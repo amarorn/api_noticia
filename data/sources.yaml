@@ -1,0 +1,35 @@
+# Fontes RSS de notícias esportivas
+# Adicione novas entradas aqui — não é necessário editar código Python.
+#
+# Campos:
+#   id:   identificador único (snake_case)
+#   name: nome legível
+#   url:  URL do feed RSS
+#   enabled: true/false (opcional, default true)
+
+sources:
+  - id: globo_esporte
+    name: Globo Esporte
+    url: https://ge.globo.com/rss/ge/
+
+  - id: espn_br
+    name: ESPN Brasil
+    url: https://www.espn.com.br/espn/rss/news
+
+  - id: uol_esporte
+    name: UOL Esporte
+    url: https://rss.uol.com.br/feed/esporte.xml
+
+  - id: fogaonet
+    name: Fogaonet
+    url: https://www.fogaonet.com/feed/
+
+  - id: gazeta_esportiva
+    name: Gazeta Esportiva
+    url: https://www.gazetaesportiva.com/feed/
+
+  # Lance desativado — feed retorna 404/410
+  - id: lance
+    name: Lance!
+    url: https://www.lance.com.br/feed/
+    enabled: false

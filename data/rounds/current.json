@@ -1,0 +1,17 @@
+{
+  "season": 2025,
+  "competition": "Brasileirão",
+  "round": 1,
+  "matches": [
+    {"home_team": "Flamengo", "away_team": "Internacional"},
+    {"home_team": "Palmeiras", "away_team": "Botafogo"},
+    {"home_team": "Corinthians", "away_team": "São Paulo"},
+    {"home_team": "Grêmio", "away_team": "Atlético-MG"},
+    {"home_team": "Fluminense", "away_team": "Bragantino"},
+    {"home_team": "Bahia", "away_team": "Fortaleza"},
+    {"home_team": "Vasco", "away_team": "Cruzeiro"},
+    {"home_team": "Athletico-PR", "away_team": "Santos"},
+    {"home_team": "Vitória", "away_team": "Ceará"},
+    {"home_team": "Sport", "away_team": "Juventude"}
+  ]
+}

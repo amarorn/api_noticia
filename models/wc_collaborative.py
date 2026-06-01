@@ -1,0 +1,205 @@
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from math import log
+
+import pandas as pd
+
+from models.logistic_wc import WcLogisticModel
+from models.poisson_wc import predict_poisson
+from pipelines.wc_stats import build_match_features
+
+
+@dataclass
+class CollaborativeMetrics:
+    poisson_weight: float
+    logistic_weight: float
+    accuracy: float
+    brier_score: float
+    log_loss: float
+    validation_size: int
+
+
+def _brier_multiclass(rows: list[dict]) -> float:
+    if not rows:
+        return 0.0
+    labels = ("1", "X", "2")
+    total = 0.0
+    for row in rows:
+        y = row["label"]
+        probs = row["probs"]
+        for label in labels:
+            target = 1.0 if y == label else 0.0
+            total += (probs[label] - target) ** 2
+    return total / (len(rows) * len(labels))
+
+
+def _log_loss_multiclass(rows: list[dict], epsilon: float = 1e-12) -> float:
+    if not rows:
+        return 0.0
+    total = 0.0
+    for row in rows:
+        p = max(min(row["probs"][row["label"]], 1.0 - epsilon), epsilon)
+        total += -log(p)
+    return total / len(rows)
+
+
+class CollaborativeWcModel:
+    def __init__(self) -> None:
+        self.logistic = WcLogisticModel()
+        self.metrics: CollaborativeMetrics | None = None
+        self._poisson_weight = 0.5
+
+    @property
+    def poisson_weight(self) -> float:
+        return self._poisson_weight
+
+    @property
+    def logistic_weight(self) -> float:
+        return 1.0 - self._poisson_weight
+
+    def fit(self, fixtures_df: pd.DataFrame, validation_season: int = 2022) -> CollaborativeMetrics:
+        df = fixtures_df.sort_values("match_date").copy()
+        train_df = df[df["season"] != validation_season]
+        valid_df = df[df["season"] == validation_season]
+
+        if train_df.empty or valid_df.empty:
+            raise ValueError(
+                f"Não foi possível separar treino/validação para a temporada {validation_season}."
+            )
+
+        # Modelo logístico base em temporadas históricas (sem a temporada de validação).
+        self.logistic.fit(train_df, holdout_season=None)
+
+        base_rows: list[dict] = []
+        for _, row in valid_df.iterrows():
+            before = row["match_date"]
+            history_mask = pd.to_datetime(df["match_date"], utc=True) < pd.to_datetime(before, utc=True)
+            history = df[history_mask]
+            if history.empty:
+                continue
+
+            phase = row.get("phase", "group")
+            is_neutral = bool(row.get("is_neutral", True))
+
+            features = build_match_features(
+                history,
+                row["home_team"],
+                row["away_team"],
+                before_date=before,
+                phase=phase,
+                is_neutral=is_neutral,
+            )
+            poisson = predict_poisson(
+                history,
+                row["home_team"],
+                row["away_team"],
+                features=features,
+                before_date=before,
+            )
+            logistic = self.logistic.predict_match(
+                history,
+                row["home_team"],
+                row["away_team"],
+                phase=phase,
+                is_neutral=is_neutral,
+            )
+            base_rows.append(
+                {
+                    "label": row["label"],
+                    "poisson": {"1": poisson.prob_home, "X": poisson.prob_draw, "2": poisson.prob_away},
+                    "logistic": {"1": logistic.prob_home, "X": logistic.prob_draw, "2": logistic.prob_away},
+                }
+            )
+
+        if not base_rows:
+            raise ValueError("Não foi possível gerar previsões para calibração.")
+
+        best: dict | None = None
+        for step in range(0, 21):
+            pw = step / 20.0
+            lw = 1.0 - pw
+
+            scored_rows: list[dict] = []
+            correct = 0
+            for item in base_rows:
+                probs = {
+                    "1": pw * item["poisson"]["1"] + lw * item["logistic"]["1"],
+                    "X": pw * item["poisson"]["X"] + lw * item["logistic"]["X"],
+                    "2": pw * item["poisson"]["2"] + lw * item["logistic"]["2"],
+                }
+                total = probs["1"] + probs["X"] + probs["2"]
+                probs = {k: v / total for k, v in probs.items()}
+                pred = max(probs, key=probs.get)
+                if pred == item["label"]:
+                    correct += 1
+                scored_rows.append({"label": item["label"], "probs": probs})
+
+            candidate = {
+                "pw": pw,
+                "lw": lw,
+                "accuracy": correct / len(scored_rows),
+                "brier": _brier_multiclass(scored_rows),
+                "log_loss": _log_loss_multiclass(scored_rows),
+                "size": len(scored_rows),
+            }
+            if best is None or candidate["brier"] < best["brier"]:
+                best = candidate
+
+        assert best is not None
+        self._poisson_weight = float(best["pw"])
+        self.metrics = CollaborativeMetrics(
+            poisson_weight=float(best["pw"]),
+            logistic_weight=float(best["lw"]),
+            accuracy=float(best["accuracy"]),
+            brier_score=float(best["brier"]),
+            log_loss=float(best["log_loss"]),
+            validation_size=int(best["size"]),
+        )
+        return self.metrics
+
+    def predict(
+        self,
+        fixtures_df: pd.DataFrame,
+        home_team: str,
+        away_team: str,
+        *,
+        phase: str = "group",
+        is_neutral: bool = True,
+        before_date: datetime | None = None,
+    ) -> dict[str, float]:
+        if self.metrics is None:
+            self.fit(fixtures_df)
+
+        ref = before_date or datetime.now(timezone.utc)
+        dt = pd.to_datetime(fixtures_df["match_date"], utc=True)
+        ref_ts = pd.Timestamp(ref if ref.tzinfo else ref.replace(tzinfo=timezone.utc))
+        history = fixtures_df[dt < ref_ts]
+        if history.empty:
+            history = fixtures_df
+
+        features = build_match_features(
+            history,
+            home_team,
+            away_team,
+            before_date=ref,
+            phase=phase,
+            is_neutral=is_neutral,
+        )
+        poisson = predict_poisson(history, home_team, away_team, features=features, before_date=ref)
+        logistic = self.logistic.predict_match(
+            history,
+            home_team,
+            away_team,
+            phase=phase,
+            is_neutral=is_neutral,
+        )
+
+        pw = self.poisson_weight
+        lw = self.logistic_weight
+        probs = {
+            "1": pw * poisson.prob_home + lw * logistic.prob_home,
+            "X": pw * poisson.prob_draw + lw * logistic.prob_draw,
+            "2": pw * poisson.prob_away + lw * logistic.prob_away,
+        }
+        total = probs["1"] + probs["X"] + probs["2"]
+        return {k: v / total for k, v in probs.items()}

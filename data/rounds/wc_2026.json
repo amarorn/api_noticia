@@ -1,0 +1,14 @@
+{
+  "season": 2026,
+  "competition": "Copa do Mundo",
+  "phase": "group",
+  "round": 1,
+  "matches": [
+    {"home_team": "Brasil", "away_team": "Marrocos", "phase": "group", "group": "G"},
+    {"home_team": "Argentina", "away_team": "México", "phase": "group", "group": "C"},
+    {"home_team": "França", "away_team": "Senegal", "phase": "group", "group": "D"},
+    {"home_team": "Inglaterra", "away_team": "Croácia", "phase": "group", "group": "B"},
+    {"home_team": "Alemanha", "away_team": "Japão", "phase": "group", "group": "E"},
+    {"home_team": "Espanha", "away_team": "Holanda", "phase": "group", "group": "F"}
+  ]
+}

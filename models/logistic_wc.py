@@ -1,0 +1,114 @@
+from dataclasses import dataclass
+
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+
+from pipelines.wc_stats import (
+    FEATURE_NAMES,
+    WcMatchFeatures,
+    build_match_features,
+    features_to_vector,
+)
+from schemas.models import BolaoLabel
+
+LABELS: list[BolaoLabel] = ["1", "X", "2"]
+
+
+@dataclass
+class LogisticPrediction:
+    prob_home: float
+    prob_draw: float
+    prob_away: float
+    prediction: BolaoLabel
+
+
+class WcLogisticModel:
+    def __init__(self) -> None:
+        self.model = LogisticRegression(
+            max_iter=2000,
+            random_state=42,
+            solver="lbfgs",
+        )
+        self.scaler = StandardScaler()
+        self._fitted = False
+
+    def fit(self, fixtures_df: pd.DataFrame, holdout_season: int | None = 2022) -> dict:
+        df = fixtures_df.sort_values("match_date").copy()
+        train_df = df[df["season"] != holdout_season] if holdout_season else df
+
+        x_rows: list[list[float]] = []
+        y_rows: list[str] = []
+
+        for _, row in train_df.iterrows():
+            before = row["match_date"]
+            feats = build_match_features(
+                df,
+                row["home_team"],
+                row["away_team"],
+                before_date=before,
+                phase=row.get("phase", "group"),
+                is_neutral=bool(row.get("is_neutral", True)),
+            )
+            x_rows.append(features_to_vector(feats))
+            y_rows.append(row["label"])
+
+        if len(x_rows) < 50:
+            raise ValueError(f"Dados insuficientes para treino ({len(x_rows)} jogos)")
+
+        x_scaled = self.scaler.fit_transform(x_rows)
+        self.model.fit(x_scaled, y_rows)
+        self._fitted = True
+
+        metrics: dict = {"train_size": len(x_rows), "features": FEATURE_NAMES}
+        if holdout_season and holdout_season in df["season"].values:
+            test_df = df[df["season"] == holdout_season]
+            correct = 0
+            for _, row in test_df.iterrows():
+                pred = self.predict_match(
+                    df[df["match_date"] < row["match_date"]],
+                    row["home_team"],
+                    row["away_team"],
+                    phase=row.get("phase", "group"),
+                )
+                if pred.prediction == row["label"]:
+                    correct += 1
+            metrics["holdout_season"] = holdout_season
+            metrics["holdout_accuracy"] = correct / len(test_df) if len(test_df) else 0.0
+
+        return metrics
+
+    def predict_match(
+        self,
+        fixtures_df: pd.DataFrame,
+        home_team: str,
+        away_team: str,
+        phase: str = "group",
+        is_neutral: bool = True,
+    ) -> LogisticPrediction:
+        if not self._fitted:
+            self.fit(fixtures_df)
+
+        feats = build_match_features(
+            fixtures_df,
+            home_team,
+            away_team,
+            phase=phase,
+            is_neutral=is_neutral,
+        )
+        x = self.scaler.transform([features_to_vector(feats)])[0]
+        probs = self.model.predict_proba([x])[0]
+        classes = list(self.model.classes_)
+
+        prob_map = {c: float(p) for c, p in zip(classes, probs, strict=False)}
+        p1 = prob_map.get("1", 0.0)
+        px = prob_map.get("X", 0.0)
+        p2 = prob_map.get("2", 0.0)
+
+        best = max(prob_map, key=prob_map.get)
+        return LogisticPrediction(
+            prob_home=p1,
+            prob_draw=px,
+            prob_away=p2,
+            prediction=best,  # type: ignore[arg-type]
+        )
