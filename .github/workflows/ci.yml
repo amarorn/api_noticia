@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-and-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[dev,ml]"
+
+      - name: Unit tests
+        run: pytest tests/ -q --tb=short
+
+      - name: Import fixtures (openfootball)
+        run: import-fixtures --competition brasileirao --seasons 2022 2023 2024
+
+      - name: Temporal benchmark (Brasileirão)
+        run: benchmark-bolao-models --eval-season 2024
+
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brasileirao-benchmark-report
+          path: data/lake/reports/brasileirao_benchmark_report.json
+          if-no-files-found: ignore
+          retention-days: 14

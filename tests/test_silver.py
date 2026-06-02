@@ -1,11 +1,12 @@
 import pytest
 
-from pipelines.silver import _extract_entities, _simple_sentiment
+from pipelines.ner import extract_teams
+from pipelines.silver import _simple_sentiment
 
 
 def test_extract_teams():
     text = "Flamengo vence Palmeiras no Maracanã"
-    teams, _ = _extract_entities(text)
+    teams = extract_teams(text)
     assert "Flamengo" in teams
     assert "Palmeiras" in teams
 

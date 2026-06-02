@@ -6,6 +6,8 @@ import pandas as pd
 from ingest.fixtures.world_cup import load_wc_fixtures
 from models.wc_collaborative import CollaborativeWcModel
 from models.logistic_wc import WcLogisticModel
+from config import settings
+from models.economics import ces_blend_probabilities
 from models.poisson_wc import predict_poisson
 from pipelines.wc_stats import build_match_features, compute_wc_h2h, format_wc_context
 from schemas.models import BolaoLabel
@@ -74,16 +76,26 @@ class WcPredictor:
 
         pw = self.collaborative.poisson_weight
         lw = self.collaborative.logistic_weight
-        prob_home = pw * poisson.prob_home + lw * logistic.prob_home
-        prob_draw = pw * poisson.prob_draw + lw * logistic.prob_draw
-        prob_away = pw * poisson.prob_away + lw * logistic.prob_away
-
-        total = prob_home + prob_draw + prob_away
-        prob_home /= total
-        prob_draw /= total
-        prob_away /= total
-
-        probs = {"1": prob_home, "X": prob_draw, "2": prob_away}
+        models = {
+            "poisson": {
+                "1": poisson.prob_home,
+                "X": poisson.prob_draw,
+                "2": poisson.prob_away,
+            },
+            "logistic": {
+                "1": logistic.prob_home,
+                "X": logistic.prob_draw,
+                "2": logistic.prob_away,
+            },
+        }
+        probs = ces_blend_probabilities(
+            models,
+            weights={"poisson": pw, "logistic": lw},
+            sigma=settings.dixit_sigma,
+        )
+        prob_home = probs["1"]
+        prob_draw = probs["X"]
+        prob_away = probs["2"]
         prediction = max(probs, key=probs.get)  # type: ignore[assignment]
         confidence = probs[prediction]
 
@@ -122,6 +134,8 @@ class WcPredictor:
                     "poisson": round(pw, 3),
                     "logistic": round(lw, 3),
                 },
+                "dixit_sigma": settings.dixit_sigma,
+                "blend": "ces_dixit_stiglitz",
                 "ensemble_brier": round(self.collab_metrics.brier_score, 6),
             },
         )

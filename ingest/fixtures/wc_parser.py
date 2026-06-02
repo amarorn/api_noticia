@@ -8,9 +8,10 @@ from ingest.fixtures.parser import score_to_label
 from schemas.models import BolaoLabel, MatchResult
 from schemas.national_teams import normalize_national_team
 
-GROUP_RE = re.compile(r"^▪\s+Group\s+([A-H])\s*$", re.IGNORECASE)
+GROUP_RE = re.compile(r"^▪\s+Group\s+([A-H]|[1-9]\d*)\s*(?:\|.*)?$", re.IGNORECASE)
 PHASE_RE = re.compile(
-    r"^▪\s+(Round of 16|Quarter-finals|Semi-finals|Match for third place|Final)\s*",
+    r"^▪\s+(Round of 16|Quarter-finals|Semi-finals|Match for third place|Final)"
+    r"(?:\s*\|.*)?\s*$",
     re.IGNORECASE,
 )
 MATCHDAY_RE = re.compile(r"^▪\s+Matchday", re.IGNORECASE)

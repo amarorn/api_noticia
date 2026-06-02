@@ -49,6 +49,19 @@ SAMPLE_1986 = """
 """
 
 
+def test_parse_1930_numeric_group():
+    sample = """
+▪ Group 1
+July 13
+  France     4-1 (3-0)  Mexico    @ Estadio Pocitos, Montevideo
+July 15
+  Argentina  1-0 (0-0)  France    @ Estadio Parque Central, Montevideo
+"""
+    matches = parse_world_cup_txt(sample, season=1930)
+    assert len(matches) == 2
+    assert matches[0].group_name == "1"
+
+
 def test_parse_group_matches():
     matches = parse_world_cup_txt(SAMPLE_GROUP, season=2022)
     assert len(matches) == 2

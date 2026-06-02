@@ -2,7 +2,7 @@ import argparse
 
 import structlog
 
-from ingest.fixtures.brasileirao import load_fixtures
+from ingest.fixtures.store import load_fixtures
 from models.dataset import export_jsonl
 from pipelines.gold import run_gold_pipeline
 from pipelines.silver import run_silver_pipeline
@@ -22,8 +22,14 @@ def main() -> None:
         choices=["silver", "gold", "all", "export"],
         help="Estágio do pipeline",
     )
-    parser.add_argument("--season", type=int, help="Temporada do Brasileirão (ex: 2024)")
+    parser.add_argument("--season", type=int, help="Temporada (ex: 2024)")
     parser.add_argument("--round", type=int, help="Rodada específica")
+    parser.add_argument(
+        "--competition",
+        choices=["brasileirao", "copa"],
+        default=None,
+        help="Filtra fixtures por competição",
+    )
     args = parser.parse_args()
 
     if args.stage in ("silver", "all"):
@@ -31,7 +37,7 @@ def main() -> None:
         print(f"Silver: {path or 'sem dados'}")
 
     if args.stage in ("gold", "all"):
-        fixtures = load_fixtures(season=args.season)
+        fixtures = load_fixtures(season=args.season, competition=args.competition)
         if fixtures.empty:
             print("Gold: sem fixtures. Execute primeiro: import-brasileirao")
         else:

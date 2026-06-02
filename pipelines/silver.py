@@ -7,7 +7,7 @@ import structlog
 from config import settings
 from ingest.storage import load_bronze
 from schemas.models import SilverArticle
-from schemas.teams import BRAZILIAN_TEAMS
+from pipelines.ner import extract_entities
 
 logger = structlog.get_logger()
 
@@ -18,13 +18,6 @@ INJURY_KEYWORDS = [
 
 POSITIVE_KEYWORDS = ["vitória", "gol", "artilheiro", "confiante", "invicto", "classificação"]
 NEGATIVE_KEYWORDS = ["derrota", "rebaixamento", "crise", "demissão", "suspenso", "eliminação"]
-
-
-def _extract_entities(text: str) -> tuple[list[str], list[str]]:
-    text_lower = text.lower()
-    teams = [t for t in BRAZILIAN_TEAMS if t.lower() in text_lower]
-    players: list[str] = []
-    return teams, players
 
 
 def _simple_sentiment(text: str) -> float:
@@ -42,7 +35,7 @@ def bronze_to_silver(df: pd.DataFrame) -> list[SilverArticle]:
     for _, row in df.iterrows():
         body = row.get("content_raw") or row.get("summary") or row.get("title", "")
         full_text = f"{row.get('title', '')} {body}"
-        teams, players = _extract_entities(full_text)
+        teams, players = extract_entities(full_text)
 
         article = SilverArticle(
             id=row["id"],

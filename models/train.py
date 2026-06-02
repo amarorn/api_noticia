@@ -17,13 +17,33 @@ logger = structlog.get_logger()
 def train(
     dataset_path: Path = Path("data/training/bolao_train.jsonl"),
     output_dir: Path = Path("models/checkpoints/bolao-lm"),
-    base_model: str = "meta-llama/Llama-3.2-1B-Instruct",
+    base_model: str = "unsloth/Qwen2.5-0.5B-Instruct",
+    use_unsloth: bool = False,
 ) -> None:
     count = export_jsonl(dataset_path)
     if count == 0:
         logger.error(
             "training_aborted",
-            reason="Dataset vazio. Adicione labels (1/2/X) nos jogos gold antes de treinar.",
+            reason="Dataset vazio. Execute import-fixtures e run-pipeline gold/export.",
+        )
+        return
+
+    if use_unsloth:
+        import subprocess
+        import sys
+
+        script = Path(__file__).resolve().parents[1] / "scripts" / "unsloth_train.py"
+        subprocess.check_call(
+            [
+                sys.executable,
+                str(script),
+                "--dataset",
+                str(dataset_path),
+                "--base-model",
+                base_model,
+                "--output-dir",
+                str(output_dir),
+            ]
         )
         return
 
@@ -33,7 +53,7 @@ def train(
         examples=count,
         base_model=base_model,
         output_dir=str(output_dir),
-        hint="Use Unsloth SFT com o JSONL exportado. Veja README.md.",
+        hint='Treino Unsloth: train-bolao --unsloth | python scripts/unsloth_train.py',
     )
 
 

@@ -62,6 +62,10 @@ class BolaoFeature(BaseModel):
     h2h_home_wins: Optional[int] = None
     h2h_draws: Optional[int] = None
     h2h_away_wins: Optional[int] = None
+    home_shots_on_target: Optional[int] = None
+    away_shots_on_target: Optional[int] = None
+    home_possession_pct: Optional[int] = None
+    away_possession_pct: Optional[int] = None
 
 
 class GoldBolaoContext(BaseModel):

@@ -13,6 +13,8 @@ COPY models ./models
 COPY pipelines ./pipelines
 COPY schemas ./schemas
 COPY config.py ./
+COPY data/sources.yaml ./data/sources.yaml
+COPY data/rounds ./data/rounds
 
 RUN pip install --upgrade pip && \
     pip install . && \

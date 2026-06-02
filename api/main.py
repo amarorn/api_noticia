@@ -1,15 +1,15 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from config import settings
-from ingest.fixtures.brasileirao import load_fixtures
+from ingest.fixtures.store import load_fixtures
 from ingest.odds.the_odds_api import fetch_live_h2h_odds, merge_schedule_with_odds, save_odds_file
 from ingest.meta import collection_stats
 from models.ev_value import MatchValueReport, evaluate_match
-from models.baseline import predict_baseline
+from models.bolao_predictor import BolaoPrediction, get_predictor
 from models.wc_predictor import WcPredictor
 from pipelines.current_round import load_round_schedule, predict_round
 from pipelines.gold import build_gold_for_match
@@ -48,6 +48,8 @@ class MatchContextResponse(BaseModel):
     prediction: str | None = None
     confidence: float | None = None
     reason: str | None = None
+    probabilities: dict[str, float] | None = None
+    model_source: str | None = None
 
 
 class RoundPrediction(BaseModel):
@@ -57,6 +59,8 @@ class RoundPrediction(BaseModel):
     confidence: float
     reason: str
     news_count: int
+    probabilities: dict[str, float] | None = None
+    model_source: str | None = None
 
 
 class RoundResponse(BaseModel):
@@ -103,6 +107,15 @@ class WcValueResponse(BaseModel):
     edges: list[WcMatchValueResponse]
 
 
+def _apply_prediction(resp: MatchContextResponse, result: BolaoPrediction) -> MatchContextResponse:
+    resp.prediction = result.prediction
+    resp.confidence = round(result.confidence, 4)
+    resp.reason = result.reason
+    resp.probabilities = {k: round(v, 4) for k, v in result.probabilities.items()}
+    resp.model_source = result.model_source
+    return resp
+
+
 def _context_to_response(context, include_prediction: bool = False) -> MatchContextResponse:
     resp = MatchContextResponse(
         match_id=context.match_id,
@@ -121,10 +134,7 @@ def _context_to_response(context, include_prediction: bool = False) -> MatchCont
         away_form=context.features.away_form,
     )
     if include_prediction:
-        pred, conf, reason = predict_baseline(context.features)
-        resp.prediction = pred
-        resp.confidence = conf
-        resp.reason = reason
+        return _apply_prediction(resp, get_predictor().predict(context))
     return resp
 
 
@@ -171,6 +181,7 @@ def health():
         "articles_silver": len(silver_df),
         "fixtures": len(fixtures_df),
         "collections": stats,
+        "predictor": get_predictor().status(),
     }
 
 
@@ -190,47 +201,34 @@ def root():
     }
 
 
-@app.post("/context", response_model=MatchContextResponse)
-def get_match_context(req: MatchRequest):
+def _build_match_context(req: MatchRequest):
     silver_df = load_silver()
     fixtures_df = load_fixtures()
-
     match_id = f"{req.home_team}_{req.away_team}_{req.round_number}".lower().replace(" ", "_")
-    context = build_gold_for_match(
+    return build_gold_for_match(
         match_id=match_id,
         home_team=req.home_team,
         away_team=req.away_team,
         round_number=req.round_number,
         competition=req.competition,
-        match_date=datetime.utcnow(),
+        match_date=datetime.now(UTC),
         silver_df=silver_df,
         season=req.season,
         fixtures_df=fixtures_df if not fixtures_df.empty else None,
         live_mode=True,
     )
+
+
+@app.post("/context", response_model=MatchContextResponse)
+def get_match_context(req: MatchRequest):
+    context = _build_match_context(req)
     return _context_to_response(context)
 
 
 @app.post("/predict", response_model=MatchContextResponse)
 def predict_match(req: MatchRequest):
-    resp = get_match_context(req)
-    context = build_gold_for_match(
-        match_id=resp.match_id,
-        home_team=resp.home_team,
-        away_team=resp.away_team,
-        round_number=req.round_number,
-        competition=req.competition,
-        match_date=datetime.utcnow(),
-        silver_df=load_silver(),
-        season=req.season,
-        fixtures_df=load_fixtures(),
-        live_mode=True,
-    )
-    pred, conf, reason = predict_baseline(context.features)
-    resp.prediction = pred
-    resp.confidence = conf
-    resp.reason = reason
-    return resp
+    context = _build_match_context(req)
+    return _context_to_response(context, include_prediction=True)
 
 
 @app.get("/round/predict", response_model=RoundResponse)
@@ -252,6 +250,8 @@ def predict_current_round():
                 confidence=r["confidence"],
                 reason=r["reason"],
                 news_count=r["news_count"],
+                probabilities=r.get("probabilities"),
+                model_source=r.get("model_source"),
             )
             for r in results
         ],
