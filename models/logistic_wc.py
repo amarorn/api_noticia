@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -85,6 +86,7 @@ class WcLogisticModel:
         away_team: str,
         phase: str = "group",
         is_neutral: bool = True,
+        before_date: datetime | None = None,
     ) -> LogisticPrediction:
         if not self._fitted:
             self.fit(fixtures_df)
@@ -93,6 +95,7 @@ class WcLogisticModel:
             fixtures_df,
             home_team,
             away_team,
+            before_date=before_date,
             phase=phase,
             is_neutral=is_neutral,
         )

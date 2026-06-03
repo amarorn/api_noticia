@@ -1,0 +1,26 @@
+Palpite final (1/X/2): 1 (vitória do mandante, Irã)
+Probabilidades do ensemble:
+1: 40.02%
+X: 27.58%
+2: 32.40%
+Placar mais provável (Poisson): 1x1
+Gols esperados (Poisson): 1.36 x 1.23
+Pesos usados no ensemble para esse cenário: Poisson 0.35, Logística 0.65
+
+Palpite (1/X/2): 1 (vitória da Inglaterra)
+Probabilidades (ensemble):
+1: 76.23%
+X: 14.11%
+2: 9.66%
+Placar provável (Poisson): 2x0
+Gols esperados: 2.94 x 0.00
+Pesos do ensemble: Poisson 0.2 + Logística 0.8
+
+Palpite final (1/X/2): 2 (Argentina vence)
+Probabilidades (ensemble):
+1 (Holanda): 43.84%
+X (Empate): 10.32%
+2 (Argentina): 45.84%
+Placar provável (Poisson): 1x1
+Gols esperados: 1.29 x 1.10
+Pesos do ensemble: Poisson 0.35 + Logística 0.65

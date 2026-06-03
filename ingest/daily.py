@@ -3,10 +3,8 @@ import argparse
 
 import structlog
 
-from ingest.meta import collection_stats, log_collection
-from ingest.sources import collect_all_sources
-from ingest.storage import save_bronze
-from pipelines.silver import run_silver_pipeline
+from ingest.meta import collection_stats
+from ingest.news_sync import sync_news_sources
 
 structlog.configure(
     processors=[
@@ -17,22 +15,18 @@ structlog.configure(
 
 
 async def run(fetch_body: bool, pipeline: bool) -> None:
-    articles = await collect_all_sources(fetch_full_body=fetch_body)
-    save_bronze(articles)
+    result = await sync_news_sources(
+        fetch_body=fetch_body,
+        run_silver=pipeline,
+        full_silver_rebuild=pipeline,
+    )
 
-    by_source: dict[str, int] = {}
-    for a in articles:
-        by_source[a.source] = by_source.get(a.source, 0) + 1
-    log_collection(len(articles), by_source, stage="bronze")
-
-    print(f"Coletados {len(articles)} artigos.")
-    for src, count in sorted(by_source.items()):
+    print(f"Coletados {result['collected']} artigos.")
+    for src, count in sorted(result["by_source"].items()):
         print(f"  {src}: {count}")
 
     if pipeline:
-        path = run_silver_pipeline()
-        log_collection(len(articles), by_source, stage="silver")
-        print(f"Silver atualizado: {path or 'sem dados'}")
+        print(f"Silver atualizado: {result['silver_path'] or 'sem dados'}")
 
     stats = collection_stats()
     print(f"Total de coletas: {stats['total_runs']} | Artigos acumulados (log): {stats['total_articles']}")

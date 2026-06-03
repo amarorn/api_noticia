@@ -105,6 +105,49 @@ import-brasileirao --seasons 2024     # temporada específica
 
 Fonte: [openfootball/south-america](https://github.com/openfootball/south-america) (domínio público).
 
+### 2b. Base histórica da Copa do Mundo
+
+```bash
+import-world-cup --list              # edições na fonte vs lake local
+import-world-cup --missing-only      # importa só o que falta (1930–2022)
+import-world-cup --seasons 1970 1982 2022
+import-world-cup --force             # reimporta todas as edições
+```
+
+Fonte: [openfootball/worldcup](https://github.com/openfootball/worldcup) (1930 a 2022). Após importar, **reinicie a API** para os modelos WC recarregarem os jogos.
+
+### 2c. Baselines táticos KXL (Copa 2026)
+
+Perfis vetoriais por seleção em `data/wc/team_baselines.json` (48 times). O palpite WC mistura 75% ensemble histórico + 25% DNA KXL e inclui matchup setorial no `context`.
+
+```bash
+python3 scripts/import_wc_baselines.py "/caminho/DADOS PARCEIAIS ... COPA.txt"
+```
+
+**Fase 3 — motor de colisão:** `pipelines/wc_kxl_collision.py` e fórmulas em [docs/kxl-colisao.md](docs/kxl-colisao.md) (Vcar, Vesc, TBRTL, colisão setorial, **letalidade×GK** cabeça/fora/área/BP, **EACP**). UI: gramado interativo + painel Letalidade×Goleiro.
+
+**Fase 2 — entrada dinâmica (opcional no `POST /worldcup/predict`):**
+
+```json
+{
+  "home_team": "Brasil",
+  "away_team": "Marrocos",
+  "phase": "group",
+  "kxl_match": {
+    "fecl": { "chuva_mm": 4, "umidade_pct": 90, "gramado": "molhado" },
+    "feju": { "perfil": "punitivista", "cartoes_media": 5.2 },
+    "fede": {
+      "desfalques_visitante": [{ "jogador": "Ziyech", "nota_elenco": 7.2, "impacto": 0.08 }]
+    },
+    "fept": {
+      "titulares_mandante": [{ "nome": "Vini Jr", "linha": "ataque", "nota_sofascore": 7.8 }],
+      "titulares_visitante": [{ "nome": "Hakimi", "linha": "defesa", "nota_sofascore": 6.5 }]
+    },
+    "feem": { "peso_rivalidade": 0.3, "jogo_decisivo": true }
+  }
+}
+```
+
 ### 3. Rodar pipeline de transformação
 
 ```bash

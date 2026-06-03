@@ -1,25 +1,74 @@
+import asyncio
+import json
+from contextlib import asynccontextmanager
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from api.lake_cache import get_lake_counts, invalidate_lake_counts
 from config import settings
 from ingest.fixtures.brasileirao import load_fixtures
 from ingest.odds.the_odds_api import fetch_live_h2h_odds, merge_schedule_with_odds, save_odds_file
 from ingest.meta import collection_stats
 from models.ev_value import MatchValueReport, evaluate_match
 from models.baseline import predict_baseline
-from models.wc_predictor import WcPredictor
+from models.wc_predictor import WcPrediction, WcPredictor
+from schemas.wc_kxl_dynamic import WcKxlMatchInput
 from pipelines.current_round import load_round_schedule, predict_round
 from pipelines.gold import build_gold_for_match
+from ingest.news_sync import sync_news_sources
+from pipelines.news_feed import build_news_feed
 from pipelines.silver import load_silver
+from pipelines.wc_validate import (
+    list_edition_matches,
+    list_wc_editions,
+    validate_historical_match,
+)
+from schemas.national_teams import normalize_national_team
+
+WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
+
+_wc_models_ready = False
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Treina modelos da Copa na subida para a primeira requisição do frontend não travar."""
+    global _wc_models_ready
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    try:
+        await loop.run_in_executor(None, _get_wc_predictor)
+        _wc_models_ready = True
+    except ValueError:
+        _wc_models_ready = False
+    yield
+
 
 app = FastAPI(
     title="Bolão News API",
     description="API de contexto e previsão baseada em notícias esportivas",
     version="0.2.0",
+    lifespan=lifespan,
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@lru_cache(maxsize=1)
+def _get_wc_predictor() -> WcPredictor:
+    return WcPredictor()
 
 
 class MatchRequest(BaseModel):
@@ -103,6 +152,181 @@ class WcValueResponse(BaseModel):
     edges: list[WcMatchValueResponse]
 
 
+class WcPredictRequest(BaseModel):
+    home_team: str = Field(..., examples=["Brasil"])
+    away_team: str = Field(..., examples=["Marrocos"])
+    phase: str = Field("group", examples=["group"])
+    kxl_match: WcKxlMatchInput | None = Field(
+        None,
+        description="Entrada dinâmica KXL (FECL, FEJU, FEDE, FEPT, FEEM) — opcional",
+    )
+
+
+class WcGoalFactors(BaseModel):
+    league_avg: float
+    home_attack: float
+    away_attack: float
+    home_defense: float
+    away_defense: float
+    home_advantage: float
+    elo_factor_home: float
+    elo_factor_away: float
+    lambda_home: float
+    lambda_away: float
+    rho: float
+
+
+class WcModelBreakdown(BaseModel):
+    dixon_coles: dict[str, float]
+    logistic: dict[str, float]
+    dixon_coles_rho: float | None = None
+    poisson_factors: WcGoalFactors | None = None
+    holdout_2022_accuracy: float | None = None
+    ensemble_weights: dict[str, float]
+    ensemble_brier: float | None = None
+    kxl_baseline: dict | None = None
+    kxl_collision: dict | None = None
+    kxl_dynamic: dict | None = None
+
+
+class WcPredictionResponse(BaseModel):
+    home_team: str
+    away_team: str
+    prediction: str
+    confidence: float
+    prob_home: float
+    prob_draw: float
+    prob_away: float
+    poisson_score: str
+    expected_goals: str
+    context: str
+    h2h_summary: str
+    model_breakdown: WcModelBreakdown
+
+
+class WcRoundResponse(BaseModel):
+    season: int
+    competition: str
+    phase: str
+    round: int
+    predictions: list[WcPredictionResponse]
+
+
+class WcTeamsResponse(BaseModel):
+    teams: list[str]
+    count: int
+
+
+class WcEditionItem(BaseModel):
+    season: int
+    label: str
+    match_count: int
+
+
+class WcEditionsResponse(BaseModel):
+    editions: list[WcEditionItem]
+
+
+class WcHistoricalMatchItem(BaseModel):
+    match_id: str
+    season: int
+    home_team: str
+    away_team: str
+    match_date: str
+    phase: str
+    phase_label: str
+    group_name: str | None = None
+    home_score: int
+    away_score: int
+    result: str
+    result_label: str
+    score: str
+
+
+class WcEditionMatchesResponse(BaseModel):
+    season: int
+    matches: list[WcHistoricalMatchItem]
+
+
+class WcValidateRequest(BaseModel):
+    season: int = Field(..., ge=1930, le=2022)
+    match_id: str | None = None
+    home_team: str | None = None
+    away_team: str | None = None
+
+
+class WcValidateMatchInfo(BaseModel):
+    match_id: str
+    season: int
+    home_team: str
+    away_team: str
+    match_date: str
+    phase: str
+    phase_label: str
+    group_name: str | None = None
+    home_score: int
+    away_score: int
+    actual_result: str
+    actual_result_label: str
+    actual_score: str
+
+
+class NewsArticleItem(BaseModel):
+    id: str
+    source: str
+    source_name: str
+    source_url: str
+    title: str
+    summary: str | None = None
+    body_preview: str
+    published_at: str | None = None
+    scraped_at: str | None = None
+    teams_mentioned: list[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
+    sentiment_score: float | None = None
+    sentiment_label: str
+
+
+class NewsSourceItem(BaseModel):
+    id: str
+    name: str
+    count: int
+
+
+class NewsFeedResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    sources: list[NewsSourceItem]
+    articles: list[NewsArticleItem]
+
+
+class NewsSyncResponse(BaseModel):
+    collected: int
+    by_source: dict[str, int]
+    silver_updated: bool
+    silver_path: str | None = None
+    articles_silver: int
+    synced_at: str
+
+
+class WcValidateResponse(BaseModel):
+    match: WcValidateMatchInfo
+    prediction: str
+    confidence: float
+    prob_home: float
+    prob_draw: float
+    prob_away: float
+    poisson_score: str
+    expected_goals: str
+    correct: bool
+    context: str
+    h2h_summary: str
+    model_breakdown: WcModelBreakdown
+    cutoff_date: str
+    cutoff_note: str
+
+
 def _context_to_response(context, include_prediction: bool = False) -> MatchContextResponse:
     resp = MatchContextResponse(
         match_id=context.match_id,
@@ -126,6 +350,49 @@ def _context_to_response(context, include_prediction: bool = False) -> MatchCont
         resp.confidence = conf
         resp.reason = reason
     return resp
+
+
+def _breakdown_to_response(breakdown: dict) -> WcModelBreakdown:
+    pf = breakdown.get("poisson_factors")
+    return WcModelBreakdown(
+        dixon_coles=breakdown["dixon_coles"],
+        logistic=breakdown["logistic"],
+        dixon_coles_rho=breakdown.get("dixon_coles_rho"),
+        poisson_factors=WcGoalFactors(**pf) if pf else None,
+        holdout_2022_accuracy=breakdown.get("holdout_2022_accuracy"),
+        ensemble_weights=breakdown["ensemble_weights"],
+        ensemble_brier=breakdown.get("ensemble_brier"),
+        kxl_baseline=breakdown.get("kxl_baseline"),
+        kxl_collision=breakdown.get("kxl_collision"),
+        kxl_dynamic=breakdown.get("kxl_dynamic"),
+    )
+
+
+def _wc_prediction_to_response(pred: WcPrediction) -> WcPredictionResponse:
+    breakdown = pred.model_breakdown
+    return WcPredictionResponse(
+        home_team=pred.home_team,
+        away_team=pred.away_team,
+        prediction=pred.prediction,
+        confidence=round(pred.confidence, 4),
+        prob_home=round(pred.prob_home, 4),
+        prob_draw=round(pred.prob_draw, 4),
+        prob_away=round(pred.prob_away, 4),
+        poisson_score=pred.poisson_score,
+        expected_goals=pred.expected_goals,
+        context=pred.context,
+        h2h_summary=pred.h2h_summary,
+        model_breakdown=_breakdown_to_response(breakdown),
+    )
+
+
+def _load_wc_round(path: Path = WC_ROUND_FILE) -> dict:
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Rodada WC não encontrada: {path}")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Falha ao ler rodada WC: {exc}") from exc
 
 
 def _match_value_to_response(report: MatchValueReport) -> WcMatchValueResponse:
@@ -160,17 +427,29 @@ def _match_value_to_response(report: MatchValueReport) -> WcMatchValueResponse:
     )
 
 
+def _sanitize_match_item(data: dict) -> dict:
+    import math
+
+    out = dict(data)
+    group = out.get("group_name")
+    if group is None or (isinstance(group, float) and math.isnan(group)):
+        out["group_name"] = None
+    else:
+        out["group_name"] = str(group)
+    return out
+
+
 @app.get("/health")
-def health():
+async def health():
     stats = collection_stats()
-    silver_df = load_silver()
-    fixtures_df = load_fixtures()
+    articles_silver, fixtures = await asyncio.to_thread(get_lake_counts)
     return {
         "status": "ok",
         "lake_root": str(settings.lake_root),
-        "articles_silver": len(silver_df),
-        "fixtures": len(fixtures_df),
+        "articles_silver": articles_silver,
+        "fixtures": fixtures,
         "collections": stats,
+        "wc_models_ready": _wc_models_ready,
     }
 
 
@@ -182,12 +461,62 @@ def root():
         "docs": "/docs",
         "health": "/health",
         "endpoints": [
+            "/news/feed",
+            "/news/sync",
             "/context",
             "/predict",
             "/round/predict",
+            "/worldcup/predict",
+            "/worldcup/round",
+            "/worldcup/teams",
             "/worldcup/value/live",
+            "/worldcup/editions",
+            "/worldcup/editions/{season}/matches",
+            "/worldcup/validate",
         ],
     }
+
+
+@app.post("/news/sync", response_model=NewsSyncResponse)
+async def news_sync():
+    try:
+        result = await sync_news_sources(fetch_body=False, run_silver=True)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Falha ao sincronizar fontes: {exc}") from exc
+    invalidate_lake_counts()
+    return NewsSyncResponse(**result)
+
+
+@app.get("/news/feed", response_model=NewsFeedResponse)
+async def news_feed(
+    limit: int = 24,
+    offset: int = 0,
+    source: str | None = None,
+    q: str | None = None,
+    days: int | None = 30,
+):
+    limit = min(max(limit, 1), 100)
+    offset = max(offset, 0)
+    if days is not None:
+        days = min(max(days, 1), 365)
+
+    silver_df = await asyncio.to_thread(load_silver)
+    payload = await asyncio.to_thread(
+        build_news_feed,
+        silver_df,
+        limit=limit,
+        offset=offset,
+        source=source,
+        query=q,
+        days=days,
+    )
+    return NewsFeedResponse(
+        total=payload["total"],
+        limit=payload["limit"],
+        offset=payload["offset"],
+        sources=[NewsSourceItem(**s) for s in payload["sources"]],
+        articles=[NewsArticleItem(**a) for a in payload["articles"]],
+    )
 
 
 @app.post("/context", response_model=MatchContextResponse)
@@ -258,6 +587,158 @@ def predict_current_round():
     )
 
 
+@app.post("/worldcup/predict", response_model=WcPredictionResponse)
+def worldcup_predict(req: WcPredictRequest):
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    home = normalize_national_team(req.home_team)
+    away = normalize_national_team(req.away_team)
+    try:
+        pred = predictor.predict(home, away, phase=req.phase, kxl_match=req.kxl_match)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _wc_prediction_to_response(pred)
+
+
+@app.get("/worldcup/round", response_model=WcRoundResponse)
+def worldcup_round():
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    round_data = _load_wc_round()
+    phase_default = round_data.get("phase", "group")
+    predictions: list[WcPredictionResponse] = []
+
+    for match in round_data.get("matches", []):
+        home = normalize_national_team(match["home_team"])
+        away = normalize_national_team(match["away_team"])
+        match_phase = match.get("phase", phase_default)
+        try:
+            pred = predictor.predict(home, away, phase=match_phase)
+            predictions.append(_wc_prediction_to_response(pred))
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Erro ao prever {home} x {away}: {exc}",
+            ) from exc
+
+    return WcRoundResponse(
+        season=round_data.get("season", 2026),
+        competition=round_data.get("competition", "Copa do Mundo"),
+        phase=phase_default,
+        round=round_data.get("round", 1),
+        predictions=predictions,
+    )
+
+
+@app.get("/worldcup/teams", response_model=WcTeamsResponse)
+def worldcup_teams():
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    fixtures = predictor.fixtures
+    teams: set[str] = set()
+    if not fixtures.empty:
+        teams.update(fixtures["home_team"].dropna().unique())
+        teams.update(fixtures["away_team"].dropna().unique())
+
+    round_data = _load_wc_round()
+    for match in round_data.get("matches", []):
+        teams.add(normalize_national_team(match["home_team"]))
+        teams.add(normalize_national_team(match["away_team"]))
+
+    sorted_teams = sorted(teams, key=str.casefold)
+    return WcTeamsResponse(teams=sorted_teams, count=len(sorted_teams))
+
+
+@app.get("/worldcup/editions", response_model=WcEditionsResponse)
+def worldcup_editions():
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    editions = list_wc_editions(predictor.fixtures)
+    return WcEditionsResponse(
+        editions=[WcEditionItem(**e) for e in editions],
+    )
+
+
+@app.get("/worldcup/editions/{season}/matches", response_model=WcEditionMatchesResponse)
+def worldcup_edition_matches(season: int):
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    matches = list_edition_matches(predictor.fixtures, season)
+    if not matches:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Nenhum jogo encontrado para a edição {season}",
+        )
+    return WcEditionMatchesResponse(
+        season=season,
+        matches=[WcHistoricalMatchItem(**_sanitize_match_item(m)) for m in matches],
+    )
+
+
+@app.post("/worldcup/validate", response_model=WcValidateResponse)
+def worldcup_validate(req: WcValidateRequest):
+    if not req.match_id and (not req.home_team or not req.away_team):
+        raise HTTPException(
+            status_code=400,
+            detail="Informe match_id ou home_team e away_team",
+        )
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    home = normalize_national_team(req.home_team) if req.home_team else None
+    away = normalize_national_team(req.away_team) if req.away_team else None
+
+    try:
+        result = validate_historical_match(
+            predictor,
+            predictor.fixtures,
+            req.season,
+            match_id=req.match_id,
+            home_team=home,
+            away_team=away,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    breakdown = result["model_breakdown"]
+    return WcValidateResponse(
+        match=WcValidateMatchInfo(**result["match"]),
+        prediction=result["prediction"],
+        confidence=round(result["confidence"], 4),
+        prob_home=round(result["prob_home"], 4),
+        prob_draw=round(result["prob_draw"], 4),
+        prob_away=round(result["prob_away"], 4),
+        poisson_score=result["poisson_score"],
+        expected_goals=result["expected_goals"],
+        correct=result["correct"],
+        context=result["context"],
+        h2h_summary=result["h2h_summary"],
+        model_breakdown=_breakdown_to_response(breakdown),
+        cutoff_date=result["cutoff_date"],
+        cutoff_note=result["cutoff_note"],
+    )
+
+
 @app.post("/worldcup/value/live", response_model=WcValueResponse)
 def worldcup_live_value(req: WcValueRequest):
     schedule_path = Path(req.schedule_file)
@@ -265,8 +746,6 @@ def worldcup_live_value(req: WcValueRequest):
         raise HTTPException(status_code=404, detail=f"Schedule não encontrado: {schedule_path}")
 
     try:
-        import json
-
         schedule = json.loads(schedule_path.read_text(encoding="utf-8"))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Falha ao ler schedule: {exc}") from exc
@@ -286,7 +765,10 @@ def worldcup_live_value(req: WcValueRequest):
     if req.save_odds_file:
         save_odds_file(merged, Path(req.output_odds_file))
 
-    predictor = WcPredictor()
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     phase_default = merged.get("phase", "group")
     reports: list[WcMatchValueResponse] = []
 

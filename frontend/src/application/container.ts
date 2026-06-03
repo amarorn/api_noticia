@@ -1,0 +1,46 @@
+import {
+  GetBrasileiraoRoundUseCase,
+} from "@/application/use-cases/brasileiraoUseCases";
+import { GetHealthUseCase } from "@/application/use-cases/healthUseCases";
+import {
+  GetNewsFeedUseCase,
+  SyncNewsSourcesUseCase,
+} from "@/application/use-cases/newsUseCases";
+import {
+  GetWcEditionsUseCase,
+  GetWcEditionMatchesUseCase,
+  ValidateHistoricalMatchUseCase,
+} from "@/application/use-cases/historicalValidationUseCases";
+import {
+  GetValueBetsUseCase,
+  GetWcRoundUseCase,
+  GetWcTeamsUseCase,
+  PredictWcMatchUseCase,
+} from "@/application/use-cases/wcUseCases";
+import {
+  brasileiraoRepository,
+  healthRepository,
+  historicalValidationRepository,
+  newsRepository,
+  wcRepository,
+} from "@/infrastructure/repositories";
+
+export const getWcRoundUseCase = new GetWcRoundUseCase(wcRepository);
+export const predictWcMatchUseCase = new PredictWcMatchUseCase(wcRepository);
+export const getWcTeamsUseCase = new GetWcTeamsUseCase(wcRepository);
+export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
+export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
+  brasileiraoRepository,
+);
+export const getHealthUseCase = new GetHealthUseCase(healthRepository);
+export const syncNewsSourcesUseCase = new SyncNewsSourcesUseCase(newsRepository);
+export const getNewsFeedUseCase = new GetNewsFeedUseCase(newsRepository);
+export const getWcEditionsUseCase = new GetWcEditionsUseCase(
+  historicalValidationRepository,
+);
+export const getWcEditionMatchesUseCase = new GetWcEditionMatchesUseCase(
+  historicalValidationRepository,
+);
+export const validateHistoricalMatchUseCase = new ValidateHistoricalMatchUseCase(
+  historicalValidationRepository,
+);

@@ -67,9 +67,9 @@ def run_study(output: Path, validation_season: int = 2022) -> dict:
         },
         "models": {
             "collaborative_ensemble": {
-                "description": "combinação calibrada de Poisson + Regressão Logística",
+                "description": "combinação calibrada de Dixon-Coles + Regressão Logística",
                 "weights": {
-                    "poisson": round(metrics.poisson_weight, 3),
+                    "dixon_coles": round(metrics.dixon_coles_weight, 3),
                     "logistic": round(metrics.logistic_weight, 3),
                 },
                 "validation": {
@@ -113,7 +113,7 @@ def main() -> None:
     print(f"Relatório salvo em: {args.output}")
     print(
         "Ensemble calibrado | "
-        f"Poisson={w['poisson']:.3f} Logistic={w['logistic']:.3f} | "
+        f"Dixon-Coles={w['dixon_coles']:.3f} Logistic={w['logistic']:.3f} | "
         f"acc={m['accuracy']:.3f} brier={m['brier_score']:.4f} logloss={m['log_loss']:.4f}"
     )
 

@@ -1,0 +1,336 @@
+import type {
+  BrasileiraoRound,
+  HealthStatus,
+  KxlBaselineBreakdown,
+  KxlCollisionBreakdown,
+  KxlLethalityBreakdown,
+  ModelBreakdown,
+  OutcomeLabel,
+  ValueBetsReport,
+  ValueMatch,
+  ValueOutcome,
+  WcPrediction,
+  WcRound,
+} from "@/domain/entities";
+
+export interface ApiModelBreakdown {
+  dixon_coles?: Record<string, number>;
+  poisson?: Record<string, number>;
+  logistic: Record<string, number>;
+  dixon_coles_rho?: number | null;
+  poisson_factors?: {
+    league_avg: number;
+    home_attack: number;
+    away_attack: number;
+    home_defense: number;
+    away_defense: number;
+    home_advantage: number;
+    elo_factor_home: number;
+    elo_factor_away: number;
+    lambda_home: number;
+    lambda_away: number;
+    rho: number;
+  } | null;
+  holdout_2022_accuracy: number | null;
+  ensemble_weights: { dixon_coles?: number; poisson?: number; logistic: number };
+  ensemble_brier: number | null;
+  kxl_baseline?: {
+    "1": number;
+    X: number;
+    "2": number;
+    sector_note?: string;
+    home_edge?: number;
+    away_edge?: number;
+  } | null;
+  kxl_collision?: {
+    "1": number;
+    X: number;
+    "2": number;
+    v_delta?: number;
+    sector_note?: string;
+    letalidade_note?: string;
+    mandante?: KxlCollisionSideApi;
+    visitante?: KxlCollisionSideApi;
+    notes?: string[];
+  } | null;
+}
+
+interface KxlLethalityApi {
+  dominant?: string;
+  index?: number;
+  eacp?: number;
+  metodos?: Array<{
+    metodo: string;
+    ataque_pct: number;
+    gk_fraco_pct: number;
+    pressao: number;
+  }>;
+}
+
+interface KxlCollisionSideApi {
+  energia: number;
+  espaco: number;
+  tempo: number;
+  vcar_raw: number;
+  vesc: number;
+  v_eff: number;
+  letalidade_gk?: KxlLethalityApi;
+  setores?: {
+    setor: string;
+    colisao: number;
+    dna?: number;
+    permissividade?: number;
+  }[];
+}
+
+interface ApiWcPrediction {
+  home_team: string;
+  away_team: string;
+  prediction: string;
+  confidence: number;
+  prob_home: number;
+  prob_draw: number;
+  prob_away: number;
+  poisson_score: string;
+  expected_goals: string;
+  context: string;
+  h2h_summary: string;
+  model_breakdown: ApiModelBreakdown;
+}
+
+interface ApiWcRound {
+  season: number;
+  competition: string;
+  phase: string;
+  round: number;
+  predictions: ApiWcPrediction[];
+}
+
+interface ApiBrasileiraoRound {
+  round_number: number;
+  competition: string;
+  predictions: Array<{
+    home_team: string;
+    away_team: string;
+    prediction: string;
+    confidence: number;
+    reason: string;
+    news_count: number;
+  }>;
+}
+
+interface ApiValueOutcome {
+  outcome: string;
+  odd: number;
+  model_prob: number;
+  implied_prob: number;
+  expected_value: number;
+  fair_odd: number;
+  kelly_quarter: number;
+}
+
+interface ApiValueMatch {
+  home_team: string;
+  away_team: string;
+  best: ApiValueOutcome | null;
+  outcomes: ApiValueOutcome[];
+}
+
+interface ApiValueBets {
+  matched_games: number;
+  total_schedule_games: number;
+  source: string;
+  captured_at: string | null;
+  edges: ApiValueMatch[];
+}
+
+function mapOutcome(value: string): OutcomeLabel {
+  if (value === "1" || value === "X" || value === "2") return value;
+  return "X";
+}
+
+function mapKxlBaseline(raw: ApiModelBreakdown["kxl_baseline"]): KxlBaselineBreakdown | null {
+  if (!raw) return null;
+  return {
+    probHome: raw["1"] ?? 0,
+    probDraw: raw["X"] ?? 0,
+    probAway: raw["2"] ?? 0,
+    sectorNote: raw.sector_note ?? "",
+    homeEdge: raw.home_edge ?? 0,
+    awayEdge: raw.away_edge ?? 0,
+  };
+}
+
+function mapLethalityGk(raw: KxlLethalityApi | undefined): KxlLethalityBreakdown | null {
+  if (!raw?.metodos?.length) return null;
+  return {
+    dominant: raw.dominant ?? "",
+    index: raw.index ?? 0,
+    eacp: raw.eacp ?? 0,
+    metodos: raw.metodos.map((m) => ({
+      metodo: m.metodo,
+      ataquePct: m.ataque_pct,
+      gkFracoPct: m.gk_fraco_pct,
+      pressao: m.pressao,
+    })),
+  };
+}
+
+function mapKxlCollision(raw: ApiModelBreakdown["kxl_collision"]): KxlCollisionBreakdown | null {
+  if (!raw?.mandante || !raw.visitante) return null;
+  const mapSide = (side: KxlCollisionSideApi) => ({
+    energia: side.energia,
+    espaco: side.espaco,
+    tempo: side.tempo,
+    vcarRaw: side.vcar_raw,
+    vesc: side.vesc,
+    vEff: side.v_eff,
+    lethalityGk: mapLethalityGk(side.letalidade_gk),
+    setores: (side.setores ?? []).map((s) => ({
+      setor: s.setor,
+      colisao: s.colisao,
+      attackDna: s.dna,
+      permissividade: s.permissividade,
+    })),
+  });
+  return {
+    probHome: raw["1"] ?? 0,
+    probDraw: raw["X"] ?? 0,
+    probAway: raw["2"] ?? 0,
+    vDelta: raw.v_delta ?? 0,
+    sectorNote: raw.sector_note ?? "",
+    lethalityNote: raw.letalidade_note ?? "",
+    home: mapSide(raw.mandante),
+    away: mapSide(raw.visitante),
+    notes: raw.notes ?? [],
+  };
+}
+
+export function mapModelBreakdown(raw: ApiModelBreakdown): ModelBreakdown {
+  const dc = raw.dixon_coles ?? raw.poisson ?? {};
+  const dcWeight = raw.ensemble_weights.dixon_coles ?? raw.ensemble_weights.poisson ?? 0;
+  const pf = raw.poisson_factors;
+  return {
+    dixonColes: {
+      "1": dc["1"] ?? 0,
+      X: dc["X"] ?? 0,
+      "2": dc["2"] ?? 0,
+    },
+    logistic: {
+      "1": raw.logistic["1"] ?? 0,
+      X: raw.logistic["X"] ?? 0,
+      "2": raw.logistic["2"] ?? 0,
+    },
+    dixonColesRho: raw.dixon_coles_rho ?? null,
+    poissonFactors: pf
+      ? {
+          leagueAvg: pf.league_avg,
+          homeAttack: pf.home_attack,
+          awayAttack: pf.away_attack,
+          homeDefense: pf.home_defense,
+          awayDefense: pf.away_defense,
+          homeAdvantage: pf.home_advantage,
+          eloFactorHome: pf.elo_factor_home,
+          eloFactorAway: pf.elo_factor_away,
+          lambdaHome: pf.lambda_home,
+          lambdaAway: pf.lambda_away,
+          rho: pf.rho,
+        }
+      : null,
+    holdout2022Accuracy: raw.holdout_2022_accuracy,
+    ensembleWeights: {
+      dixonColes: dcWeight,
+      logistic: raw.ensemble_weights.logistic,
+    },
+    ensembleBrier: raw.ensemble_brier,
+    kxlBaseline: mapKxlBaseline(raw.kxl_baseline),
+    kxlCollision: mapKxlCollision(raw.kxl_collision),
+  };
+}
+
+function mapWcPrediction(raw: ApiWcPrediction): WcPrediction {
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    prediction: mapOutcome(raw.prediction),
+    confidence: raw.confidence,
+    probHome: raw.prob_home,
+    probDraw: raw.prob_draw,
+    probAway: raw.prob_away,
+    poissonScore: raw.poisson_score,
+    expectedGoals: raw.expected_goals,
+    context: raw.context,
+    h2hSummary: raw.h2h_summary,
+    modelBreakdown: mapModelBreakdown(raw.model_breakdown),
+  };
+}
+
+function mapValueOutcome(raw: ApiValueOutcome): ValueOutcome {
+  return {
+    outcome: mapOutcome(raw.outcome),
+    odd: raw.odd,
+    modelProb: raw.model_prob,
+    impliedProb: raw.implied_prob,
+    expectedValue: raw.expected_value,
+    fairOdd: raw.fair_odd,
+    kellyQuarter: raw.kelly_quarter,
+  };
+}
+
+function mapValueMatch(raw: ApiValueMatch): ValueMatch {
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    best: raw.best ? mapValueOutcome(raw.best) : null,
+    outcomes: raw.outcomes.map(mapValueOutcome),
+  };
+}
+
+export function mapWcRound(raw: ApiWcRound): WcRound {
+  return {
+    season: raw.season,
+    competition: raw.competition,
+    phase: raw.phase,
+    round: raw.round,
+    predictions: raw.predictions.map(mapWcPrediction),
+  };
+}
+
+export function mapBrasileiraoRound(raw: ApiBrasileiraoRound): BrasileiraoRound {
+  return {
+    roundNumber: raw.round_number,
+    competition: raw.competition,
+    predictions: raw.predictions.map((p) => ({
+      homeTeam: p.home_team,
+      awayTeam: p.away_team,
+      prediction: mapOutcome(p.prediction),
+      confidence: p.confidence,
+      reason: p.reason,
+      newsCount: p.news_count,
+    })),
+  };
+}
+
+export function mapValueBets(raw: ApiValueBets): ValueBetsReport {
+  return {
+    matchedGames: raw.matched_games,
+    totalScheduleGames: raw.total_schedule_games,
+    source: raw.source,
+    capturedAt: raw.captured_at,
+    edges: raw.edges.map(mapValueMatch),
+  };
+}
+
+export function mapHealth(raw: {
+  status: string;
+  articles_silver: number;
+  fixtures: number;
+}): HealthStatus {
+  return {
+    status: raw.status,
+    articlesSilver: raw.articles_silver,
+    fixtures: raw.fixtures,
+  };
+}
+
+export { mapWcPrediction };

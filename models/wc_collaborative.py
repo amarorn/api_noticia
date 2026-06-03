@@ -4,14 +4,14 @@ from math import log
 
 import pandas as pd
 
+from models.dixon_coles_wc import DixonColesWcModel
 from models.logistic_wc import WcLogisticModel
-from models.poisson_wc import predict_poisson
 from pipelines.wc_stats import build_match_features
 
 
 @dataclass
 class CollaborativeMetrics:
-    poisson_weight: float
+    dixon_coles_weight: float
     logistic_weight: float
     accuracy: float
     brier_score: float
@@ -44,18 +44,23 @@ def _log_loss_multiclass(rows: list[dict], epsilon: float = 1e-12) -> float:
 
 
 class CollaborativeWcModel:
-    def __init__(self) -> None:
+    def __init__(self, dixon_coles: DixonColesWcModel | None = None) -> None:
         self.logistic = WcLogisticModel()
+        self.dixon_coles = dixon_coles or DixonColesWcModel()
         self.metrics: CollaborativeMetrics | None = None
-        self._poisson_weight = 0.5
+        self._dixon_coles_weight = 0.5
+
+    @property
+    def dixon_coles_weight(self) -> float:
+        return self._dixon_coles_weight
 
     @property
     def poisson_weight(self) -> float:
-        return self._poisson_weight
+        return self._dixon_coles_weight
 
     @property
     def logistic_weight(self) -> float:
-        return 1.0 - self._poisson_weight
+        return 1.0 - self._dixon_coles_weight
 
     def fit(self, fixtures_df: pd.DataFrame, validation_season: int = 2022) -> CollaborativeMetrics:
         df = fixtures_df.sort_values("match_date").copy()
@@ -67,8 +72,9 @@ class CollaborativeWcModel:
                 f"Não foi possível separar treino/validação para a temporada {validation_season}."
             )
 
-        # Modelo logístico base em temporadas históricas (sem a temporada de validação).
         self.logistic.fit(train_df, holdout_season=None)
+        if not self.dixon_coles._fitted:
+            self.dixon_coles.fit(df, holdout_season=validation_season)
 
         base_rows: list[dict] = []
         for _, row in valid_df.iterrows():
@@ -89,7 +95,7 @@ class CollaborativeWcModel:
                 phase=phase,
                 is_neutral=is_neutral,
             )
-            poisson = predict_poisson(
+            dc = self.dixon_coles.predict(
                 history,
                 row["home_team"],
                 row["away_team"],
@@ -106,7 +112,7 @@ class CollaborativeWcModel:
             base_rows.append(
                 {
                     "label": row["label"],
-                    "poisson": {"1": poisson.prob_home, "X": poisson.prob_draw, "2": poisson.prob_away},
+                    "dixon_coles": {"1": dc.prob_home, "X": dc.prob_draw, "2": dc.prob_away},
                     "logistic": {"1": logistic.prob_home, "X": logistic.prob_draw, "2": logistic.prob_away},
                 }
             )
@@ -116,16 +122,16 @@ class CollaborativeWcModel:
 
         best: dict | None = None
         for step in range(0, 21):
-            pw = step / 20.0
-            lw = 1.0 - pw
+            dw = step / 20.0
+            lw = 1.0 - dw
 
             scored_rows: list[dict] = []
             correct = 0
             for item in base_rows:
                 probs = {
-                    "1": pw * item["poisson"]["1"] + lw * item["logistic"]["1"],
-                    "X": pw * item["poisson"]["X"] + lw * item["logistic"]["X"],
-                    "2": pw * item["poisson"]["2"] + lw * item["logistic"]["2"],
+                    "1": dw * item["dixon_coles"]["1"] + lw * item["logistic"]["1"],
+                    "X": dw * item["dixon_coles"]["X"] + lw * item["logistic"]["X"],
+                    "2": dw * item["dixon_coles"]["2"] + lw * item["logistic"]["2"],
                 }
                 total = probs["1"] + probs["X"] + probs["2"]
                 probs = {k: v / total for k, v in probs.items()}
@@ -135,7 +141,7 @@ class CollaborativeWcModel:
                 scored_rows.append({"label": item["label"], "probs": probs})
 
             candidate = {
-                "pw": pw,
+                "dw": dw,
                 "lw": lw,
                 "accuracy": correct / len(scored_rows),
                 "brier": _brier_multiclass(scored_rows),
@@ -146,9 +152,9 @@ class CollaborativeWcModel:
                 best = candidate
 
         assert best is not None
-        self._poisson_weight = float(best["pw"])
+        self._dixon_coles_weight = float(best["dw"])
         self.metrics = CollaborativeMetrics(
-            poisson_weight=float(best["pw"]),
+            dixon_coles_weight=float(best["dw"]),
             logistic_weight=float(best["lw"]),
             accuracy=float(best["accuracy"]),
             brier_score=float(best["brier"]),
@@ -185,7 +191,9 @@ class CollaborativeWcModel:
             phase=phase,
             is_neutral=is_neutral,
         )
-        poisson = predict_poisson(history, home_team, away_team, features=features, before_date=ref)
+        dc = self.dixon_coles.predict(
+            history, home_team, away_team, features=features, before_date=ref
+        )
         logistic = self.logistic.predict_match(
             history,
             home_team,
@@ -194,12 +202,12 @@ class CollaborativeWcModel:
             is_neutral=is_neutral,
         )
 
-        pw = self.poisson_weight
+        dw = self.dixon_coles_weight
         lw = self.logistic_weight
         probs = {
-            "1": pw * poisson.prob_home + lw * logistic.prob_home,
-            "X": pw * poisson.prob_draw + lw * logistic.prob_draw,
-            "2": pw * poisson.prob_away + lw * logistic.prob_away,
+            "1": dw * dc.prob_home + lw * logistic.prob_home,
+            "X": dw * dc.prob_draw + lw * logistic.prob_draw,
+            "2": dw * dc.prob_away + lw * logistic.prob_away,
         }
         total = probs["1"] + probs["X"] + probs["2"]
         return {k: v / total for k, v in probs.items()}

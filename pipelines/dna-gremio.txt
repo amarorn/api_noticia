@@ -1,0 +1,33 @@
+Jogos: 21
+Campanha: 4V, 5E, 12D
+Pontos: 17
+Aproveitamento: 26,98%
+Gols pró: 22
+Gols contra: 28
+Saldo: -6
+Média gols marcados: 1,05/jogo
+Média gols sofridos: 1,33/jogo
+Casa/Fora: 6 em casa, 15 fora
+Partida a partida (Grêmio em 2024):
+
+2024-04-14 (R1): Vasco 2x1 Grêmio — D
+2024-04-27 (R4): Bahia 1x0 Grêmio — D
+2024-06-01 (R7): Grêmio 0x2 Bragantino — D
+2024-06-13 (R8): Flamengo 2x1 Grêmio — D
+2024-06-19 (R10): Fortaleza 1x0 Grêmio — D
+2024-06-22 (R11): Grêmio 0x1 Internacional — D
+2024-06-26 (R12): Goiás 1x1 Grêmio — E
+2024-07-10 (R16): Grêmio 0x2 Cruzeiro — D
+2024-07-17 (R17): São Paulo 1x0 Grêmio — D
+2024-07-21 (R18): Grêmio 2x0 Vitória — V
+2024-07-25 (R19): Corinthians 2x2 Grêmio — E
+2024-08-04 (R21): Athletico-PR 0x2 Grêmio — V
+2024-08-10 (R22): Cuiabá 1x3 Grêmio — V
+2024-09-15 (R26): Bragantino 2x2 Grêmio — E
+2024-09-25 (R5): Grêmio 1x2 Criciúma — D
+2024-10-04 (R29): Grêmio 3x1 Fortaleza — V
+2024-10-09 (R6): Atlético-MG 2x1 Grêmio — D
+2024-10-19 (R30): Internacional 1x0 Grêmio — D
+2024-11-01 (R32): Fluminense 2x2 Grêmio — E
+2024-11-08 (R33): Palmeiras 1x0 Grêmio — D
+2024-11-27 (R35): Cruzeiro 1x1 Grêmio — E

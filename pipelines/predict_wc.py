@@ -4,6 +4,7 @@ from pathlib import Path
 
 from models.wc_predictor import WcPredictor
 from schemas.national_teams import normalize_national_team
+from schemas.wc_kxl_dynamic import WcKxlMatchInput
 
 DEFAULT_ROUND = Path("data/rounds/wc_2026.json")
 
@@ -23,7 +24,7 @@ def _print_prediction(pred, verbose: bool = True) -> None:
     print(
         f"Probabilidades: 1={pred.prob_home:.1%} | X={pred.prob_draw:.1%} | 2={pred.prob_away:.1%}"
     )
-    print(f"Placar provável (Poisson): {pred.poisson_score} (gols esp. {pred.expected_goals})")
+    print(f"Placar provável (Dixon-Coles): {pred.poisson_score} (gols esp. {pred.expected_goals})")
     print(f"H2H: {pred.h2h_summary}")
     if verbose:
         print(f"\n{pred.context}")
@@ -31,14 +32,25 @@ def _print_prediction(pred, verbose: bool = True) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Palpites Copa do Mundo (Poisson + Logística)")
+    parser = argparse.ArgumentParser(description="Palpites Copa do Mundo (Dixon-Coles + Logística)")
     parser.add_argument("--round-file", type=Path, default=DEFAULT_ROUND, help="JSON com jogos")
     parser.add_argument("--home", type=str, help="Seleção mandante (palpite avulso)")
     parser.add_argument("--away", type=str, help="Seleção visitante (palpite avulso)")
     parser.add_argument("--phase", type=str, default="group", help="Fase: group, round_16, quarter...")
     parser.add_argument("--json", action="store_true", help="Saída JSON")
     parser.add_argument("--quiet", action="store_true", help="Menos detalhes")
+    parser.add_argument(
+        "--kxl-json",
+        type=Path,
+        help="JSON com campo kxl_match (mesmo formato da API)",
+    )
     args = parser.parse_args()
+
+    kxl_match: WcKxlMatchInput | None = None
+    if args.kxl_json:
+        payload = json.loads(args.kxl_json.read_text(encoding="utf-8"))
+        if "kxl_match" in payload:
+            kxl_match = WcKxlMatchInput.model_validate(payload["kxl_match"])
 
     predictor = WcPredictor()
     results = []
@@ -46,7 +58,7 @@ def main() -> None:
     if args.home and args.away:
         home = normalize_national_team(args.home)
         away = normalize_national_team(args.away)
-        pred = predictor.predict(home, away, phase=args.phase)
+        pred = predictor.predict(home, away, phase=args.phase, kxl_match=kxl_match)
         results.append(pred)
     else:
         round_data = _load_round(args.round_file)
@@ -55,7 +67,9 @@ def main() -> None:
             home = normalize_national_team(match["home_team"])
             away = normalize_national_team(match["away_team"])
             match_phase = match.get("phase", phase)
-            pred = predictor.predict(home, away, phase=match_phase)
+            pred = predictor.predict(
+                home, away, phase=match_phase, kxl_match=kxl_match
+            )
             results.append(pred)
 
     if args.json:

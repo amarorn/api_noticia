@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import math
 
 import pandas as pd
+
+from models.math_utils import sigmoid
 
 ELO_INITIAL = 1500.0
 ELO_K = 32.0
@@ -60,7 +63,7 @@ def _played_before(df: pd.DataFrame, before_date: datetime) -> pd.DataFrame:
 
 
 def _expected_score(rating_a: float, rating_b: float) -> float:
-    return 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
+    return sigmoid((rating_a - rating_b) / 400.0 * math.log(10))
 
 
 def _update_elo(rating: float, expected: float, actual: float) -> float:

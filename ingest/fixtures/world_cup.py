@@ -14,6 +14,18 @@ logger = structlog.get_logger()
 OPENFOOTBALL_WC_BASE = "https://raw.githubusercontent.com/openfootball/worldcup/master"
 
 WC_EDITIONS: dict[int, str] = {
+    1930: "1930--uruguay",
+    1934: "1934--italy",
+    1938: "1938--france",
+    1950: "1950--brazil",
+    1954: "1954--switzerland",
+    1958: "1958--sweden",
+    1962: "1962--chile",
+    1966: "1966--england",
+    1970: "1970--mexico",
+    1974: "1974--west-germany",
+    1978: "1978--argentina",
+    1982: "1982--spain",
     1986: "1986--mexico",
     1990: "1990--italy",
     1994: "1994--usa",
@@ -26,7 +38,53 @@ WC_EDITIONS: dict[int, str] = {
     2022: "2022--qatar",
 }
 
-DEFAULT_WC_SEASONS = list(WC_EDITIONS.keys())
+WC_HOST_LABELS: dict[int, str] = {
+    1930: "Uruguai",
+    1934: "Itália",
+    1938: "França",
+    1950: "Brasil",
+    1954: "Suíça",
+    1958: "Suécia",
+    1962: "Chile",
+    1966: "Inglaterra",
+    1970: "México",
+    1974: "Alemanha Ocidental",
+    1978: "Argentina",
+    1982: "Espanha",
+    1986: "México",
+    1990: "Itália",
+    1994: "EUA",
+    1998: "França",
+    2002: "Coreia do Sul / Japão",
+    2006: "Alemanha",
+    2010: "África do Sul",
+    2014: "Brasil",
+    2018: "Rússia",
+    2022: "Qatar",
+}
+
+DEFAULT_WC_SEASONS = sorted(WC_EDITIONS.keys())
+
+
+def edition_label(season: int) -> str:
+    host = WC_HOST_LABELS.get(season)
+    if host:
+        return f"Copa do Mundo — {host} {season}"
+    return f"Copa do Mundo {season}"
+
+
+def list_available_seasons() -> list[int]:
+    return DEFAULT_WC_SEASONS
+
+
+def missing_local_seasons() -> list[int]:
+    root = settings.fixtures_path
+    missing: list[int] = []
+    for season in DEFAULT_WC_SEASONS:
+        path = root / f"world_cup_{season}.parquet"
+        if not path.exists():
+            missing.append(season)
+    return missing
 
 
 async def _fetch_text(url: str) -> str:
@@ -93,19 +151,31 @@ def load_wc_fixtures(seasons: list[int] | None = None) -> pd.DataFrame:
     return pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
 
 
-async def import_wc_seasons(seasons: list[int] | None = None) -> pd.DataFrame:
+async def import_wc_seasons(
+    seasons: list[int] | None = None,
+    *,
+    skip_existing: bool = False,
+) -> pd.DataFrame:
     target = seasons or DEFAULT_WC_SEASONS
     all_matches: list[MatchResult] = []
 
     for season in target:
+        out_path = settings.fixtures_path / f"world_cup_{season}.parquet"
+        if skip_existing and out_path.exists():
+            logger.info("wc_import_skipped_existing", season=season, path=str(out_path))
+            continue
+
         try:
             matches = await fetch_edition(season)
+            if not matches:
+                logger.warning("wc_import_empty", season=season)
+                continue
             save_wc_fixtures(matches)
             all_matches.extend(matches)
         except Exception as exc:
             logger.error("wc_import_failed", season=season, error=str(exc))
 
     if not all_matches:
-        return pd.DataFrame()
+        return load_wc_fixtures()
 
     return pd.DataFrame([m.model_dump(mode="json") for m in all_matches])

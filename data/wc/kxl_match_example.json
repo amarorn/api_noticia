@@ -1,0 +1,37 @@
+{
+  "home_team": "Brasil",
+  "away_team": "Marrocos",
+  "phase": "group",
+  "kxl_match": {
+    "fecl": {
+      "chuva_mm": 0,
+      "temperatura_c": 22,
+      "umidade_pct": 65,
+      "gramado": "bom"
+    },
+    "feju": {
+      "perfil": "equilibrado",
+      "faltas_media": 24,
+      "cartoes_media": 4.1
+    },
+    "fede": {
+      "desfalques_mandante": [],
+      "desfalques_visitante": []
+    },
+    "fept": {
+      "esquema_mandante": "4-2-3-1",
+      "esquema_visitante": "4-1-4-1",
+      "titulares_mandante": [
+        { "nome": "Vini Jr", "linha": "ataque", "nota_sofascore": 7.9 }
+      ],
+      "titulares_visitante": [
+        { "nome": "Hakimi", "linha": "defesa", "nota_sofascore": 7.0 }
+      ]
+    },
+    "feem": {
+      "peso_rivalidade": 0.2,
+      "jogo_decisivo": false,
+      "contexto_caos_extra": 0.0
+    }
+  }
+}

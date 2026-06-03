@@ -27,6 +27,32 @@ def _extract_entities(text: str) -> tuple[list[str], list[str]]:
     return teams, players
 
 
+def _optional_str(value: object) -> str | None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    text = str(value).strip()
+    return text if text else None
+
+
+def _optional_datetime(value: object) -> datetime | None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    try:
+        dt = pd.to_datetime(value, utc=True)
+        if pd.isna(dt):
+            return None
+        return dt.to_pydatetime()
+    except (TypeError, ValueError):
+        return None
+
+
+def _required_datetime(value: object) -> datetime:
+    parsed = _optional_datetime(value)
+    if parsed is not None:
+        return parsed
+    return datetime.now(timezone.utc)
+
+
 def _simple_sentiment(text: str) -> float:
     text_lower = text.lower()
     pos = sum(1 for kw in POSITIVE_KEYWORDS if kw in text_lower)
@@ -40,20 +66,26 @@ def _simple_sentiment(text: str) -> float:
 def bronze_to_silver(df: pd.DataFrame) -> list[SilverArticle]:
     articles: list[SilverArticle] = []
     for _, row in df.iterrows():
-        body = row.get("content_raw") or row.get("summary") or row.get("title", "")
-        full_text = f"{row.get('title', '')} {body}"
+        body = (
+            _optional_str(row.get("content_raw"))
+            or _optional_str(row.get("summary"))
+            or _optional_str(row.get("title"))
+            or ""
+        )
+        title = _optional_str(row.get("title")) or ""
+        full_text = f"{title} {body}"
         teams, players = _extract_entities(full_text)
 
         article = SilverArticle(
-            id=row["id"],
-            source=row["source"],
+            id=str(row["id"]),
+            source=str(row["source"]),
             source_url=row["source_url"],
-            title=row["title"],
+            title=title,
             body=body,
-            summary=row.get("summary"),
-            published_at=row.get("published_at"),
-            scraped_at=row.get("scraped_at"),
-            content_hash=row["content_hash"],
+            summary=_optional_str(row.get("summary")),
+            published_at=_optional_datetime(row.get("published_at")),
+            scraped_at=_required_datetime(row.get("scraped_at")),
+            content_hash=str(row["content_hash"]),
             teams_mentioned=teams,
             players_mentioned=players,
             categories=row.get("raw_payload", {}).get("tags", []) if isinstance(row.get("raw_payload"), dict) else [],

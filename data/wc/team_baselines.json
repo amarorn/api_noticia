@@ -1,0 +1,2454 @@
+{
+  "version": 1,
+  "source": "kxl_copa_2026",
+  "teams": [
+    {
+      "selecao": "Espanha",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.2,
+            "EAES_esq": 3.8,
+            "EAME_meio": 4.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 25,
+            "EAGD_dentro": 48,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 16.5,
+            "EACA_contra_ataque": 1.4,
+            "EACP_chances_perdidas": 1.8
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 63,
+          "ECPC_passes_certos_pct": 88,
+          "ECPE_passes_errados_pct": 12,
+          "ECDC_dribles_jogo": 8.5
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 18.5,
+          "EDCT_chutes_sofridos": 8.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.2,
+            "EGFE_sofrido_esq": 0.15,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.1,
+          "EGBS_bolas_espalmadas": 18,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 10,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 75
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1480,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "França",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.5,
+            "EAES_esq": 3.9,
+            "EAME_meio": 3.6
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 18,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 45,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 15.2,
+            "EACA_contra_ataque": 2.8,
+            "EACP_chances_perdidas": 1.5
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 54,
+          "ECPC_passes_certos_pct": 84,
+          "ECPE_passes_errados_pct": 16,
+          "ECDC_dribles_jogo": 9.2
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.2,
+          "EDCT_chutes_sofridos": 9.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.8,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 20,
+            "EGSD_sofrido_dentro": 65
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1610,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Inglaterra",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.1,
+            "EAME_meio": 4.2
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 22,
+            "EAGF_fora": 20,
+            "EAGD_dentro": 43,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.8,
+            "EACA_contra_ataque": 1.2,
+            "EACP_chances_perdidas": 1.9
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 58,
+          "ECPC_passes_certos_pct": 86,
+          "ECPE_passes_errados_pct": 14,
+          "ECDC_dribles_jogo": 7.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 19.8,
+          "EDCT_chutes_sofridos": 8.9,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.2,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.45,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 18,
+            "EGSF_sofrido_fora": 12,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1550,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Argentina",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.1,
+            "EAES_esq": 3.5,
+            "EAME_meio": 4.5
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 10,
+            "EAGF_fora": 28,
+            "EAGD_dentro": 47,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 15.9,
+            "EACA_contra_ataque": 1.9,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 60,
+          "ECPC_passes_certos_pct": 87,
+          "ECPE_passes_errados_pct": 13,
+          "ECDC_dribles_jogo": 10.4
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.5,
+          "EDCT_chutes_sofridos": 7.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.15,
+            "EGFE_sofrido_esq": 0.2,
+            "EGFM_sofrido_meio": 0.3
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.2,
+          "EGBS_bolas_espalmadas": 15,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 8,
+            "EGSF_sofrido_fora": 17,
+            "EGSD_sofrido_dentro": 75
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1490,
+        "FSC_fator_caos_base": 1.02
+      }
+    },
+    {
+      "selecao": "Alemanha",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.3,
+            "EAES_esq": 3.6,
+            "EAME_meio": 3.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 15,
+            "EAGF_fora": 26,
+            "EAGD_dentro": 44,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 16.1,
+            "EACA_contra_ataque": 1.5,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 61,
+          "ECPC_passes_certos_pct": 85,
+          "ECPE_passes_errados_pct": 15,
+          "ECDC_dribles_jogo": 8.1
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 19.0,
+          "EDCT_chutes_sofridos": 9.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.35,
+          "EGBS_bolas_espalmadas": 20,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1620,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Brasil",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.8,
+            "EAES_esq": 3.4,
+            "EAME_meio": 4.0
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 14,
+            "EAGF_fora": 24,
+            "EAGD_dentro": 47,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 15.7,
+            "EACA_contra_ataque": 2.1,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 57,
+          "ECPC_passes_certos_pct": 86,
+          "ECPE_passes_errados_pct": 14,
+          "ECDC_dribles_jogo": 11.2
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.0,
+          "EDCT_chutes_sofridos": 8.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.2,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.15,
+          "EGBS_bolas_espalmadas": 24,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 10,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 75
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1580,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Portugal",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.6,
+            "EAES_esq": 3.5,
+            "EAME_meio": 3.8
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 16,
+            "EAGF_fora": 23,
+            "EAGD_dentro": 46,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 15.0,
+            "EACA_contra_ataque": 1.7,
+            "EACP_chances_perdidas": 1.5
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 59,
+          "ECPC_passes_certos_pct": 85,
+          "ECPE_passes_errados_pct": 15,
+          "ECDC_dribles_jogo": 9.5
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 18.8,
+          "EDCT_chutes_sofridos": 9.0,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.3,
+          "EGBS_bolas_espalmadas": 21,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1600,
+        "FSC_fator_caos_base": 1.02
+      }
+    },
+    {
+      "selecao": "Países Baixos",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.5,
+            "EAES_esq": 3.2,
+            "EAME_meio": 3.5
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 20,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 47,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.9,
+            "EACA_contra_ataque": 2.2,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 53,
+          "ECPC_passes_certos_pct": 82,
+          "ECPE_passes_errados_pct": 18,
+          "ECDC_dribles_jogo": 7.4
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 22.4,
+          "EDCT_chutes_sofridos": 10.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.6,
+          "EGBS_bolas_espalmadas": 26,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 22,
+            "EGSD_sofrido_dentro": 63
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1680,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Itália",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.9,
+            "EAES_esq": 3.1,
+            "EAME_meio": 3.8
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 15,
+            "EAGF_fora": 20,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.1,
+            "EACA_contra_ataque": 1.1,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 55,
+          "ECPC_passes_certos_pct": 84,
+          "ECPE_passes_errados_pct": 16,
+          "ECDC_dribles_jogo": 6.9
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.1,
+          "EDCT_chutes_sofridos": 7.9,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.2,
+            "EGFE_sofrido_esq": 0.15,
+            "EGFM_sofrido_meio": 0.3
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.5,
+          "EGBS_bolas_espalmadas": 18,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 10,
+            "EGSF_sofrido_fora": 12,
+            "EGSD_sofrido_dentro": 78
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1520,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Bélgica",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.7,
+            "EAME_meio": 3.4
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.2,
+            "EACA_contra_ataque": 2.5,
+            "EACP_chances_perdidas": 1.8
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 52,
+          "ECPC_passes_certos_pct": 81,
+          "ECPE_passes_errados_pct": 19,
+          "ECDC_dribles_jogo": 9.0
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 17.9,
+          "EDCT_chutes_sofridos": 11.4,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.4,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.75,
+          "EGBS_bolas_espalmadas": 28,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 18,
+            "EGSF_sofrido_fora": 20,
+            "EGSD_sofrido_dentro": 62
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1710,
+        "FSC_fator_caos_base": 1.06
+      }
+    },
+    {
+      "selecao": "Uruguai",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.3,
+            "EAES_esq": 3.4,
+            "EAME_meio": 3.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 18,
+            "EAGF_fora": 20,
+            "EAGD_dentro": 47,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.9,
+            "EACA_contra_ataque": 2.6,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 48,
+          "ECPC_passes_certos_pct": 78,
+          "ECPE_passes_errados_pct": 22,
+          "ECDC_dribles_jogo": 8.0
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 24.5,
+          "EDCT_chutes_sofridos": 10.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.9,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1750,
+        "FSC_fator_caos_base": 1.08
+      }
+    },
+    {
+      "selecao": "Colômbia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.5,
+            "EAES_esq": 3.1,
+            "EAME_meio": 3.2
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 25,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 42,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.8,
+            "EACA_contra_ataque": 1.9,
+            "EACP_chances_perdidas": 1.5
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 50,
+          "ECPC_passes_certos_pct": 80,
+          "ECPE_passes_errados_pct": 20,
+          "ECDC_dribles_jogo": 8.4
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 22.0,
+          "EDCT_chutes_sofridos": 11.0,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.85,
+          "EGBS_bolas_espalmadas": 23,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 20,
+            "EGSF_sofrido_fora": 14,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1720,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Croácia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.8,
+            "EAES_esq": 2.9,
+            "EAME_meio": 3.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 24,
+            "EAGD_dentro": 49,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.5,
+            "EACA_contra_ataque": 1.0,
+            "EACP_chances_perdidas": 1.3
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 56,
+          "ECPC_passes_certos_pct": 84,
+          "ECPE_passes_errados_pct": 16,
+          "ECDC_dribles_jogo": 6.2
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 19.5,
+          "EDCT_chutes_sofridos": 9.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.4,
+          "EGBS_bolas_espalmadas": 20,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 73
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1630,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Marrocos",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.2,
+            "EAES_esq": 3.0,
+            "EAME_meio": 2.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 10,
+            "EAGF_fora": 25,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.1,
+            "EACA_contra_ataque": 2.4,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 46,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 8.9
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.8,
+          "EDCT_chutes_sofridos": 9.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.2,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.7,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1690,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Suíça",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.7,
+            "EAES_esq": 2.8,
+            "EAME_meio": 3.3
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 16,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.1,
+            "EACA_contra_ataque": 1.2,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 49,
+          "ECPC_passes_certos_pct": 81,
+          "ECPE_passes_errados_pct": 19,
+          "ECDC_dribles_jogo": 5.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.4,
+          "EDCT_chutes_sofridos": 10.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.65,
+          "EGBS_bolas_espalmadas": 21,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 69
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1660,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Japão",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.6,
+            "EAME_meio": 2.8
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 8,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 55,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.5,
+            "EACA_contra_ataque": 2.9,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 47,
+          "ECPC_passes_certos_pct": 80,
+          "ECPE_passes_errados_pct": 20,
+          "ECDC_dribles_jogo": 9.1
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.8,
+          "EDCT_chutes_sofridos": 11.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.4,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.1,
+          "EGBS_bolas_espalmadas": 27,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 22,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1650,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Equador",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.1,
+            "EAES_esq": 3.3,
+            "EAME_meio": 2.7
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 20,
+            "EAGF_fora": 15,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.4,
+            "EACA_contra_ataque": 2.3,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 45,
+          "ECPC_passes_certos_pct": 76,
+          "ECPE_passes_errados_pct": 24,
+          "ECDC_dribles_jogo": 8.6
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 25.1,
+          "EDCT_chutes_sofridos": 10.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.0,
+          "EGBS_bolas_espalmadas": 24,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 18,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1760,
+        "FSC_fator_caos_base": 1.06
+      }
+    },
+    {
+      "selecao": "Dinamarca",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.9,
+            "EAES_esq": 2.8,
+            "EAME_meio": 3.4
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 22,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 45,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.9,
+            "EACA_contra_ataque": 1.1,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 51,
+          "ECPC_passes_certos_pct": 82,
+          "ECPE_passes_errados_pct": 18,
+          "ECDC_dribles_jogo": 6.0
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.2,
+          "EDCT_chutes_sofridos": 9.9,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.55,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 16,
+            "EGSF_sofrido_fora": 14,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1640,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "México",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.0,
+            "EAES_esq": 2.9,
+            "EAME_meio": 3.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 14,
+            "EAGF_fora": 20,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.5,
+            "EACA_contra_ataque": 1.8,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 50,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 7.5
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.0,
+          "EDCT_chutes_sofridos": 11.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.8,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1730,
+        "FSC_fator_caos_base": 1.03
+      }
+    },
+    {
+      "selecao": "Estados Unidos",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.2,
+            "EAES_esq": 3.1,
+            "EAME_meio": 3.0
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.1,
+            "EACA_contra_ataque": 2.0,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 49,
+          "ECPC_passes_certos_pct": 78,
+          "ECPE_passes_errados_pct": 22,
+          "ECDC_dribles_jogo": 8.2
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 22.5,
+          "EDCT_chutes_sofridos": 11.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.4,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.95,
+          "EGBS_bolas_espalmadas": 26,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 20,
+            "EGSD_sofrido_dentro": 65
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1740,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Senegal",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 2.9,
+            "EAME_meio": 3.2
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 22,
+            "EAGF_fora": 14,
+            "EAGD_dentro": 49,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.4,
+            "EACA_contra_ataque": 2.1,
+            "EACP_chances_perdidas": 1.65
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 48,
+          "ECPC_passes_certos_pct": 77,
+          "ECPE_passes_errados_pct": 23,
+          "ECDC_dribles_jogo": 7.9
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.8,
+          "EDCT_chutes_sofridos": 11.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.6,
+          "EGBS_bolas_espalmadas": 24,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 16,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1715,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Suécia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.3,
+            "EAES_esq": 3.5,
+            "EAME_meio": 3.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 16,
+            "EAGF_fora": 21,
+            "EAGD_dentro": 48,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.3,
+            "EACA_contra_ataque": 2.4,
+            "EACP_chances_perdidas": 1.75
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 52,
+          "ECPC_passes_certos_pct": 81,
+          "ECPE_passes_errados_pct": 19,
+          "ECDC_dribles_jogo": 8.4
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 19.5,
+          "EDCT_chutes_sofridos": 10.4,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.65,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 71
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1620,
+        "FSC_fator_caos_base": 1.02
+      }
+    },
+    {
+      "selecao": "Canadá",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.6,
+            "EAME_meio": 2.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 55,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.9,
+            "EACA_contra_ataque": 2.6,
+            "EACP_chances_perdidas": 1.8
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 49,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 8.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.8,
+          "EDCT_chutes_sofridos": 11.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.4,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.9,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 67
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1690,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Áustria",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.1,
+            "EAES_esq": 3.0,
+            "EAME_meio": 3.5
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 20,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 43,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.5,
+            "EACA_contra_ataque": 2.8,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 51,
+          "ECPC_passes_certos_pct": 82,
+          "ECPE_passes_errados_pct": 18,
+          "ECDC_dribles_jogo": 7.6
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.4,
+          "EDCT_chutes_sofridos": 10.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.5,
+          "EGBS_bolas_espalmadas": 21,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 72
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1610,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Paraguai",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.9,
+            "EAES_esq": 2.8,
+            "EAME_meio": 3.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 24,
+            "EAGF_fora": 15,
+            "EAGD_dentro": 46,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 11.2,
+            "EACA_contra_ataque": 1.4,
+            "EACP_chances_perdidas": 1.3
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 42,
+          "ECPC_passes_certos_pct": 72,
+          "ECPE_passes_errados_pct": 28,
+          "ECDC_dribles_jogo": 5.4
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 26.5,
+          "EDCT_chutes_sofridos": 12.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.2,
+          "EGBS_bolas_espalmadas": 24,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 18,
+            "EGSF_sofrido_fora": 14,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1850,
+        "FSC_fator_caos_base": 1.08
+      }
+    },
+    {
+      "selecao": "Escócia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.8,
+            "EAES_esq": 3.2,
+            "EAME_meio": 2.7
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 26,
+            "EAGF_fora": 16,
+            "EAGD_dentro": 43,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 10.9,
+            "EACA_contra_ataque": 1.1,
+            "EACP_chances_perdidas": 1.5
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 44,
+          "ECPC_passes_certos_pct": 74,
+          "ECPE_passes_errados_pct": 26,
+          "ECDC_dribles_jogo": 5.1
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 24.0,
+          "EDCT_chutes_sofridos": 13.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.05,
+          "EGBS_bolas_espalmadas": 23,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 22,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 62
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1820,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Bósnia e Herzegovina",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.7,
+            "EAES_esq": 2.9,
+            "EAME_meio": 2.8
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 22,
+            "EAGF_fora": 15,
+            "EAGD_dentro": 48,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 11.4,
+            "EACA_contra_ataque": 1.3,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 43,
+          "ECPC_passes_certos_pct": 73,
+          "ECPE_passes_errados_pct": 27,
+          "ECDC_dribles_jogo": 4.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.5,
+          "EDCT_chutes_sofridos": 12.9,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.95,
+          "EGBS_bolas_espalmadas": 20,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 18,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 67
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1780,
+        "FSC_fator_caos_base": 1.02
+      }
+    },
+    {
+      "selecao": "Costa do Marfim",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.6,
+            "EAME_meio": 3.0
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 16,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 47,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.8,
+            "EACA_contra_ataque": 2.4,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 52,
+          "ECPC_passes_certos_pct": 80,
+          "ECPE_passes_errados_pct": 20,
+          "ECDC_dribles_jogo": 8.9
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 22.1,
+          "EDCT_chutes_sofridos": 10.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.7,
+          "EGBS_bolas_espalmadas": 23,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 14,
+            "EGSD_sofrido_dentro": 74
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1690,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Egito",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.1,
+            "EAES_esq": 3.5,
+            "EAME_meio": 3.2
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 14,
+            "EAGF_fora": 24,
+            "EAGD_dentro": 47,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.5,
+            "EACA_contra_ataque": 2.5,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 50,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 7.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.0,
+          "EDCT_chutes_sofridos": 11.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.8,
+          "EGBS_bolas_espalmadas": 21,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1730,
+        "FSC_fator_caos_base": 1.03
+      }
+    },
+    {
+      "selecao": "Chéquia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.3,
+            "EAES_esq": 3.1,
+            "EAME_meio": 3.5
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 20,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 43,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.1,
+            "EACA_contra_ataque": 1.5,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 51,
+          "ECPC_passes_certos_pct": 82,
+          "ECPE_passes_errados_pct": 18,
+          "ECDC_dribles_jogo": 7.1
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.4,
+          "EDCT_chutes_sofridos": 10.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.5,
+          "EGBS_bolas_espalmadas": 21,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 72
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1610,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Gana",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.6,
+            "EAME_meio": 2.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 55,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.9,
+            "EACA_contra_ataque": 2.6,
+            "EACP_chances_perdidas": 1.8
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 49,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 8.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.8,
+          "EDCT_chutes_sofridos": 11.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.4,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.9,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 67
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1690,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Argélia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.2,
+            "EAES_esq": 3.0,
+            "EAME_meio": 2.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 10,
+            "EAGF_fora": 25,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.1,
+            "EACA_contra_ataque": 2.4,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 46,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 8.9
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.8,
+          "EDCT_chutes_sofridos": 9.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.2,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.7,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1690,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Coreia do Sul",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.6,
+            "EAME_meio": 2.8
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 8,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 55,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.5,
+            "EACA_contra_ataque": 2.9,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 47,
+          "ECPC_passes_certos_pct": 80,
+          "ECPE_passes_errados_pct": 20,
+          "ECDC_dribles_jogo": 9.1
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.8,
+          "EDCT_chutes_sofridos": 11.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.4,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.1,
+          "EGBS_bolas_espalmadas": 27,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 22,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1650,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Tunísia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.7,
+            "EAES_esq": 2.8,
+            "EAME_meio": 3.3
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 16,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.1,
+            "EACA_contra_ataque": 1.2,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 49,
+          "ECPC_passes_certos_pct": 81,
+          "ECPE_passes_errados_pct": 19,
+          "ECDC_dribles_jogo": 5.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.4,
+          "EDCT_chutes_sofridos": 10.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.65,
+          "EGBS_bolas_espalmadas": 21,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 69
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1660,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Austrália",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.1,
+            "EAES_esq": 3.3,
+            "EAME_meio": 2.7
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 20,
+            "EAGF_fora": 15,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.4,
+            "EACA_contra_ataque": 2.3,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 45,
+          "ECPC_passes_certos_pct": 76,
+          "ECPE_passes_errados_pct": 24,
+          "ECDC_dribles_jogo": 8.6
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 25.1,
+          "EDCT_chutes_sofridos": 10.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.0,
+          "EGBS_bolas_espalmadas": 24,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 18,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1760,
+        "FSC_fator_caos_base": 1.06
+      }
+    },
+    {
+      "selecao": "Irã",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.9,
+            "EAES_esq": 2.8,
+            "EAME_meio": 3.4
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 22,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 45,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.9,
+            "EACA_contra_ataque": 1.1,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 51,
+          "ECPC_passes_certos_pct": 82,
+          "ECPE_passes_errados_pct": 18,
+          "ECDC_dribles_jogo": 6.0
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.2,
+          "EDCT_chutes_sofridos": 9.9,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.55,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 16,
+            "EGSF_sofrido_fora": 14,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1640,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "República Democrática do Congo",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.0,
+            "EAES_esq": 2.9,
+            "EAME_meio": 3.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 14,
+            "EAGF_fora": 20,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.5,
+            "EACA_contra_ataque": 1.8,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 50,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 7.5
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.0,
+          "EDCT_chutes_sofridos": 11.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.8,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1730,
+        "FSC_fator_caos_base": 1.03
+      }
+    },
+    {
+      "selecao": "África do Sul",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.2,
+            "EAES_esq": 3.1,
+            "EAME_meio": 3.0
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.1,
+            "EACA_contra_ataque": 2.0,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 49,
+          "ECPC_passes_certos_pct": 78,
+          "ECPE_passes_errados_pct": 22,
+          "ECDC_dribles_jogo": 8.2
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 22.5,
+          "EDCT_chutes_sofridos": 11.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.4,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.95,
+          "EGBS_bolas_espalmadas": 26,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 20,
+            "EGSD_sofrido_dentro": 65
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1740,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Arábia Saudita",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.2,
+            "EAES_esq": 3.0,
+            "EAME_meio": 2.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 10,
+            "EAGF_fora": 25,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.1,
+            "EACA_contra_ataque": 2.4,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 46,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 8.9
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.8,
+          "EDCT_chutes_sofridos": 9.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.2,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.7,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1690,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Panamá",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.3,
+            "EAES_esq": 3.4,
+            "EAME_meio": 3.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 18,
+            "EAGF_fora": 20,
+            "EAGD_dentro": 47,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.9,
+            "EACA_contra_ataque": 2.6,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 48,
+          "ECPC_passes_certos_pct": 78,
+          "ECPE_passes_errados_pct": 22,
+          "ECDC_dribles_jogo": 8.0
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 24.5,
+          "EDCT_chutes_sofridos": 10.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.9,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1750,
+        "FSC_fator_caos_base": 1.08
+      }
+    },
+    {
+      "selecao": "Nova Zelândia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.5,
+            "EAES_esq": 3.1,
+            "EAME_meio": 3.2
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 25,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 42,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.8,
+            "EACA_contra_ataque": 1.9,
+            "EACP_chances_perdidas": 1.5
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 50,
+          "ECPC_passes_certos_pct": 80,
+          "ECPE_passes_errados_pct": 20,
+          "ECDC_dribles_jogo": 8.4
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 22.0,
+          "EDCT_chutes_sofridos": 11.0,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.3,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.85,
+          "EGBS_bolas_espalmadas": 23,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 20,
+            "EGSF_sofrido_fora": 14,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1720,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Iraque",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.8,
+            "EAES_esq": 2.9,
+            "EAME_meio": 3.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 12,
+            "EAGF_fora": 24,
+            "EAGD_dentro": 49,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.5,
+            "EACA_contra_ataque": 1.0,
+            "EACP_chances_perdidas": 1.3
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 56,
+          "ECPC_passes_certos_pct": 84,
+          "ECPE_passes_errados_pct": 16,
+          "ECDC_dribles_jogo": 6.2
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 19.5,
+          "EDCT_chutes_sofridos": 9.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.4,
+          "EGBS_bolas_espalmadas": 20,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 15,
+            "EGSD_sofrido_dentro": 73
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1630,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Uzbequistão",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.2,
+            "EAES_esq": 3.0,
+            "EAME_meio": 2.9
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 10,
+            "EAGF_fora": 25,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.1,
+            "EACA_contra_ataque": 2.4,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 46,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 8.9
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 23.8,
+          "EDCT_chutes_sofridos": 9.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.25,
+            "EGFE_sofrido_esq": 0.2,
+            "EGFM_sofrido_meio": 0.35
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.7,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1690,
+        "FSC_fator_caos_base": 1.04
+      }
+    },
+    {
+      "selecao": "Catar",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.7,
+            "EAES_esq": 2.8,
+            "EAME_meio": 3.3
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 16,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.1,
+            "EACA_contra_ataque": 1.2,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 49,
+          "ECPC_passes_certos_pct": 81,
+          "ECPE_passes_errados_pct": 19,
+          "ECDC_dribles_jogo": 5.8
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.4,
+          "EDCT_chutes_sofridos": 10.1,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.65,
+          "EGBS_bolas_espalmadas": 21,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 15,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 69
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1660,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Cabo Verde",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.4,
+            "EAES_esq": 3.6,
+            "EAME_meio": 2.8
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 8,
+            "EAGF_fora": 22,
+            "EAGD_dentro": 55,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 14.5,
+            "EACA_contra_ataque": 2.9,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 47,
+          "ECPC_passes_certos_pct": 80,
+          "ECPE_passes_errados_pct": 20,
+          "ECDC_dribles_jogo": 9.1
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.8,
+          "EDCT_chutes_sofridos": 11.2,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.4,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.1,
+          "EGBS_bolas_espalmadas": 27,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 12,
+            "EGSF_sofrido_fora": 22,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1650,
+        "FSC_fator_caos_base": 1.05
+      }
+    },
+    {
+      "selecao": "Jordânia",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.1,
+            "EAES_esq": 3.3,
+            "EAME_meio": 2.7
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 20,
+            "EAGF_fora": 15,
+            "EAGD_dentro": 50,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.4,
+            "EACA_contra_ataque": 2.3,
+            "EACP_chances_perdidas": 1.7
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 45,
+          "ECPC_passes_certos_pct": 76,
+          "ECPE_passes_errados_pct": 24,
+          "ECDC_dribles_jogo": 8.6
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 25.1,
+          "EDCT_chutes_sofridos": 10.8,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 3.0,
+          "EGBS_bolas_espalmadas": 24,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 18,
+            "EGSF_sofrido_fora": 16,
+            "EGSD_sofrido_dentro": 66
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1760,
+        "FSC_fator_caos_base": 1.06
+      }
+    },
+    {
+      "selecao": "Haiti",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 2.9,
+            "EAES_esq": 2.8,
+            "EAME_meio": 3.4
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 22,
+            "EAGF_fora": 18,
+            "EAGD_dentro": 45,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 12.9,
+            "EACA_contra_ataque": 1.1,
+            "EACP_chances_perdidas": 1.4
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 51,
+          "ECPC_passes_certos_pct": 82,
+          "ECPE_passes_errados_pct": 18,
+          "ECDC_dribles_jogo": 6.0
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 20.2,
+          "EDCT_chutes_sofridos": 9.9,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.3,
+            "EGFE_sofrido_esq": 0.25,
+            "EGFM_sofrido_meio": 0.4
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.55,
+          "EGBS_bolas_espalmadas": 22,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 16,
+            "EGSF_sofrido_fora": 14,
+            "EGSD_sofrido_dentro": 70
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1640,
+        "FSC_fator_caos_base": 1.0
+      }
+    },
+    {
+      "selecao": "Curaçao",
+      "baseline_eixos": {
+        "ataque_ea": {
+          "DNA_direcional": {
+            "EADR_dir": 3.0,
+            "EAES_esq": 2.9,
+            "EAME_meio": 3.1
+          },
+          "letalidade_metodo": {
+            "EAGC_cabeca": 14,
+            "EAGF_fora": 20,
+            "EAGD_dentro": 51,
+            "EABP_parada": 15
+          },
+          "volume": {
+            "ECCH_chutes_totais": 13.5,
+            "EACA_contra_ataque": 1.8,
+            "EACP_chances_perdidas": 1.6
+          }
+        },
+        "conectividade_ec": {
+          "ECPB_posse_media": 50,
+          "ECPC_passes_certos_pct": 79,
+          "ECPE_passes_errados_pct": 21,
+          "ECDC_dribles_jogo": 7.5
+        },
+        "defensivo_ed": {
+          "EDDF_desarmes_cortes": 21.0,
+          "EDCT_chutes_sofridos": 11.5,
+          "permissividade_setor": {
+            "EGFD_sofrido_dir": 0.35,
+            "EGFE_sofrido_esq": 0.35,
+            "EGFM_sofrido_meio": 0.45
+          }
+        },
+        "goleiro_baliza_eg": {
+          "EGDP_defesas_jogo": 2.8,
+          "EGBS_bolas_espalmadas": 25,
+          "fraquezas": {
+            "EGCF_sofrido_cabeca": 14,
+            "EGSF_sofrido_fora": 18,
+            "EGSD_sofrido_dentro": 68
+          }
+        }
+      },
+      "historico_atrito_temporal": {
+        "TTBP_provocado_segundos": 1730,
+        "FSC_fator_caos_base": 1.03
+      }
+    }
+  ]
+}

@@ -3,14 +3,47 @@
   "competition": "Copa do Mundo",
   "phase": "group",
   "round": 1,
-  "bookmaker": "exemplo",
-  "captured_at": "2026-06-01T00:00:00Z",
+  "source": "the-odds-api",
+  "captured_at": "2026-06-03T04:34:48.932066+00:00",
   "matches": [
-    {"home_team": "Brasil", "away_team": "Marrocos", "phase": "group", "odds": {"1": 1.90, "X": 3.40, "2": 5.20}},
-    {"home_team": "Argentina", "away_team": "México", "phase": "group", "odds": {"1": 2.05, "X": 3.25, "2": 3.90}},
-    {"home_team": "França", "away_team": "Senegal", "phase": "group", "odds": {"1": 1.95, "X": 3.30, "2": 4.50}},
-    {"home_team": "Inglaterra", "away_team": "Croácia", "phase": "group", "odds": {"1": 2.20, "X": 3.15, "2": 3.50}},
-    {"home_team": "Alemanha", "away_team": "Japão", "phase": "group", "odds": {"1": 1.72, "X": 3.70, "2": 5.00}},
-    {"home_team": "Espanha", "away_team": "Holanda", "phase": "group", "odds": {"1": 2.45, "X": 3.05, "2": 2.95}}
+    {
+      "home_team": "Brasil",
+      "away_team": "Marrocos",
+      "phase": "group",
+      "group": "G",
+      "bookmaker": "marathonbet",
+      "commence_time": "2026-06-13T22:00:00Z",
+      "odds": {
+        "1": 1.61,
+        "X": 3.94,
+        "2": 6.3
+      }
+    },
+    {
+      "home_team": "França",
+      "away_team": "Senegal",
+      "phase": "group",
+      "group": "D",
+      "bookmaker": "marathonbet",
+      "commence_time": "2026-06-16T19:00:00Z",
+      "odds": {
+        "1": 1.46,
+        "X": 4.55,
+        "2": 7.9
+      }
+    },
+    {
+      "home_team": "Inglaterra",
+      "away_team": "Croácia",
+      "phase": "group",
+      "group": "B",
+      "bookmaker": "marathonbet",
+      "commence_time": "2026-06-17T20:00:00Z",
+      "odds": {
+        "1": 1.77,
+        "X": 3.84,
+        "2": 4.85
+      }
+    }
   ]
 }
