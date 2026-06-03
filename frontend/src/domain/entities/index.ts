@@ -182,6 +182,45 @@ export interface WcSchedule {
   totalMatches: number;
 }
 
+export interface WcSquadPlayer {
+  name: string;
+  club: string | null;
+}
+
+export interface WcSquadSection {
+  role: string;
+  position: string;
+  players: WcSquadPlayer[];
+}
+
+export interface WcSquad {
+  team: string;
+  playerCount: number;
+  sections: WcSquadSection[];
+}
+
+export interface WcSquadTeamSummary {
+  team: string;
+  playerCount: number;
+}
+
+export interface WcSquadsIndex {
+  season: number;
+  competition: string;
+  sourceUrl: string;
+  updatedAt: string;
+  teamCount: number;
+  teams: WcSquadTeamSummary[];
+}
+
+export interface WcSquadDetail {
+  season: number;
+  competition: string;
+  sourceUrl: string;
+  updatedAt: string;
+  squad: WcSquad;
+}
+
 export interface BrasileiraoPrediction {
   homeTeam: string;
   awayTeam: string;

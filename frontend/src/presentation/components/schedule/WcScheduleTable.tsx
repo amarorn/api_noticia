@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { WcSchedule, WcScheduleMatch } from "@/domain/entities";
-import { teamColor } from "@/data/teamColors";
 import { IconChevronRight } from "@/presentation/components/ui/Icons";
+import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 
 interface WcScheduleTableProps {
   schedule: WcSchedule;
@@ -25,22 +25,9 @@ function formatKickoff(iso: string | null): string {
 }
 
 function TeamCell({ name }: { name: string }) {
-  const color = teamColor(name);
-  const initials = name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-
   return (
     <div className="flex items-center gap-2.5 min-w-0">
-      <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-black"
-        style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}35` }}
-      >
-        {initials}
-      </div>
+      <TeamFlag team={name} size={32} />
       <span className="truncate font-medium text-white">{name}</span>
     </div>
   );
@@ -165,18 +152,12 @@ export function WcGroupGrid({ groups, selectedGroup, onSelectGroup }: GroupGridP
               <span className="text-[10px] text-slate-600">{group.teams.length} times</span>
             </div>
             <ul className="space-y-2">
-              {group.teams.map((team) => {
-                const color = teamColor(team);
-                return (
-                  <li key={team} className="flex items-center gap-2">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="truncate text-sm text-slate-300">{team}</span>
-                  </li>
-                );
-              })}
+              {group.teams.map((team) => (
+                <li key={team} className="flex items-center gap-2">
+                  <TeamFlag team={team} size={20} />
+                  <span className="truncate text-sm text-slate-300">{team}</span>
+                </li>
+              ))}
             </ul>
           </button>
         );

@@ -58,3 +58,18 @@ def _normalize_match(match: dict, data: dict) -> dict:
 def _slug_match(home: str, away: str, round_no: int) -> str:
     base = f"{home}_{away}_r{round_no}".lower().replace(" ", "_")
     return base
+
+
+def official_match_exists(
+    home: str,
+    away: str,
+    phase: str = "group",
+    path: Path = DEFAULT_SCHEDULE,
+) -> bool:
+    data = load_wc_schedule(path)
+    for match in data.get("matches", []):
+        if match.get("phase", data.get("phase", "group")) != phase:
+            continue
+        if match["home_team"] == home and match["away_team"] == away:
+            return True
+    return False

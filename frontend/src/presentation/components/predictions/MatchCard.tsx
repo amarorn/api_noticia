@@ -9,33 +9,20 @@ import {
   predictedWinner,
 } from "@/presentation/theme";
 import { IconChevronRight } from "@/presentation/components/ui/Icons";
+import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 
 interface MatchCardProps {
   prediction: WcPrediction;
   index?: number;
   compact?: boolean;
+  group?: string | null;
 }
 
-function TeamAvatar({ name, color }: { name: string; color: string }) {
-  const initials = name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-
-  return (
-    <div
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-      style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}30` }}
-      aria-hidden
-    >
-      {initials}
-    </div>
-  );
+function TeamAvatar({ name }: { name: string }) {
+  return <TeamFlag team={name} size={40} rounded="md" />;
 }
 
-export function MatchCard({ prediction, index = 0, compact = false }: MatchCardProps) {
+export function MatchCard({ prediction, index = 0, compact = false, group }: MatchCardProps) {
   const winner = predictedWinner(
     prediction.prediction,
     prediction.homeTeam,
@@ -68,6 +55,11 @@ export function MatchCard({ prediction, index = 0, compact = false }: MatchCardP
       >
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
+          {group && (
+            <span className="rounded-md bg-neon-green/10 px-1.5 py-0.5 text-[9px] font-black text-neon-green">
+              {group}
+            </span>
+          )}
           <span className="text-sm font-bold" style={{ color: winnerColor }}>{winner}</span>
         </div>
         <ConfidenceBadge
@@ -79,7 +71,7 @@ export function MatchCard({ prediction, index = 0, compact = false }: MatchCardP
       {/* Times */}
       <div className="relative flex items-center justify-between gap-2 px-4 py-4">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <TeamAvatar name={prediction.homeTeam} color={homeColor} />
+          <TeamAvatar name={prediction.homeTeam} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white">{prediction.homeTeam}</p>
             <p className="text-[10px] text-slate-500">Mandante</p>
@@ -103,7 +95,7 @@ export function MatchCard({ prediction, index = 0, compact = false }: MatchCardP
             <p className="truncate text-sm font-semibold text-white">{prediction.awayTeam}</p>
             <p className="text-[10px] text-slate-500">Visitante</p>
           </div>
-          <TeamAvatar name={prediction.awayTeam} color={awayColor} />
+          <TeamAvatar name={prediction.awayTeam} />
         </div>
       </div>
 

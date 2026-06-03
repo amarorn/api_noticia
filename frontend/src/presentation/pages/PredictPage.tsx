@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  getWcTeamsUseCase,
+  getWcScheduleUseCase,
   predictWcMatchUseCase,
 } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
@@ -16,36 +17,99 @@ import { ErrorState } from "@/presentation/components/ui/ErrorState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { IconSwap, IconZap } from "@/presentation/components/ui/Icons";
 import { phases, outcomeColors } from "@/presentation/theme";
+import {
+  awayOpponentsForHome,
+  findOfficialMatch,
+  findReverseOfficialMatch,
+  homeTeamsInSchedule,
+  matchesForPhase,
+  phasesInSchedule,
+} from "@/presentation/utils/officialSchedule";
 import { motion } from "framer-motion";
 
 export function PredictPage() {
-  const [homeTeam, setHomeTeam] = useState("Brasil");
-  const [awayTeam, setAwayTeam] = useState("Marrocos");
+  const [homeTeam, setHomeTeam] = useState("");
+  const [awayTeam, setAwayTeam] = useState("");
   const [phase, setPhase] = useState("group");
 
-  const teamsQuery = useQuery({
-    queryKey: ["wc-teams"],
-    queryFn: () => getWcTeamsUseCase.execute(),
+  const scheduleQuery = useQuery({
+    queryKey: ["wc-schedule"],
+    queryFn: () => getWcScheduleUseCase.execute(),
+    staleTime: 10 * 60_000,
   });
+
+  const availablePhases = useMemo(() => {
+    if (!scheduleQuery.data) return phases.filter((p) => p.value === "group");
+    const scheduled = new Set(phasesInSchedule(scheduleQuery.data));
+    return phases.filter((p) => scheduled.has(p.value));
+  }, [scheduleQuery.data]);
+
+  const phaseMatches = useMemo(
+    () => (scheduleQuery.data ? matchesForPhase(scheduleQuery.data, phase) : []),
+    [scheduleQuery.data, phase],
+  );
+
+  const homeOptions = useMemo(
+    () => homeTeamsInSchedule(phaseMatches),
+    [phaseMatches],
+  );
+
+  const awayOptions = useMemo(
+    () => awayOpponentsForHome(homeTeam, phaseMatches),
+    [homeTeam, phaseMatches],
+  );
+
+  const selectedMatch = useMemo(
+    () => findOfficialMatch(homeTeam, awayTeam, phaseMatches),
+    [homeTeam, awayTeam, phaseMatches],
+  );
+
+  const canSwap = useMemo(
+    () => Boolean(findReverseOfficialMatch(homeTeam, awayTeam, phaseMatches)),
+    [homeTeam, awayTeam, phaseMatches],
+  );
+
+  useEffect(() => {
+    if (availablePhases.length === 0) return;
+    if (!availablePhases.some((p) => p.value === phase)) {
+      setPhase(availablePhases[0].value);
+    }
+  }, [availablePhases, phase]);
+
+  useEffect(() => {
+    if (homeOptions.length === 0) return;
+    if (!homeOptions.includes(homeTeam)) {
+      setHomeTeam(homeOptions[0]);
+    }
+  }, [homeOptions, homeTeam]);
+
+  useEffect(() => {
+    if (awayOptions.length === 0) return;
+    if (!awayOptions.includes(awayTeam)) {
+      setAwayTeam(awayOptions[0]);
+    }
+  }, [awayOptions, awayTeam]);
 
   const predictMutation = useMutation({
     mutationFn: () =>
       predictWcMatchUseCase.execute({ homeTeam, awayTeam, phase }),
   });
 
-  const teams = teamsQuery.data ?? [];
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (homeTeam && awayTeam && homeTeam !== awayTeam) {
+    if (selectedMatch) {
       predictMutation.mutate();
     }
   };
 
   const handleSwap = () => {
+    if (!canSwap) return;
     setHomeTeam(awayTeam);
     setAwayTeam(homeTeam);
   };
+
+  const isLoading = scheduleQuery.isLoading;
+  const hasOfficialMatches = phaseMatches.length > 0;
 
   return (
     <PageTransition className="space-y-8">
@@ -66,117 +130,151 @@ export function PredictPage() {
             </span>
           </div>
           <p className="mt-1.5 text-sm text-slate-400">
-            Ensemble Dixon-Coles + Logística + DNA KXL · Selecione as seleções e fase
+            Apenas confrontos da tabela oficial · Dixon-Coles + Logística + DNA KXL
           </p>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* Form panel */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="glass-card space-y-4 p-5">
-            <p className="section-label">Configurar confronto</p>
+          {scheduleQuery.isError && (
+            <ErrorState
+              message={
+                scheduleQuery.error instanceof Error
+                  ? scheduleQuery.error.message
+                  : "Falha ao carregar tabela oficial"
+              }
+              onRetry={() => scheduleQuery.refetch()}
+            />
+          )}
 
-            {/* Mandante */}
-            <div>
-              <label htmlFor="home" className="mb-1.5 block text-xs font-medium text-slate-400">
-                Mandante
-              </label>
-              {teamsQuery.isLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <div className="relative">
+          {!scheduleQuery.isError && (
+            <form onSubmit={handleSubmit} className="glass-card space-y-4 p-5">
+              <p className="section-label">Configurar confronto</p>
+
+              <div>
+                <label htmlFor="phase" className="mb-1.5 block text-xs font-medium text-slate-400">
+                  Fase
+                </label>
+                {isLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
                   <select
-                    id="home"
-                    value={homeTeam}
-                    onChange={(e) => setHomeTeam(e.target.value)}
-                    className="select-field pr-8"
+                    id="phase"
+                    value={phase}
+                    onChange={(e) => setPhase(e.target.value)}
+                    className="select-field"
                   >
-                    {teams.map((t) => (
-                      <option key={t} value={t} className="bg-surface">
-                        {t}
+                    {availablePhases.map((p) => (
+                      <option key={p.value} value={p.value} className="bg-surface">
+                        {p.label}
                       </option>
                     ))}
                   </select>
-                  <TeamColorDot color={outcomeColors["1"]} />
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="home" className="mb-1.5 block text-xs font-medium text-slate-400">
+                  Mandante
+                </label>
+                {isLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="relative">
+                    <select
+                      id="home"
+                      value={homeTeam}
+                      onChange={(e) => setHomeTeam(e.target.value)}
+                      disabled={!hasOfficialMatches}
+                      className="select-field pr-8"
+                    >
+                      {homeOptions.map((t) => (
+                        <option key={t} value={t} className="bg-surface">
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <TeamColorDot color={outcomeColors["1"]} />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/5" />
+                <button
+                  type="button"
+                  onClick={handleSwap}
+                  disabled={!canSwap}
+                  title={
+                    canSwap
+                      ? "Inverter mandante e visitante"
+                      : "Este confronto invertido não existe na tabela oficial"
+                  }
+                  className="btn-icon disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Inverter mandante e visitante"
+                >
+                  <IconSwap className="h-3.5 w-3.5" />
+                </button>
+                <div className="h-px flex-1 bg-white/5" />
+              </div>
+
+              <div>
+                <label htmlFor="away" className="mb-1.5 block text-xs font-medium text-slate-400">
+                  Visitante
+                </label>
+                {isLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="relative">
+                    <select
+                      id="away"
+                      value={awayTeam}
+                      onChange={(e) => setAwayTeam(e.target.value)}
+                      disabled={!hasOfficialMatches || awayOptions.length === 0}
+                      className="select-field pr-8"
+                    >
+                      {awayOptions.map((t) => (
+                        <option key={t} value={t} className="bg-surface">
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <TeamColorDot color={outcomeColors["2"]} />
+                  </div>
+                )}
+              </div>
+
+              {selectedMatch && (
+                <div className="rounded-xl border border-neon-green/15 bg-neon-green/5 px-3 py-2 text-xs text-slate-400">
+                  Jogo oficial · Grupo {selectedMatch.group} · Rodada {selectedMatch.round}
+                  {selectedMatch.city && (
+                    <span className="text-slate-500"> · {selectedMatch.city}</span>
+                  )}
                 </div>
               )}
-            </div>
 
-            {/* Swap button */}
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-white/5" />
+              {!hasOfficialMatches && !isLoading && (
+                <p className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-400">
+                  Nenhum jogo oficial nesta fase.{" "}
+                  <Link to="/jogos" className="underline hover:text-amber-300">
+                    Ver tabela
+                  </Link>
+                </p>
+              )}
+
               <button
-                type="button"
-                onClick={handleSwap}
-                title="Inverter times"
-                className="btn-icon"
-                aria-label="Inverter mandante e visitante"
+                type="submit"
+                disabled={predictMutation.isPending || !selectedMatch}
+                className="btn-primary w-full"
               >
-                <IconSwap className="h-3.5 w-3.5" />
+                <IconZap className="h-4 w-4" />
+                {predictMutation.isPending ? "Calculando…" : "Gerar palpite"}
               </button>
-              <div className="h-px flex-1 bg-white/5" />
-            </div>
+            </form>
+          )}
 
-            {/* Visitante */}
-            <div>
-              <label htmlFor="away" className="mb-1.5 block text-xs font-medium text-slate-400">
-                Visitante
-              </label>
-              <div className="relative">
-                <select
-                  id="away"
-                  value={awayTeam}
-                  onChange={(e) => setAwayTeam(e.target.value)}
-                  className="select-field pr-8"
-                >
-                  {teams.map((t) => (
-                    <option key={t} value={t} className="bg-surface">
-                      {t}
-                    </option>
-                  ))}
-                </select>
-                <TeamColorDot color={outcomeColors["2"]} />
-              </div>
-            </div>
-
-            {/* Fase */}
-            <div>
-              <label htmlFor="phase" className="mb-1.5 block text-xs font-medium text-slate-400">
-                Fase
-              </label>
-              <select
-                id="phase"
-                value={phase}
-                onChange={(e) => setPhase(e.target.value)}
-                className="select-field"
-              >
-                {phases.map((p) => (
-                  <option key={p.value} value={p.value} className="bg-surface">
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {homeTeam === awayTeam && (
-              <p className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-400">
-                Selecione times diferentes.
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={predictMutation.isPending || homeTeam === awayTeam}
-              className="btn-primary w-full"
-            >
-              <IconZap className="h-4 w-4" />
-              {predictMutation.isPending ? "Calculando…" : "Gerar palpite"}
-            </button>
-          </form>
-
-          {/* Quick match preview */}
-          {homeTeam !== awayTeam && !predictMutation.isPending && (
+          {selectedMatch && !predictMutation.isPending && (
             <div className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm">
               <span className="font-semibold text-white">{homeTeam}</span>
               <span className="rounded-lg bg-white/5 px-2 py-0.5 text-xs font-bold text-slate-500">VS</span>
@@ -185,7 +283,6 @@ export function PredictPage() {
           )}
         </div>
 
-        {/* Result panel */}
         <div className="lg:col-span-3">
           {predictMutation.isError && (
             <ErrorState
@@ -204,8 +301,11 @@ export function PredictPage() {
                 VS
               </div>
               <p className="max-w-xs text-sm text-slate-500">
-                Configure o confronto ao lado e clique em{" "}
-                <span className="text-slate-400">Gerar palpite</span>
+                Escolha um confronto da{" "}
+                <Link to="/jogos" className="text-neon-green hover:underline">
+                  tabela oficial
+                </Link>{" "}
+                e clique em <span className="text-slate-400">Gerar palpite</span>
               </p>
             </div>
           )}
@@ -224,7 +324,6 @@ export function PredictPage() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              {/* Hero result */}
               <div className="glass-card overflow-hidden">
                 <div
                   className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4"

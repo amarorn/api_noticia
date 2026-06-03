@@ -13,6 +13,7 @@ import { PoissonFactorsPanel } from "@/presentation/components/predictions/Poiss
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
 import { IconArrowLeft } from "@/presentation/components/ui/Icons";
+import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { formatPercent, outcomeColors } from "@/presentation/theme";
 
 export function MatchDetailPage() {
@@ -90,7 +91,7 @@ export function MatchDetailPage() {
         <div className="relative flex flex-wrap items-center justify-between gap-6 px-6 py-6 sm:px-8">
           {/* Times */}
           <div className="flex items-center gap-4">
-            <TeamHeroAvatar name={pred.homeTeam} color={outcomeColors["1"]} />
+            <TeamHeroAvatar name={pred.homeTeam} />
             <div>
               <p className="text-[10px] uppercase tracking-widest text-slate-600">Mandante</p>
               <p className="text-xl font-extrabold text-white">{pred.homeTeam}</p>
@@ -123,7 +124,7 @@ export function MatchDetailPage() {
                 {formatPercent(pred.probAway)}
               </p>
             </div>
-            <TeamHeroAvatar name={pred.awayTeam} color={outcomeColors["2"]} />
+            <TeamHeroAvatar name={pred.awayTeam} />
           </div>
         </div>
 
@@ -190,27 +191,8 @@ export function MatchDetailPage() {
   );
 }
 
-function TeamHeroAvatar({ name, color }: { name: string; color: string }) {
-  const initials = name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-
-  return (
-    <div
-      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-base font-black"
-      style={{
-        backgroundColor: `${color}15`,
-        color,
-        border: `1px solid ${color}30`,
-        boxShadow: `0 0 16px ${color}15`,
-      }}
-    >
-      {initials}
-    </div>
-  );
+function TeamHeroAvatar({ name }: { name: string }) {
+  return <TeamFlag team={name} size={56} rounded="md" />;
 }
 
 function MetricCard({

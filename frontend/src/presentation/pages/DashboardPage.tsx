@@ -1,7 +1,9 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   getValueBetsUseCase,
   getWcRoundUseCase,
+  getWcScheduleUseCase,
 } from "@/application/container";
 import { ApiError } from "@/infrastructure/api/client";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/presentation/components/layout/PageTransition";
@@ -9,14 +11,45 @@ import { MatchCard } from "@/presentation/components/predictions/MatchCard";
 import { ValueBetsSection } from "@/presentation/components/predictions/ValueBetCard";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import {
+  buildMatchGroupLookup,
+  groupForMatch,
+  sortedGroupIds,
+} from "@/presentation/utils/officialSchedule";
 
 export function DashboardPage() {
+  const [selectedGroup, setSelectedGroup] = useState<string | "all">("all");
+
   const roundQuery = useQuery({
     queryKey: ["wc-round"],
     queryFn: () => getWcRoundUseCase.execute(),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
   });
+
+  const scheduleQuery = useQuery({
+    queryKey: ["wc-schedule"],
+    queryFn: () => getWcScheduleUseCase.execute(),
+    staleTime: 10 * 60_000,
+  });
+
+  const groupLookup = useMemo(
+    () => (scheduleQuery.data ? buildMatchGroupLookup(scheduleQuery.data) : new Map()),
+    [scheduleQuery.data],
+  );
+
+  const groupIds = useMemo(
+    () => (scheduleQuery.data ? sortedGroupIds(scheduleQuery.data) : []),
+    [scheduleQuery.data],
+  );
+
+  const filteredPredictions = useMemo(() => {
+    const predictions = roundQuery.data?.predictions ?? [];
+    if (selectedGroup === "all") return predictions;
+    return predictions.filter(
+      (pred) => groupForMatch(pred.homeTeam, pred.awayTeam, groupLookup) === selectedGroup,
+    );
+  }, [roundQuery.data, selectedGroup, groupLookup]);
 
   const valueQuery = useQuery({
     queryKey: ["wc-value"],
@@ -59,26 +92,59 @@ export function DashboardPage() {
   }
 
   const round = roundQuery.data!;
+  const gamesLabel =
+    selectedGroup === "all"
+      ? `${filteredPredictions.length} jogos`
+      : `Grupo ${selectedGroup} · ${filteredPredictions.length} jogos`;
 
   return (
     <PageTransition className="space-y-10">
       <PageHeader
         title={`${round.competition}`}
         subtitle={`Rodada ${round.round} · Temporada ${round.season} · Fase ${round.phase}`}
-        badges={[
-          { label: `${round.predictions.length} jogos`, color: "blue" },
-        ]}
+        badges={[{ label: gamesLabel, color: "blue" }]}
       />
+
+      {groupIds.length > 0 && (
+        <section className="space-y-3">
+          <p className="section-label">Filtrar por grupo</p>
+          <div className="flex flex-wrap gap-2">
+            <GroupFilterChip
+              label="Todos"
+              active={selectedGroup === "all"}
+              onClick={() => setSelectedGroup("all")}
+            />
+            {groupIds.map((gid) => (
+              <GroupFilterChip
+                key={gid}
+                label={gid}
+                active={selectedGroup === gid}
+                onClick={() => setSelectedGroup(gid)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <p className="section-label">Palpites da rodada</p>
-        <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {round.predictions.map((pred, i) => (
-            <StaggerItem key={`${pred.homeTeam}-${pred.awayTeam}`}>
-              <MatchCard prediction={pred} index={i} />
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+        {filteredPredictions.length === 0 ? (
+          <div className="glass-card flex flex-col items-center justify-center gap-2 py-16 text-center">
+            <p className="text-sm text-slate-400">Nenhum jogo neste grupo.</p>
+          </div>
+        ) : (
+          <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredPredictions.map((pred, i) => (
+              <StaggerItem key={`${pred.homeTeam}-${pred.awayTeam}`}>
+                <MatchCard
+                  prediction={pred}
+                  index={i}
+                  group={groupForMatch(pred.homeTeam, pred.awayTeam, groupLookup)}
+                />
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        )}
       </section>
 
       <ValueBetsSection
@@ -144,3 +210,27 @@ function PageHeader({ title, subtitle, badges }: PageHeaderProps) {
 }
 
 export { PageHeader };
+
+function GroupFilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-xs font-bold transition-all ${
+        active
+          ? "bg-neon-green/15 text-neon-green ring-1 ring-neon-green/30"
+          : "bg-white/5 text-slate-400 hover:bg-white/8 hover:text-slate-300"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}

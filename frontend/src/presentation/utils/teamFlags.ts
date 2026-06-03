@@ -8,11 +8,13 @@ const TEAM_ISO: Record<string, string> = {
   Bélgica: "BE",
   Bolívia: "BO",
   Bósnia: "BA",
+  "Bósnia e Herzegovina": "BA",
+  Catar: "QA",
+  Qatar: "QA",
   Brasil: "BR",
   Bulgária: "BG",
   Camarões: "CM",
   Canadá: "CA",
-  Catar: "QA",
   Chile: "CL",
   China: "CN",
   Colômbia: "CO",
@@ -81,6 +83,17 @@ function isoToFlag(iso: string): string {
     .split("")
     .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
     .join("");
+}
+
+export function getTeamIso(teamName: string): string | null {
+  return TEAM_ISO[teamName] ?? null;
+}
+
+export function teamFlagImageUrl(teamName: string, width = 40): string | null {
+  const iso = getTeamIso(teamName);
+  if (!iso) return null;
+  const w = width <= 40 ? 40 : width <= 80 ? 80 : 160;
+  return `https://flagcdn.com/w${w}/${iso.toLowerCase()}.png`;
 }
 
 export function teamFlag(teamName: string): string {

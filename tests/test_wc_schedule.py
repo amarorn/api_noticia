@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pipelines.wc_schedule import build_schedule_response, load_wc_schedule
+from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
 
 WC_JSON = Path("data/rounds/wc_2026.json")
 
@@ -29,3 +29,9 @@ def test_each_group_has_four_teams_and_six_matches() -> None:
             teams_in_matches.add(m["home_team"])
             teams_in_matches.add(m["away_team"])
         assert teams_in_matches == set(group["teams"])
+
+
+def test_official_match_exists_respects_home_away() -> None:
+    assert official_match_exists("Brasil", "Marrocos", phase="group", path=WC_JSON)
+    assert not official_match_exists("Marrocos", "Brasil", phase="group", path=WC_JSON)
+    assert not official_match_exists("Brasil", "França", phase="group", path=WC_JSON)

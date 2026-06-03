@@ -1,5 +1,5 @@
 import type { IWcRepository } from "@/domain/repositories";
-import type { WcPrediction, WcRound, WcSchedule } from "@/domain/entities";
+import type { WcPrediction, WcRound, WcSchedule, WcSquadDetail, WcSquadsIndex } from "@/domain/entities";
 import type { WcPredictRequestDto } from "../dtos";
 
 export class GetWcRoundUseCase {
@@ -15,6 +15,22 @@ export class GetWcScheduleUseCase {
 
   execute(): Promise<WcSchedule> {
     return this.repository.getSchedule();
+  }
+}
+
+export class GetWcSquadsIndexUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(): Promise<WcSquadsIndex> {
+    return this.repository.getSquadsIndex();
+  }
+}
+
+export class GetWcSquadUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(team: string): Promise<WcSquadDetail> {
+    return this.repository.getSquad(team);
   }
 }
 

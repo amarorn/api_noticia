@@ -23,7 +23,8 @@ from pipelines.gold import build_gold_for_match
 from ingest.news_sync import sync_news_sources
 from pipelines.news_feed import build_news_feed
 from pipelines.silver import load_silver
-from pipelines.wc_schedule import build_schedule_response, load_wc_schedule
+from pipelines.wc_squads import get_squad_by_team, list_squad_teams, load_wc_squads
+from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
 from pipelines.wc_validate import (
     list_edition_matches,
     list_wc_editions,
@@ -243,6 +244,40 @@ class WcScheduleResponse(BaseModel):
     matchdays: list[int]
     matches: list[WcScheduleMatchItem]
     total_matches: int
+
+
+class WcSquadPlayerItem(BaseModel):
+    name: str
+    club: str | None = None
+
+
+class WcSquadSectionItem(BaseModel):
+    role: str
+    position: str
+    players: list[WcSquadPlayerItem]
+
+
+class WcSquadTeamItem(BaseModel):
+    team: str
+    player_count: int
+    sections: list[WcSquadSectionItem]
+
+
+class WcSquadTeamsResponse(BaseModel):
+    season: int
+    competition: str
+    source_url: str
+    updated_at: str
+    team_count: int
+    teams: list[dict]
+
+
+class WcSquadDetailResponse(BaseModel):
+    season: int
+    competition: str
+    source_url: str
+    updated_at: str
+    squad: WcSquadTeamItem
 
 
 class WcEditionItem(BaseModel):
@@ -497,6 +532,8 @@ def root():
             "/worldcup/predict",
             "/worldcup/round",
             "/worldcup/schedule",
+            "/worldcup/squads",
+            "/worldcup/squads/{team}",
             "/worldcup/teams",
             "/worldcup/value/live",
             "/worldcup/editions",
@@ -625,6 +662,11 @@ def worldcup_predict(req: WcPredictRequest):
 
     home = normalize_national_team(req.home_team)
     away = normalize_national_team(req.away_team)
+    if req.phase == "group" and not official_match_exists(home, away, phase="group"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Confronto {home} x {away} não consta na tabela oficial da fase de grupos.",
+        )
     try:
         pred = predictor.predict(home, away, phase=req.phase, kxl_match=req.kxl_match)
     except Exception as exc:
@@ -698,6 +740,45 @@ def worldcup_schedule():
 
     payload = build_schedule_response(data)
     return WcScheduleResponse(**payload)
+
+
+@app.get("/worldcup/squads", response_model=WcSquadTeamsResponse)
+def worldcup_squads():
+    try:
+        data = load_wc_squads()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Convocações WC inválidas: {exc}") from exc
+
+    return WcSquadTeamsResponse(
+        season=data.get("season", 2026),
+        competition=data.get("competition", "Copa do Mundo FIFA 2026"),
+        source_url=data.get("source_url", ""),
+        updated_at=data.get("updated_at", ""),
+        team_count=data.get("team_count", len(data.get("squads", []))),
+        teams=list_squad_teams(data),
+    )
+
+
+@app.get("/worldcup/squads/{team}", response_model=WcSquadDetailResponse)
+def worldcup_squad_detail(team: str):
+    try:
+        data = load_wc_squads()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    squad = get_squad_by_team(data, team)
+    if squad is None:
+        raise HTTPException(status_code=404, detail=f"Convocação não encontrada: {team}")
+
+    return WcSquadDetailResponse(
+        season=data.get("season", 2026),
+        competition=data.get("competition", "Copa do Mundo FIFA 2026"),
+        source_url=data.get("source_url", ""),
+        updated_at=data.get("updated_at", ""),
+        squad=WcSquadTeamItem(**squad),
+    )
 
 
 @app.get("/worldcup/editions", response_model=WcEditionsResponse)

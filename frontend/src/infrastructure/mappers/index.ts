@@ -14,6 +14,8 @@ import type {
   WcRound,
   WcSchedule,
   WcScheduleMatch,
+  WcSquadDetail,
+  WcSquadsIndex,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -406,6 +408,63 @@ export function mapWcSchedule(raw: ApiWcSchedule): WcSchedule {
     matchdays: raw.matchdays,
     matches: raw.matches.map(mapWcScheduleMatch),
     totalMatches: raw.total_matches,
+  };
+}
+
+interface ApiWcSquadsIndex {
+  season: number;
+  competition: string;
+  source_url: string;
+  updated_at: string;
+  team_count: number;
+  teams: { team: string; player_count: number }[];
+}
+
+interface ApiWcSquadDetail {
+  season: number;
+  competition: string;
+  source_url: string;
+  updated_at: string;
+  squad: {
+    team: string;
+    player_count: number;
+    sections: {
+      role: string;
+      position: string;
+      players: { name: string; club: string | null }[];
+    }[];
+  };
+}
+
+export function mapWcSquadsIndex(raw: ApiWcSquadsIndex): WcSquadsIndex {
+  return {
+    season: raw.season,
+    competition: raw.competition,
+    sourceUrl: raw.source_url,
+    updatedAt: raw.updated_at,
+    teamCount: raw.team_count,
+    teams: raw.teams.map((t) => ({
+      team: t.team,
+      playerCount: t.player_count,
+    })),
+  };
+}
+
+export function mapWcSquadDetail(raw: ApiWcSquadDetail): WcSquadDetail {
+  return {
+    season: raw.season,
+    competition: raw.competition,
+    sourceUrl: raw.source_url,
+    updatedAt: raw.updated_at,
+    squad: {
+      team: raw.squad.team,
+      playerCount: raw.squad.player_count,
+      sections: raw.squad.sections.map((s) => ({
+        role: s.role,
+        position: s.position,
+        players: s.players.map((p) => ({ name: p.name, club: p.club })),
+      })),
+    },
   };
 }
 

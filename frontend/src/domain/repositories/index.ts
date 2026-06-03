@@ -7,6 +7,8 @@ import type {
   WcPrediction,
   WcRound,
   WcSchedule,
+  WcSquadDetail,
+  WcSquadsIndex,
 } from "../entities";
 
 export interface NewsFeedParams {
@@ -20,6 +22,8 @@ export interface NewsFeedParams {
 export interface IWcRepository {
   getRound(): Promise<WcRound>;
   getSchedule(): Promise<WcSchedule>;
+  getSquadsIndex(): Promise<WcSquadsIndex>;
+  getSquad(team: string): Promise<WcSquadDetail>;
   predictMatch(homeTeam: string, awayTeam: string, phase: string): Promise<WcPrediction>;
   getTeams(): Promise<string[]>;
   getValueBets(): Promise<ValueBetsReport>;
