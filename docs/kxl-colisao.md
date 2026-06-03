@@ -20,9 +20,12 @@ Não foi encontrado repositório externo com implementação de colisão; este m
 Força do elenco no dia (SofaScore) ou proxy do baseline:
 
 ```
-E = média(nota_sofascore atacantes) / 7.5     (se FEPT enviado)
-E = 0.35×(ECDC/12) + 0.35×(EAGD/55) + 0.30×(ECCH/18)   (senão)
+E = weighted_squad_energy(FEPT)   (goleiro 8%, defesa 32%, meio 30%, ataque 30%)
+E = fallback média atacantes / 7.5
+E = 0.32×(ECDC/12) + 0.32×(EAGD/55) + 0.28×(ECCH/18) − penalty(ECPE)   (sem FEPT)
 ```
+
+`ECPE` (passes errados %) eleva viés de empate quando média ≥ 16%.
 
 ### 2. Espaço — colisão setorial (`C`)
 
@@ -57,7 +60,7 @@ T_draw = 1 + |TTBP_h − TTBP_a| / 1800 × 0.15    (empate se ritmos divergem)
 Vcar_raw_h = (0.45×S_h + 0.35×E_h + 0.20×(ECCH_h/18)) × T_h × FSC_h × M_h
 ```
 
-`M_h` = produto dos moduladores dinâmicos (FECL, FEJU, FEDE, FEPT, FEEM).
+`M_h` = produto dos moduladores dinâmicos (FECL, FEJU, FEDE, FEPT, FEEM). Helpers PDF em `pipelines/wc_kxl_fept.py` (chuva %, gramado sintético, esquema tático 4-3-3 vs 5-4-1, titulares aninhados).
 
 Regras do PDF sobre `M`:
 

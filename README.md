@@ -126,7 +126,7 @@ python3 scripts/import_wc_baselines.py "/caminho/DADOS PARCEIAIS ... COPA.txt"
 
 **Fase 3 — motor de colisão:** `pipelines/wc_kxl_collision.py` e fórmulas em [docs/kxl-colisao.md](docs/kxl-colisao.md) (Vcar, Vesc, TBRTL, colisão setorial, **letalidade×GK** cabeça/fora/área/BP, **EACP**). UI: gramado interativo + painel Letalidade×Goleiro.
 
-**Fase 2 — entrada dinâmica (opcional no `POST /worldcup/predict`):**
+**Fase 2 — entrada dinâmica (opcional no `POST /worldcup/predict`):** exemplo completo em `data/wc/kxl_match_example.json`. Campos alinhados ao PDF: `previsao_chuva_pct`, `estado_gramado`, `mandante_titulares_notas` (goleiro/defensores/meio/atacantes), `impacto_nota_elenco`, `contexto_peso_caos`.
 
 ```json
 {
@@ -134,18 +134,29 @@ python3 scripts/import_wc_baselines.py "/caminho/DADOS PARCEIAIS ... COPA.txt"
   "away_team": "Marrocos",
   "phase": "group",
   "kxl_match": {
-    "fecl": { "chuva_mm": 4, "umidade_pct": 90, "gramado": "molhado" },
-    "feju": { "perfil": "punitivista", "cartoes_media": 5.2 },
+    "fecl": { "previsao_chuva_pct": 55, "estado_gramado": "Molhado" },
+    "feju": { "perfil": "punitivista", "indice_cartao_falta": 0.28 },
     "fede": {
-      "desfalques_visitante": [{ "jogador": "Ziyech", "nota_elenco": 7.2, "impacto": 0.08 }]
+      "desfalques_visitante": [
+        { "jogador": "Ziyech", "impacto_nota_elenco": -0.8 }
+      ]
     },
     "fept": {
-      "titulares_mandante": [{ "nome": "Vini Jr", "linha": "ataque", "nota_sofascore": 7.8 }],
-      "titulares_visitante": [{ "nome": "Hakimi", "linha": "defesa", "nota_sofascore": 6.5 }]
+      "esquema_mandante": "4-3-3",
+      "mandante_titulares_notas": {
+        "goleiro": { "nome": "Alisson", "nota_sofascore": 7.1 },
+        "atacantes": [{ "nome": "Vini Jr", "nota_sofascore": 7.9 }]
+      }
     },
-    "feem": { "peso_rivalidade": 0.3, "jogo_decisivo": true }
+    "feem": { "contexto_peso_caos": 1.25, "jogo_decisivo": true }
   }
 }
+```
+
+**Calibração holdout (ensemble vs blend KXL 25%):**
+
+```bash
+python3 scripts/wc_kxl_calibrate.py --season 2022
 ```
 
 ### 3. Rodar pipeline de transformação

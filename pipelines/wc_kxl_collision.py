@@ -405,12 +405,14 @@ def _fept_atrito(kxl: WcKxlMatchInput | None) -> float:
     if not kxl or not kxl.fept:
         return 0.0
     atrito = 0.0
-    h_atk = _avg_line_rating(kxl.fept.titulares_mandante, "attack")
-    a_def = _avg_line_rating(kxl.fept.titulares_visitante, "defense")
+    h_players = fept_players_for_side(kxl.fept, is_home=True)
+    a_players = fept_players_for_side(kxl.fept, is_home=False)
+    h_atk = _avg_line_rating(h_players, "attack")
+    a_def = _avg_line_rating(a_players, "defense")
     if h_atk is not None and a_def is not None and h_atk - a_def >= 0.8:
         atrito += 0.15
-    a_atk = _avg_line_rating(kxl.fept.titulares_visitante, "attack")
-    h_def = _avg_line_rating(kxl.fept.titulares_mandante, "defense")
+    a_atk = _avg_line_rating(a_players, "attack")
+    h_def = _avg_line_rating(h_players, "defense")
     if a_atk is not None and h_def is not None and a_atk - h_def >= 0.8:
         atrito += 0.15
     return min(atrito, 0.30)

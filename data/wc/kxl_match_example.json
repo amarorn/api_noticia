@@ -3,16 +3,21 @@
   "away_team": "Marrocos",
   "phase": "group",
   "kxl_match": {
+    "confronto_id": "wc2026-grp-a-01",
+    "fase": "fase_grupos",
+    "partida": { "mandante": "Brasil", "visitante": "Marrocos" },
     "fecl": {
-      "chuva_mm": 0,
+      "previsao_chuva_pct": 15,
       "temperatura_c": 22,
       "umidade_pct": 65,
-      "gramado": "bom"
+      "estado_gramado": "Natural"
     },
     "feju": {
+      "nome_arbitro": "Szymon Marciniak",
       "perfil": "equilibrado",
       "faltas_media": 24,
-      "cartoes_media": 4.1
+      "cartoes_media": 4.1,
+      "indice_cartao_falta": 0.17
     },
     "fede": {
       "desfalques_mandante": [],
@@ -21,14 +26,30 @@
     "fept": {
       "esquema_mandante": "4-2-3-1",
       "esquema_visitante": "4-1-4-1",
-      "titulares_mandante": [
-        { "nome": "Vini Jr", "linha": "ataque", "nota_sofascore": 7.9 }
-      ],
-      "titulares_visitante": [
-        { "nome": "Hakimi", "linha": "defesa", "nota_sofascore": 7.0 }
-      ]
+      "mandante_titulares_notas": {
+        "goleiro": { "nome": "Alisson", "posicao": "GK", "nota_sofascore": 7.1 },
+        "defensores": [
+          { "nome": "Marquinhos", "nota_sofascore": 7.3 },
+          { "nome": "Militão", "nota_sofascore": 7.0 }
+        ],
+        "meio_campistas": [
+          { "nome": "Paquetá", "nota_sofascore": 7.5 },
+          { "nome": "Casemiro", "nota_sofascore": 7.2 }
+        ],
+        "atacantes": [
+          { "nome": "Vini Jr", "nota_sofascore": 7.9 },
+          { "nome": "Rodrygo", "nota_sofascore": 7.4 }
+        ]
+      },
+      "visitante_titulares_notas": {
+        "goleiro": { "nome": "Bono", "nota_sofascore": 7.0 },
+        "defensores": [{ "nome": "Hakimi", "nota_sofascore": 7.2 }],
+        "meio_campistas": [{ "nome": "Amrabat", "nota_sofascore": 6.9 }],
+        "atacantes": [{ "nome": "En-Nesyri", "nota_sofascore": 7.1 }]
+      }
     },
     "feem": {
+      "contexto_peso_caos": 1.0,
       "peso_rivalidade": 0.2,
       "jogo_decisivo": false,
       "contexto_caos_extra": 0.0
