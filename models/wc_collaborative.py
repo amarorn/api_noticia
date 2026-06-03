@@ -62,7 +62,12 @@ class CollaborativeWcModel:
     def logistic_weight(self) -> float:
         return 1.0 - self._dixon_coles_weight
 
-    def fit(self, fixtures_df: pd.DataFrame, validation_season: int = 2022) -> CollaborativeMetrics:
+    def fit(
+        self,
+        fixtures_df: pd.DataFrame,
+        validation_season: int = 2022,
+        logistic_model: WcLogisticModel | None = None,
+    ) -> CollaborativeMetrics:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = df[df["season"] != validation_season]
         valid_df = df[df["season"] == validation_season]
@@ -72,7 +77,10 @@ class CollaborativeWcModel:
                 f"Não foi possível separar treino/validação para a temporada {validation_season}."
             )
 
-        self.logistic.fit(train_df, holdout_season=None)
+        if logistic_model is not None:
+            self.logistic = logistic_model
+        else:
+            self.logistic.fit(train_df, holdout_season=None)
         if not self.dixon_coles._fitted:
             self.dixon_coles.fit(df, holdout_season=validation_season)
 

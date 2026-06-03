@@ -38,19 +38,43 @@ class WcPrediction:
     model_breakdown: dict
 
 
+def train_wc_predictor(
+    fixtures_df: pd.DataFrame | None = None,
+    validation_season: int = 2022,
+) -> "WcPredictor":
+    predictor = WcPredictor.__new__(WcPredictor)
+    predictor.fixtures = fixtures_df if fixtures_df is not None else load_wc_fixtures()
+    if predictor.fixtures.empty:
+        raise ValueError(
+            "Nenhum dado de Copa do Mundo. Execute: import-world-cup"
+        )
+    predictor.logistic = WcLogisticModel()
+    predictor._metrics = predictor.logistic.fit(
+        predictor.fixtures, holdout_season=validation_season
+    )
+    predictor.dixon_coles = DixonColesWcModel()
+    predictor._dc_metrics = predictor.dixon_coles.fit(
+        predictor.fixtures, holdout_season=validation_season
+    )
+    predictor.collaborative = CollaborativeWcModel(dixon_coles=predictor.dixon_coles)
+    predictor.collab_metrics = predictor.collaborative.fit(
+        predictor.fixtures,
+        validation_season=validation_season,
+        logistic_model=predictor.logistic,
+    )
+    return predictor
+
+
 class WcPredictor:
     def __init__(self, fixtures_df: pd.DataFrame | None = None) -> None:
-        self.fixtures = fixtures_df if fixtures_df is not None else load_wc_fixtures()
-        if self.fixtures.empty:
-            raise ValueError(
-                "Nenhum dado de Copa do Mundo. Execute: import-world-cup"
-            )
-        self.logistic = WcLogisticModel()
-        self._metrics = self.logistic.fit(self.fixtures, holdout_season=2022)
-        self.dixon_coles = DixonColesWcModel()
-        self._dc_metrics = self.dixon_coles.fit(self.fixtures, holdout_season=2022)
-        self.collaborative = CollaborativeWcModel(dixon_coles=self.dixon_coles)
-        self.collab_metrics = self.collaborative.fit(self.fixtures, validation_season=2022)
+        trained = train_wc_predictor(fixtures_df)
+        self.fixtures = trained.fixtures
+        self.logistic = trained.logistic
+        self._metrics = trained._metrics
+        self.dixon_coles = trained.dixon_coles
+        self._dc_metrics = trained._dc_metrics
+        self.collaborative = trained.collaborative
+        self.collab_metrics = trained.collab_metrics
 
     @property
     def training_metrics(self) -> dict:
@@ -168,6 +192,7 @@ class WcPredictor:
                     "logistic": round(lw, 3),
                 },
                 "ensemble_brier": round(self.collab_metrics.brier_score, 6),
+                "squad_features": True,
                 "kxl_baseline": _baseline_breakdown(baseline_out),
                 "kxl_collision": (
                     collision_to_breakdown(collision_out) if collision_out else None

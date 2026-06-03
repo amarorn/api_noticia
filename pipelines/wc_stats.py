@@ -5,6 +5,7 @@ import math
 import pandas as pd
 
 from models.math_utils import sigmoid
+from pipelines.wc_squad_features import SQUAD_FEATURE_NAMES, squad_feature_vector
 
 ELO_INITIAL = 1500.0
 ELO_K = 32.0
@@ -228,7 +229,7 @@ def build_match_features(
 
 
 def features_to_vector(f: WcMatchFeatures) -> list[float]:
-    return [
+    base = [
         f.elo_diff,
         f.h2h_home_wins,
         f.h2h_draws,
@@ -242,6 +243,7 @@ def features_to_vector(f: WcMatchFeatures) -> list[float]:
         f.phase_knockout,
         f.is_neutral,
     ]
+    return base + squad_feature_vector(f.home_team, f.away_team)
 
 
 FEATURE_NAMES = [
@@ -257,7 +259,7 @@ FEATURE_NAMES = [
     "form_wins_diff",
     "phase_knockout",
     "is_neutral",
-]
+] + SQUAD_FEATURE_NAMES
 
 
 def format_wc_context(f: WcMatchFeatures, h2h: WcH2H | None = None) -> str:

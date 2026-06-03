@@ -69,6 +69,8 @@ fetch-wc-odds = "pipelines.fetch_wc_odds:main"
 benchmark-wc-models = "pipelines.wc_benchmark:main"
 benchmark-bolao-models = "pipelines.bolao_benchmark:main"
 study-wc-calibration = "pipelines.wc_calibration:main"
+train-wc = "models.wc_artifact:main"
+walkforward-wc-models = "pipelines.wc_walkforward:main"
 run-pipeline = "pipelines.cli:main"
 
 [build-system]

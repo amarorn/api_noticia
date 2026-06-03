@@ -2,7 +2,6 @@ import asyncio
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime
-from functools import lru_cache
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -35,6 +34,8 @@ from schemas.national_teams import normalize_national_team
 WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 
 _wc_models_ready = False
+_wc_predictor: WcPredictor | None = None
+_wc_artifact_meta: dict = {}
 
 
 @asynccontextmanager
@@ -45,7 +46,7 @@ async def lifespan(app: FastAPI):
 
     loop = asyncio.get_event_loop()
     try:
-        await loop.run_in_executor(None, _get_wc_predictor)
+        await loop.run_in_executor(None, lambda: get_wc_predictor())
         _wc_models_ready = True
     except ValueError:
         _wc_models_ready = False
@@ -68,9 +69,19 @@ app.add_middleware(
 )
 
 
-@lru_cache(maxsize=1)
+def get_wc_predictor(*, force: bool = False) -> WcPredictor:
+    global _wc_predictor, _wc_artifact_meta
+    from models.wc_artifact import load_or_train_wc_predictor
+
+    if force or _wc_predictor is None:
+        _wc_predictor, _wc_artifact_meta = load_or_train_wc_predictor(
+            force=force or settings.wc_artifact_force_retrain
+        )
+    return _wc_predictor
+
+
 def _get_wc_predictor() -> WcPredictor:
-    return WcPredictor()
+    return get_wc_predictor()
 
 
 class MatchRequest(BaseModel):
@@ -513,6 +524,7 @@ async def health():
         "fixtures": fixtures,
         "collections": stats,
         "wc_models_ready": _wc_models_ready,
+        "wc_artifact": _wc_artifact_meta if _wc_models_ready else None,
     }
 
 
@@ -539,6 +551,8 @@ def root():
             "/worldcup/editions",
             "/worldcup/editions/{season}/matches",
             "/worldcup/validate",
+            "/worldcup/walkforward",
+            "/worldcup/retrain",
         ],
     }
 
@@ -860,6 +874,34 @@ def worldcup_validate(req: WcValidateRequest):
         cutoff_date=result["cutoff_date"],
         cutoff_note=result["cutoff_note"],
     )
+
+
+@app.get("/worldcup/walkforward")
+def worldcup_walkforward():
+    report_path = settings.lake_root / "reports" / "wc_walkforward_report.json"
+    if not report_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Relatório ausente. Execute: walkforward-wc-models",
+        )
+    return json.loads(report_path.read_text(encoding="utf-8"))
+
+
+@app.post("/worldcup/retrain")
+def worldcup_retrain():
+    global _wc_predictor, _wc_artifact_meta, _wc_models_ready
+    try:
+        from models.wc_artifact import load_or_train_wc_predictor
+
+        _wc_predictor, _wc_artifact_meta = load_or_train_wc_predictor(force=True)
+        _wc_models_ready = True
+    except ValueError as exc:
+        _wc_models_ready = False
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {
+        "status": "ok",
+        "artifact": _wc_artifact_meta,
+    }
 
 
 @app.post("/worldcup/value/live", response_model=WcValueResponse)

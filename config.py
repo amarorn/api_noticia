@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     bolao_use_lm: bool = True
     bolao_lm_max_tokens: int = 8
     wc_validation_season: int = 2022
+    wc_squads_path: Path = Path("data/wc/squads_2026.json")
+    wc_artifact_dir: Path = Path("data/lake/artifacts/wc_predictor")
+    wc_artifact_force_retrain: bool = False
     lgn_min_samples: int = 30
     lgn_bootstrap_samples: int = 2000
     ev_min_edge: float = 0.03
