@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { WcPrediction } from "@/domain/entities";
+import { springSnappy } from "@/presentation/theme/motion";
 import { ConfidenceBadge, ConfidenceBar } from "./ConfidenceBadge";
 import { ProbabilityBar } from "../charts/ProbabilityCharts";
 import {
@@ -34,9 +35,10 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.35 }}
+      initial={{ opacity: 0, y: 20, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: index * 0.05, ...springSnappy }}
+      whileHover={{ y: -6, transition: { duration: 0.2 } }}
       className="glass-card-hover group relative flex flex-col overflow-hidden"
     >
       {/* Textura de fundo */}
@@ -50,7 +52,7 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
 
       {/* Header: resultado previsto */}
       <div
-        className="relative flex items-center justify-between rounded-t-2xl px-4 py-3"
+        className="relative flex items-center justify-between rounded-t-2xl px-4 py-3 transition-colors duration-300"
         style={{ backgroundColor: `${winnerColor}10`, borderBottom: `1px solid ${winnerColor}20` }}
       >
         <div className="flex items-center gap-2">

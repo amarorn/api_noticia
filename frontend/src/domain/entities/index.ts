@@ -261,10 +261,45 @@ export interface ValueBetsReport {
   edges: ValueMatch[];
 }
 
+export interface WcArtifactHealth {
+  holdoutAccuracy?: number | null;
+  ensembleBrier?: number | null;
+  ensembleWeights?: { dixon_coles?: number; logistic?: number };
+  featureCount?: number;
+  loadedFromCache?: boolean;
+}
+
 export interface HealthStatus {
   status: string;
   articlesSilver: number;
   fixtures: number;
+  wcArtifact?: WcArtifactHealth | null;
+}
+
+export interface WcGroupStandingRow {
+  position: number;
+  team: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  gf: number;
+  ga: number;
+  gd: number;
+  points: number;
+}
+
+export interface WcGroupStandingsBlock {
+  group: string;
+  standings: WcGroupStandingRow[];
+}
+
+export interface WcGroupStandings {
+  season: number;
+  competition: string;
+  simulated: boolean;
+  note: string;
+  groups: WcGroupStandingsBlock[];
 }
 
 export type NewsSentimentLabel = "positive" | "neutral" | "negative";

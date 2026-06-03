@@ -6,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 import structlog
 
-from config import settings
 from ingest.fixtures.store import load_fixtures
 from models.bolao_predictor import get_predictor
 from pipelines.gold import build_gold_for_match, save_gold

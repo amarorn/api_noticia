@@ -11,6 +11,13 @@ from schemas.national_teams import normalize_national_team
 
 BASELINES_PATH = Path(__file__).resolve().parent.parent / "data" / "wc" / "team_baselines.json"
 
+
+def baselines_fingerprint() -> str:
+    if not BASELINES_PATH.exists():
+        return "missing"
+    st = BASELINES_PATH.stat()
+    return f"{BASELINES_PATH.name}:{st.st_mtime_ns}:{st.st_size}"
+
 KXL_TEAM_ALIASES: dict[str, str] = {
     "Países Baixos": "Holanda",
     "Chéquia": "República Tcheca",

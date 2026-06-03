@@ -149,6 +149,7 @@ def build_news_feed(
                 "published_at": published.isoformat() if published else None,
                 "scraped_at": scraped.isoformat() if scraped else None,
                 "teams_mentioned": _teams_list(row.get("teams_mentioned")),
+                "national_teams_mentioned": _teams_list(row.get("national_teams_mentioned")),
                 "categories": _teams_list(row.get("categories")),
                 "sentiment_score": sentiment,
                 "sentiment_label": sentiment_label(sentiment),

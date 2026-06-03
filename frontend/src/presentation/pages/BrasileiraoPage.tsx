@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getBrasileiraoRoundUseCase } from "@/application/container";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/presentation/components/layout/PageTransition";
 import { BrasileiraoCard } from "@/presentation/components/predictions/MatchCard";
-import { PageHeader } from "@/presentation/pages/DashboardPage";
+import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
 
@@ -15,7 +15,7 @@ export function BrasileiraoPage() {
   if (query.isLoading) {
     return (
       <PageTransition>
-        <PageHeader title="Brasileirão" subtitle="Carregando palpites..." />
+        <HeroPageHeader title="Brasileirão" subtitle="Carregando palpites..." />
         <DashboardSkeleton />
       </PageTransition>
     );
@@ -40,7 +40,7 @@ export function BrasileiraoPage() {
 
   return (
     <PageTransition className="space-y-8">
-      <PageHeader
+      <HeroPageHeader
         title={`${round.competition} — Rodada ${round.roundNumber}`}
         subtitle="Previsões heurísticas baseadas em notícias e contexto dos times"
       />

@@ -6,6 +6,7 @@ import pandas as pd
 
 from models.dixon_coles_wc import DixonColesWcModel
 from models.logistic_wc import WcLogisticModel
+from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_stats import build_match_features
 
 
@@ -128,9 +129,11 @@ class CollaborativeWcModel:
         if not base_rows:
             raise ValueError("Não foi possível gerar previsões para calibração.")
 
+        hp = get_wc_hyperparams()
+        steps = max(hp.ensemble_weight_steps, 1)
         best: dict | None = None
-        for step in range(0, 21):
-            dw = step / 20.0
+        for step in range(0, steps + 1):
+            dw = step / steps
             lw = 1.0 - dw
 
             scored_rows: list[dict] = []

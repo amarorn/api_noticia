@@ -1,4 +1,3 @@
-import pytest
 
 from ingest.fixtures.parser import parse_football_txt, score_to_label
 

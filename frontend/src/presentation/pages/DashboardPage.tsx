@@ -5,26 +5,50 @@ import {
   getWcRoundUseCase,
   getWcScheduleUseCase,
 } from "@/application/container";
+import type { WcPrediction } from "@/domain/entities";
 import { ApiError } from "@/infrastructure/api/client";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/presentation/components/layout/PageTransition";
+import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
+import { QuickActions } from "@/presentation/components/layout/QuickActions";
 import { MatchCard } from "@/presentation/components/predictions/MatchCard";
 import { ValueBetsSection } from "@/presentation/components/predictions/ValueBetCard";
+import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
+import { EmptyState, ErrorState } from "@/presentation/components/ui/ErrorState";
 import {
   buildMatchGroupLookup,
+  buildMatchRoundLookup,
   groupForMatch,
+  roundForMatchPair,
   sortedGroupIds,
 } from "@/presentation/utils/officialSchedule";
 
 export function DashboardPage() {
   const [selectedGroup, setSelectedGroup] = useState<string | "all">("all");
+  const [selectedRound, setSelectedRound] = useState<number | "all">("all");
 
-  const roundQuery = useQuery({
-    queryKey: ["wc-round"],
-    queryFn: () => getWcRoundUseCase.execute(),
+  const round1Query = useQuery({
+    queryKey: ["wc-round", 1],
+    queryFn: () => getWcRoundUseCase.execute(1),
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
+  });
+
+  const round2Query = useQuery({
+    queryKey: ["wc-round", 2],
+    queryFn: () => getWcRoundUseCase.execute(2),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    enabled: round1Query.isSuccess,
+  });
+
+  const round3Query = useQuery({
+    queryKey: ["wc-round", 3],
+    queryFn: () => getWcRoundUseCase.execute(3),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    enabled: round1Query.isSuccess,
   });
 
   const scheduleQuery = useQuery({
@@ -33,8 +57,25 @@ export function DashboardPage() {
     staleTime: 10 * 60_000,
   });
 
+  const allPredictions = useMemo(() => {
+    const merged: WcPrediction[] = [];
+    for (const query of [round1Query, round2Query, round3Query]) {
+      if (query.data?.predictions) {
+        merged.push(...query.data.predictions);
+      }
+    }
+    return merged;
+  }, [round1Query.data, round2Query.data, round3Query.data]);
+
+  const roundMeta = round1Query.data ?? round2Query.data ?? round3Query.data;
+
   const groupLookup = useMemo(
     () => (scheduleQuery.data ? buildMatchGroupLookup(scheduleQuery.data) : new Map()),
+    [scheduleQuery.data],
+  );
+
+  const roundLookup = useMemo(
+    () => (scheduleQuery.data ? buildMatchRoundLookup(scheduleQuery.data) : new Map()),
     [scheduleQuery.data],
   );
 
@@ -43,13 +84,26 @@ export function DashboardPage() {
     [scheduleQuery.data],
   );
 
+  const matchdays = scheduleQuery.data?.matchdays ?? [];
+
   const filteredPredictions = useMemo(() => {
-    const predictions = roundQuery.data?.predictions ?? [];
-    if (selectedGroup === "all") return predictions;
-    return predictions.filter(
-      (pred) => groupForMatch(pred.homeTeam, pred.awayTeam, groupLookup) === selectedGroup,
-    );
-  }, [roundQuery.data, selectedGroup, groupLookup]);
+    return allPredictions.filter((pred) => {
+      const group = groupForMatch(pred.homeTeam, pred.awayTeam, groupLookup);
+      const round = roundForMatchPair(pred.homeTeam, pred.awayTeam, roundLookup);
+      if (selectedGroup !== "all" && group !== selectedGroup) return false;
+      if (selectedRound !== "all" && round !== selectedRound) return false;
+      return true;
+    });
+  }, [allPredictions, selectedGroup, selectedRound, groupLookup, roundLookup]);
+
+  const roundCounts = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const pred of allPredictions) {
+      const r = roundForMatchPair(pred.homeTeam, pred.awayTeam, roundLookup);
+      if (r != null) counts.set(r, (counts.get(r) ?? 0) + 1);
+    }
+    return counts;
+  }, [allPredictions, roundLookup]);
 
   const valueQuery = useQuery({
     queryKey: ["wc-value"],
@@ -64,74 +118,127 @@ export function DashboardPage() {
         ? "Erro ao carregar value bets"
         : null;
 
-  if (roundQuery.isLoading) {
+  const hasFilters = selectedGroup !== "all" || selectedRound !== "all";
+  const loadingMoreRounds =
+    round1Query.isSuccess &&
+    (round2Query.isFetching || round3Query.isFetching) &&
+    allPredictions.length < 72;
+
+  if (round1Query.isLoading) {
     return (
       <PageTransition>
-        <PageHeader
+        <HeroPageHeader
           title="Copa do Mundo 2026"
-          subtitle="Carregando palpites… Se a API acabou de subir, o treino dos modelos pode levar até 1 minuto."
+          subtitle="Palpites da fase de grupos · 72 jogos oficiais"
+        />
+        <SlowLoadingPanel
+          active
+          title="Gerando palpites da rodada 1…"
+          hint="Carregamos a rodada 1 primeiro (~24 jogos). Rodadas 2 e 3 entram em seguida."
         />
         <DashboardSkeleton />
       </PageTransition>
     );
   }
 
-  if (roundQuery.isError) {
+  if (round1Query.isError) {
     return (
       <PageTransition>
         <ErrorState
+          title="Não foi possível carregar os palpites"
           message={
-            roundQuery.error instanceof Error
-              ? roundQuery.error.message
-              : "Falha ao carregar rodada"
+            round1Query.error instanceof Error
+              ? round1Query.error.message
+              : "Verifique se a API está rodando (./scripts/dev-api-stable.sh)"
           }
-          onRetry={() => roundQuery.refetch()}
+          onRetry={() => round1Query.refetch()}
         />
       </PageTransition>
     );
   }
 
-  const round = roundQuery.data!;
-  const gamesLabel =
-    selectedGroup === "all"
-      ? `${filteredPredictions.length} jogos`
-      : `Grupo ${selectedGroup} · ${filteredPredictions.length} jogos`;
+  const gamesLabel = buildGamesLabel(filteredPredictions.length, selectedGroup, selectedRound);
 
   return (
-    <PageTransition className="space-y-10">
-      <PageHeader
-        title={`${round.competition}`}
-        subtitle={`Rodada ${round.round} · Temporada ${round.season} · Fase ${round.phase}`}
+    <PageTransition className="space-y-8">
+      <HeroPageHeader
+        title={roundMeta?.competition ?? "Copa do Mundo 2026"}
+        subtitle={`Fase de grupos · Temporada ${roundMeta?.season ?? 2026} · ${allPredictions.length}/72 jogos carregados`}
         badges={[{ label: gamesLabel, color: "blue" }]}
       />
 
+      {loadingMoreRounds && (
+        <SlowLoadingPanel
+          active
+          title="Carregando rodadas 2 e 3…"
+          hint="Os palpites já visíveis da rodada 1 continuam disponíveis enquanto o restante é calculado."
+        />
+      )}
+
+      <QuickActions />
+
       {groupIds.length > 0 && (
-        <section className="space-y-3">
-          <p className="section-label">Filtrar por grupo</p>
-          <div className="flex flex-wrap gap-2">
-            <GroupFilterChip
-              label="Todos"
-              active={selectedGroup === "all"}
-              onClick={() => setSelectedGroup("all")}
+        <FilterBar label="Filtrar por grupo">
+          <FilterChip
+            label="Todos"
+            active={selectedGroup === "all"}
+            onClick={() => setSelectedGroup("all")}
+          />
+          {groupIds.map((gid) => (
+            <FilterChip
+              key={gid}
+              label={`Gr. ${gid}`}
+              active={selectedGroup === gid}
+              onClick={() => setSelectedGroup(gid)}
             />
-            {groupIds.map((gid) => (
-              <GroupFilterChip
-                key={gid}
-                label={gid}
-                active={selectedGroup === gid}
-                onClick={() => setSelectedGroup(gid)}
-              />
-            ))}
-          </div>
-        </section>
+          ))}
+        </FilterBar>
+      )}
+
+      {matchdays.length > 0 && (
+        <FilterBar label="Filtrar por rodada">
+          <FilterChip
+            label="Todas"
+            active={selectedRound === "all"}
+            onClick={() => setSelectedRound("all")}
+          />
+          {matchdays.map((rd) => (
+            <FilterChip
+              key={rd}
+              label={`Rodada ${rd}`}
+              active={selectedRound === rd}
+              onClick={() => setSelectedRound(rd)}
+              count={roundCounts.get(rd)}
+            />
+          ))}
+        </FilterBar>
       )}
 
       <section>
-        <p className="section-label">Palpites da rodada</p>
+        <p className="section-label">Palpites</p>
         {filteredPredictions.length === 0 ? (
-          <div className="glass-card flex flex-col items-center justify-center gap-2 py-16 text-center">
-            <p className="text-sm text-slate-400">Nenhum jogo neste grupo.</p>
-          </div>
+          <EmptyState
+            title="Nenhum jogo neste filtro"
+            description={
+              loadingMoreRounds
+                ? "Aguarde o carregamento das demais rodadas ou limpe os filtros."
+                : "Tente outro grupo ou rodada, ou volte para ver todos os 72 jogos."
+            }
+            action={
+              hasFilters ? (
+                <button
+                  type="button"
+                  className="btn-ghost mt-2"
+                  onClick={() => {
+                    setSelectedGroup("all");
+                    setSelectedRound("all");
+                  }}
+                >
+                  Limpar filtros
+                </button>
+              ) : undefined
+            }
+          />
         ) : (
           <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredPredictions.map((pred, i) => (
@@ -150,7 +257,7 @@ export function DashboardPage() {
       <ValueBetsSection
         edges={valueQuery.data?.edges ?? []}
         matchedGames={valueQuery.data?.matchedGames ?? 0}
-        totalGames={valueQuery.data?.totalScheduleGames ?? round.predictions.length}
+        totalGames={valueQuery.data?.totalScheduleGames ?? 72}
         loading={valueQuery.isLoading}
         error={valueError}
       />
@@ -158,79 +265,13 @@ export function DashboardPage() {
   );
 }
 
-interface PageHeaderBadge {
-  label: string;
-  color?: "green" | "blue" | "purple" | "orange";
-}
-
-interface PageHeaderProps {
-  title: string;
-  subtitle: string;
-  badges?: PageHeaderBadge[];
-}
-
-const badgeClasses: Record<NonNullable<PageHeaderBadge["color"]>, string> = {
-  green: "border-neon-green/25 bg-neon-green/8 text-neon-green",
-  blue: "border-neon-blue/25 bg-neon-blue/8 text-neon-blue",
-  purple: "border-neon-purple/25 bg-neon-purple/8 text-neon-purple",
-  orange: "border-neon-orange/25 bg-neon-orange/8 text-neon-orange",
-};
-
-function PageHeader({ title, subtitle, badges }: PageHeaderProps) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06]" style={{ minHeight: 160 }}>
-      {/* Imagem hero gerada pelo modelo */}
-      <img
-        src="/images/hero-pitch.png"
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover object-center opacity-30"
-        draggable={false}
-      />
-      {/* Overlay gradiente para manter legibilidade do texto */}
-      <div className="absolute inset-0 bg-gradient-to-r from-surface/95 via-surface/80 to-surface/40" />
-      <div className="relative p-6 sm:p-8">
-        <h1 className="text-2xl font-extrabold gradient-text sm:text-3xl">{title}</h1>
-        <p className="mt-1.5 text-sm text-slate-400">{subtitle}</p>
-        {badges && badges.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {badges.map((b) => (
-              <span
-                key={b.label}
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${badgeClasses[b.color ?? "blue"]}`}
-              >
-                {b.label}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export { PageHeader };
-
-function GroupFilterChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-xs font-bold transition-all ${
-        active
-          ? "bg-neon-green/15 text-neon-green ring-1 ring-neon-green/30"
-          : "bg-white/5 text-slate-400 hover:bg-white/8 hover:text-slate-300"
-      }`}
-    >
-      {label}
-    </button>
-  );
+function buildGamesLabel(
+  count: number,
+  group: string | "all",
+  round: number | "all",
+): string {
+  const parts: string[] = [`${count} jogos`];
+  if (group !== "all") parts.push(`Gr. ${group}`);
+  if (round !== "all") parts.push(`R${round}`);
+  return parts.join(" · ");
 }

@@ -10,6 +10,8 @@ build/
 .ruff_cache/
 .mypy_cache/
 data/lake/
+mlflow.db
+mlruns/
 *.parquet
 .DS_Store
 .idea/

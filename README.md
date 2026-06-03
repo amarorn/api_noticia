@@ -270,11 +270,14 @@ Para comparar modelos e reduzir erro com validação temporal:
 ```bash
 benchmark-wc-models --eval-season 2022
 benchmark-wc-models --eval-season 2022 --mlflow
+mlflow-ui
 ```
 
 Saídas:
 - Relatório JSON em `data/lake/reports/wc_benchmark_report.json`
-- Opcional: métricas no MLflow (`accuracy`, `brier`, `log_loss` por modelo)
+- Opcional: métricas no MLflow (`accuracy`, `brier`, `log_loss` por modelo), experimento `api-noticia/wc-benchmark` em `mlflow.db`
+
+Use sempre `mlflow-ui` (não `mlflow ui` puro) para a UI ler o mesmo backend SQLite do benchmark. URL padrão: http://127.0.0.1:5001 (porta 5001 evita conflito com AirPlay no macOS).
 
 ## Estrutura do projeto
 

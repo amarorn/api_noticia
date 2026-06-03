@@ -16,6 +16,8 @@ import type {
   WcScheduleMatch,
   WcSquadDetail,
   WcSquadsIndex,
+  WcGroupStandings,
+  WcArtifactHealth,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -472,11 +474,63 @@ export function mapHealth(raw: {
   status: string;
   articles_silver: number;
   fixtures: number;
+  wc_artifact?: {
+    training_metrics?: { holdout_accuracy?: number };
+    collab_metrics?: { brier_score?: number };
+    ensemble_weights?: { dixon_coles?: number; logistic?: number };
+    feature_count?: number;
+    loaded_from_cache?: boolean;
+  } | null;
 }): HealthStatus {
+  const art = raw.wc_artifact;
+  let wcArtifact: WcArtifactHealth | null = null;
+  if (art) {
+    wcArtifact = {
+      holdoutAccuracy: art.training_metrics?.holdout_accuracy ?? null,
+      ensembleBrier: art.collab_metrics?.brier_score ?? null,
+      ensembleWeights: art.ensemble_weights,
+      featureCount: art.feature_count,
+      loadedFromCache: art.loaded_from_cache,
+    };
+  }
   return {
     status: raw.status,
     articlesSilver: raw.articles_silver,
     fixtures: raw.fixtures,
+    wcArtifact,
+  };
+}
+
+export function mapWcGroupStandings(raw: {
+  season: number;
+  competition: string;
+  simulated: boolean;
+  note: string;
+  groups: {
+    group: string;
+    standings: {
+      position: number;
+      team: string;
+      played: number;
+      won: number;
+      drawn: number;
+      lost: number;
+      gf: number;
+      ga: number;
+      gd: number;
+      points: number;
+    }[];
+  }[];
+}): WcGroupStandings {
+  return {
+    season: raw.season,
+    competition: raw.competition,
+    simulated: raw.simulated,
+    note: raw.note,
+    groups: raw.groups.map((g) => ({
+      group: g.group,
+      standings: g.standings.map((r) => ({ ...r })),
+    })),
   };
 }
 

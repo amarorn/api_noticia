@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
 import pandas as pd
-import pytest
 
 from pipelines.stats import compute_h2h, compute_standings, format_stats_context
 

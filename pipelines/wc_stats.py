@@ -5,11 +5,15 @@ import math
 import pandas as pd
 
 from models.math_utils import sigmoid
+from pipelines.wc_fifa_rankings import fifa_points, load_fifa_rankings
+from pipelines.wc_hyperparams import get_wc_hyperparams
+from pipelines.wc_market_features import MARKET_FEATURE_NAMES, market_feature_vector
+from pipelines.wc_news_features import NEWS_FEATURE_NAMES, wc_news_feature_vector
 from pipelines.wc_squad_features import SQUAD_FEATURE_NAMES, squad_feature_vector
 
-ELO_INITIAL = 1500.0
-ELO_K = 32.0
-ELO_HOME_ADV = 65.0
+EXTRA_FEATURE_NAMES = [
+    "fifa_points_diff",
+] + MARKET_FEATURE_NAMES
 
 
 @dataclass
@@ -67,8 +71,8 @@ def _expected_score(rating_a: float, rating_b: float) -> float:
     return sigmoid((rating_a - rating_b) / 400.0 * math.log(10))
 
 
-def _update_elo(rating: float, expected: float, actual: float) -> float:
-    return rating + ELO_K * (actual - expected)
+def _update_elo(rating: float, expected: float, actual: float, k: float = 32.0) -> float:
+    return rating + k * (actual - expected)
 
 
 def compute_elo_ratings(
@@ -80,10 +84,11 @@ def compute_elo_ratings(
         df = _played_before(df, before_date)
     df = df.sort_values("match_date")
 
+    hp = get_wc_hyperparams()
     ratings: dict[str, float] = {}
 
     def _get(team: str) -> float:
-        return ratings.setdefault(team, ELO_INITIAL)
+        return ratings.setdefault(team, hp.elo_initial)
 
     for _, row in df.iterrows():
         home = row["home_team"]
@@ -91,7 +96,11 @@ def compute_elo_ratings(
         rh = _get(home)
         ra = _get(away)
 
-        rh_adj = rh + ELO_HOME_ADV
+        if bool(row.get("is_neutral", True)):
+            home_adv = hp.elo_home_adv * 0.35
+        else:
+            home_adv = hp.elo_home_adv
+        rh_adj = rh + home_adv
         exp_home = _expected_score(rh_adj, ra)
         exp_away = 1.0 - exp_home
 
@@ -103,8 +112,8 @@ def compute_elo_ratings(
         else:
             act_home, act_away = 0.5, 0.5
 
-        ratings[home] = _update_elo(rh, exp_home, act_home)
-        ratings[away] = _update_elo(ra, exp_away, act_away)
+        ratings[home] = _update_elo(rh, exp_home, act_home, k=hp.elo_k)
+        ratings[away] = _update_elo(ra, exp_away, act_away, k=hp.elo_k)
 
     return ratings
 
@@ -202,8 +211,9 @@ def build_match_features(
     elo = compute_elo_ratings(played)
     h2h = compute_wc_h2h(played, home_team, away_team)
 
-    rh = elo.get(home_team, ELO_INITIAL)
-    ra = elo.get(away_team, ELO_INITIAL)
+    hp = get_wc_hyperparams()
+    rh = elo.get(home_team, hp.elo_initial)
+    ra = elo.get(away_team, hp.elo_initial)
     gf_h, ga_h, form_h = _team_rates(played, home_team)
     gf_a, ga_a, form_a = _team_rates(played, away_team)
 
@@ -228,7 +238,10 @@ def build_match_features(
     )
 
 
-def features_to_vector(f: WcMatchFeatures) -> list[float]:
+def features_to_vector(
+    f: WcMatchFeatures,
+    before_date: datetime | None = None,
+) -> list[float]:
     base = [
         f.elo_diff,
         f.h2h_home_wins,
@@ -243,7 +256,15 @@ def features_to_vector(f: WcMatchFeatures) -> list[float]:
         f.phase_knockout,
         f.is_neutral,
     ]
-    return base + squad_feature_vector(f.home_team, f.away_team)
+    rankings = load_fifa_rankings()
+    fifa_diff = fifa_points(f.home_team, rankings) - fifa_points(f.away_team, rankings)
+    return (
+        base
+        + [fifa_diff]
+        + market_feature_vector(f.home_team, f.away_team)
+        + squad_feature_vector(f.home_team, f.away_team)
+        + wc_news_feature_vector(f.home_team, f.away_team, before_date=before_date)
+    )
 
 
 FEATURE_NAMES = [
@@ -259,7 +280,7 @@ FEATURE_NAMES = [
     "form_wins_diff",
     "phase_knockout",
     "is_neutral",
-] + SQUAD_FEATURE_NAMES
+] + EXTRA_FEATURE_NAMES + SQUAD_FEATURE_NAMES + NEWS_FEATURE_NAMES
 
 
 def format_wc_context(f: WcMatchFeatures, h2h: WcH2H | None = None) -> str:

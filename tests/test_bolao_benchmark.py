@@ -1,5 +1,4 @@
 import pandas as pd
-import pytest
 
 from models.baseline import predict_baseline_probs
 from pipelines.bolao_benchmark import run_benchmark

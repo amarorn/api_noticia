@@ -13,11 +13,13 @@ import {
   mapWcSchedule,
   mapWcSquadDetail,
   mapWcSquadsIndex,
+  mapWcGroupStandings,
 } from "../mappers";
 
 export class WcApiRepository implements IWcRepository {
-  async getRound() {
-    const raw = await apiFetch<Parameters<typeof mapWcRound>[0]>("/worldcup/round");
+  async getRound(matchday?: number) {
+    const qs = matchday != null ? `?round=${matchday}` : "";
+    const raw = await apiFetch<Parameters<typeof mapWcRound>[0]>(`/worldcup/round${qs}`);
     return mapWcRound(raw);
   }
 
@@ -62,6 +64,13 @@ export class WcApiRepository implements IWcRepository {
     });
     return mapValueBets(raw);
   }
+
+  async getGroupStandings() {
+    const raw = await apiFetch<Parameters<typeof mapWcGroupStandings>[0]>(
+      "/worldcup/group-standings",
+    );
+    return mapWcGroupStandings(raw);
+  }
 }
 
 export class BrasileiraoApiRepository implements IBrasileiraoRepository {
@@ -73,11 +82,7 @@ export class BrasileiraoApiRepository implements IBrasileiraoRepository {
 
 export class HealthApiRepository implements IHealthRepository {
   async getHealth() {
-    const raw = await apiFetch<{
-      status: string;
-      articles_silver: number;
-      fixtures: number;
-    }>("/health");
+    const raw = await apiFetch<Parameters<typeof mapHealth>[0]>("/health");
     return mapHealth(raw);
   }
 }

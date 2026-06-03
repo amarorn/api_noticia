@@ -15,12 +15,17 @@ import structlog
 
 from config import settings
 from models.wc_predictor import WcPredictor, train_wc_predictor
+from pipelines.wc_fifa_rankings import fifa_rankings_fingerprint
+from pipelines.wc_hyperparams import HYPERPARAMS_PATH, get_wc_hyperparams, load_hyperparams_file
+from pipelines.wc_baselines import baselines_fingerprint
+from pipelines.wc_market_features import DEFAULT_ODDS
 from pipelines.wc_squad_features import squads_fingerprint
+from pipelines.silver import silver_fingerprint
 from pipelines.wc_stats import FEATURE_NAMES
 
 logger = structlog.get_logger()
 
-ARTIFACT_VERSION = 2
+ARTIFACT_VERSION = 5
 
 
 def fixtures_fingerprint() -> str:
@@ -30,6 +35,20 @@ def fixtures_fingerprint() -> str:
     parts = [f"{p.name}:{p.stat().st_mtime_ns}:{p.stat().st_size}" for p in paths]
     digest = hashlib.sha256("|".join(parts).encode()).hexdigest()
     return digest[:16]
+
+
+def _odds_fingerprint() -> str:
+    if not DEFAULT_ODDS.exists():
+        return "missing"
+    st = DEFAULT_ODDS.stat()
+    return f"{DEFAULT_ODDS.name}:{st.st_mtime_ns}:{st.st_size}"
+
+
+def hyperparams_fingerprint() -> str:
+    hp = load_hyperparams_file() or get_wc_hyperparams()
+    p = HYPERPARAMS_PATH
+    mtime = p.stat().st_mtime_ns if p.exists() else 0
+    return f"{hp.elo_home_adv}:{hp.kxl_blend_weight}:{mtime}"
 
 
 def _manifest_path() -> Path:
@@ -57,6 +76,17 @@ def artifact_is_valid(manifest: dict | None = None) -> bool:
         return False
     if manifest.get("squads_fingerprint") != squads_fingerprint():
         return False
+    if manifest.get("hyperparams_fingerprint") != hyperparams_fingerprint():
+        return False
+    if manifest.get("fifa_fingerprint") != fifa_rankings_fingerprint():
+        return False
+    odds_fp = _odds_fingerprint()
+    if manifest.get("odds_fingerprint") != odds_fp:
+        return False
+    if manifest.get("baselines_fingerprint") != baselines_fingerprint():
+        return False
+    if manifest.get("silver_fingerprint") != silver_fingerprint():
+        return False
     if manifest.get("feature_names") != FEATURE_NAMES:
         return False
     return True
@@ -78,6 +108,14 @@ def save_artifact(predictor: WcPredictor) -> dict:
         "created_at": datetime.now(UTC).isoformat(),
         "fixtures_fingerprint": fixtures_fingerprint(),
         "squads_fingerprint": squads_fingerprint(),
+        "hyperparams_fingerprint": hyperparams_fingerprint(),
+        "fifa_fingerprint": fifa_rankings_fingerprint(),
+        "odds_fingerprint": _odds_fingerprint(),
+        "baselines_fingerprint": baselines_fingerprint(),
+        "silver_fingerprint": silver_fingerprint(),
+        "hyperparams": get_wc_hyperparams().__dict__,
+        "logistic_calibration": "platt_sigmoid_cv3",
+        "feature_count": len(FEATURE_NAMES),
         "feature_names": FEATURE_NAMES,
         "fixture_rows": int(len(predictor.fixtures)),
         "training_metrics": predictor.training_metrics,

@@ -10,6 +10,7 @@ from models.poisson_wc import (
     score_outcome_probs,
     score_probability,
 )
+from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_stats import WcMatchFeatures, build_match_features
 
 
@@ -73,11 +74,13 @@ class DixonColesWcModel:
             )
             prepared.append((int(row["home_score"]), int(row["away_score"]), lam_home, lam_away))
 
+        hp = get_wc_hyperparams()
         best_rho = 0.0
         best_ll = float("-inf")
 
-        for step in range(-20, 21):
-            rho = step / 100.0
+        steps = int(round((hp.rho_max - hp.rho_min) / hp.rho_step))
+        for i in range(steps + 1):
+            rho = hp.rho_min + i * hp.rho_step
             log_likelihood = 0.0
             for hs, aws, lam_home, lam_away in prepared:
                 p = _normalized_score_prob(hs, aws, lam_home, lam_away, rho)

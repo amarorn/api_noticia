@@ -13,10 +13,10 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ingest.fixtures.world_cup import load_wc_fixtures
-from models.wc_predictor import WcPredictor
-from pipelines.wc_baselines import blend_with_baseline, load_team_baselines, resolve_baseline_team
-from pipelines.wc_stats import build_match_features
+from ingest.fixtures.world_cup import load_wc_fixtures  # noqa: E402
+from models.wc_predictor import WcPredictor  # noqa: E402
+from pipelines.wc_baselines import blend_with_baseline, load_team_baselines, resolve_baseline_team  # noqa: E402
+from pipelines.wc_stats import build_match_features  # noqa: E402
 
 
 def _brier(probs: dict[str, float], label: str) -> float:

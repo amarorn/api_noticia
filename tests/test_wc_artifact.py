@@ -7,8 +7,6 @@ import pytest
 from models.wc_artifact import (
     ARTIFACT_VERSION,
     artifact_is_valid,
-    fixtures_fingerprint,
-    load_or_train_wc_predictor,
     read_manifest,
     save_artifact,
 )

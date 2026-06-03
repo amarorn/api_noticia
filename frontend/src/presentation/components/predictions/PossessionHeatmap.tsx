@@ -11,7 +11,7 @@
  * Grade: 3 corredores (esq / meio / dir) × 4 faixas de profundidade = 12 zonas.
  */
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type {
   GoalModelFactors,
@@ -123,18 +123,35 @@ function computeOverallPossession(
   };
 }
 
-// ─── Cores ─────────────────────────────────────────────────────────────────────
+const DEPTH_SHORT = ["Caixa", "Ofensivo", "Meio", "Defesa"] as const;
 
-function zoneColor(intensity: number, mode: HeatMode, homeVal: number, awayVal: number): string {
-  const alpha = 0.08 + intensity * 0.62;
+// ─── Cores e preenchimento ─────────────────────────────────────────────────────
 
-  if (mode === "home") return `rgba(0, 255, 136, ${alpha})`;
-  if (mode === "away") return `rgba(168, 85, 247, ${alpha})`;
+function zoneIntensity(
+  mode: HeatMode,
+  homeVal: number,
+  awayVal: number,
+  rawVal: number,
+  maxVal: number,
+): number {
+  if (mode === "duelo") return Math.abs(homeVal - awayVal) / maxVal;
+  return rawVal / maxVal;
+}
 
+function zoneFillUrl(
+  intensity: number,
+  mode: HeatMode,
+  homeVal: number,
+  awayVal: number,
+  uid: string,
+): string {
+  if (intensity < 0.04) return "transparent";
+  if (mode === "home") return `url(#${uid}-team-home)`;
+  if (mode === "away") return `url(#${uid}-team-away)`;
   const net = homeVal - awayVal;
-  if (net > 0.04) return `rgba(0, 255, 136, ${0.08 + Math.abs(net) * 0.65})`;
-  if (net < -0.04) return `rgba(168, 85, 247, ${0.08 + Math.abs(net) * 0.65})`;
-  return `rgba(0, 212, 255, ${0.10 + intensity * 0.25})`;
+  if (net > 0.04) return `url(#${uid}-home)`;
+  if (net < -0.04) return `url(#${uid}-away)`;
+  return `url(#${uid}-neutral)`;
 }
 
 // ─── Componente principal ──────────────────────────────────────────────────────
@@ -145,6 +162,7 @@ export interface PossessionHeatmapProps {
 }
 
 export function PossessionHeatmap({ prediction, className = "" }: PossessionHeatmapProps) {
+  const uid = useId().replace(/:/g, "");
   const [mode, setMode] = useState<HeatMode>("duelo");
   const [activeZone, setActiveZone] = useState<ZoneInfo | null>(null);
 
@@ -175,10 +193,19 @@ export function PossessionHeatmap({ prediction, className = "" }: PossessionHeat
   const allVals = homeZones.flat().concat(awayZones.flat());
   const maxVal = Math.max(...allVals, 0.01);
 
-  const PITCH_W = 100;
-  const PITCH_H = 160;
-  const ZONE_W = PITCH_W / 3;
-  const ZONE_H = PITCH_H / 4;
+  const PITCH_W = 108;
+  const PITCH_H = 168;
+  const PAD = 3;
+  const LABEL_W = 8;
+  const INNER_W = PITCH_W - PAD * 2 - LABEL_W;
+  const INNER_H = PITCH_H - PAD * 2;
+  const ZONE_W = INNER_W / 3;
+  const ZONE_H = INNER_H / 4;
+  const ORIGIN_X = PAD;
+
+  const attackTeam = mode === "away" ? prediction.awayTeam : prediction.homeTeam;
+  const defendTeam = mode === "away" ? prediction.homeTeam : prediction.awayTeam;
+  const attackColor = mode === "away" ? outcomeColors["2"] : outcomeColors["1"];
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -205,119 +232,416 @@ export function PossessionHeatmap({ prediction, className = "" }: PossessionHeat
         />
       </div>
 
-      <div className="relative mx-auto max-w-xs sm:max-w-sm">
-        <svg
-          viewBox={`0 0 ${PITCH_W} ${PITCH_H}`}
-          className="w-full select-none rounded-lg"
-          role="img"
-          aria-label="Mapa de posse de bola por zona do gramado"
-        >
-          <defs>
-            <linearGradient id="poss-grass" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#173622" />
-              <stop offset="50%" stopColor="#1c4228" />
-              <stop offset="100%" stopColor="#173622" />
-            </linearGradient>
-          </defs>
+      <div className="relative mx-auto max-w-sm">
+        <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-surface/40 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <svg
+            viewBox={`0 0 ${PITCH_W} ${PITCH_H}`}
+            className="w-full select-none"
+            role="img"
+            aria-label="Mapa de posse de bola por zona do gramado"
+          >
+            <defs>
+              <linearGradient id={`${uid}-grass`} x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#0f2a1a" />
+                <stop offset="35%" stopColor="#1a4a2e" />
+                <stop offset="65%" stopColor="#1e5534" />
+                <stop offset="100%" stopColor="#0f2a1a" />
+              </linearGradient>
 
-          <rect x="0" y="0" width={PITCH_W} height={PITCH_H} fill="url(#poss-grass)" />
+              <pattern
+                id={`${uid}-stripes`}
+                width="8"
+                height={INNER_H}
+                patternUnits="userSpaceOnUse"
+                x={ORIGIN_X}
+                y={PAD}
+              >
+                <rect width="4" height={INNER_H} fill="rgba(255,255,255,0.025)" />
+                <rect x="4" width="4" height={INNER_H} fill="rgba(0,0,0,0.04)" />
+              </pattern>
 
-          {[0, 1, 2, 3].map((depth) =>
-            [0, 1, 2].map((col) => {
-              const homeVal = homeZones[depth]?.[col] ?? 0;
-              const awayVal = awayZones[depth]?.[col] ?? 0;
-              const rawVal = mode === "away" ? awayVal : homeVal;
+              <radialGradient id={`${uid}-home`} cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor="rgba(0,255,136,0.6)" />
+                <stop offset="60%" stopColor="rgba(0,255,136,0.2)" />
+                <stop offset="100%" stopColor="rgba(0,255,136,0)" />
+              </radialGradient>
+              <radialGradient id={`${uid}-away`} cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor="rgba(168,85,247,0.6)" />
+                <stop offset="60%" stopColor="rgba(168,85,247,0.2)" />
+                <stop offset="100%" stopColor="rgba(168,85,247,0)" />
+              </radialGradient>
+              <radialGradient id={`${uid}-neutral`} cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor="rgba(0,212,255,0.4)" />
+                <stop offset="60%" stopColor="rgba(0,212,255,0.14)" />
+                <stop offset="100%" stopColor="rgba(0,212,255,0)" />
+              </radialGradient>
+              <radialGradient id={`${uid}-team-home`} cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor={outcomeColors["1"]} stopOpacity="0.55" />
+                <stop offset="60%" stopColor={outcomeColors["1"]} stopOpacity="0.18" />
+                <stop offset="100%" stopColor={outcomeColors["1"]} stopOpacity="0" />
+              </radialGradient>
+              <radialGradient id={`${uid}-team-away`} cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor={outcomeColors["2"]} stopOpacity="0.55" />
+                <stop offset="60%" stopColor={outcomeColors["2"]} stopOpacity="0.18" />
+                <stop offset="100%" stopColor={outcomeColors["2"]} stopOpacity="0" />
+              </radialGradient>
 
-              const duelIntensity =
-                mode === "duelo"
-                  ? Math.abs(homeVal - awayVal) / maxVal
-                  : rawVal / maxVal;
+              <linearGradient id={`${uid}-vignette`} x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="rgba(0,0,0,0.3)" />
+                <stop offset="12%" stopColor="rgba(0,0,0,0)" />
+                <stop offset="88%" stopColor="rgba(0,0,0,0)" />
+                <stop offset="100%" stopColor="rgba(0,0,0,0.35)" />
+              </linearGradient>
 
-              const fill = zoneColor(duelIntensity, mode, homeVal, awayVal);
-              const x = col * ZONE_W;
-              const y = depth * ZONE_H;
-              const isActive = activeZone?.col === col && activeZone?.depth === depth;
+              <filter id={`${uid}-glow`} x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="1" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
 
-              return (
-                <motion.rect
-                  key={`z-${depth}-${col}`}
-                  x={x + 0.5}
-                  y={y + 0.5}
-                  width={ZONE_W - 1}
-                  height={ZONE_H - 1}
-                  fill={fill}
-                  stroke={isActive ? "rgba(255,255,255,0.7)" : "none"}
-                  strokeWidth={0.6}
-                  className="cursor-pointer"
-                  animate={{ opacity: isActive ? 1 : 0.88 }}
-                  onMouseEnter={() => setActiveZone({ col, depth, homeVal, awayVal })}
-                  onMouseLeave={() => setActiveZone(null)}
-                  onClick={() =>
-                    setActiveZone((prev) =>
-                      prev?.col === col && prev?.depth === depth
-                        ? null
-                        : { col, depth, homeVal, awayVal },
-                    )
-                  }
+            {/* Gramado */}
+            <rect
+              x={ORIGIN_X}
+              y={PAD}
+              width={INNER_W}
+              height={INNER_H}
+              rx="1.5"
+              fill={`url(#${uid}-grass)`}
+            />
+            <rect
+              x={ORIGIN_X}
+              y={PAD}
+              width={INNER_W}
+              height={INNER_H}
+              rx="1.5"
+              fill={`url(#${uid}-stripes)`}
+            />
+
+            {/* Zonas de calor */}
+            {[0, 1, 2, 3].map((depth) =>
+              [0, 1, 2].map((col) => {
+                const homeVal = homeZones[depth]?.[col] ?? 0;
+                const awayVal = awayZones[depth]?.[col] ?? 0;
+                const rawVal = mode === "away" ? awayVal : homeVal;
+                const intensity = zoneIntensity(mode, homeVal, awayVal, rawVal, maxVal);
+                const fill = zoneFillUrl(intensity, mode, homeVal, awayVal, uid);
+                const x = ORIGIN_X + col * ZONE_W;
+                const y = PAD + depth * ZONE_H;
+                const isActive = activeZone?.col === col && activeZone?.depth === depth;
+
+                return (
+                  <g key={`z-${depth}-${col}`}>
+                    <motion.rect
+                      x={x + 0.4}
+                      y={y + 0.4}
+                      width={ZONE_W - 0.8}
+                      height={ZONE_H - 0.8}
+                      rx="0.6"
+                      fill={fill}
+                      className="cursor-pointer"
+                      initial={false}
+                      animate={{
+                        opacity:
+                          intensity < 0.04
+                            ? 0
+                            : isActive
+                              ? 0.95
+                              : 0.3 + intensity * 0.55,
+                      }}
+                      transition={{ duration: 0.22 }}
+                      onMouseEnter={() => setActiveZone({ col, depth, homeVal, awayVal })}
+                      onMouseLeave={() => setActiveZone(null)}
+                      onClick={() =>
+                        setActiveZone((prev) =>
+                          prev?.col === col && prev?.depth === depth
+                            ? null
+                            : { col, depth, homeVal, awayVal },
+                        )
+                      }
+                    />
+                    {isActive && intensity >= 0.04 && (
+                      <rect
+                        x={x + 0.4}
+                        y={y + 0.4}
+                        width={ZONE_W - 0.8}
+                        height={ZONE_H - 0.8}
+                        rx="0.6"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.55)"
+                        strokeWidth="0.45"
+                        filter={`url(#${uid}-glow)`}
+                        pointerEvents="none"
+                      />
+                    )}
+                  </g>
+                );
+              }),
+            )}
+
+            {/* Marcacoes do campo */}
+            <g pointerEvents="none" fill="none" stroke="rgba(255,255,255,0.28)">
+              <rect
+                x={ORIGIN_X}
+                y={PAD}
+                width={INNER_W}
+                height={INNER_H}
+                rx="1.5"
+                strokeWidth="0.55"
+              />
+              <line
+                x1={ORIGIN_X}
+                y1={PAD + INNER_H / 2}
+                x2={ORIGIN_X + INNER_W}
+                y2={PAD + INNER_H / 2}
+                stroke="rgba(255,255,255,0.2)"
+                strokeWidth="0.45"
+              />
+              <circle
+                cx={ORIGIN_X + INNER_W / 2}
+                cy={PAD + INNER_H / 2}
+                r="9"
+                strokeWidth="0.4"
+                stroke="rgba(255,255,255,0.18)"
+              />
+              <circle
+                cx={ORIGIN_X + INNER_W / 2}
+                cy={PAD + INNER_H / 2}
+                r="0.7"
+                fill="rgba(255,255,255,0.35)"
+                stroke="none"
+              />
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 16}
+                y={PAD}
+                width="32"
+                height="13"
+                strokeWidth="0.38"
+                stroke="rgba(255,255,255,0.16)"
+              />
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 10}
+                y={PAD}
+                width="20"
+                height="5"
+                strokeWidth="0.3"
+                stroke="rgba(255,255,255,0.1)"
+              />
+              <circle
+                cx={ORIGIN_X + INNER_W / 2}
+                cy={PAD + 9}
+                r="0.65"
+                fill="rgba(255,255,255,0.3)"
+                stroke="none"
+              />
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 16}
+                y={PAD + INNER_H - 13}
+                width="32"
+                height="13"
+                strokeWidth="0.38"
+                stroke="rgba(255,255,255,0.16)"
+              />
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 10}
+                y={PAD + INNER_H - 5}
+                width="20"
+                height="5"
+                strokeWidth="0.3"
+                stroke="rgba(255,255,255,0.1)"
+              />
+              <circle
+                cx={ORIGIN_X + INNER_W / 2}
+                cy={PAD + INNER_H - 9}
+                r="0.65"
+                fill="rgba(255,255,255,0.3)"
+                stroke="none"
+              />
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 8}
+                y={PAD - 0.5}
+                width="16"
+                height="1.2"
+                fill="rgba(255,255,255,0.12)"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="0.35"
+              />
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 8}
+                y={PAD + INNER_H - 0.7}
+                width="16"
+                height="1.2"
+                fill="rgba(255,255,255,0.12)"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="0.35"
+              />
+              {[1, 2].map((n) => (
+                <line
+                  key={n}
+                  x1={ORIGIN_X + n * ZONE_W}
+                  y1={PAD + 12}
+                  x2={ORIGIN_X + n * ZONE_W}
+                  y2={PAD + INNER_H - 12}
+                  stroke="rgba(255,255,255,0.06)"
+                  strokeWidth="0.35"
+                  strokeDasharray="1.5,2.5"
                 />
+              ))}
+              {[1, 2, 3].map((n) => (
+                <line
+                  key={`d-${n}`}
+                  x1={ORIGIN_X + 1}
+                  y1={PAD + n * ZONE_H}
+                  x2={ORIGIN_X + INNER_W - 1}
+                  y2={PAD + n * ZONE_H}
+                  stroke="rgba(255,255,255,0.04)"
+                  strokeWidth="0.25"
+                  strokeDasharray="2,3"
+                />
+              ))}
+            </g>
+
+            {/* Labels corredores (topo) */}
+            {CORR_LABELS.map((label, col) => {
+              const cx = ORIGIN_X + col * ZONE_W + ZONE_W / 2;
+              return (
+                <g key={`corr-${col}`} pointerEvents="none">
+                  <rect
+                    x={cx - 9}
+                    y={PAD + 2.5}
+                    width="18"
+                    height="5"
+                    rx="2.5"
+                    fill="rgba(0,0,0,0.35)"
+                    stroke="rgba(255,255,255,0.06)"
+                    strokeWidth="0.2"
+                  />
+                  <text
+                    x={cx}
+                    y={PAD + 6}
+                    textAnchor="middle"
+                    fill="rgba(255,255,255,0.5)"
+                    fontSize="2.6"
+                    fontWeight="600"
+                    letterSpacing="0.06em"
+                  >
+                    {label.toUpperCase()}
+                  </text>
+                </g>
               );
-            }),
-          )}
+            })}
 
-          {/* Linhas do campo */}
-          <rect x="1" y="1" width={PITCH_W - 2} height={PITCH_H - 2}
-            fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6" />
-          <line x1="1" y1={PITCH_H / 2} x2={PITCH_W - 1} y2={PITCH_H / 2}
-            stroke="rgba(255,255,255,0.22)" strokeWidth="0.5" />
-          <circle cx={PITCH_W / 2} cy={PITCH_H / 2} r="10"
-            fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.4" />
-          <circle cx={PITCH_W / 2} cy={PITCH_H / 2} r="0.9"
-            fill="rgba(255,255,255,0.25)" />
-          <rect x="28" y="1" width="44" height="20"
-            fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.4" />
-          <rect x="38" y="1" width="24" height="8"
-            fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.35" />
-          <circle cx={PITCH_W / 2} cy="13" r="0.8" fill="rgba(255,255,255,0.25)" />
-          <rect x="28" y={PITCH_H - 21} width="44" height="20"
-            fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.4" />
-          <rect x="38" y={PITCH_H - 9} width="24" height="8"
-            fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.35" />
-          <circle cx={PITCH_W / 2} cy={PITCH_H - 13} r="0.8" fill="rgba(255,255,255,0.25)" />
-          <rect x="40" y="0" width="20" height="3"
-            fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" />
-          <rect x="40" y={PITCH_H - 3} width="20" height="3"
-            fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" />
-          {[ZONE_W, ZONE_W * 2].map((x) => (
-            <line key={x} x1={x} y1="1" x2={x} y2={PITCH_H - 1}
-              stroke="rgba(255,255,255,0.07)" strokeWidth="0.3" strokeDasharray="2,3" />
-          ))}
+            {/* Labels profundidade (direita) */}
+            {DEPTH_LABELS.map((label, depth) => {
+              const cy = PAD + depth * ZONE_H + ZONE_H / 2;
+              const isActive = activeZone?.depth === depth;
+              return (
+                <g key={`depth-${depth}`} pointerEvents="none">
+                  <rect
+                    x={ORIGIN_X + INNER_W + 0.5}
+                    y={cy - 4}
+                    width={LABEL_W - 1}
+                    height="8"
+                    rx="2"
+                    fill={isActive ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.4)"}
+                    stroke={isActive ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)"}
+                    strokeWidth="0.2"
+                  />
+                  <text
+                    x={ORIGIN_X + INNER_W + LABEL_W / 2}
+                    y={cy + 0.8}
+                    textAnchor="middle"
+                    fill={isActive ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)"}
+                    fontSize="2.2"
+                    fontWeight="600"
+                  >
+                    {DEPTH_SHORT[depth]}
+                  </text>
+                  <title>{label}</title>
+                </g>
+              );
+            })}
 
-          {DEPTH_LABELS.map((label, i) => (
-            <text key={i} x={PITCH_W - 1.5} y={i * ZONE_H + ZONE_H / 2}
-              textAnchor="end" dominantBaseline="middle"
-              fill="rgba(255,255,255,0.2)" fontSize="3.2" fontWeight="500" pointerEvents="none">
-              {label}
-            </text>
-          ))}
+            {/* Badge time atacante (topo) */}
+            <g pointerEvents="none">
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 18}
+                y={PAD - 0.5}
+                width="36"
+                height="0"
+                fill="none"
+              />
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 16}
+                y={0.5}
+                width="32"
+                height="5.5"
+                rx="2.75"
+                fill="rgba(0,0,0,0.45)"
+                stroke={`${attackColor}40`}
+                strokeWidth="0.3"
+              />
+              <text
+                x={ORIGIN_X + INNER_W / 2}
+                y={4.2}
+                textAnchor="middle"
+                fill="rgba(255,255,255,0.9)"
+                fontSize="2.8"
+                fontWeight="700"
+                letterSpacing="0.06em"
+              >
+                {attackTeam.slice(0, 14).toUpperCase()}
+              </text>
+            </g>
 
-          <text x={PITCH_W / 2} y="5.5" textAnchor="middle"
-            fill="rgba(255,255,255,0.55)" fontSize="3.8" fontWeight="700" pointerEvents="none">
-            {(mode === "away" ? prediction.awayTeam : prediction.homeTeam).slice(0, 14).toUpperCase()}
-          </text>
-          <text x={PITCH_W / 2} y={PITCH_H - 2.5} textAnchor="middle"
-            fill="rgba(255,255,255,0.25)" fontSize="3.2" fontWeight="500" pointerEvents="none">
-            {(mode === "away" ? prediction.homeTeam : prediction.awayTeam).slice(0, 14)}
-          </text>
-        </svg>
+            {/* Badge time defensor (base) */}
+            <g pointerEvents="none">
+              <rect
+                x={ORIGIN_X + INNER_W / 2 - 14}
+                y={PITCH_H - 5.5}
+                width="28"
+                height="5"
+                rx="2.5"
+                fill="rgba(0,0,0,0.4)"
+                stroke="rgba(255,255,255,0.06)"
+                strokeWidth="0.2"
+              />
+              <text
+                x={ORIGIN_X + INNER_W / 2}
+                y={PITCH_H - 2.2}
+                textAnchor="middle"
+                fill="rgba(255,255,255,0.45)"
+                fontSize="2.5"
+                fontWeight="500"
+              >
+                {defendTeam.slice(0, 14)}
+              </text>
+            </g>
+
+            {/* Vignette */}
+            <rect
+              x={ORIGIN_X}
+              y={PAD}
+              width={INNER_W}
+              height={INNER_H}
+              rx="1.5"
+              fill={`url(#${uid}-vignette)`}
+              pointerEvents="none"
+            />
+          </svg>
+        </div>
 
         <AnimatePresence>
           {activeZone && (
             <motion.div
               key="tooltip"
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              className="absolute bottom-2 left-2 right-2 rounded-xl border border-white/15 bg-surface/95 p-3 shadow-xl backdrop-blur-md"
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/12 bg-surface/95 p-3 shadow-2xl backdrop-blur-md"
             >
               <ZoneTooltip
                 zone={activeZone}
@@ -333,11 +657,15 @@ export function PossessionHeatmap({ prediction, className = "" }: PossessionHeat
         </AnimatePresence>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] text-slate-500">
-        <LegendItem color="rgba(0,255,136,0.6)" label={prediction.homeTeam} />
-        <LegendItem color="rgba(0,212,255,0.4)" label="Neutro" />
-        <LegendItem color="rgba(168,85,247,0.6)" label={prediction.awayTeam} />
+      <div className="mx-auto flex max-w-sm flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        <LegendDot color="#00ff88" label={prediction.homeTeam} />
+        <LegendDot color="#00d4ff" label="Neutro" />
+        <LegendDot color="#a855f7" label={prediction.awayTeam} />
       </div>
+
+      <p className="text-center text-[11px] text-slate-500">
+        Passe o mouse ou toque em uma zona para ver posse estimada
+      </p>
 
       <DataSourcesNote
         prediction={prediction}
@@ -366,23 +694,24 @@ function PossessionBar({
   const awayPctInt = 100 - homePctInt;
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between text-xs">
-        <span className="font-semibold" style={{ color: outcomeColors["1"] }}>
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="mb-2.5 flex items-center justify-between gap-2 text-xs">
+        <span className="font-display font-semibold" style={{ color: outcomeColors["1"] }}>
           {homeTeam}
         </span>
-        <span className="text-[10px] text-slate-600">{source}</span>
-        <span className="font-semibold" style={{ color: outcomeColors["2"] }}>
+        <span className="truncate text-[10px] text-slate-600">{source}</span>
+        <span className="font-display font-semibold" style={{ color: outcomeColors["2"] }}>
           {awayTeam}
         </span>
       </div>
-      <div className="flex h-7 overflow-hidden rounded-xl border border-white/[0.06]">
+      <div className="relative flex h-8 overflow-hidden rounded-xl border border-white/[0.08] shadow-inner">
         <div
           className="flex items-center justify-center text-xs font-bold transition-all duration-700"
           style={{
             width: `${homePct * 100}%`,
-            background: `linear-gradient(90deg, ${outcomeColors["1"]}30, ${outcomeColors["1"]}55)`,
+            background: `linear-gradient(90deg, ${outcomeColors["1"]}25, ${outcomeColors["1"]}50)`,
             color: outcomeColors["1"],
+            boxShadow: `inset 0 0 20px ${outcomeColors["1"]}20`,
           }}
         >
           {homePctInt}%
@@ -391,12 +720,14 @@ function PossessionBar({
           className="flex items-center justify-center text-xs font-bold transition-all duration-700"
           style={{
             width: `${awayPct * 100}%`,
-            background: `linear-gradient(90deg, ${outcomeColors["2"]}55, ${outcomeColors["2"]}30)`,
+            background: `linear-gradient(90deg, ${outcomeColors["2"]}50, ${outcomeColors["2"]}25)`,
             color: outcomeColors["2"],
+            boxShadow: `inset 0 0 20px ${outcomeColors["2"]}20`,
           }}
         >
           {awayPctInt}%
         </div>
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/10" />
       </div>
     </div>
   );
@@ -438,7 +769,7 @@ function ZoneTooltip({
 
   return (
     <div className="space-y-2 text-xs">
-      <p className="font-semibold text-white">
+      <p className="font-display font-semibold text-white">
         {depthLabel} · {corrLabel}
       </p>
       <div className="space-y-1 text-slate-400">
@@ -500,19 +831,26 @@ function ModeBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-        active ? "text-white" : "border border-white/10 bg-white/5 text-slate-400 hover:bg-white/10"
+      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+        active
+          ? "border text-white shadow-sm"
+          : "border border-white/10 bg-white/[0.04] text-slate-400 hover:border-white/15 hover:bg-white/[0.07]"
       }`}
       style={
-        active
+        active && color
           ? {
-              borderWidth: 1,
-              borderStyle: "solid",
-              borderColor: color ? `${color}50` : "rgba(0,212,255,0.45)",
-              backgroundColor: color ? `${color}15` : "rgba(0,212,255,0.10)",
-              color: color ?? "#00d4ff",
+              borderColor: `${color}50`,
+              backgroundColor: `${color}14`,
+              color,
+              boxShadow: `0 0 20px ${color}18`,
             }
-          : undefined
+          : active
+            ? {
+                borderColor: "rgba(0,212,255,0.45)",
+                backgroundColor: "rgba(0,212,255,0.1)",
+                boxShadow: "0 0 20px rgba(0,212,255,0.1)",
+              }
+            : undefined
       }
     >
       {label}
@@ -520,10 +858,13 @@ function ModeBtn({
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <span className="flex items-center gap-1.5">
-      <span className="inline-block h-2.5 w-6 rounded-sm" style={{ backgroundColor: color }} />
+    <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
+      <span
+        className="h-2 w-2 rounded-full shadow-[0_0_6px_currentColor]"
+        style={{ backgroundColor: color, color }}
+      />
       {label}
     </span>
   );

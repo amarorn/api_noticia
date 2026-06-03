@@ -24,6 +24,23 @@ TOP_LEAGUE_PATTERNS = re.compile(
 )
 
 
+MID_TIER_PATTERNS = re.compile(
+    r"liga|serie|bundesliga|ligue|eredivisie|primeira|brasileir|argentin|mls|"
+    r"flamengo|palmeiras|boca|river|porto|benfica|sporting|ajax|fenerbah",
+    re.IGNORECASE,
+)
+
+
+def _club_strength_score(club: str | None) -> float:
+    if not club:
+        return 0.35
+    if TOP_LEAGUE_PATTERNS.search(club):
+        return 1.0
+    if MID_TIER_PATTERNS.search(club):
+        return 0.65
+    return 0.4
+
+
 @dataclass(frozen=True)
 class SquadProfile:
     depth_norm: float
@@ -31,6 +48,7 @@ class SquadProfile:
     mid_share: float
     atk_share: float
     top5_league_share: float
+    league_strength_avg: float
 
     @classmethod
     def neutral(cls) -> SquadProfile:
@@ -40,6 +58,7 @@ class SquadProfile:
             mid_share=0.35,
             atk_share=0.30,
             top5_league_share=0.5,
+            league_strength_avg=0.55,
         )
 
 
@@ -74,11 +93,14 @@ def profile_from_squad(squad: dict | None) -> SquadProfile:
 
     top5 = 0
     players = 0
+    strength_sum = 0.0
     for section in squad.get("sections", []):
         for player in section.get("players", []):
             players += 1
-            if _is_top_league_club(player.get("club")):
+            club = player.get("club")
+            if _is_top_league_club(club):
                 top5 += 1
+            strength_sum += _club_strength_score(club)
 
     field_players = max(players - gk_n, 1)
     return SquadProfile(
@@ -87,6 +109,7 @@ def profile_from_squad(squad: dict | None) -> SquadProfile:
         mid_share=mid_n / field_players,
         atk_share=atk_n / field_players,
         top5_league_share=top5 / max(players, 1),
+        league_strength_avg=strength_sum / max(players, 1),
     )
 
 
@@ -113,6 +136,7 @@ def squad_feature_vector(home_team: str, away_team: str, path: str | None = None
         home.atk_share - away.atk_share,
         home.mid_share - away.mid_share,
         (home.def_share + home.mid_share * 0.5) - (away.def_share + away.mid_share * 0.5),
+        home.league_strength_avg - away.league_strength_avg,
     ]
 
 
@@ -123,6 +147,7 @@ SQUAD_FEATURE_NAMES = [
     "squad_atk_share_diff",
     "squad_mid_share_diff",
     "squad_structural_balance_diff",
+    "squad_league_strength_diff",
 ]
 
 

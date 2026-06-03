@@ -40,7 +40,7 @@ def _parse_dt(value) -> datetime:
 
 
 def _result_for_team(row: pd.Series, team: str) -> str:
-    home, away = row["home_team"], row["away_team"]
+    home = row["home_team"]
     hs, aws = int(row["home_score"]), int(row["away_score"])
     if team == home:
         if hs > aws:

@@ -3,8 +3,6 @@ from schemas.wc_kxl_dynamic import (
     FeclAmbiente,
     FedeDesfalque,
     FedeElenco,
-    FeemEmocional,
-    FejuArbitro,
     FeptEscalacao,
     FeptJogador,
     WcKxlMatchInput,

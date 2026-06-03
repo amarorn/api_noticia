@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   getWcScheduleUseCase,
   predictWcMatchUseCase,
 } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
+import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import {
   ModelBreakdownChart,
   ProbabilityDonut,
@@ -15,10 +16,12 @@ import { MatchContextPanel } from "@/presentation/components/predictions/MatchCo
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
+import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
 import { IconSwap, IconZap } from "@/presentation/components/ui/Icons";
 import { phases, outcomeColors } from "@/presentation/theme";
 import {
   awayOpponentsForHome,
+  formatOfficialMatchLabel,
   findOfficialMatch,
   findReverseOfficialMatch,
   homeTeamsInSchedule,
@@ -28,9 +31,14 @@ import {
 import { motion } from "framer-motion";
 
 export function PredictPage() {
+  const [searchParams] = useSearchParams();
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
   const [phase, setPhase] = useState("group");
+  const urlParamsApplied = useRef(false);
+
+  const homeFromUrl = searchParams.get("home");
+  const awayFromUrl = searchParams.get("away");
 
   const scheduleQuery = useQuery({
     queryKey: ["wc-schedule"],
@@ -77,6 +85,22 @@ export function PredictPage() {
   }, [availablePhases, phase]);
 
   useEffect(() => {
+    if (urlParamsApplied.current || !scheduleQuery.data) return;
+    if (!homeFromUrl || !awayFromUrl) return;
+
+    const match = findOfficialMatch(homeFromUrl, awayFromUrl, phaseMatches);
+    if (match) {
+      setHomeTeam(homeFromUrl);
+      setAwayTeam(awayFromUrl);
+      if (match.phase) {
+        setPhase(match.phase);
+      }
+      urlParamsApplied.current = true;
+    }
+  }, [scheduleQuery.data, homeFromUrl, awayFromUrl, phaseMatches]);
+
+  useEffect(() => {
+    if (urlParamsApplied.current) return;
     if (homeOptions.length === 0) return;
     if (!homeOptions.includes(homeTeam)) {
       setHomeTeam(homeOptions[0]);
@@ -84,6 +108,7 @@ export function PredictPage() {
   }, [homeOptions, homeTeam]);
 
   useEffect(() => {
+    if (urlParamsApplied.current) return;
     if (awayOptions.length === 0) return;
     if (!awayOptions.includes(awayTeam)) {
       setAwayTeam(awayOptions[0]);
@@ -108,32 +133,29 @@ export function PredictPage() {
     setAwayTeam(homeTeam);
   };
 
+  const matchPickerValue =
+    homeTeam && awayTeam ? `${homeTeam}|${awayTeam}` : "";
+
+  const handleMatchPicker = (value: string) => {
+    const [home, away] = value.split("|");
+    if (home && away) {
+      setHomeTeam(home);
+      setAwayTeam(away);
+    }
+  };
+
   const isLoading = scheduleQuery.isLoading;
   const hasOfficialMatches = phaseMatches.length > 0;
 
   return (
     <PageTransition className="space-y-8">
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.06]" style={{ minHeight: 140 }}>
-        <img
-          src="/images/predict-hero.png"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover object-center opacity-25"
-          draggable={false}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-surface/95 via-surface/75 to-surface/30" />
-        <div className="relative p-6 sm:p-8">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-extrabold gradient-text sm:text-3xl">Palpite avulso</h1>
-            <span className="inline-flex items-center rounded-full border border-neon-green/25 bg-neon-green/8 px-2.5 py-0.5 text-xs font-medium text-neon-green">
-              Copa 2026
-            </span>
-          </div>
-          <p className="mt-1.5 text-sm text-slate-400">
-            Apenas confrontos da tabela oficial · Dixon-Coles + Logística + DNA KXL
-          </p>
-        </div>
-      </div>
+      <HeroPageHeader
+        title="Palpite avulso"
+        subtitle="Escolha um jogo da tabela oficial · Ensemble Dixon-Coles + Logística + KXL"
+        badges={[{ label: "Copa 2026", color: "green" }]}
+        imageSrc="/images/predict-hero.png"
+        imageOpacity={0.22}
+      />
 
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2">
@@ -151,6 +173,36 @@ export function PredictPage() {
           {!scheduleQuery.isError && (
             <form onSubmit={handleSubmit} className="glass-card space-y-4 p-5">
               <p className="section-label">Configurar confronto</p>
+
+              <div>
+                <label htmlFor="match-picker" className="mb-1.5 block text-xs font-medium text-slate-400">
+                  Jogo oficial
+                </label>
+                {isLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <select
+                    id="match-picker"
+                    value={matchPickerValue}
+                    onChange={(e) => handleMatchPicker(e.target.value)}
+                    disabled={!hasOfficialMatches}
+                    className="select-field"
+                  >
+                    {phaseMatches.map((m) => (
+                      <option
+                        key={m.matchId}
+                        value={`${m.homeTeam}|${m.awayTeam}`}
+                        className="bg-surface"
+                      >
+                        {formatOfficialMatchLabel(m.homeTeam, m.awayTeam, m.group, m.round)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="mt-1.5 text-[10px] text-slate-600">
+                  Ou ajuste mandante e visitante abaixo
+                </p>
+              </div>
 
               <div>
                 <label htmlFor="phase" className="mb-1.5 block text-xs font-medium text-slate-400">
@@ -284,6 +336,19 @@ export function PredictPage() {
         </div>
 
         <div className="lg:col-span-3">
+          {predictMutation.isPending && (
+            <SlowLoadingPanel
+              active
+              title="Calculando palpite…"
+              hint="O modelo analisa histórico, forma recente e índices KXL para este confronto."
+              steps={[
+                "Normalizando seleções",
+                "Rodando Dixon-Coles e logística",
+                "Combinando ensemble final",
+              ]}
+            />
+          )}
+
           {predictMutation.isError && (
             <ErrorState
               message={
@@ -293,6 +358,14 @@ export function PredictPage() {
               }
               onRetry={() => predictMutation.mutate()}
             />
+          )}
+
+          {predictMutation.isPending && (
+            <div className="glass-card space-y-4 p-6">
+              <Skeleton className="h-6 w-2/3" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
           )}
 
           {!predictMutation.data && !predictMutation.isPending && !predictMutation.isError && (
@@ -307,14 +380,6 @@ export function PredictPage() {
                 </Link>{" "}
                 e clique em <span className="text-slate-400">Gerar palpite</span>
               </p>
-            </div>
-          )}
-
-          {predictMutation.isPending && (
-            <div className="glass-card space-y-4 p-6">
-              <Skeleton className="h-6 w-2/3" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-32 w-full" />
             </div>
           )}
 

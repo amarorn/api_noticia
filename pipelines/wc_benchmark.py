@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 
 from config import settings
 from ingest.fixtures.world_cup import load_wc_fixtures
+from pipelines.mlflow_tracking import log_classification_benchmark
 from models.economics import ces_blend_probabilities, lgn_min_sample_warning
 from models.poisson_wc import predict_poisson
 from pipelines.wc_stats import FEATURE_NAMES, build_match_features, features_to_vector
@@ -136,7 +137,7 @@ def _build_eval_rows(fixtures: pd.DataFrame, eval_season: int) -> tuple[np.ndarr
             phase=row.get("phase", "group"),
             is_neutral=bool(row.get("is_neutral", True)),
         )
-        vec = features_to_vector(feats)
+        vec = features_to_vector(feats, before_date=row["match_date"].to_pydatetime())
         p = predict_poisson(
             history,
             row["home_team"],
@@ -185,7 +186,9 @@ def run_benchmark(eval_season: int | None = None, enable_mlflow: bool = False) -
             phase=row.get("phase", "group"),
             is_neutral=bool(row.get("is_neutral", True)),
         )
-        train_rows.append((features_to_vector(feats), str(row["label"])))
+        train_rows.append(
+            (features_to_vector(feats, before_date=row["match_date"].to_pydatetime()), str(row["label"]))
+        )
 
     x_train = np.array([r[0] for r in train_rows], dtype=float)
     y_train = [r[1] for r in train_rows]
@@ -269,20 +272,19 @@ def run_benchmark(eval_season: int | None = None, enable_mlflow: bool = False) -
 
     if enable_mlflow:
         try:
-            import mlflow  # type: ignore
-
-            with mlflow.start_run(run_name=f"wc-benchmark-{eval_season}"):
-                mlflow.log_param("eval_season", eval_season)
-                mlflow.log_param("train_samples", len(y_train))
-                mlflow.log_param("eval_samples", len(y_eval))
-                for m in report["metrics"]:
-                    prefix = m["model"]
-                    mlflow.log_metric(f"{prefix}_accuracy", m["accuracy"])
-                    mlflow.log_metric(f"{prefix}_brier", m["brier"])
-                    mlflow.log_metric(f"{prefix}_log_loss", m["log_loss"])
-                if "weights" in m_blend:
-                    for key, value in m_blend["weights"].items():
-                        mlflow.log_param(f"blend_weight_{key}", value)
+            extra: dict[str, float | int | str] = {}
+            if "weights" in m_blend:
+                for key, value in m_blend["weights"].items():
+                    extra[f"blend_weight_{key}"] = value
+            log_classification_benchmark(
+                experiment_name=settings.mlflow_experiment_wc,
+                run_name=f"wc-benchmark-{eval_season}",
+                eval_season=eval_season,
+                train_samples=len(y_train),
+                eval_samples=len(y_eval),
+                metrics=report["metrics"],
+                extra_params=extra or None,
+            )
         except Exception as exc:
             report["mlflow_warning"] = f"MLflow indisponível: {exc}"
 

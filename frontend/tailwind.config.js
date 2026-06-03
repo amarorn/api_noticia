@@ -3,6 +3,10 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        display: ['"Space Grotesk"', "Inter", "system-ui", "sans-serif"],
+      },
       colors: {
         neon: {
           green: "#00ff88",
@@ -13,33 +17,58 @@ export default {
           yellow: "#fbbf24",
         },
         surface: {
-          DEFAULT: "#0a0f1a",
-          card: "rgba(15, 23, 42, 0.6)",
-          elevated: "rgba(30, 41, 59, 0.5)",
-          border: "rgba(255, 255, 255, 0.07)",
+          DEFAULT: "#070b14",
+          card: "rgba(12, 18, 32, 0.72)",
+          elevated: "rgba(22, 32, 52, 0.65)",
+          border: "rgba(255, 255, 255, 0.08)",
         },
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "mesh-gradient":
-          "linear-gradient(135deg, #0a0f1a 0%, #1a1033 50%, #0d2137 100%)",
+          "linear-gradient(145deg, #070b14 0%, #12102a 42%, #0a1a2e 100%)",
         "gradient-hero":
-          "linear-gradient(135deg, rgba(0,255,136,0.04) 0%, rgba(0,212,255,0.04) 50%, rgba(168,85,247,0.04) 100%)",
+          "linear-gradient(135deg, rgba(0,255,136,0.06) 0%, rgba(0,212,255,0.05) 50%, rgba(168,85,247,0.06) 100%)",
+        "brand-gradient":
+          "linear-gradient(120deg, #00ff88 0%, #00d4ff 45%, #a855f7 100%)",
       },
       boxShadow: {
-        neon: "0 0 20px rgba(0, 255, 136, 0.15)",
-        "neon-blue": "0 0 20px rgba(0, 212, 255, 0.15)",
-        "neon-purple": "0 0 20px rgba(168, 85, 247, 0.15)",
-        "card": "0 4px 24px rgba(0,0,0,0.4)",
+        neon: "0 0 24px rgba(0, 255, 136, 0.18), 0 0 48px rgba(0, 255, 136, 0.06)",
+        "neon-blue":
+          "0 0 24px rgba(0, 212, 255, 0.18), 0 0 48px rgba(0, 212, 255, 0.06)",
+        "neon-purple":
+          "0 0 24px rgba(168, 85, 247, 0.2), 0 0 48px rgba(168, 85, 247, 0.08)",
+        card: "0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.04)",
+        glow: "0 0 0 1px rgba(0,255,136,0.15), 0 0 20px rgba(0,255,136,0.12)",
       },
       animation: {
         pulse_slow: "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "fade-in": "fadeIn 0.3s ease-out",
+        "fade-in": "fadeIn 0.35s ease-out forwards",
+        shimmer: "shimmer 2.4s linear infinite",
+        "glow-pulse": "glowPulse 3s ease-in-out infinite",
+        float: "float 6s ease-in-out infinite",
+        "mesh-shift": "meshShift 20s ease-in-out infinite alternate",
       },
       keyframes: {
         fadeIn: {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "200% center" },
+          "100%": { backgroundPosition: "-200% center" },
+        },
+        glowPulse: {
+          "0%, 100%": { opacity: "0.45" },
+          "50%": { opacity: "0.85" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        meshShift: {
+          "0%": { transform: "translate(0, 0) scale(1)" },
+          "100%": { transform: "translate(2%, -1%) scale(1.02)" },
         },
       },
     },

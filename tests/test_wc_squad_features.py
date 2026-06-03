@@ -18,10 +18,10 @@ def test_profile_from_squad_counts_positions():
     profile = profile_from_squad(squad)
     assert profile.depth_norm > 0.9
     assert profile.top5_league_share > 0.5
-    assert len(SQUAD_FEATURE_NAMES) == 6
+    assert len(SQUAD_FEATURE_NAMES) == 7
 
 
 def test_squad_feature_vector_neutral_for_unknown_team():
     vec = squad_feature_vector("Time Inexistente", "Outro Time")
-    assert len(vec) == 6
+    assert len(vec) == 7
     assert all(abs(v) < 0.5 for v in vec)

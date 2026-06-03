@@ -13,6 +13,7 @@ import {
 } from "@/application/use-cases/historicalValidationUseCases";
 import {
   GetValueBetsUseCase,
+  GetWcGroupStandingsUseCase,
   GetWcRoundUseCase,
   GetWcScheduleUseCase,
   GetWcSquadsIndexUseCase,
@@ -29,6 +30,7 @@ import {
 } from "@/infrastructure/repositories";
 
 export const getWcRoundUseCase = new GetWcRoundUseCase(wcRepository);
+export const getWcGroupStandingsUseCase = new GetWcGroupStandingsUseCase(wcRepository);
 export const getWcScheduleUseCase = new GetWcScheduleUseCase(wcRepository);
 export const getWcSquadsIndexUseCase = new GetWcSquadsIndexUseCase(wcRepository);
 export const getWcSquadUseCase = new GetWcSquadUseCase(wcRepository);

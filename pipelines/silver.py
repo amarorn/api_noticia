@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import structlog
 from config import settings
 from ingest.storage import load_bronze
 from schemas.models import SilverArticle
+from pipelines.national_team_entities import extract_national_teams
 from schemas.teams import BRAZILIAN_TEAMS
 
 logger = structlog.get_logger()
@@ -75,6 +77,7 @@ def bronze_to_silver(df: pd.DataFrame) -> list[SilverArticle]:
         title = _optional_str(row.get("title")) or ""
         full_text = f"{title} {body}"
         teams, players = _extract_entities(full_text)
+        national_teams = extract_national_teams(full_text)
 
         article = SilverArticle(
             id=str(row["id"]),
@@ -87,6 +90,7 @@ def bronze_to_silver(df: pd.DataFrame) -> list[SilverArticle]:
             scraped_at=_required_datetime(row.get("scraped_at")),
             content_hash=str(row["content_hash"]),
             teams_mentioned=teams,
+            national_teams_mentioned=national_teams,
             players_mentioned=players,
             categories=row.get("raw_payload", {}).get("tags", []) if isinstance(row.get("raw_payload"), dict) else [],
             sentiment_score=_simple_sentiment(full_text),
@@ -115,6 +119,17 @@ def save_silver(articles: list[SilverArticle]) -> Path | None:
     df.to_parquet(out_path, index=False)
     logger.info("silver_saved", path=str(out_path), rows=len(df))
     return out_path
+
+
+def silver_fingerprint() -> str:
+    root = settings.silver_path
+    if not root.exists():
+        return "empty"
+    files = sorted(root.glob("**/*.parquet"))
+    if not files:
+        return "empty"
+    parts = [f"{f.relative_to(root)}:{f.stat().st_mtime_ns}:{f.stat().st_size}" for f in files]
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
 
 
 def load_silver() -> pd.DataFrame:

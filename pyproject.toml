@@ -71,7 +71,10 @@ benchmark-bolao-models = "pipelines.bolao_benchmark:main"
 study-wc-calibration = "pipelines.wc_calibration:main"
 train-wc = "models.wc_artifact:main"
 walkforward-wc-models = "pipelines.wc_walkforward:main"
+tune-wc-hyperparams = "pipelines.wc_tune:main"
+tune-wc-kxl = "pipelines.wc_kxl_tune:main"
 run-pipeline = "pipelines.cli:main"
+mlflow-ui = "pipelines.mlflow_ui:main"
 
 [build-system]
 requires = ["hatchling"]

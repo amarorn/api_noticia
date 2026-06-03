@@ -14,9 +14,11 @@ from sklearn.preprocessing import StandardScaler
 
 from config import settings
 from ingest.fixtures.store import load_fixtures
+from pipelines.mlflow_tracking import log_classification_benchmark
 from models.baseline import predict_baseline_probs
 from models.eval_metrics import LABELS, classification_metrics
 from pipelines.bolao_features import FEATURE_NAMES, build_bolao_feature, features_to_array
+from schemas.models import BolaoFeature
 
 BRASILEIRAO = "Brasileirão"
 
@@ -127,15 +129,14 @@ def run_benchmark(eval_season: int = 2024, enable_mlflow: bool = False) -> dict:
 
     if enable_mlflow:
         try:
-            import mlflow
-
-            with mlflow.start_run(run_name=f"brasileirao-benchmark-{eval_season}"):
-                mlflow.log_param("eval_season", eval_season)
-                for m in report["metrics"]:
-                    prefix = m["model"]
-                    mlflow.log_metric(f"{prefix}_accuracy", m["accuracy"])
-                    mlflow.log_metric(f"{prefix}_brier", m["brier"])
-                    mlflow.log_metric(f"{prefix}_log_loss", m["log_loss"])
+            log_classification_benchmark(
+                experiment_name=settings.mlflow_experiment_bolao,
+                run_name=f"brasileirao-benchmark-{eval_season}",
+                eval_season=eval_season,
+                train_samples=len(y_train),
+                eval_samples=len(y_eval),
+                metrics=report["metrics"],
+            )
         except Exception as exc:
             report["mlflow_warning"] = str(exc)
 

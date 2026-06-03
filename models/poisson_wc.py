@@ -4,10 +4,10 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_stats import WcMatchFeatures
 
 MAX_GOALS = 6
-HOME_ADV_GOALS = 0.15
 
 
 @dataclass
@@ -104,7 +104,10 @@ def expected_lambdas(
     def_h = defense.get(home_team, 1.0)
     def_a = defense.get(away_team, 1.0)
 
-    lam_home = league_avg * att_h * def_a + HOME_ADV_GOALS
+    hp = get_wc_hyperparams()
+    is_neutral = bool(features.is_neutral) if features else True
+    home_adv = hp.home_advantage_goals(is_neutral)
+    lam_home = league_avg * att_h * def_a + home_adv
     lam_away = league_avg * att_a * def_h
 
     if features:
@@ -131,7 +134,10 @@ def goal_model_factors(
     def_h = defense.get(home_team, 1.0)
     def_a = defense.get(away_team, 1.0)
 
-    lam_home = league_avg * att_h * def_a + HOME_ADV_GOALS
+    hp = get_wc_hyperparams()
+    is_neutral = bool(features.is_neutral) if features else True
+    home_adv = hp.home_advantage_goals(is_neutral)
+    lam_home = league_avg * att_h * def_a + home_adv
     lam_away = league_avg * att_a * def_h
     elo_home = 1.0
     elo_away = 1.0
@@ -149,7 +155,7 @@ def goal_model_factors(
         away_attack=float(att_a),
         home_defense=float(def_h),
         away_defense=float(def_a),
-        home_advantage=HOME_ADV_GOALS,
+        home_advantage=home_adv,
         elo_factor_home=float(elo_home),
         elo_factor_away=float(elo_away),
         lambda_home=float(lam_home),

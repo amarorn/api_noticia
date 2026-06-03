@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getWcScheduleUseCase } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
+import { PageHeader } from "@/presentation/components/layout/PageHeader";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import {
   WcGroupGrid,
@@ -76,11 +78,11 @@ export function SchedulePage() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <FilterBar label="Rodada">
           <FilterChip
             active={selectedRound === "all"}
             onClick={() => setSelectedRound("all")}
-            label="Todas as rodadas"
+            label="Todas"
           />
           {schedule.matchdays.map((round) => (
             <FilterChip
@@ -98,7 +100,7 @@ export function SchedulePage() {
               label={`Grupo ${selectedGroup} ✕`}
             />
           )}
-        </div>
+        </FilterBar>
 
         <WcScheduleTable
           schedule={schedule}
@@ -107,43 +109,5 @@ export function SchedulePage() {
         />
       </section>
     </PageTransition>
-  );
-}
-
-function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <header className="mb-8">
-      <h1 className="text-2xl font-black tracking-tight text-white md:text-3xl">{title}</h1>
-      <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
-    </header>
-  );
-}
-
-function FilterChip({
-  label,
-  active,
-  onClick,
-  count,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  count?: number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
-        active
-          ? "bg-neon-green/15 text-neon-green ring-1 ring-neon-green/30"
-          : "bg-white/5 text-slate-400 hover:bg-white/8 hover:text-slate-300"
-      }`}
-    >
-      {label}
-      {count != null && (
-        <span className="ml-1.5 text-[10px] opacity-70">({count})</span>
-      )}
-    </button>
   );
 }

@@ -1,20 +1,28 @@
 import asyncio
 import json
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from api.lake_cache import get_lake_counts, invalidate_lake_counts
+from api.wc_round_cache import (
+    get_cached,
+    invalidate_wc_round_cache,
+    match_key,
+    persist_to_disk,
+    set_cached,
+    warm_from_disk,
+)
 from config import settings
 from ingest.fixtures.brasileirao import load_fixtures
 from ingest.odds.the_odds_api import fetch_live_h2h_odds, merge_schedule_with_odds, save_odds_file
 from ingest.meta import collection_stats
 from models.ev_value import MatchValueReport, evaluate_match
-from models.baseline import predict_baseline
+from models.baseline import predict_baseline, predict_baseline_probs
 from models.wc_predictor import WcPrediction, WcPredictor
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
 from pipelines.current_round import load_round_schedule, predict_round
@@ -24,6 +32,7 @@ from pipelines.news_feed import build_news_feed
 from pipelines.silver import load_silver
 from pipelines.wc_squads import get_squad_by_team, list_squad_teams, load_wc_squads
 from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
+from pipelines.wc_group_standings import build_group_standings
 from pipelines.wc_validate import (
     list_edition_matches,
     list_wc_editions,
@@ -48,6 +57,7 @@ async def lifespan(app: FastAPI):
     try:
         await loop.run_in_executor(None, lambda: get_wc_predictor())
         _wc_models_ready = True
+        await loop.run_in_executor(None, warm_from_disk)
     except ValueError:
         _wc_models_ready = False
     yield
@@ -110,6 +120,8 @@ class MatchContextResponse(BaseModel):
     prediction: str | None = None
     confidence: float | None = None
     reason: str | None = None
+    model_source: str | None = None
+    probabilities: dict[str, float] | None = None
 
 
 class RoundPrediction(BaseModel):
@@ -223,6 +235,32 @@ class WcRoundResponse(BaseModel):
     phase: str
     round: int
     predictions: list[WcPredictionResponse]
+
+
+class WcGroupStandingRow(BaseModel):
+    position: int
+    team: str
+    played: int
+    won: int
+    drawn: int
+    lost: int
+    gf: int
+    ga: int
+    gd: int
+    points: int
+
+
+class WcGroupStandingsBlock(BaseModel):
+    group: str
+    standings: list[WcGroupStandingRow]
+
+
+class WcGroupStandingsResponse(BaseModel):
+    season: int
+    competition: str
+    simulated: bool = True
+    note: str
+    groups: list[WcGroupStandingsBlock]
 
 
 class WcTeamsResponse(BaseModel):
@@ -356,6 +394,7 @@ class NewsArticleItem(BaseModel):
     published_at: str | None = None
     scraped_at: str | None = None
     teams_mentioned: list[str] = Field(default_factory=list)
+    national_teams_mentioned: list[str] = Field(default_factory=list)
     categories: list[str] = Field(default_factory=list)
     sentiment_score: float | None = None
     sentiment_label: str
@@ -423,6 +462,8 @@ def _context_to_response(context, include_prediction: bool = False) -> MatchCont
         resp.prediction = pred
         resp.confidence = conf
         resp.reason = reason
+        resp.model_source = "baseline"
+        resp.probabilities = predict_baseline_probs(context.features)
     return resp
 
 
@@ -553,6 +594,7 @@ def root():
             "/worldcup/validate",
             "/worldcup/walkforward",
             "/worldcup/retrain",
+            "/worldcup/group-standings",
         ],
     }
 
@@ -611,7 +653,7 @@ def get_match_context(req: MatchRequest):
         away_team=req.away_team,
         round_number=req.round_number,
         competition=req.competition,
-        match_date=datetime.utcnow(),
+        match_date=datetime.now(timezone.utc),
         silver_df=silver_df,
         season=req.season,
         fixtures_df=fixtures_df if not fixtures_df.empty else None,
@@ -629,7 +671,7 @@ def predict_match(req: MatchRequest):
         away_team=resp.away_team,
         round_number=req.round_number,
         competition=req.competition,
-        match_date=datetime.utcnow(),
+        match_date=datetime.now(timezone.utc),
         silver_df=load_silver(),
         season=req.season,
         fixtures_df=load_fixtures(),
@@ -639,6 +681,8 @@ def predict_match(req: MatchRequest):
     resp.prediction = pred
     resp.confidence = conf
     resp.reason = reason
+    resp.model_source = "baseline"
+    resp.probabilities = predict_baseline_probs(context.features)
     return resp
 
 
@@ -688,8 +732,53 @@ def worldcup_predict(req: WcPredictRequest):
     return _wc_prediction_to_response(pred)
 
 
+def _build_wc_round_predictions(
+    predictor: WcPredictor,
+    round_data: dict,
+    *,
+    matchday: int | None = None,
+) -> list[WcPredictionResponse]:
+    phase_default = round_data.get("phase", "group")
+    matches = round_data.get("matches", [])
+    if matchday is not None:
+        matches = [m for m in matches if m.get("round") == matchday]
+
+    predictions: list[WcPredictionResponse] = []
+    dirty = False
+
+    for match in matches:
+        home = normalize_national_team(match["home_team"])
+        away = normalize_national_team(match["away_team"])
+        match_phase = match.get("phase", phase_default)
+        key = match_key(home, away, match_phase)
+
+        cached = get_cached(key)
+        if cached is not None:
+            predictions.append(WcPredictionResponse(**cached))
+            continue
+
+        try:
+            pred = predictor.predict(home, away, phase=match_phase)
+            resp = _wc_prediction_to_response(pred)
+            set_cached(key, resp.model_dump())
+            predictions.append(resp)
+            dirty = True
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Erro ao prever {home} x {away}: {exc}",
+            ) from exc
+
+    if dirty:
+        persist_to_disk()
+
+    return predictions
+
+
 @app.get("/worldcup/round", response_model=WcRoundResponse)
-def worldcup_round():
+def worldcup_round(
+    matchday: int | None = Query(None, alias="round", ge=1, le=3),
+):
     try:
         predictor = _get_wc_predictor()
     except ValueError as exc:
@@ -697,27 +786,58 @@ def worldcup_round():
 
     round_data = _load_wc_round()
     phase_default = round_data.get("phase", "group")
-    predictions: list[WcPredictionResponse] = []
-
-    for match in round_data.get("matches", []):
-        home = normalize_national_team(match["home_team"])
-        away = normalize_national_team(match["away_team"])
-        match_phase = match.get("phase", phase_default)
-        try:
-            pred = predictor.predict(home, away, phase=match_phase)
-            predictions.append(_wc_prediction_to_response(pred))
-        except Exception as exc:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Erro ao prever {home} x {away}: {exc}",
-            ) from exc
+    predictions = _build_wc_round_predictions(
+        predictor,
+        round_data,
+        matchday=matchday,
+    )
 
     return WcRoundResponse(
         season=round_data.get("season", 2026),
         competition=round_data.get("competition", "Copa do Mundo"),
         phase=phase_default,
-        round=round_data.get("round", 1),
+        round=matchday if matchday is not None else round_data.get("round", 0),
         predictions=predictions,
+    )
+
+
+@app.get("/worldcup/group-standings", response_model=WcGroupStandingsResponse)
+def worldcup_group_standings():
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    round_data = _load_wc_round()
+    predictions = _build_wc_round_predictions(predictor, round_data, matchday=None)
+    pair_group: dict[tuple[str, str], str] = {}
+    for match in round_data.get("matches", []):
+        home = normalize_national_team(match["home_team"])
+        away = normalize_national_team(match["away_team"])
+        g = match.get("group")
+        if g:
+            pair_group[(home, away)] = str(g)
+
+    pred_rows: list[dict] = []
+    for pred in predictions:
+        key = (pred.home_team, pred.away_team)
+        pred_rows.append(
+            {
+                "home_team": pred.home_team,
+                "away_team": pred.away_team,
+                "prediction": pred.prediction,
+                "group": pair_group.get(key),
+            }
+        )
+
+    groups_meta = round_data.get("groups", [])
+    blocks = build_group_standings(groups_meta, pred_rows)
+    return WcGroupStandingsResponse(
+        season=int(round_data.get("season", 2026)),
+        competition=round_data.get("competition", "Copa do Mundo FIFA 2026"),
+        simulated=True,
+        note="Pontos simulados pelos palpites do modelo (3 vitória, 1 empate, 0 derrota).",
+        groups=[WcGroupStandingsBlock(**block) for block in blocks],
     )
 
 
@@ -895,6 +1015,7 @@ def worldcup_retrain():
 
         _wc_predictor, _wc_artifact_meta = load_or_train_wc_predictor(force=True)
         _wc_models_ready = True
+        invalidate_wc_round_cache()
     except ValueError as exc:
         _wc_models_ready = False
         raise HTTPException(status_code=503, detail=str(exc)) from exc

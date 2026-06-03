@@ -6,7 +6,7 @@ import {
   getNewsFeedUseCase,
   syncNewsSourcesUseCase,
 } from "@/application/container";
-import { PageHeader } from "@/presentation/pages/DashboardPage";
+import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { NewsArticleCard } from "@/presentation/components/news/NewsArticleCard";
 import { NewsFeedSkeleton } from "@/presentation/components/ui/Skeleton";
@@ -112,7 +112,7 @@ export function NewsFeedPage() {
   if (showSkeleton) {
     return (
       <PageTransition>
-        <PageHeader
+        <HeroPageHeader
           title="Feed de notícias"
           subtitle={
             waitingApi

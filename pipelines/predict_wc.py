@@ -63,18 +63,30 @@ def main() -> None:
     else:
         round_data = _load_round(args.round_file)
         phase = round_data.get("phase", "group")
-        for match in round_data.get("matches", []):
+        round_matches = round_data.get("matches", [])
+        for match in round_matches:
             home = normalize_national_team(match["home_team"])
             away = normalize_national_team(match["away_team"])
             match_phase = match.get("phase", phase)
             pred = predictor.predict(
                 home, away, phase=match_phase, kxl_match=kxl_match
             )
-            results.append(pred)
+            results.append((pred, match))
 
     if args.json:
-        output = [
-            {
+        output = []
+        for item in results:
+            if isinstance(item, tuple):
+                p, meta = item
+                row = {
+                    "group": meta.get("group"),
+                    "matchday": meta.get("matchday"),
+                    "phase": meta.get("phase"),
+                }
+            else:
+                p, row = item, {}
+            output.append({
+                **row,
                 "home_team": p.home_team,
                 "away_team": p.away_team,
                 "prediction": p.prediction,
@@ -84,16 +96,15 @@ def main() -> None:
                 "expected_goals": p.expected_goals,
                 "h2h": p.h2h_summary,
                 "models": p.model_breakdown,
-            }
-            for p in results
-        ]
+            })
         print(json.dumps(output, ensure_ascii=False, indent=2))
     else:
         metrics = predictor.training_metrics
         print(f"Modelo treinado com {metrics.get('train_size', '?')} jogos históricos")
         if "holdout_accuracy" in metrics:
             print(f"Acurácia holdout Copa {metrics.get('holdout_season')}: {metrics['holdout_accuracy']:.1%}")
-        for pred in results:
+        for item in results:
+            pred = item[0] if isinstance(item, tuple) else item
             _print_prediction(pred, verbose=not args.quiet)
 
 

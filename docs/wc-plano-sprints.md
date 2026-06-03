@@ -84,9 +84,52 @@ Seleções fora do JSON recebem perfil neutro (não quebra o modelo).
 
 ---
 
-## Próximo passo sugerido (Sprint 4)
+## Hiperparâmetros (calibrados)
 
-1. Integrar notícias RSS com entidades de seleções nacionais no silver.
-2. Walk-forward automático no CI após `import-world-cup`.
-3. Calibrar peso KXL (25%) por edição, como o ensemble DC/logística.
-4. Persistir também hash de `team_baselines.json` no manifest.
+Arquivo: `data/wc/hyperparams.json` (gerado por `tune-wc-hyperparams`).
+
+| Parâmetro | Antes (implícito) | Depois (tuned) |
+|-----------|-------------------|----------------|
+| `elo_home_adv` | 65 | **25** |
+| `home_adv_goals_neutral` | 0.15 | **0.05** |
+| `logistic_c` | 1.0 (default sklearn) | **1.0** + `class_weight=balanced` |
+| `kxl_blend_weight` | 0.25 fixo | **0.25** (calibrado) |
+| `draw_prob_floor` | — | **0.16** (mais empates plausíveis) |
+| Grade ensemble | 21 passos (5%) | **41 passos (2,5%)** |
+
+```bash
+pip install -e ".[dev,ml]"
+tune-wc-hyperparams              # modo rápido (~6 min)
+tune-wc-hyperparams --slow       # grade completa (lento)
+train-wc --force                 # aplica e persiste artefato
+```
+
+Holdout 2022 após retreino: Brier ~**0,194**, acurácia modal ~**47%** (com piso de empate + classes balanceadas). Na rodada 2026: **43** mandantes, **27** visitantes, **2** empates (antes: 52/19/1).
+
+---
+
+## Sprint 4 — Notícias, calibração e CI
+
+### Entregas
+
+| Item | Status | Como usar |
+|------|--------|-----------|
+| Seleções no silver (`national_teams_mentioned`) | Feito | `collect-news` → silver; lexicon em `national_team_entities.py` |
+| 3 features de notícias WC | Feito | `wc_news_count_diff`, `wc_news_sentiment_diff`, `wc_news_available` |
+| Calibração Platt (sigmoid cv=3) na logística | Feito | artefato v5; `train-wc --force` |
+| Fingerprint `team_baselines.json` + silver | Feito | invalida cache no manifest |
+| Tune peso KXL | Feito | `tune-wc-kxl` → `data/lake/reports/wc_kxl_blend_report.json` |
+| Walk-forward no CI | Feito | job `wc-model` em `.github/workflows/ci.yml` |
+| Feed expõe seleções | Feito | `GET /news/feed` → `national_teams_mentioned` |
+
+### Comandos
+
+```bash
+collect-news
+train-wc --force
+tune-wc-kxl              # grade 0–40% no holdout 2022
+tune-wc-kxl --apply      # grava melhor peso em hyperparams.json
+walkforward-wc-models --max-editions 6
+```
+
+Artefato **v5**: 26 features (23 anteriores + 3 notícias). Logística com `CalibratedClassifierCV(method="sigmoid")`.

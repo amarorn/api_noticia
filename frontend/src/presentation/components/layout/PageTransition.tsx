@@ -1,5 +1,9 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
+import {
+  staggerContainerVariants,
+  staggerItemVariants,
+} from "@/presentation/theme/motion";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -7,17 +11,7 @@ interface PageTransitionProps {
 }
 
 export function PageTransition({ children, className }: PageTransitionProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className={className}>{children}</div>;
 }
 
 export function StaggerContainer({
@@ -27,14 +21,17 @@ export function StaggerContainer({
   children: ReactNode;
   className?: string;
 }) {
+  const reduced = useReducedMotion();
+
+  if (reduced) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       initial="hidden"
       animate="visible"
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.08 } },
-      }}
+      variants={staggerContainerVariants}
       className={className}
     >
       {children}
@@ -49,15 +46,14 @@ export function StaggerItem({
   children: ReactNode;
   className?: string;
 }) {
+  const reduced = useReducedMotion();
+
+  if (reduced) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 16 },
-        visible: { opacity: 1, y: 0 },
-      }}
-      transition={{ duration: 0.4 }}
-      className={className}
-    >
+    <motion.div variants={staggerItemVariants} className={className}>
       {children}
     </motion.div>
   );

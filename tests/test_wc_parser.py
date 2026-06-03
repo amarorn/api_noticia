@@ -1,4 +1,3 @@
-import pytest
 
 from ingest.fixtures.wc_parser import parse_world_cup_txt
 

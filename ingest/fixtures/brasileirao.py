@@ -1,11 +1,9 @@
-from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
 import pandas as pd
 import structlog
 
-from config import settings
 from ingest.fixtures.parser import parse_football_txt
 from schemas.models import MatchResult
 

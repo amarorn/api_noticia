@@ -9,7 +9,7 @@ import {
 import type { WcHistoricalMatch } from "@/domain/entities";
 import { HistoricalMatchPicker } from "@/presentation/components/historical/HistoricalMatchPicker";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
-import { PageHeader } from "@/presentation/pages/DashboardPage";
+import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import {
   ModelBreakdownChart,
   ProbabilityDonut,
@@ -55,7 +55,7 @@ export function HistoricalValidationPage() {
 
   return (
     <PageTransition className="space-y-8">
-      <PageHeader
+      <HeroPageHeader
         title="Validar histórico"
         subtitle="Backtest jogo a jogo com recorte temporal — sem vazamento de dados futuros"
       />

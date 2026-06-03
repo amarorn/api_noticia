@@ -1,12 +1,19 @@
 import type { IWcRepository } from "@/domain/repositories";
-import type { WcPrediction, WcRound, WcSchedule, WcSquadDetail, WcSquadsIndex } from "@/domain/entities";
+import type {
+  WcGroupStandings,
+  WcPrediction,
+  WcRound,
+  WcSchedule,
+  WcSquadDetail,
+  WcSquadsIndex,
+} from "@/domain/entities";
 import type { WcPredictRequestDto } from "../dtos";
 
 export class GetWcRoundUseCase {
   constructor(private readonly repository: IWcRepository) {}
 
-  execute(): Promise<WcRound> {
-    return this.repository.getRound();
+  execute(matchday?: number): Promise<WcRound> {
+    return this.repository.getRound(matchday);
   }
 }
 
@@ -55,5 +62,13 @@ export class GetValueBetsUseCase {
 
   execute() {
     return this.repository.getValueBets();
+  }
+}
+
+export class GetWcGroupStandingsUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(): Promise<WcGroupStandings> {
+    return this.repository.getGroupStandings();
   }
 }

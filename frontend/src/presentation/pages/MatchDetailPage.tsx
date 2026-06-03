@@ -11,6 +11,7 @@ import { ConfidenceBadge, ConfidenceBar } from "@/presentation/components/predic
 import { MatchContextPanel } from "@/presentation/components/predictions/MatchContextPanel";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
+import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
 import { IconArrowLeft } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
@@ -39,6 +40,11 @@ export function MatchDetailPage() {
   if (query.isLoading && !query.data) {
     return (
       <PageTransition>
+        <SlowLoadingPanel
+          active
+          title={`Analisando ${homeTeam} x ${awayTeam}…`}
+          hint="Montando palpite completo com breakdown dos modelos."
+        />
         <DashboardSkeleton />
       </PageTransition>
     );
@@ -62,13 +68,12 @@ export function MatchDetailPage() {
 
   return (
     <PageTransition className="space-y-5">
-      {/* Breadcrumb */}
       <Link
         to="/"
         className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
       >
         <IconArrowLeft className="h-4 w-4" />
-        Voltar ao dashboard
+        Voltar aos palpites
       </Link>
 
       {/* Match hero */}

@@ -2,12 +2,13 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import pandas as pd
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
+from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_stats import (
     FEATURE_NAMES,
-    WcMatchFeatures,
     build_match_features,
     features_to_vector,
 )
@@ -26,11 +27,15 @@ class LogisticPrediction:
 
 class WcLogisticModel:
     def __init__(self) -> None:
-        self.model = LogisticRegression(
-            max_iter=2000,
+        hp = get_wc_hyperparams()
+        base = LogisticRegression(
+            C=hp.logistic_c,
+            class_weight=hp.logistic_class_weight,
+            max_iter=hp.logistic_max_iter,
             random_state=42,
             solver="lbfgs",
         )
+        self.model = CalibratedClassifierCV(base, cv=3, method="sigmoid")
         self.scaler = StandardScaler()
         self._fitted = False
 
@@ -51,7 +56,7 @@ class WcLogisticModel:
                 phase=row.get("phase", "group"),
                 is_neutral=bool(row.get("is_neutral", True)),
             )
-            x_rows.append(features_to_vector(feats))
+            x_rows.append(features_to_vector(feats, before_date=before))
             y_rows.append(row["label"])
 
         if len(x_rows) < 50:
@@ -61,7 +66,11 @@ class WcLogisticModel:
         self.model.fit(x_scaled, y_rows)
         self._fitted = True
 
-        metrics: dict = {"train_size": len(x_rows), "features": FEATURE_NAMES}
+        metrics: dict = {
+            "train_size": len(x_rows),
+            "features": FEATURE_NAMES,
+            "calibration": "platt_sigmoid_cv3",
+        }
         if holdout_season and holdout_season in df["season"].values:
             test_df = df[df["season"] == holdout_season]
             correct = 0
@@ -99,7 +108,7 @@ class WcLogisticModel:
             phase=phase,
             is_neutral=is_neutral,
         )
-        x = self.scaler.transform([features_to_vector(feats)])[0]
+        x = self.scaler.transform([features_to_vector(feats, before_date=before_date)])[0]
         probs = self.model.predict_proba([x])[0]
         classes = list(self.model.classes_)
 

@@ -33,6 +33,14 @@ function TeamCell({ name }: { name: string }) {
   );
 }
 
+function buildPredictLink(homeTeam: string, awayTeam: string): string {
+  const params = new URLSearchParams({
+    home: homeTeam,
+    away: awayTeam,
+  });
+  return `/predict?${params.toString()}`;
+}
+
 function MatchRow({ match, index }: { match: WcScheduleMatch; index: number }) {
   return (
     <motion.tr
@@ -66,7 +74,7 @@ function MatchRow({ match, index }: { match: WcScheduleMatch; index: number }) {
       </td>
       <td className="px-4 py-3.5 text-right">
         <Link
-          to={`/match/${encodeURIComponent(match.homeTeam)}/${encodeURIComponent(match.awayTeam)}`}
+          to={buildPredictLink(match.homeTeam, match.awayTeam)}
           className="inline-flex items-center gap-1 rounded-lg border border-white/8 bg-white/4 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:border-neon-green/30 hover:text-neon-green"
         >
           Palpite

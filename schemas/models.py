@@ -30,6 +30,7 @@ class SilverArticle(BaseModel):
     scraped_at: datetime
     content_hash: str
     teams_mentioned: list[str] = Field(default_factory=list)
+    national_teams_mentioned: list[str] = Field(default_factory=list)
     players_mentioned: list[str] = Field(default_factory=list)
     categories: list[str] = Field(default_factory=list)
     sentiment_score: Optional[float] = None

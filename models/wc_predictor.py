@@ -17,9 +17,19 @@ from pipelines.wc_kxl_collision import (
     collision_to_breakdown,
     format_collision_context,
 )
+from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_stats import build_match_features, compute_wc_h2h, format_wc_context
 from schemas.models import BolaoLabel
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
+
+
+def _apply_draw_floor(probs: dict[str, float], floor: float) -> dict[str, float]:
+    if floor <= 0:
+        return probs
+    px = max(probs["X"], floor)
+    rem = 1.0 - px
+    scale = rem / max(probs["1"] + probs["2"], 1e-9)
+    return {"1": probs["1"] * scale, "X": px, "2": probs["2"] * scale}
 
 
 @dataclass
@@ -129,17 +139,22 @@ class WcPredictor:
 
         collision_out = collision_predict(home_team, away_team, kxl_match)
 
+        hp = get_wc_hyperparams()
         prob_home, prob_draw, prob_away, baseline_out = blend_with_baseline(
             prob_home,
             prob_draw,
             prob_away,
             home_team,
             away_team,
-            weight=0.25,
+            weight=hp.kxl_blend_weight,
             kxl_match=kxl_match,
         )
 
-        probs = {"1": prob_home, "X": prob_draw, "2": prob_away}
+        probs = _apply_draw_floor(
+            {"1": prob_home, "X": prob_draw, "2": prob_away},
+            hp.draw_prob_floor,
+        )
+        prob_home, prob_draw, prob_away = probs["1"], probs["X"], probs["2"]
         prediction = max(probs, key=probs.get)  # type: ignore[assignment]
         confidence = probs[prediction]
 
@@ -254,7 +269,7 @@ def _baseline_breakdown(baseline_out) -> dict | None:
         "1": round(baseline_out.prob_home, 3),
         "X": round(baseline_out.prob_draw, 3),
         "2": round(baseline_out.prob_away, 3),
-        "blend_weight": 0.25,
+        "blend_weight": get_wc_hyperparams().kxl_blend_weight,
         "sector_note": m.sector_note,
         "home_edge": m.home_edge,
         "away_edge": m.away_edge,

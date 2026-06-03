@@ -5,7 +5,6 @@ from models.bolao_predictor import (
     build_match_prompt,
     parse_bolao_label,
 )
-from models.baseline import predict_baseline_probs
 from schemas.models import BolaoFeature, GoldBolaoContext
 
 

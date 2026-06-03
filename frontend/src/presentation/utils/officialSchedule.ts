@@ -61,3 +61,32 @@ export function groupForMatch(
 export function sortedGroupIds(schedule: WcSchedule): string[] {
   return schedule.groups.map((g) => g.id).sort();
 }
+
+export function buildMatchRoundLookup(schedule: WcSchedule): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const match of schedule.matches) {
+    map.set(`${match.homeTeam}|${match.awayTeam}`, match.round);
+  }
+  return map;
+}
+
+export function roundForMatchPair(
+  home: string,
+  away: string,
+  lookup: Map<string, number>,
+): number | null {
+  return lookup.get(`${home}|${away}`) ?? null;
+}
+
+export function formatOfficialMatchLabel(
+  home: string,
+  away: string,
+  group: string | null,
+  round: number | null,
+): string {
+  const base = `${home} x ${away}`;
+  const parts: string[] = [];
+  if (group) parts.push(`Gr. ${group}`);
+  if (round) parts.push(`R${round}`);
+  return parts.length ? `${base} · ${parts.join(" · ")}` : base;
+}
