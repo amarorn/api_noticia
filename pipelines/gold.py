@@ -5,10 +5,11 @@ import pandas as pd
 import structlog
 
 from config import settings
-from ingest.fixtures.brasileirao import load_fixtures
+from ingest.fixtures.store import load_fixtures
 from pipelines.silver import load_silver
 from pipelines.stats import compute_h2h, format_stats_context
 from schemas.models import BolaoFeature, GoldBolaoContext
+from schemas.teams import article_mentions_team
 
 logger = structlog.get_logger()
 
@@ -18,14 +19,6 @@ INJURY_KEYWORDS = [
 ]
 
 NEWS_WINDOW_DAYS = 7
-
-
-def _teams_contain(teams, team: str) -> bool:
-    if teams is None:
-        return False
-    if hasattr(teams, "tolist"):
-        teams = teams.tolist()
-    return team in teams
 
 
 def _count_injury_mentions(texts: list[str]) -> int:
@@ -70,6 +63,38 @@ def filter_news_for_match(
     ].drop(columns=["_published"])
 
 
+def _collect_players(news_df: pd.DataFrame) -> list[str]:
+    players: list[str] = []
+    seen: set[str] = set()
+    if news_df.empty or "players_mentioned" not in news_df.columns:
+        return players
+    for val in news_df["players_mentioned"]:
+        items = val.tolist() if hasattr(val, "tolist") else (val or [])
+        for name in items:
+            key = str(name).strip().lower()
+            if key and key not in seen:
+                seen.add(key)
+                players.append(str(name).strip())
+    return players[:20]
+
+
+def _build_players_section(home: str, away: str, home_news: pd.DataFrame, away_news: pd.DataFrame) -> list[str]:
+    home_players = _collect_players(home_news)
+    away_players = _collect_players(away_news)
+    if not home_players and not away_players:
+        return []
+
+    lines = ["## Jogadores citados na imprensa", ""]
+    if home_players:
+        lines.append(f"### {home}")
+        lines.extend(f"- {p}" for p in home_players)
+        lines.append("")
+    if away_players:
+        lines.append(f"### {away}")
+        lines.extend(f"- {p}" for p in away_players)
+    return lines
+
+
 def _build_news_section(news_df: pd.DataFrame) -> list[str]:
     lines = ["## Notícias recentes", ""]
     if news_df.empty:
@@ -88,11 +113,18 @@ def _build_context_text(
     away: str,
     news_df: pd.DataFrame,
     stats_text: str = "",
+    home_news: pd.DataFrame | None = None,
+    away_news: pd.DataFrame | None = None,
 ) -> str:
     lines = [f"# {home} x {away}", ""]
     if stats_text:
         lines.append(stats_text)
         lines.append("")
+    if home_news is not None and away_news is not None:
+        player_lines = _build_players_section(home, away, home_news, away_news)
+        if player_lines:
+            lines.extend(player_lines)
+            lines.append("")
     lines.extend(_build_news_section(news_df))
     return "\n".join(lines)
 
@@ -137,8 +169,8 @@ def build_gold_for_match(
         silver_df, match_date, window_days=news_window_days, live_mode=live_mode
     )
 
-    home_news = news_df[news_df["teams_mentioned"].apply(lambda t: _teams_contain(t, home_team))]
-    away_news = news_df[news_df["teams_mentioned"].apply(lambda t: _teams_contain(t, away_team))]
+    home_news = news_df[news_df["teams_mentioned"].apply(lambda t: article_mentions_team(t, home_team))]
+    away_news = news_df[news_df["teams_mentioned"].apply(lambda t: article_mentions_team(t, away_team))]
 
     home_texts = home_news["body"].tolist() if not home_news.empty else []
     away_texts = away_news["body"].tolist() if not away_news.empty else []
@@ -178,7 +210,10 @@ def build_gold_for_match(
         round_number=round_number,
         competition=competition,
         match_date=match_date,
-        context_text=_build_context_text(home_team, away_team, relevant, stats_text),
+        context_text=_build_context_text(
+            home_team, away_team, relevant, stats_text,
+            home_news=home_news, away_news=away_news,
+        ),
         features=features,
         label=label,
         home_score=home_score,

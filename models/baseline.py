@@ -1,15 +1,13 @@
+import math
+
 from schemas.models import BolaoFeature, BolaoLabel
 
 HOME_ADVANTAGE = 0.15
+LABELS: tuple[BolaoLabel, ...] = ("1", "X", "2")
 
 
-def predict_baseline(features: BolaoFeature) -> tuple[BolaoLabel, float, str]:
-    """
-    Previsão heurística combinando estatísticas + sentimento + notícias.
-    Retorna (palpite, confiança 0-1, motivo).
-    """
+def _baseline_score(features: BolaoFeature) -> float:
     score_home = HOME_ADVANTAGE
-    score_away = 0.0
     reasons: list[str] = []
 
     if features.home_position and features.away_position:
@@ -50,13 +48,30 @@ def predict_baseline(features: BolaoFeature) -> tuple[BolaoLabel, float, str]:
         news_ratio = features.news_count_home / max(features.news_count_home + features.news_count_away, 1)
         score_home += (news_ratio - 0.5) * 0.1
 
-    if score_home > 0.12:
-        prediction: BolaoLabel = "1"
-    elif score_home < -0.12:
-        prediction = "2"
-    else:
-        prediction = "X"
+    return score_home, reasons
 
+
+def predict_baseline_probs(features: BolaoFeature) -> dict[BolaoLabel, float]:
+    """Distribui 1/X/2 a partir do score heurístico (para Brier/log-loss)."""
+    score_home, _ = _baseline_score(features)
+    scale = 4.0
+    raw = {
+        "1": math.exp(score_home * scale),
+        "X": math.exp(-abs(score_home) * scale * 0.5),
+        "2": math.exp(-score_home * scale),
+    }
+    total = sum(raw.values())
+    return {k: v / total for k, v in raw.items()}
+
+
+def predict_baseline(features: BolaoFeature) -> tuple[BolaoLabel, float, str]:
+    """
+    Previsão heurística combinando estatísticas + sentimento + notícias.
+    Retorna (palpite, confiança 0-1, motivo).
+    """
+    score_home, reasons = _baseline_score(features)
+    probs = predict_baseline_probs(features)
+    prediction = max(probs, key=probs.get)  # type: ignore[arg-type]
     confidence = min(abs(score_home) + 0.3, 0.85)
     reason = "; ".join(reasons) if reasons else "equilíbrio entre os times"
     return prediction, confidence, reason

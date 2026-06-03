@@ -25,12 +25,25 @@ ml = [
     "transformers>=4.40.0",
     "datasets>=2.18.0",
     "torch>=2.2.0",
+    "peft>=0.12.0",
     "scikit-learn>=1.4.0",
     "mlflow>=2.14.0",
 ]
 gcp = [
     "google-cloud-bigquery>=3.20.0",
     "google-cloud-storage>=2.16.0",
+]
+ner = [
+    "transformers>=4.40.0",
+    "torch>=2.2.0",
+]
+orchestration = [
+    "prefect>=2.19.0",
+]
+unsloth = [
+    "unsloth",
+    "datasets>=2.18.0",
+    "trl>=0.12.0",
 ]
 dev = [
     "pytest>=8.0.0",
@@ -42,6 +55,11 @@ dev = [
 collect-news = "ingest.cli:main"
 daily-sync = "ingest.daily:main"
 import-brasileirao = "ingest.fixtures.cli:main"
+import-fixtures = "ingest.fixtures.import_cli:main"
+sync-gcp = "ingest.gcp.cli:main"
+run-daily-flow = "pipelines.flows.daily:main"
+enrich-gold = "pipelines.enrich_gold:main"
+train-bolao = "models.train_cli:main"
 import-world-cup = "ingest.fixtures.wc_cli:main"
 predict-round = "pipelines.current_round:main"
 predict-wc = "pipelines.predict_wc:main"
@@ -49,6 +67,8 @@ study-wc-model = "pipelines.wc_study:main"
 value-wc-odds = "pipelines.wc_value:main"
 fetch-wc-odds = "pipelines.fetch_wc_odds:main"
 benchmark-wc-models = "pipelines.wc_benchmark:main"
+benchmark-bolao-models = "pipelines.bolao_benchmark:main"
+study-wc-calibration = "pipelines.wc_calibration:main"
 run-pipeline = "pipelines.cli:main"
 
 [build-system]

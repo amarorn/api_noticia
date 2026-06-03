@@ -7,8 +7,8 @@ import pandas as pd
 import structlog
 
 from config import settings
-from ingest.fixtures.brasileirao import load_fixtures
-from models.baseline import predict_baseline
+from ingest.fixtures.store import load_fixtures
+from models.bolao_predictor import get_predictor
 from pipelines.gold import build_gold_for_match, save_gold
 from pipelines.silver import load_silver
 
@@ -85,15 +85,17 @@ def predict_round(
             fixtures_df=fixtures_df if not fixtures_df.empty else None,
             live_mode=True,
         )
-        prediction, confidence, reason = predict_baseline(context.features)
+        result = get_predictor().predict(context)
         entry = {
             "match_id": context.match_id,
             "home_team": context.home_team,
             "away_team": context.away_team,
             "round_number": context.round_number,
-            "prediction": prediction,
-            "confidence": round(confidence, 2),
-            "reason": reason,
+            "prediction": result.prediction,
+            "confidence": round(result.confidence, 2),
+            "reason": result.reason,
+            "probabilities": {k: round(v, 4) for k, v in result.probabilities.items()},
+            "model_source": result.model_source,
             "news_count": context.features.news_count_home + context.features.news_count_away,
             "home_position": context.features.home_position,
             "away_position": context.features.away_position,
@@ -111,13 +113,17 @@ def print_predictions(results: list[dict], schedule: dict) -> None:
     print(f"\n{'='*60}")
     print(f"  RODADA {schedule['round']} — {schedule.get('competition', 'Brasileirão')}")
     print(f"{'='*60}\n")
-    print(f"{'Mandante':<18} {'Visitante':<18} {'Palpite':>7} {'Conf.':>6}  Motivo")
-    print("-" * 70)
+    print(f"{'Mandante':<18} {'Visitante':<18} {'Palpite':>7} {'Conf.':>6} {'Mod.':<8} Motivo")
+    print("-" * 78)
     for r in results:
+        probs = r.get("probabilities") or {}
+        prob_str = f"1={probs.get('1', 0):.0%} X={probs.get('X', 0):.0%} 2={probs.get('2', 0):.0%}"
         print(
             f"{r['home_team']:<18} {r['away_team']:<18} "
-            f"{r['prediction']:>7} {r['confidence']:>5.0%}  {r['reason']}"
+            f"{r['prediction']:>7} {r['confidence']:>5.0%} {r.get('model_source', '?'):<8} "
+            f"{r['reason']}"
         )
+        print(f"{'':18} {'':18} {'':>7} {'':>6} {'':8} {prob_str}")
     print()
 
 

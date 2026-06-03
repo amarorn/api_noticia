@@ -46,6 +46,24 @@ def test_parse_date_without_year():
     assert dt.day == 19
 
 
+COPA_SAMPLE = """
+= Copa do Brasil 2025
+
+▪ Round 1
+  Tue Feb 18 2025
+    18:00  Tocantinópolis TO       v Atlético Mineiro         0-2 (0-0)
+           Boavista RJ             v CSA AL                   0-2 (0-2)
+"""
+
+
+def test_parse_copa_round():
+    matches = parse_football_txt(COPA_SAMPLE, season=2025, competition="Copa do Brasil")
+    assert len(matches) == 2
+    assert matches[0].competition == "Copa do Brasil"
+    assert matches[0].label == "2"
+    assert matches[1].home_team_raw == "Boavista RJ"
+
+
 def test_parse_fluminense_draw():
     matches = parse_football_txt(SAMPLE_TXT, season=2024)
     fluminense = next(m for m in matches if m.home_team == "Fluminense")

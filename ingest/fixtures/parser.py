@@ -7,7 +7,7 @@ from dateutil import parser as date_parser
 from schemas.models import BolaoLabel, MatchResult
 from schemas.teams import normalize_team
 
-MATCHDAY_RE = re.compile(r"^▪ Matchday\s+(\d+)", re.IGNORECASE)
+ROUND_RE = re.compile(r"^▪ (?:Matchday|Round)\s+(\d+)", re.IGNORECASE)
 DATE_RE = re.compile(
     r"^\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+([A-Za-z]{3}\s+\d{1,2}\s+\d{4})"
 )
@@ -15,7 +15,7 @@ DATE_NO_YEAR_RE = re.compile(
     r"^\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+([A-Za-z]{3}\s+\d{1,2})\s*$"
 )
 MATCH_RE = re.compile(
-    r"^\s+\d{2}:\d{2}\s+(.+?)\s+v\s+(.+?)\s+(\d+)-(\d+)\s+\("
+    r"^\s+(?:\d{2}:\d{2}\s+)?(.+?)\s+v\s+(.+?)\s+(\d+)-(\d+)(?:\s+pen\.|\s+a\.e\.t\.)?\s+\("
 )
 
 
@@ -48,9 +48,9 @@ def parse_football_txt(content: str, season: int, competition: str = "Brasileir�
     current_date: datetime | None = None
 
     for line in content.splitlines():
-        matchday = MATCHDAY_RE.match(line)
-        if matchday:
-            current_round = int(matchday.group(1))
+        round_match = ROUND_RE.match(line)
+        if round_match:
+            current_round = int(round_match.group(1))
             continue
 
         date_match = DATE_RE.match(line)

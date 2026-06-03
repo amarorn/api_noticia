@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+from config import settings
+from models.economics import coase_effective_min_edge
+
 
 @dataclass
 class OutcomeValue:
@@ -58,8 +61,9 @@ def evaluate_match(
     away_team: str,
     probabilities: dict[str, float],
     odds: dict[str, float],
-    min_edge: float = 0.03,
+    min_edge: float | None = None,
 ) -> MatchValueReport:
+    threshold = coase_effective_min_edge(min_edge or settings.ev_min_edge)
     outcomes: list[OutcomeValue] = []
     for key in ("1", "X", "2"):
         odd = float(odds.get(key, 0.0))
@@ -69,7 +73,7 @@ def evaluate_match(
         outcomes.append(evaluate_outcome(key, prob, odd))
 
     outcomes.sort(key=lambda item: item.expected_value, reverse=True)
-    best = outcomes[0] if outcomes and outcomes[0].expected_value >= min_edge else None
+    best = outcomes[0] if outcomes and outcomes[0].expected_value >= threshold else None
     return MatchValueReport(
         home_team=home_team,
         away_team=away_team,

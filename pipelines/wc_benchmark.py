@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 
 from config import settings
 from ingest.fixtures.world_cup import load_wc_fixtures
+from models.economics import ces_blend_probabilities, lgn_min_sample_warning
 from models.poisson_wc import predict_poisson
 from pipelines.wc_stats import FEATURE_NAMES, build_match_features, features_to_vector
 
@@ -156,7 +157,8 @@ def _build_eval_rows(fixtures: pd.DataFrame, eval_season: int) -> tuple[np.ndarr
     return x, y, rows
 
 
-def run_benchmark(eval_season: int = 2022, enable_mlflow: bool = False) -> dict:
+def run_benchmark(eval_season: int | None = None, enable_mlflow: bool = False) -> dict:
+    eval_season = eval_season if eval_season is not None else settings.wc_validation_season
     fixtures = load_wc_fixtures()
     if fixtures.empty:
         raise ValueError("Sem dados de Copa. Execute import-world-cup primeiro.")
@@ -164,6 +166,7 @@ def run_benchmark(eval_season: int = 2022, enable_mlflow: bool = False) -> dict:
     x_eval, y_eval, rows = _build_eval_rows(fixtures, eval_season)
     if len(rows) < 20:
         raise ValueError(f"Poucas amostras para avaliação na temporada {eval_season}: {len(rows)}")
+    lgn_warn = lgn_min_sample_warning(len(rows), f"benchmark Copa {eval_season}")
 
     train_df = fixtures[fixtures["season"] < eval_season].sort_values("match_date")
     # Construção temporal do conjunto de treino (sem vazamento).
@@ -225,12 +228,31 @@ def run_benchmark(eval_season: int = 2022, enable_mlflow: bool = False) -> dict:
     m_gb_cal = _metrics("gradient_boosting_calibrated", probs_gb_cal)
 
     best_blend, probs_blend = _weights_search(rows, ("poisson", "logistic", "gb_cal"))
-    m_blend = _metrics("ensemble_blend", probs_blend)
+    m_blend = _metrics("ensemble_blend_linear", probs_blend)
     m_blend["weights"] = {
         "poisson": best_blend["weights"][0],
         "logistic": best_blend["weights"][1],
         "gb_cal": best_blend["weights"][2],
     }
+
+    ces_rows_probs = []
+    for i, r in enumerate(rows):
+        models = {
+            "poisson": dict(zip(LABELS, r.probs_poisson, strict=True)),
+            "logistic": dict(zip(LABELS, r.probs_logistic or [0, 0, 0], strict=True)),
+            "gb_cal": dict(zip(LABELS, r.probs_gb_cal or [0, 0, 0], strict=True)),
+        }
+        w = {
+            "poisson": best_blend["weights"][0],
+            "logistic": best_blend["weights"][1],
+            "gb_cal": best_blend["weights"][2],
+        }
+        blended = ces_blend_probabilities(models, weights=w, sigma=settings.dixit_sigma)
+        ces_rows_probs.append([blended[c] for c in LABELS])
+    probs_ces = np.array(ces_rows_probs, dtype=float)
+    m_ces = _metrics("ensemble_dixit_ces", probs_ces)
+    m_ces["sigma"] = settings.dixit_sigma
+    m_ces["weights"] = m_blend["weights"]
 
     cluster_report = _cluster_error_analysis(rows, probs_blend, n_clusters=4)
 
@@ -240,8 +262,9 @@ def run_benchmark(eval_season: int = 2022, enable_mlflow: bool = False) -> dict:
         "train_samples": int(len(y_train)),
         "eval_samples": int(len(y_eval)),
         "feature_names": FEATURE_NAMES,
-        "metrics": [m_poisson, m_log, m_gb, m_gb_cal, m_blend],
+        "metrics": [m_poisson, m_log, m_gb, m_gb_cal, m_blend, m_ces],
         "cluster_error": cluster_report,
+        "lgn_warning": lgn_warn,
     }
 
     if enable_mlflow:
@@ -268,7 +291,12 @@ def run_benchmark(eval_season: int = 2022, enable_mlflow: bool = False) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Benchmark temporal de modelos da Copa")
-    parser.add_argument("--eval-season", type=int, default=2022)
+    parser.add_argument(
+        "--eval-season",
+        type=int,
+        default=settings.wc_validation_season,
+        help=f"Temporada holdout (default: {settings.wc_validation_season}, world_cup_{{ano}}.parquet)",
+    )
     parser.add_argument("--mlflow", action="store_true", help="Logar métricas no MLflow (se instalado)")
     parser.add_argument(
         "--output",
