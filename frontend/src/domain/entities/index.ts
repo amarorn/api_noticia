@@ -155,6 +155,33 @@ export interface WcRound {
   predictions: WcPrediction[];
 }
 
+export interface WcScheduleGroup {
+  id: string;
+  teams: string[];
+}
+
+export interface WcScheduleMatch {
+  matchId: string;
+  homeTeam: string;
+  awayTeam: string;
+  group: string | null;
+  round: number;
+  phase: string;
+  kickoff: string | null;
+  venue: string | null;
+  city: string | null;
+}
+
+export interface WcSchedule {
+  season: number;
+  competition: string;
+  phase: string;
+  groups: WcScheduleGroup[];
+  matchdays: number[];
+  matches: WcScheduleMatch[];
+  totalMatches: number;
+}
+
 export interface BrasileiraoPrediction {
   homeTeam: string;
   awayTeam: string;

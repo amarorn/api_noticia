@@ -10,12 +10,18 @@ import {
   mapValueBets,
   mapWcPrediction,
   mapWcRound,
+  mapWcSchedule,
 } from "../mappers";
 
 export class WcApiRepository implements IWcRepository {
   async getRound() {
     const raw = await apiFetch<Parameters<typeof mapWcRound>[0]>("/worldcup/round");
     return mapWcRound(raw);
+  }
+
+  async getSchedule() {
+    const raw = await apiFetch<Parameters<typeof mapWcSchedule>[0]>("/worldcup/schedule");
+    return mapWcSchedule(raw);
   }
 
   async predictMatch(homeTeam: string, awayTeam: string, phase: string) {

@@ -1,5 +1,5 @@
 import type { IWcRepository } from "@/domain/repositories";
-import type { WcPrediction, WcRound } from "@/domain/entities";
+import type { WcPrediction, WcRound, WcSchedule } from "@/domain/entities";
 import type { WcPredictRequestDto } from "../dtos";
 
 export class GetWcRoundUseCase {
@@ -7,6 +7,14 @@ export class GetWcRoundUseCase {
 
   execute(): Promise<WcRound> {
     return this.repository.getRound();
+  }
+}
+
+export class GetWcScheduleUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(): Promise<WcSchedule> {
+    return this.repository.getSchedule();
   }
 }
 

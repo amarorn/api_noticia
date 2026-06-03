@@ -7,6 +7,7 @@ import { BrasileiraoPage } from "@/presentation/pages/BrasileiraoPage";
 import { MatchDetailPage } from "@/presentation/pages/MatchDetailPage";
 import { HistoricalValidationPage } from "@/presentation/pages/HistoricalValidationPage";
 import { NewsFeedPage } from "@/presentation/pages/NewsFeedPage";
+import { SchedulePage } from "@/presentation/pages/SchedulePage";
 import { AlbumPage } from "@/presentation/pages/AlbumPage";
 import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
 
@@ -32,6 +33,7 @@ export function App() {
             <Route path="brasileirao" element={<BrasileiraoPage />} />
             <Route path="match/:home/:away" element={<MatchDetailPage />} />
             <Route path="album" element={<AlbumPage />} />
+            <Route path="jogos" element={<SchedulePage />} />
             <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

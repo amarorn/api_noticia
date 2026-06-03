@@ -23,6 +23,7 @@ from pipelines.gold import build_gold_for_match
 from ingest.news_sync import sync_news_sources
 from pipelines.news_feed import build_news_feed
 from pipelines.silver import load_silver
+from pipelines.wc_schedule import build_schedule_response, load_wc_schedule
 from pipelines.wc_validate import (
     list_edition_matches,
     list_wc_editions,
@@ -215,6 +216,33 @@ class WcRoundResponse(BaseModel):
 class WcTeamsResponse(BaseModel):
     teams: list[str]
     count: int
+
+
+class WcScheduleGroup(BaseModel):
+    id: str
+    teams: list[str]
+
+
+class WcScheduleMatchItem(BaseModel):
+    match_id: str
+    home_team: str
+    away_team: str
+    group: str | None = None
+    round: int
+    phase: str
+    kickoff: str | None = None
+    venue: str | None = None
+    city: str | None = None
+
+
+class WcScheduleResponse(BaseModel):
+    season: int
+    competition: str
+    phase: str
+    groups: list[WcScheduleGroup]
+    matchdays: list[int]
+    matches: list[WcScheduleMatchItem]
+    total_matches: int
 
 
 class WcEditionItem(BaseModel):
@@ -468,6 +496,7 @@ def root():
             "/round/predict",
             "/worldcup/predict",
             "/worldcup/round",
+            "/worldcup/schedule",
             "/worldcup/teams",
             "/worldcup/value/live",
             "/worldcup/editions",
@@ -656,6 +685,19 @@ def worldcup_teams():
 
     sorted_teams = sorted(teams, key=str.casefold)
     return WcTeamsResponse(teams=sorted_teams, count=len(sorted_teams))
+
+
+@app.get("/worldcup/schedule", response_model=WcScheduleResponse)
+def worldcup_schedule():
+    try:
+        data = load_wc_schedule()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Calendário WC inválido: {exc}") from exc
+
+    payload = build_schedule_response(data)
+    return WcScheduleResponse(**payload)
 
 
 @app.get("/worldcup/editions", response_model=WcEditionsResponse)

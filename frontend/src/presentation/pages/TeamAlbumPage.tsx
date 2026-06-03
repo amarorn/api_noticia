@@ -17,7 +17,29 @@ import {
 } from "@/data/albumPlayers";
 import { TEAMS } from "@/presentation/pages/AlbumPage";
 
-// ─── Mapeamento time → retrato ilustrado ──────────────────────────────────────
+// ─── Retrato individual por jogador (nome exato do ROSTERS) ──────────────────
+// Brasil: retratos gerados individualmente para cada jogador
+// Demais times: fallback para o retrato genérico da seleção
+
+const PLAYER_PORTRAIT: Record<string, string> = {
+  // Brasil
+  "Alisson":          "/images/player-brasil-1-alisson.png",
+  "Ederson":          "/images/player-brasil-23-ederson.png",
+  "Danilo":           "/images/player-brasil-2-danilo.png",
+  "Marquinhos":       "/images/player-brasil-3-marquinhos.png",
+  "Gabriel Magalhães":"/images/player-brasil-4-gabriel.png",
+  "Alex Telles":      "/images/player-brasil-12-telles.png",
+  "Casemiro":         "/images/player-brasil-5-casemiro.png",
+  "Fred":             "/images/player-brasil-8-fred.png",
+  "Lucas Paquetá":    "/images/player-brasil-10-paqueta.png",
+  "Rodrygo":          "/images/player-brasil-7-rodrygo.png",
+  "Raphinha":         "/images/player-brasil-11-raphinha.png",
+  "Vinicius Jr":      "/images/player-brasil-20-vinicius.png",
+  "Richarlison":      "/images/player-brasil-9-richarlison.png",
+  "Endrick":          "/images/player-brasil-18-endrick.png",
+};
+
+// ─── Retrato genérico por time (fallback quando não há retrato individual) ────
 
 const TEAM_PORTRAIT: Record<string, string> = {
   "Brasil":         "/images/player-brasil.png",
@@ -44,6 +66,14 @@ const TEAM_PORTRAIT: Record<string, string> = {
   "Canadá":         "/images/player-brasil.png",
   "Estados Unidos": "/images/player-brasil.png",
 };
+
+function resolvePortrait(playerName: string, teamName: string): string {
+  return (
+    PLAYER_PORTRAIT[playerName] ??
+    TEAM_PORTRAIT[teamName] ??
+    "/images/player-brasil.png"
+  );
+}
 
 // ─── Persistência separada dos jogadores coletados ────────────────────────────
 
@@ -84,7 +114,7 @@ function PlayerSticker({
   onToggle: () => void;
 }) {
   const posColor = POSITION_COLOR[player.position];
-  const portrait = TEAM_PORTRAIT[teamName] ?? "/images/sticker-template-green.png";
+  const portrait = resolvePortrait(player.name, teamName);
 
   return (
     <motion.button

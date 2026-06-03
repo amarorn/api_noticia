@@ -10,6 +10,7 @@ import {
   IconHistory,
   IconTrophy,
   IconAlbum,
+  IconCalendar,
   IconMenu,
   IconX,
   IconWifi,
@@ -17,6 +18,7 @@ import {
 
 const navItems = [
   { to: "/", label: "Dashboard WC", end: true, Icon: IconDashboard },
+  { to: "/jogos", label: "Jogos", Icon: IconCalendar },
   { to: "/album", label: "Álbum", Icon: IconAlbum },
   { to: "/news", label: "Notícias", Icon: IconNewspaper },
   { to: "/predict", label: "Palpite avulso", Icon: IconZap },

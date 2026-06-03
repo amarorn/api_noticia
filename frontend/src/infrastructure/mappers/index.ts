@@ -12,6 +12,8 @@ import type {
   ValueOutcome,
   WcPrediction,
   WcRound,
+  WcSchedule,
+  WcScheduleMatch,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -356,6 +358,54 @@ export function mapValueBets(raw: ApiValueBets): ValueBetsReport {
     source: raw.source,
     capturedAt: raw.captured_at,
     edges: raw.edges.map(mapValueMatch),
+  };
+}
+
+interface ApiWcScheduleMatch {
+  match_id: string;
+  home_team: string;
+  away_team: string;
+  group: string | null;
+  round: number;
+  phase: string;
+  kickoff: string | null;
+  venue: string | null;
+  city: string | null;
+}
+
+interface ApiWcSchedule {
+  season: number;
+  competition: string;
+  phase: string;
+  groups: { id: string; teams: string[] }[];
+  matchdays: number[];
+  matches: ApiWcScheduleMatch[];
+  total_matches: number;
+}
+
+function mapWcScheduleMatch(raw: ApiWcScheduleMatch): WcScheduleMatch {
+  return {
+    matchId: raw.match_id,
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    group: raw.group,
+    round: raw.round,
+    phase: raw.phase,
+    kickoff: raw.kickoff,
+    venue: raw.venue,
+    city: raw.city,
+  };
+}
+
+export function mapWcSchedule(raw: ApiWcSchedule): WcSchedule {
+  return {
+    season: raw.season,
+    competition: raw.competition,
+    phase: raw.phase,
+    groups: raw.groups.map((g) => ({ id: g.id, teams: g.teams })),
+    matchdays: raw.matchdays,
+    matches: raw.matches.map(mapWcScheduleMatch),
+    totalMatches: raw.total_matches,
   };
 }
 

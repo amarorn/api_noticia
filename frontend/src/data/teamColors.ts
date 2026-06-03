@@ -1,0 +1,42 @@
+/** Cores primárias das seleções (hex) — usadas em cards, tabela e álbum. */
+export const TEAM_COLORS: Record<string, string> = {
+  Argentina: "#74b9e0",
+  Espanha: "#c60b1e",
+  Brasil: "#009c3b",
+  Portugal: "#006600",
+  Inglaterra: "#c8102e",
+  França: "#003189",
+  Alemanha: "#ffffff",
+  Japão: "#bc002d",
+  Holanda: "#ff6600",
+  Itália: "#0066cc",
+  Marrocos: "#c1272d",
+  Senegal: "#00853f",
+  Croácia: "#ff0000",
+  México: "#006847",
+  "Coreia do Sul": "#c60c30",
+  Bélgica: "#ef3340",
+  Canadá: "#ff0000",
+  Suíça: "#ff0000",
+  Dinamarca: "#c60c30",
+  Escócia: "#003087",
+  Colômbia: "#fcd116",
+  Uruguai: "#75a3db",
+  Egito: "#ce1126",
+  Austrália: "#00843d",
+  "Estados Unidos": "#b22234",
+  "Arábia Saudita": "#006c35",
+  Noruega: "#ba0c2f",
+  Turquia: "#e30a17",
+  Catar: "#8d1b3d",
+  "República Tcheca": "#d7141a",
+  Bósnia: "#003da5",
+  "Costa do Marfim": "#f77f00",
+  "Cabo Verde": "#003893",
+  Curaçau: "#003087",
+  Iraque: "#007a3d",
+};
+
+export function teamColor(name: string): string {
+  return TEAM_COLORS[name] ?? "#64748b";
+}

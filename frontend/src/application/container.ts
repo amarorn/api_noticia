@@ -14,6 +14,7 @@ import {
 import {
   GetValueBetsUseCase,
   GetWcRoundUseCase,
+  GetWcScheduleUseCase,
   GetWcTeamsUseCase,
   PredictWcMatchUseCase,
 } from "@/application/use-cases/wcUseCases";
@@ -26,6 +27,7 @@ import {
 } from "@/infrastructure/repositories";
 
 export const getWcRoundUseCase = new GetWcRoundUseCase(wcRepository);
+export const getWcScheduleUseCase = new GetWcScheduleUseCase(wcRepository);
 export const predictWcMatchUseCase = new PredictWcMatchUseCase(wcRepository);
 export const getWcTeamsUseCase = new GetWcTeamsUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);

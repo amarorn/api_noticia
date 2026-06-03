@@ -32,6 +32,7 @@ NATIONAL_ALIASES: dict[str, str] = {
     "Países Baixos": "Holanda",
     "Czech Republic": "República Tcheca",
     "Chéquia": "República Tcheca",
+    "Czechia": "República Tcheca",
     "Bosnia and Herzegovina": "Bósnia",
     "Bósnia e Herzegovina": "Bósnia",
     "DR Congo": "República Democrática do Congo",
