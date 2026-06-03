@@ -17,6 +17,34 @@ import {
 } from "@/data/albumPlayers";
 import { TEAMS } from "@/presentation/pages/AlbumPage";
 
+// ─── Mapeamento time → retrato ilustrado ──────────────────────────────────────
+
+const TEAM_PORTRAIT: Record<string, string> = {
+  "Brasil":         "/images/player-brasil.png",
+  "Argentina":      "/images/player-argentina.png",
+  "França":         "/images/player-franca.png",
+  "Espanha":        "/images/player-espanha.png",
+  "Alemanha":       "/images/player-alemanha.png",
+  "Inglaterra":     "/images/player-brasil.png",
+  "Portugal":       "/images/player-portugal.png",
+  "Itália":         "/images/player-italia.png",
+  "Holanda":        "/images/player-holanda.png",
+  "Croácia":        "/images/player-croacia.png",
+  "Marrocos":       "/images/player-marrocos.png",
+  "Japão":          "/images/player-japao.png",
+  "México":         "/images/player-mexico.png",
+  "Senegal":        "/images/player-marrocos.png",
+  "Colômbia":       "/images/player-mexico.png",
+  "Uruguai":        "/images/player-argentina.png",
+  "Bélgica":        "/images/player-franca.png",
+  "Suécia":         "/images/player-alemanha.png",
+  "Dinamarca":      "/images/player-alemanha.png",
+  "Austrália":      "/images/player-brasil.png",
+  "Suíça":          "/images/player-espanha.png",
+  "Canadá":         "/images/player-brasil.png",
+  "Estados Unidos": "/images/player-brasil.png",
+};
+
 // ─── Persistência separada dos jogadores coletados ────────────────────────────
 
 const PLAYER_KEY = "wc2026_players_collected";
@@ -43,24 +71,20 @@ function playerKey(teamName: string, player: Player) {
 function PlayerSticker({
   player,
   teamColor,
+  teamName,
   index,
   collected,
   onToggle,
 }: {
   player: Player;
   teamColor: string;
+  teamName: string;
   index: number;
   collected: boolean;
   onToggle: () => void;
 }) {
   const posColor = POSITION_COLOR[player.position];
-  const initials = player.name
-    .split(" ")
-    .filter((w) => w.length > 2)
-    .slice(-2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase() || player.name.slice(0, 2).toUpperCase();
+  const portrait = TEAM_PORTRAIT[teamName] ?? "/images/sticker-template-green.png";
 
   return (
     <motion.button
@@ -74,55 +98,50 @@ function PlayerSticker({
       className="group relative flex flex-col overflow-hidden rounded-xl text-left focus:outline-none"
       style={{
         border: `1.5px solid ${collected ? posColor : "rgba(255,255,255,0.09)"}`,
-        filter: collected ? "none" : "saturate(0.35) brightness(0.65)",
-        boxShadow: collected ? `0 0 20px ${posColor}30, 0 4px 16px rgba(0,0,0,0.5)` : "none",
-        background: "#0d1829",
+        filter: collected ? "none" : "saturate(0.3) brightness(0.55)",
+        boxShadow: collected
+          ? `0 0 22px ${posColor}40, 0 6px 20px rgba(0,0,0,0.6), inset 0 0 0 1px ${posColor}20`
+          : "0 2px 8px rgba(0,0,0,0.4)",
+        background: "#0a0f1a",
       }}
       aria-pressed={collected}
       aria-label={`${player.name} — ${collected ? "remover" : "coletar"}`}
     >
-      {/* Topo colorido da seleção + número */}
-      <div
-        className="flex items-center justify-between px-2 py-1.5"
-        style={{ background: `linear-gradient(135deg, ${teamColor}cc, ${teamColor}55)` }}
-      >
-        <span className="font-mono text-[9px] font-black text-white/80">
-          #{player.number}
-        </span>
+      {/* Foto / ilustração do jogador */}
+      <div className="relative overflow-hidden" style={{ aspectRatio: "3/4" }}>
+        <img
+          src={portrait}
+          alt={`Jogador — ${teamName}`}
+          className="absolute inset-0 h-full w-full object-cover object-top"
+          draggable={false}
+          loading="lazy"
+        />
+
+        {/* Gradiente inferior para o nome */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/90 to-transparent" />
+
+        {/* Número no canto superior esquerdo */}
+        <div
+          className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-[9px] font-black"
+          style={{ backgroundColor: teamColor, color: "#0a0f1a" }}
+        >
+          {player.number}
+        </div>
+
+        {/* Badge posição canto superior direito */}
         <span
-          className="rounded px-1 py-px text-[8px] font-black"
-          style={{ backgroundColor: `${posColor}30`, color: posColor }}
+          className="absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[8px] font-black"
+          style={{ backgroundColor: `${posColor}cc`, color: "#0a0f1a" }}
         >
           {player.position}
         </span>
-      </div>
 
-      {/* Área do "foto" — silhueta neon estilizada */}
-      <div
-        className="relative flex h-20 items-center justify-center overflow-hidden"
-        style={{
-          background: `radial-gradient(ellipse at 50% 60%, ${teamColor}18 0%, #0a1020 70%)`,
-        }}
-      >
-        {/* Silhueta usando imagem template com tint da cor */}
-        <img
-          src="/images/sticker-template-green.png"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-20"
-          draggable={false}
-          style={{ filter: `hue-rotate(${hueFromColor(teamColor)}deg)` }}
-        />
-        {/* Iniciais grandes por cima */}
-        <span
-          className="relative z-10 text-3xl font-black leading-none"
-          style={{
-            color: teamColor,
-            textShadow: `0 0 20px ${teamColor}90, 0 0 40px ${teamColor}40`,
-          }}
-        >
-          {initials}
-        </span>
+        {/* Nome sobreposto na foto */}
+        <div className="absolute inset-x-0 bottom-0 px-2 pb-1.5">
+          <p className="truncate text-center text-[10px] font-black leading-tight text-white drop-shadow-lg">
+            {player.name.split(" ").slice(-1)[0].toUpperCase()}
+          </p>
+        </div>
 
         {/* Checkmark overlay quando coletado */}
         <AnimatePresence>
@@ -131,11 +150,10 @@ function PlayerSticker({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute inset-0 z-20 flex items-center justify-center"
-              style={{ background: `${posColor}28` }}
+              className="absolute inset-0 z-20 flex items-end justify-end p-2"
             >
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-full shadow-lg"
+                className="flex h-7 w-7 items-center justify-center rounded-full shadow-lg"
                 style={{ backgroundColor: posColor, color: "#0a0f1a" }}
               >
                 <IconCheck className="h-4 w-4" />
@@ -145,10 +163,10 @@ function PlayerSticker({
         </AnimatePresence>
       </div>
 
-      {/* Info do jogador */}
+      {/* Rodapé com info completa */}
       <div
-        className="flex flex-col gap-0.5 border-t px-2 py-2"
-        style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(5,10,20,0.9)" }}
+        className="flex flex-col gap-0.5 px-2 py-1.5"
+        style={{ background: `linear-gradient(135deg, ${teamColor}18, rgba(5,10,20,0.95))` }}
       >
         <p className="truncate text-center text-[10px] font-bold leading-tight text-white">
           {player.name}
@@ -156,30 +174,12 @@ function PlayerSticker({
         <p className="truncate text-center text-[8px] text-slate-500">
           {player.club}
         </p>
-        <p
-          className="text-center text-[8px] font-semibold"
-          style={{ color: posColor }}
-        >
+        <p className="text-center text-[8px] font-semibold" style={{ color: posColor }}>
           {POSITION_LABEL[player.position]} · {player.born}
         </p>
       </div>
     </motion.button>
   );
-}
-
-/** Aproximação de hue-rotate em graus para colorir o template baseado na cor da seleção */
-function hueFromColor(hex: string): number {
-  const map: Record<string, number> = {
-    "#009c3b": 0,    // verde (Brasil) — template já é verde
-    "#c60b1e": 100,  // vermelho
-    "#003189": 160,  // azul
-    "#74b9e0": 155,  // azul claro (Argentina)
-    "#fcd116": 50,   // amarelo (Colômbia)
-    "#f97316": 30,   // laranja
-    "#ff6600": 25,   // laranja Holanda
-    "#8d1b3d": 120,  // vinho (Catar)
-  };
-  return map[hex] ?? 140;
 }
 
 // ─── Filtros de posição ──────────────────────────────────────────────────────
@@ -355,6 +355,7 @@ export function TeamAlbumPage() {
                 key={`${player.number}-${player.name}`}
                 player={player}
                 teamColor={teamColor}
+                teamName={teamName}
                 index={i}
                 collected={collected.has(playerKey(teamName, player))}
                 onToggle={() => togglePlayer(player)}
