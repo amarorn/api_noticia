@@ -4,6 +4,7 @@ import type {
   KxlBaselineBreakdown,
   KxlCollisionBreakdown,
   KxlLethalityBreakdown,
+  KxlTeamSnapshot,
   ModelBreakdown,
   OutcomeLabel,
   ValueBetsReport,
@@ -41,6 +42,10 @@ export interface ApiModelBreakdown {
     sector_note?: string;
     home_edge?: number;
     away_edge?: number;
+    home_attack_vs_away_def?: number;
+    away_attack_vs_home_def?: number;
+    home_snapshot?: KxlSnapshotApi | null;
+    away_snapshot?: KxlSnapshotApi | null;
   } | null;
   kxl_collision?: {
     "1": number;
@@ -53,6 +58,19 @@ export interface ApiModelBreakdown {
     visitante?: KxlCollisionSideApi;
     notes?: string[];
   } | null;
+}
+
+interface KxlSnapshotApi {
+  attack_index: number;
+  defense_index: number;
+  control_index: number;
+  gk_index: number;
+  chaos: number;
+  shots_per_game: number;
+  possession_pct: number;
+  counter_attack: number;
+  inside_goal_pct: number;
+  gk_inside_weakness_pct: number;
 }
 
 interface KxlLethalityApi {
@@ -149,6 +167,22 @@ function mapOutcome(value: string): OutcomeLabel {
   return "X";
 }
 
+function mapSnapshot(raw: KxlSnapshotApi | null | undefined): KxlTeamSnapshot | null {
+  if (!raw) return null;
+  return {
+    attackIndex: raw.attack_index,
+    defenseIndex: raw.defense_index,
+    controlIndex: raw.control_index,
+    gkIndex: raw.gk_index,
+    chaos: raw.chaos,
+    shotsPerGame: raw.shots_per_game,
+    possessionPct: raw.possession_pct,
+    counterAttack: raw.counter_attack,
+    insideGoalPct: raw.inside_goal_pct,
+    gkInsideWeaknessPct: raw.gk_inside_weakness_pct,
+  };
+}
+
 function mapKxlBaseline(raw: ApiModelBreakdown["kxl_baseline"]): KxlBaselineBreakdown | null {
   if (!raw) return null;
   return {
@@ -158,6 +192,10 @@ function mapKxlBaseline(raw: ApiModelBreakdown["kxl_baseline"]): KxlBaselineBrea
     sectorNote: raw.sector_note ?? "",
     homeEdge: raw.home_edge ?? 0,
     awayEdge: raw.away_edge ?? 0,
+    homeAttackVsAwayDef: raw.home_attack_vs_away_def ?? 0,
+    awayAttackVsHomeDef: raw.away_attack_vs_home_def ?? 0,
+    homeSnapshot: mapSnapshot(raw.home_snapshot),
+    awaySnapshot: mapSnapshot(raw.away_snapshot),
   };
 }
 

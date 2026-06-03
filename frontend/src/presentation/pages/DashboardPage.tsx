@@ -63,12 +63,15 @@ export function DashboardPage() {
   return (
     <PageTransition className="space-y-10">
       <PageHeader
-        title={`${round.competition} — Rodada ${round.round}`}
-        subtitle={`Temporada ${round.season} • Fase: ${round.phase} • ${round.predictions.length} jogos`}
+        title={`${round.competition}`}
+        subtitle={`Rodada ${round.round} · Temporada ${round.season} · Fase ${round.phase}`}
+        badges={[
+          { label: `${round.predictions.length} jogos`, color: "blue" },
+        ]}
       />
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-white">Palpites da rodada</h2>
+        <p className="section-label">Palpites da rodada</p>
         <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {round.predictions.map((pred, i) => (
             <StaggerItem key={`${pred.homeTeam}-${pred.awayTeam}`}>
@@ -89,11 +92,53 @@ export function DashboardPage() {
   );
 }
 
-function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
+interface PageHeaderBadge {
+  label: string;
+  color?: "green" | "blue" | "purple" | "orange";
+}
+
+interface PageHeaderProps {
+  title: string;
+  subtitle: string;
+  badges?: PageHeaderBadge[];
+}
+
+const badgeClasses: Record<NonNullable<PageHeaderBadge["color"]>, string> = {
+  green: "border-neon-green/25 bg-neon-green/8 text-neon-green",
+  blue: "border-neon-blue/25 bg-neon-blue/8 text-neon-blue",
+  purple: "border-neon-purple/25 bg-neon-purple/8 text-neon-purple",
+  orange: "border-neon-orange/25 bg-neon-orange/8 text-neon-orange",
+};
+
+function PageHeader({ title, subtitle, badges }: PageHeaderProps) {
   return (
-    <div>
-      <h1 className="text-3xl font-bold gradient-text sm:text-4xl">{title}</h1>
-      <p className="mt-2 text-slate-400">{subtitle}</p>
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06]" style={{ minHeight: 160 }}>
+      {/* Imagem hero gerada pelo modelo */}
+      <img
+        src="/images/hero-pitch.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover object-center opacity-30"
+        draggable={false}
+      />
+      {/* Overlay gradiente para manter legibilidade do texto */}
+      <div className="absolute inset-0 bg-gradient-to-r from-surface/95 via-surface/80 to-surface/40" />
+      <div className="relative p-6 sm:p-8">
+        <h1 className="text-2xl font-extrabold gradient-text sm:text-3xl">{title}</h1>
+        <p className="mt-1.5 text-sm text-slate-400">{subtitle}</p>
+        {badges && badges.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {badges.map((b) => (
+              <span
+                key={b.label}
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${badgeClasses[b.color ?? "blue"]}`}
+              >
+                {b.label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -82,8 +82,10 @@ npm run preview
 
 | Rota | Descrição |
 |------|-----------|
-| `/` | Dashboard Copa do Mundo — rodada atual + value bets |
+| `/` | Dashboard WC — rodada atual + value bets |
+| `/news` | Feed de notícias |
 | `/predict` | Palpite avulso WC (seleção de times e fase) |
+| `/validate` | Validar histórico (backtest por jogo) |
 | `/brasileirao` | Palpites da rodada do Brasileirão |
 | `/match/:home/:away` | Análise detalhada de um jogo WC |
 
@@ -97,11 +99,16 @@ src/
 └── presentation/    # Componentes, páginas, tema
 ```
 
+Documentação completa: [../docs/frontend.md](../docs/frontend.md)
+
 ## API consumida
 
 - `GET /health`
+- `GET /news/feed`, `POST /news/sync`
 - `GET /worldcup/round`
 - `POST /worldcup/predict`
 - `GET /worldcup/teams`
+- `GET /worldcup/editions`, `GET /worldcup/editions/{season}/matches`
+- `POST /worldcup/validate`
 - `POST /worldcup/value/live` (requer `ODDS_API_KEY`)
 - `GET /round/predict`

@@ -99,12 +99,22 @@ export function ValueBetsSection({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-bold gradient-text">Value Bets (EV)</h2>
-          <p className="text-sm text-slate-400">
-            {matchedGames}/{totalGames} jogos com odds • {positiveEdges.length} com edge positivo
-          </p>
+      <div className="relative overflow-hidden rounded-2xl border border-neon-yellow/15" style={{ minHeight: 100 }}>
+        <img
+          src="/images/value-bets-hero.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-20"
+          draggable={false}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface/95 via-surface/75 to-transparent" />
+        <div className="relative flex flex-wrap items-end justify-between gap-2 p-5">
+          <div>
+            <h2 className="text-xl font-bold gradient-text">Value Bets (EV)</h2>
+            <p className="text-sm text-slate-400">
+              {matchedGames}/{totalGames} jogos com odds · {positiveEdges.length} com edge positivo
+            </p>
+          </div>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">

@@ -7,9 +7,38 @@ sdk: docker
 pinned: false
 ---
 
-# Datalake de Notícias Esportivas — Bolão LM
+# Datalake de Notícias Esportivas — Bolão AI
 
-Pipeline de coleta, transformação e preparação de dados para treinar uma LM que prevê resultados de bolão (1 / X / 2) com base em notícias dos principais portais esportivos brasileiros.
+Pipeline de coleta, transformação e previsão de resultados de bolão (**1 / X / 2**) com notícias esportivas, modelos estatísticos (Dixon-Coles + logística), motor tático **KXL** e interface web React.
+
+## Documentação completa
+
+**Índice central:** [docs/README.md](docs/README.md)
+
+| Guia | Descrição |
+|------|-----------|
+| [Visão geral](docs/visao-geral.md) | Objetivo, fluxos, capacidades |
+| [Arquitetura](docs/arquitetura.md) | Camadas, pastas, integrações |
+| [Instalação](docs/instalacao-e-configuracao.md) | Setup, `.env`, troubleshooting |
+| [API REST](docs/api-referencia.md) | Todos os endpoints + exemplos |
+| [Modelos ML](docs/modelos-preditivos.md) | Dixon-Coles, logística, KXL, EV |
+| [Datalake](docs/datalake-e-pipelines.md) | Pipelines e CLIs |
+| [Frontend](docs/frontend.md) | UI React, rotas, componentes |
+| [KXL Colisão](docs/kxl-colisao.md) | Fórmulas táticas detalhadas |
+| [Glossário](docs/glossario.md) | Termos e siglas |
+
+## Início rápido
+
+```bash
+pip install -e ".[dev]"
+cp .env.example .env
+import-world-cup --missing-only
+./scripts/dev-api.sh          # terminal 1
+cd frontend && npm run dev    # terminal 2
+```
+
+- API: http://localhost:8000/docs  
+- UI: http://localhost:5173  
 
 ## Arquitetura
 
@@ -202,12 +231,26 @@ Integração recomendada com [Unsloth](https://github.com/unslothai/unsloth) par
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Endpoints:
-- `GET /health` — status
-- `POST /context` — contexto de notícias para um jogo
-- `POST /predict` — previsão heurística (substituir pela LM treinada)
+Endpoints principais (detalhes em [docs/api-referencia.md](docs/api-referencia.md)):
 
-### 8. Odds reais + EV (Copa)
+- `GET /health` — status
+- `GET /news/feed`, `POST /news/sync` — notícias
+- `POST /context`, `POST /predict` — Brasileirão + notícias
+- `GET /round/predict` — rodada Brasileirão
+- `POST /worldcup/predict` — palpite WC (ensemble + KXL opcional)
+- `GET /worldcup/round`, `GET /worldcup/teams` — rodada e seleções
+- `GET /worldcup/editions`, `POST /worldcup/validate` — backtest histórico
+- `POST /worldcup/value/live` — value bets (requer `ODDS_API_KEY`)
+
+### 8. Frontend web
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Ver [docs/frontend.md](docs/frontend.md).
+
+### 9. Odds reais + EV (Copa)
 
 Configure `ODDS_API_KEY` no `.env` e execute:
 
@@ -220,7 +263,7 @@ Fluxo:
 - `fetch-wc-odds` busca odds em tempo real (The Odds API) e sobrescreve o JSON de odds.
 - `value-wc-odds` cruza probabilidades do modelo com odds reais e mostra apenas entradas com EV positivo.
 
-### 9. Benchmark de modelos + visual (MLflow)
+### 10. Benchmark de modelos + visual (MLflow)
 
 Para comparar modelos e reduzir erro com validação temporal:
 
@@ -237,11 +280,13 @@ Saídas:
 
 ```
 api_noticia/
-├── ingest/          # Coleta RSS + storage bronze
-├── pipelines/       # Transformações silver e gold
+├── ingest/          # Coleta RSS + storage bronze + odds
+├── pipelines/       # Transformações silver, gold, WC, KXL
 ├── schemas/         # Contratos Pydantic
-├── models/          # Dataset e treino LM
+├── models/          # Dixon-Coles, logística, baseline, EV
 ├── api/             # FastAPI
+├── frontend/        # React + TypeScript (Bolão AI)
+├── docs/            # Documentação detalhada
 ├── tests/
 ├── config.py
 └── data/lake/       # Datalake local (gitignored)

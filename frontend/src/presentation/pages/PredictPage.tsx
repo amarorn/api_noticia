@@ -5,7 +5,6 @@ import {
   predictWcMatchUseCase,
 } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
-import { PageHeader } from "@/presentation/pages/DashboardPage";
 import {
   ModelBreakdownChart,
   ProbabilityDonut,
@@ -15,7 +14,8 @@ import { MatchContextPanel } from "@/presentation/components/predictions/MatchCo
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
-import { phases } from "@/presentation/theme";
+import { IconSwap, IconZap } from "@/presentation/components/ui/Icons";
+import { phases, outcomeColors } from "@/presentation/theme";
 import { motion } from "framer-motion";
 
 export function PredictPage() {
@@ -42,86 +42,150 @@ export function PredictPage() {
     }
   };
 
+  const handleSwap = () => {
+    setHomeTeam(awayTeam);
+    setAwayTeam(homeTeam);
+  };
+
   return (
     <PageTransition className="space-y-8">
-      <PageHeader
-        title="Palpite avulso"
-        subtitle="Selecione as seleções e a fase para gerar previsão com ensemble Dixon-Coles + Logística"
-      />
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.06]" style={{ minHeight: 140 }}>
+        <img
+          src="/images/predict-hero.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-center opacity-25"
+          draggable={false}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-surface/95 via-surface/75 to-surface/30" />
+        <div className="relative p-6 sm:p-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-extrabold gradient-text sm:text-3xl">Palpite avulso</h1>
+            <span className="inline-flex items-center rounded-full border border-neon-green/25 bg-neon-green/8 px-2.5 py-0.5 text-xs font-medium text-neon-green">
+              Copa 2026
+            </span>
+          </div>
+          <p className="mt-1.5 text-sm text-slate-400">
+            Ensemble Dixon-Coles + Logística + DNA KXL · Selecione as seleções e fase
+          </p>
+        </div>
+      </div>
 
-      <div className="grid gap-8 lg:grid-cols-5">
-        <form onSubmit={handleSubmit} className="glass-card space-y-5 p-6 lg:col-span-2">
-          <div>
-            <label htmlFor="home" className="mb-1.5 block text-xs font-medium text-slate-400">
-              Mandante
-            </label>
-            {teamsQuery.isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <select
-                id="home"
-                value={homeTeam}
-                onChange={(e) => setHomeTeam(e.target.value)}
-                className="input-field"
+      <div className="grid gap-6 lg:grid-cols-5">
+        {/* Form panel */}
+        <div className="lg:col-span-2">
+          <form onSubmit={handleSubmit} className="glass-card space-y-4 p-5">
+            <p className="section-label">Configurar confronto</p>
+
+            {/* Mandante */}
+            <div>
+              <label htmlFor="home" className="mb-1.5 block text-xs font-medium text-slate-400">
+                Mandante
+              </label>
+              {teamsQuery.isLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <div className="relative">
+                  <select
+                    id="home"
+                    value={homeTeam}
+                    onChange={(e) => setHomeTeam(e.target.value)}
+                    className="select-field pr-8"
+                  >
+                    {teams.map((t) => (
+                      <option key={t} value={t} className="bg-surface">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <TeamColorDot color={outcomeColors["1"]} />
+                </div>
+              )}
+            </div>
+
+            {/* Swap button */}
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-white/5" />
+              <button
+                type="button"
+                onClick={handleSwap}
+                title="Inverter times"
+                className="btn-icon"
+                aria-label="Inverter mandante e visitante"
               >
-                {teams.map((t) => (
-                  <option key={t} value={t} className="bg-surface">
-                    {t}
+                <IconSwap className="h-3.5 w-3.5" />
+              </button>
+              <div className="h-px flex-1 bg-white/5" />
+            </div>
+
+            {/* Visitante */}
+            <div>
+              <label htmlFor="away" className="mb-1.5 block text-xs font-medium text-slate-400">
+                Visitante
+              </label>
+              <div className="relative">
+                <select
+                  id="away"
+                  value={awayTeam}
+                  onChange={(e) => setAwayTeam(e.target.value)}
+                  className="select-field pr-8"
+                >
+                  {teams.map((t) => (
+                    <option key={t} value={t} className="bg-surface">
+                      {t}
+                    </option>
+                  ))}
+                </select>
+                <TeamColorDot color={outcomeColors["2"]} />
+              </div>
+            </div>
+
+            {/* Fase */}
+            <div>
+              <label htmlFor="phase" className="mb-1.5 block text-xs font-medium text-slate-400">
+                Fase
+              </label>
+              <select
+                id="phase"
+                value={phase}
+                onChange={(e) => setPhase(e.target.value)}
+                className="select-field"
+              >
+                {phases.map((p) => (
+                  <option key={p.value} value={p.value} className="bg-surface">
+                    {p.label}
                   </option>
                 ))}
               </select>
+            </div>
+
+            {homeTeam === awayTeam && (
+              <p className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-400">
+                Selecione times diferentes.
+              </p>
             )}
-          </div>
 
-          <div>
-            <label htmlFor="away" className="mb-1.5 block text-xs font-medium text-slate-400">
-              Visitante
-            </label>
-            <select
-              id="away"
-              value={awayTeam}
-              onChange={(e) => setAwayTeam(e.target.value)}
-              className="input-field"
+            <button
+              type="submit"
+              disabled={predictMutation.isPending || homeTeam === awayTeam}
+              className="btn-primary w-full"
             >
-              {teams.map((t) => (
-                <option key={t} value={t} className="bg-surface">
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
+              <IconZap className="h-4 w-4" />
+              {predictMutation.isPending ? "Calculando…" : "Gerar palpite"}
+            </button>
+          </form>
 
-          <div>
-            <label htmlFor="phase" className="mb-1.5 block text-xs font-medium text-slate-400">
-              Fase
-            </label>
-            <select
-              id="phase"
-              value={phase}
-              onChange={(e) => setPhase(e.target.value)}
-              className="input-field"
-            >
-              {phases.map((p) => (
-                <option key={p.value} value={p.value} className="bg-surface">
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            disabled={predictMutation.isPending || homeTeam === awayTeam}
-            className="btn-primary w-full"
-          >
-            {predictMutation.isPending ? "Calculando..." : "Gerar palpite"}
-          </button>
-
-          {homeTeam === awayTeam && (
-            <p className="text-xs text-amber-400">Selecione times diferentes.</p>
+          {/* Quick match preview */}
+          {homeTeam !== awayTeam && !predictMutation.isPending && (
+            <div className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm">
+              <span className="font-semibold text-white">{homeTeam}</span>
+              <span className="rounded-lg bg-white/5 px-2 py-0.5 text-xs font-bold text-slate-500">VS</span>
+              <span className="font-semibold text-white">{awayTeam}</span>
+            </div>
           )}
-        </form>
+        </div>
 
+        {/* Result panel */}
         <div className="lg:col-span-3">
           {predictMutation.isError && (
             <ErrorState
@@ -135,19 +199,20 @@ export function PredictPage() {
           )}
 
           {!predictMutation.data && !predictMutation.isPending && !predictMutation.isError && (
-            <div className="glass-card flex h-full min-h-[320px] flex-col items-center justify-center p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-2xl font-black text-slate-600">
+            <div className="glass-card flex h-full min-h-[320px] flex-col items-center justify-center gap-4 p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.03] text-2xl font-black text-slate-700">
                 VS
               </div>
-              <p className="mt-4 text-slate-400">
-                Configure o confronto e clique em Gerar palpite
+              <p className="max-w-xs text-sm text-slate-500">
+                Configure o confronto ao lado e clique em{" "}
+                <span className="text-slate-400">Gerar palpite</span>
               </p>
             </div>
           )}
 
           {predictMutation.isPending && (
             <div className="glass-card space-y-4 p-6">
-              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-6 w-2/3" />
               <Skeleton className="h-48 w-full" />
               <Skeleton className="h-32 w-full" />
             </div>
@@ -155,54 +220,66 @@ export function PredictPage() {
 
           {predictMutation.data && (
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card space-y-6 p-6"
+              className="space-y-4"
             >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">
-                    {predictMutation.data.homeTeam} x {predictMutation.data.awayTeam}
-                  </h2>
-                  <p className="text-sm text-slate-400">{predictMutation.data.h2hSummary}</p>
+              {/* Hero result */}
+              <div className="glass-card overflow-hidden">
+                <div
+                  className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4"
+                  style={{ backgroundColor: `${outcomeColors[predictMutation.data.prediction]}06` }}
+                >
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wider">Resultado previsto</p>
+                    <h2 className="mt-1 text-xl font-bold text-white">
+                      {predictMutation.data.homeTeam}{" "}
+                      <span className="font-normal text-slate-600">x</span>{" "}
+                      {predictMutation.data.awayTeam}
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-500">{predictMutation.data.h2hSummary}</p>
+                  </div>
+                  <ConfidenceBadge
+                    confidence={predictMutation.data.confidence}
+                    prediction={predictMutation.data.prediction}
+                  />
                 </div>
-                <ConfidenceBadge
-                  confidence={predictMutation.data.confidence}
-                  prediction={predictMutation.data.prediction}
-                />
-              </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <ProbabilityDonut
-                  probHome={predictMutation.data.probHome}
-                  probDraw={predictMutation.data.probDraw}
-                  probAway={predictMutation.data.probAway}
-                  prediction={predictMutation.data.prediction}
-                />
-                <ModelBreakdownChart
-                  dixonColes={predictMutation.data.modelBreakdown.dixonColes}
-                  logistic={predictMutation.data.modelBreakdown.logistic}
-                />
-              </div>
+                <div className="p-5 space-y-5">
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <ProbabilityDonut
+                      probHome={predictMutation.data.probHome}
+                      probDraw={predictMutation.data.probDraw}
+                      probAway={predictMutation.data.probAway}
+                      prediction={predictMutation.data.prediction}
+                    />
+                    <ModelBreakdownChart
+                      dixonColes={predictMutation.data.modelBreakdown.dixonColes}
+                      logistic={predictMutation.data.modelBreakdown.logistic}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatBox label="Placar provável" value={predictMutation.data.poissonScore} />
-                <StatBox label="Gols esperados" value={predictMutation.data.expectedGoals} />
-                <StatBox
-                  label="Holdout 2022"
-                  value={
-                    predictMutation.data.modelBreakdown.holdout2022Accuracy != null
-                      ? `${(predictMutation.data.modelBreakdown.holdout2022Accuracy * 100).toFixed(1)}%`
-                      : "N/A"
-                  }
-                />
-                <StatBox
-                  label="Peso Dixon-Coles"
-                  value={`${(predictMutation.data.modelBreakdown.ensembleWeights.dixonColes * 100).toFixed(0)}%`}
-                />
-              </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <StatBox label="Placar provável" value={predictMutation.data.poissonScore} color="green" />
+                    <StatBox label="Gols esperados" value={predictMutation.data.expectedGoals} color="blue" />
+                    <StatBox
+                      label="Holdout 2022"
+                      value={
+                        predictMutation.data.modelBreakdown.holdout2022Accuracy != null
+                          ? `${(predictMutation.data.modelBreakdown.holdout2022Accuracy * 100).toFixed(1)}%`
+                          : "N/A"
+                      }
+                      color="purple"
+                    />
+                    <StatBox
+                      label="Peso DC"
+                      value={`${(predictMutation.data.modelBreakdown.ensembleWeights.dixonColes * 100).toFixed(0)}%`}
+                    />
+                  </div>
 
-              <ConfidenceBar confidence={predictMutation.data.confidence} />
+                  <ConfidenceBar confidence={predictMutation.data.confidence} />
+                </div>
+              </div>
 
               {predictMutation.data.modelBreakdown.poissonFactors && (
                 <PoissonFactorsPanel
@@ -212,10 +289,8 @@ export function PredictPage() {
                 />
               )}
 
-              <div>
-                <p className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Contexto pré-jogo
-                </p>
+              <div className="glass-card p-5">
+                <p className="section-label">Contexto pré-jogo</p>
                 <MatchContextPanel prediction={predictMutation.data} />
               </div>
             </motion.div>
@@ -226,11 +301,38 @@ export function PredictPage() {
   );
 }
 
-function StatBox({ label, value }: { label: string; value: string }) {
+function TeamColorDot({ color }: { color: string }) {
   return (
-    <div className="rounded-xl bg-white/5 p-3 text-center">
-      <p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-bold text-white">{value}</p>
+    <span
+      className="pointer-events-none absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+      style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}80` }}
+      aria-hidden
+    />
+  );
+}
+
+function StatBox({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color?: "green" | "blue" | "purple";
+}) {
+  const colorClass =
+    color === "green"
+      ? "text-neon-green"
+      : color === "blue"
+        ? "text-neon-blue"
+        : color === "purple"
+          ? "text-neon-purple"
+          : "text-white";
+
+  return (
+    <div className="stat-pill">
+      <p className="text-[9px] uppercase tracking-wider text-slate-500">{label}</p>
+      <p className={`mt-1 text-sm font-bold ${colorClass}`}>{value}</p>
     </div>
   );
 }

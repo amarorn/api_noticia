@@ -39,10 +39,19 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="glass-card flex flex-col items-center gap-3 p-10 text-center">
-      <h3 className="text-lg font-semibold text-white">{title}</h3>
-      <p className="max-w-sm text-sm text-slate-400">{description}</p>
-      {action}
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06]">
+      <img
+        src="/images/empty-state-ball.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover object-center opacity-20"
+        draggable={false}
+      />
+      <div className="relative flex flex-col items-center gap-3 p-12 text-center">
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <p className="max-w-sm text-sm text-slate-400">{description}</p>
+        {action}
+      </div>
     </div>
   );
 }

@@ -204,6 +204,23 @@ def _dynamic_blocks_used(kxl_match: WcKxlMatchInput | None) -> dict | None:
     return {"blocks_used": blocks, "engine": "wc_kxl_collision"} if blocks else None
 
 
+def _serialize_snapshot(snap) -> dict | None:
+    if snap is None:
+        return None
+    return {
+        "attack_index": round(snap.attack_index, 4),
+        "defense_index": round(snap.defense_index, 4),
+        "control_index": round(snap.control_index, 4),
+        "gk_index": round(snap.gk_index, 4),
+        "chaos": round(snap.chaos, 4),
+        "shots_per_game": round(snap.shots_per_game, 2),
+        "possession_pct": round(snap.possession_pct, 2),
+        "counter_attack": round(snap.counter_attack, 2),
+        "inside_goal_pct": round(snap.inside_goal_pct, 2),
+        "gk_inside_weakness_pct": round(snap.gk_inside_weakness_pct, 2),
+    }
+
+
 def _baseline_breakdown(baseline_out) -> dict | None:
     if baseline_out is None:
         return None
@@ -216,4 +233,8 @@ def _baseline_breakdown(baseline_out) -> dict | None:
         "sector_note": m.sector_note,
         "home_edge": m.home_edge,
         "away_edge": m.away_edge,
+        "home_attack_vs_away_def": round(m.home_attack_vs_away_def, 4),
+        "away_attack_vs_home_def": round(m.away_attack_vs_home_def, 4),
+        "home_snapshot": _serialize_snapshot(baseline_out.home),
+        "away_snapshot": _serialize_snapshot(baseline_out.away),
     }

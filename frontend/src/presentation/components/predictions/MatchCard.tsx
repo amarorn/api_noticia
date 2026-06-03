@@ -8,11 +8,31 @@ import {
   outcomeColors,
   predictedWinner,
 } from "@/presentation/theme";
+import { IconChevronRight } from "@/presentation/components/ui/Icons";
 
 interface MatchCardProps {
   prediction: WcPrediction;
   index?: number;
   compact?: boolean;
+}
+
+function TeamAvatar({ name, color }: { name: string; color: string }) {
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black"
+      style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}30` }}
+      aria-hidden
+    >
+      {initials}
+    </div>
+  );
 }
 
 export function MatchCard({ prediction, index = 0, compact = false }: MatchCardProps) {
@@ -22,22 +42,33 @@ export function MatchCard({ prediction, index = 0, compact = false }: MatchCardP
     prediction.awayTeam,
   );
   const winnerColor = outcomeColors[prediction.prediction];
+  const homeColor = outcomeColors["1"];
+  const awayColor = outcomeColors["2"];
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.4 }}
-      whileHover={{ y: -4 }}
-      className="glass-card-hover group flex flex-col p-5"
+      transition={{ delay: index * 0.06, duration: 0.35 }}
+      className="glass-card-hover group relative flex flex-col overflow-hidden"
     >
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-wider text-slate-500">Confronto</p>
-          <h3 className="mt-1 text-lg font-bold text-white">
-            {prediction.homeTeam}{" "}
-            <span className="text-slate-500 font-normal">x</span> {prediction.awayTeam}
-          </h3>
+      {/* Textura de fundo */}
+      <img
+        src="/images/card-texture.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.18]"
+        draggable={false}
+      />
+
+      {/* Header: resultado previsto */}
+      <div
+        className="relative flex items-center justify-between rounded-t-2xl px-4 py-3"
+        style={{ backgroundColor: `${winnerColor}10`, borderBottom: `1px solid ${winnerColor}20` }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
+          <span className="text-sm font-bold" style={{ color: winnerColor }}>{winner}</span>
         </div>
         <ConfidenceBadge
           confidence={prediction.confidence}
@@ -45,68 +76,70 @@ export function MatchCard({ prediction, index = 0, compact = false }: MatchCardP
         />
       </div>
 
-      <div
-        className="mb-4 rounded-xl border px-4 py-3"
-        style={{
-          borderColor: `${winnerColor}40`,
-          backgroundColor: `${winnerColor}12`,
-        }}
-      >
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-          Vence o jogo (palpite)
-        </p>
-        <p className="mt-1 text-xl font-bold" style={{ color: winnerColor }}>
-          {winner}
-        </p>
-        {prediction.prediction !== "X" && (
-          <p className="mt-0.5 text-xs text-slate-400">
-            {prediction.prediction === "1" ? "Mandante" : "Visitante"} ·{" "}
-            {formatPercent(
-              prediction.prediction === "1"
-                ? prediction.probHome
-                : prediction.probAway,
-            )}{" "}
-            de chance
-          </p>
-        )}
-        {prediction.prediction === "X" && (
-          <p className="mt-0.5 text-xs text-slate-400">
-            {formatPercent(prediction.probDraw)} de chance de empate
-          </p>
-        )}
+      {/* Times */}
+      <div className="relative flex items-center justify-between gap-2 px-4 py-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <TeamAvatar name={prediction.homeTeam} color={homeColor} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white">{prediction.homeTeam}</p>
+            <p className="text-[10px] text-slate-500">Mandante</p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 flex-col items-center gap-0.5">
+          <span className="text-[10px] font-black text-slate-600">VS</span>
+          {prediction.prediction !== "X" && (
+            <div
+              className="h-1 w-6 rounded-full"
+              style={{
+                background: `linear-gradient(90deg, ${homeColor}80, ${awayColor}80)`,
+              }}
+            />
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2.5">
+          <div className="min-w-0 text-right">
+            <p className="truncate text-sm font-semibold text-white">{prediction.awayTeam}</p>
+            <p className="text-[10px] text-slate-500">Visitante</p>
+          </div>
+          <TeamAvatar name={prediction.awayTeam} color={awayColor} />
+        </div>
       </div>
 
+      {/* Stats + barra */}
       {!compact && (
-        <>
+        <div className="relative space-y-3 px-4 pb-4">
           <ProbabilityBar
             probHome={prediction.probHome}
             probDraw={prediction.probDraw}
             probAway={prediction.probAway}
           />
 
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-white/5 p-3">
-              <p className="text-xs text-slate-500">Placar provável</p>
-              <p className="font-semibold text-neon-green">{prediction.poissonScore}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="stat-pill">
+              <p className="text-[10px] text-slate-500">Placar provável</p>
+              <p className="mt-0.5 text-sm font-bold text-neon-green">{prediction.poissonScore}</p>
             </div>
-            <div className="rounded-xl bg-white/5 p-3">
-              <p className="text-xs text-slate-500">Gols esperados</p>
-              <p className="font-semibold text-neon-blue">{prediction.expectedGoals}</p>
+            <div className="stat-pill">
+              <p className="text-[10px] text-slate-500">Gols esperados</p>
+              <p className="mt-0.5 text-sm font-bold text-neon-blue">{prediction.expectedGoals}</p>
             </div>
           </div>
 
           <ConfidenceBar confidence={prediction.confidence} />
 
-          <p className="mt-3 line-clamp-2 text-xs text-slate-500">{prediction.h2hSummary}</p>
-        </>
+          <p className="line-clamp-1 text-[11px] text-slate-600">{prediction.h2hSummary}</p>
+        </div>
       )}
 
       <Link
         to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}`}
         state={{ prediction }}
-        className="btn-ghost mt-4 w-full text-center group-hover:border-neon-green/30"
+        className="relative mx-4 mb-4 flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2.5 text-sm font-medium text-slate-400 transition-all group-hover:border-neon-green/25 group-hover:bg-neon-green/4 group-hover:text-neon-green"
       >
         Ver análise completa
+        <IconChevronRight className="h-3.5 w-3.5" />
       </Link>
     </motion.article>
   );
@@ -131,28 +164,36 @@ export function BrasileiraoCard({
   newsCount,
   index = 0,
 }: BrasileiraoCardProps) {
+  const predColor =
+    prediction === "1"
+      ? outcomeColors["1"]
+      : prediction === "2"
+        ? outcomeColors["2"]
+        : outcomeColors["X"];
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="glass-card p-5"
+      className="glass-card-hover flex flex-col gap-3 p-4"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-bold text-white">
-            {homeTeam} <span className="text-slate-500">x</span> {awayTeam}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate font-bold text-white">
+            {homeTeam} <span className="font-normal text-slate-600">x</span> {awayTeam}
           </h3>
-          <p className="mt-1 text-xs text-slate-500">{newsCount} notícias analisadas</p>
+          <p className="mt-0.5 text-[10px] text-slate-500">{newsCount} notícias analisadas</p>
         </div>
-        <div className="text-right">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-neon-green/10 text-lg font-bold text-neon-green">
-            {prediction}
-          </span>
-          <p className="mt-1 text-xs text-slate-400">{formatPercent(confidence)}</p>
+        <div
+          className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl text-xs"
+          style={{ backgroundColor: `${predColor}18`, border: `1px solid ${predColor}30` }}
+        >
+          <span className="text-lg font-black" style={{ color: predColor }}>{prediction}</span>
+          <span className="text-[8px] font-semibold text-slate-500">{formatPercent(confidence)}</span>
         </div>
       </div>
-      <p className="mt-3 text-sm text-slate-400 line-clamp-2">{reason}</p>
+      <p className="line-clamp-2 text-xs leading-relaxed text-slate-400">{reason}</p>
     </motion.article>
   );
 }

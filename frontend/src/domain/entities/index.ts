@@ -58,6 +58,30 @@ export interface KxlCollisionBreakdown {
   notes: string[];
 }
 
+/** Snapshot dos índices KXL calculados a partir do baseline real da seleção. */
+export interface KxlTeamSnapshot {
+  /** Índice de ataque calculado (Dixon-Coles normalizado) */
+  attackIndex: number;
+  /** Índice de defesa calculado */
+  defenseIndex: number;
+  /** Índice de controle de jogo (posse × passes × dribles) */
+  controlIndex: number;
+  /** Índice do goleiro */
+  gkIndex: number;
+  /** Fator de caos/imprevisibilidade (FSC) */
+  chaos: number;
+  /** Chutes totais por jogo (ECCH) */
+  shotsPerGame: number;
+  /** Posse de bola média em % (ECPB, 0-100) */
+  possessionPct: number;
+  /** Gols de contra-ataque por jogo (EACA) */
+  counterAttack: number;
+  /** % de gols marcados dentro da área (EAGD) */
+  insideGoalPct: number;
+  /** % de gols sofridos dentro da área — fraqueza do GK (EGSD) */
+  gkInsideWeaknessPct: number;
+}
+
 export interface KxlBaselineBreakdown {
   probHome: number;
   probDraw: number;
@@ -65,6 +89,10 @@ export interface KxlBaselineBreakdown {
   sectorNote: string;
   homeEdge: number;
   awayEdge: number;
+  homeAttackVsAwayDef: number;
+  awayAttackVsHomeDef: number;
+  homeSnapshot: KxlTeamSnapshot | null;
+  awaySnapshot: KxlTeamSnapshot | null;
 }
 
 export interface ModelBreakdown {

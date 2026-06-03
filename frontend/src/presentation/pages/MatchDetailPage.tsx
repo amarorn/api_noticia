@@ -12,7 +12,8 @@ import { MatchContextPanel } from "@/presentation/components/predictions/MatchCo
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { ErrorState } from "@/presentation/components/ui/ErrorState";
-import { formatPercent } from "@/presentation/theme";
+import { IconArrowLeft } from "@/presentation/components/ui/Icons";
+import { formatPercent, outcomeColors } from "@/presentation/theme";
 
 export function MatchDetailPage() {
   const { home, away } = useParams<{ home: string; away: string }>();
@@ -56,90 +57,159 @@ export function MatchDetailPage() {
   }
 
   const pred = query.data!;
+  const winnerColor = outcomeColors[pred.prediction];
 
   return (
-    <PageTransition className="space-y-6">
-      <Link to="/" className="btn-ghost inline-flex text-sm">
-        ← Voltar ao dashboard
+    <PageTransition className="space-y-5">
+      {/* Breadcrumb */}
+      <Link
+        to="/"
+        className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+      >
+        <IconArrowLeft className="h-4 w-4" />
+        Voltar ao dashboard
       </Link>
 
-      <div className="glass-card space-y-8 p-6 sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-slate-500">Análise detalhada</p>
-            <h1 className="mt-1 text-3xl font-bold text-white sm:text-4xl">
-              {pred.homeTeam}{" "}
-              <span className="text-slate-500 font-normal">x</span> {pred.awayTeam}
-            </h1>
-            <p className="mt-2 text-sm text-slate-400">{pred.h2hSummary}</p>
+      {/* Match hero */}
+      <div
+        className="relative overflow-hidden rounded-2xl border"
+        style={{ borderColor: `${winnerColor}25` }}
+      >
+        {/* Imagem de duelo gerada pelo modelo */}
+        <img
+          src="/images/match-duel-banner.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.12]"
+          draggable={false}
+        />
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{ background: `radial-gradient(ellipse at top right, ${winnerColor}, transparent 60%)` }}
+        />
+        <div className="relative flex flex-wrap items-center justify-between gap-6 px-6 py-6 sm:px-8">
+          {/* Times */}
+          <div className="flex items-center gap-4">
+            <TeamHeroAvatar name={pred.homeTeam} color={outcomeColors["1"]} />
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-600">Mandante</p>
+              <p className="text-xl font-extrabold text-white">{pred.homeTeam}</p>
+              <p className="text-sm font-semibold" style={{ color: outcomeColors["1"] }}>
+                {formatPercent(pred.probHome)}
+              </p>
+            </div>
           </div>
-          <ConfidenceBadge confidence={pred.confidence} prediction={pred.prediction} />
+
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className="rounded-xl px-4 py-2 text-center"
+              style={{ backgroundColor: `${winnerColor}12`, border: `1px solid ${winnerColor}25` }}
+            >
+              <p className="text-[9px] uppercase tracking-widest text-slate-500">Palpite</p>
+              <p className="text-2xl font-black" style={{ color: winnerColor }}>
+                {pred.prediction}
+              </p>
+            </div>
+            <p className="text-[10px] text-slate-600">
+              {formatPercent(pred.probDraw)} empate
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-right">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-600">Visitante</p>
+              <p className="text-xl font-extrabold text-white">{pred.awayTeam}</p>
+              <p className="text-sm font-semibold" style={{ color: outcomeColors["2"] }}>
+                {formatPercent(pred.probAway)}
+              </p>
+            </div>
+            <TeamHeroAvatar name={pred.awayTeam} color={outcomeColors["2"]} />
+          </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="rounded-2xl bg-white/[0.02] p-4">
-            <ProbabilityDonut
-              probHome={pred.probHome}
-              probDraw={pred.probDraw}
-              probAway={pred.probAway}
-              prediction={pred.prediction}
-              height={280}
-            />
+        {/* H2H strip */}
+        <div className="border-t border-white/[0.05] px-6 py-3 sm:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-xs text-slate-500">{pred.h2hSummary}</p>
+            <ConfidenceBadge confidence={pred.confidence} prediction={pred.prediction} />
           </div>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="glass-card p-4">
+          <ProbabilityDonut
+            probHome={pred.probHome}
+            probDraw={pred.probDraw}
+            probAway={pred.probAway}
+            prediction={pred.prediction}
+            height={260}
+          />
+        </div>
+        <div className="glass-card p-4">
           <ModelBreakdownChart
             dixonColes={pred.modelBreakdown.dixonColes}
             logistic={pred.modelBreakdown.logistic}
-            height={280}
+            height={260}
           />
         </div>
+      </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard title="Placar provável" value={pred.poissonScore} accent="green" />
-          <MetricCard title="Gols esperados" value={pred.expectedGoals} accent="blue" />
-          <MetricCard
-            title="Prob. vitória casa"
-            value={formatPercent(pred.probHome)}
-            accent="green"
-          />
-          <MetricCard
-            title="Prob. vitória fora"
-            value={formatPercent(pred.probAway)}
-            accent="purple"
-          />
-        </div>
+      {/* Metrics */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MetricCard title="Placar provável" value={pred.poissonScore} accent="green" />
+        <MetricCard title="Gols esperados" value={pred.expectedGoals} accent="blue" />
+        <MetricCard title="Prob. casa" value={formatPercent(pred.probHome)} accent="green" />
+        <MetricCard title="Prob. fora" value={formatPercent(pred.probAway)} accent="purple" />
+      </div>
 
+      {/* Confidence + ensemble */}
+      <div className="glass-card p-5 space-y-4">
         <ConfidenceBar confidence={pred.confidence} />
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <EnsembleCard
-            label="Peso Dixon-Coles"
-            value={pred.modelBreakdown.ensembleWeights.dixonColes}
-          />
-          <EnsembleCard
-            label="Peso Logística"
-            value={pred.modelBreakdown.ensembleWeights.logistic}
-          />
-          <EnsembleCard
-            label="Holdout 2022"
-            value={pred.modelBreakdown.holdout2022Accuracy ?? 0}
-            isPercent
-          />
+        <div className="grid gap-3 sm:grid-cols-3">
+          <EnsembleCard label="Peso Dixon-Coles" value={pred.modelBreakdown.ensembleWeights.dixonColes} />
+          <EnsembleCard label="Peso Logística" value={pred.modelBreakdown.ensembleWeights.logistic} />
+          <EnsembleCard label="Holdout 2022" value={pred.modelBreakdown.holdout2022Accuracy ?? 0} />
         </div>
+      </div>
 
-        {pred.modelBreakdown.poissonFactors && (
-          <PoissonFactorsPanel
-            factors={pred.modelBreakdown.poissonFactors}
-            homeTeam={pred.homeTeam}
-            awayTeam={pred.awayTeam}
-          />
-        )}
+      {pred.modelBreakdown.poissonFactors && (
+        <PoissonFactorsPanel
+          factors={pred.modelBreakdown.poissonFactors}
+          homeTeam={pred.homeTeam}
+          awayTeam={pred.awayTeam}
+        />
+      )}
 
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-white">Contexto pré-jogo</h2>
-          <MatchContextPanel prediction={pred} />
-        </section>
+      <div className="glass-card p-5">
+        <p className="section-label">Contexto pré-jogo</p>
+        <MatchContextPanel prediction={pred} />
       </div>
     </PageTransition>
+  );
+}
+
+function TeamHeroAvatar({ name, color }: { name: string; color: string }) {
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div
+      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-base font-black"
+      style={{
+        backgroundColor: `${color}15`,
+        color,
+        border: `1px solid ${color}30`,
+        boxShadow: `0 0 16px ${color}15`,
+      }}
+    >
+      {initials}
+    </div>
   );
 }
 
@@ -152,35 +222,25 @@ function MetricCard({
   value: string;
   accent: "green" | "blue" | "purple";
 }) {
-  const colors = {
-    green: "text-neon-green border-neon-green/20",
-    blue: "text-neon-blue border-neon-blue/20",
-    purple: "text-neon-purple border-neon-purple/20",
+  const colorMap = {
+    green: "text-neon-green border-neon-green/15 bg-neon-green/4",
+    blue: "text-neon-blue border-neon-blue/15 bg-neon-blue/4",
+    purple: "text-neon-purple border-neon-purple/15 bg-neon-purple/4",
   };
 
   return (
-    <div className={`rounded-xl border bg-white/[0.02] p-4 ${colors[accent]}`}>
-      <p className="text-xs text-slate-500">{title}</p>
-      <p className={`mt-1 text-xl font-bold ${colors[accent].split(" ")[0]}`}>{value}</p>
+    <div className={`rounded-xl border p-4 ${colorMap[accent]}`}>
+      <p className="text-[10px] uppercase tracking-wider text-slate-500">{title}</p>
+      <p className={`mt-1 text-xl font-bold ${colorMap[accent].split(" ")[0]}`}>{value}</p>
     </div>
   );
 }
 
-function EnsembleCard({
-  label,
-  value,
-  isPercent,
-}: {
-  label: string;
-  value: number;
-  isPercent?: boolean;
-}) {
+function EnsembleCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl bg-white/5 p-4 text-center">
+    <div className="rounded-xl bg-white/[0.03] p-4 text-center">
       <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-white">
-        {isPercent ? formatPercent(value) : formatPercent(value)}
-      </p>
+      <p className="mt-1 text-2xl font-bold text-white">{formatPercent(value)}</p>
     </div>
   );
 }

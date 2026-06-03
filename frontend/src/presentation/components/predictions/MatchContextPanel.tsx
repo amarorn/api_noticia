@@ -4,6 +4,7 @@ import type { KxlCollisionBreakdown, WcPrediction } from "@/domain/entities";
 import { formatPercent, outcomeColors } from "@/presentation/theme";
 import { LethalityGkPanel } from "@/presentation/components/predictions/LethalityGkPanel";
 import { PitchHeatmap, sectorsFromCollision } from "@/presentation/components/predictions/PitchHeatmap";
+import { PossessionHeatmap } from "@/presentation/components/predictions/PossessionHeatmap";
 import { buildMatchContextView } from "@/presentation/utils/parseMatchContext";
 
 interface MatchContextPanelProps {
@@ -14,8 +15,24 @@ export function MatchContextPanel({ prediction }: MatchContextPanelProps) {
   const view = buildMatchContextView(prediction);
   const collision = prediction.modelBreakdown.kxlCollision;
 
+  // Usa os dados estruturados do snapshot serializado pelo backend
+  const hasPossessionData =
+    collision != null ||
+    prediction.modelBreakdown.kxlBaseline?.homeSnapshot != null ||
+    prediction.modelBreakdown.poissonFactors != null;
+
   return (
     <div className="space-y-6">
+      {hasPossessionData && (
+        <ContextSection
+          title="Posse de bola"
+          subtitle="KXL baseline real · DNA setorial · Poisson λ Dixon-Coles"
+          accent="#00d4ff"
+        >
+          <PossessionHeatmap prediction={prediction} />
+        </ContextSection>
+      )}
+
       {view.preMatch && (
         <ContextSection
           title="Estatísticas pré-jogo"

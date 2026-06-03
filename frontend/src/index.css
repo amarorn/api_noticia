@@ -19,11 +19,15 @@
 
 @layer components {
   .glass-card {
-    @apply rounded-2xl border border-white/10 bg-surface-card backdrop-blur-xl;
+    @apply rounded-2xl border border-white/[0.07] bg-surface-card shadow-card backdrop-blur-xl;
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300 hover:border-neon-green/30 hover:shadow-neon;
+    @apply glass-card transition-all duration-300 hover:border-neon-green/30 hover:shadow-neon hover:-translate-y-0.5;
+  }
+
+  .glass-card-blue {
+    @apply glass-card transition-all duration-300 hover:border-neon-blue/30 hover:shadow-neon-blue hover:-translate-y-0.5;
   }
 
   .gradient-text {
@@ -38,8 +42,37 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-white/20 hover:bg-white/10;
   }
 
+  .btn-icon {
+    @apply inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-2 text-slate-400 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white;
+  }
+
   .input-field {
-    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-neon-blue/50 focus:outline-none focus:ring-2 focus:ring-neon-blue/20;
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-neon-blue/50 focus:outline-none focus:ring-2 focus:ring-neon-blue/20 transition-colors;
+  }
+
+  .select-field {
+    @apply input-field appearance-none cursor-pointer;
+  }
+
+  .section-label {
+    @apply mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500;
+  }
+
+  .section-label::after {
+    @apply block h-px flex-1 bg-white/5;
+    content: "";
+  }
+
+  .stat-pill {
+    @apply rounded-lg bg-white/5 px-3 py-2 text-center;
+  }
+
+  .team-avatar {
+    @apply flex items-center justify-center rounded-xl font-bold text-surface;
+  }
+
+  .divider-v {
+    @apply h-full w-px bg-white/5;
   }
 
   .scrollbar-thin {

@@ -7,6 +7,8 @@ import { BrasileiraoPage } from "@/presentation/pages/BrasileiraoPage";
 import { MatchDetailPage } from "@/presentation/pages/MatchDetailPage";
 import { HistoricalValidationPage } from "@/presentation/pages/HistoricalValidationPage";
 import { NewsFeedPage } from "@/presentation/pages/NewsFeedPage";
+import { AlbumPage } from "@/presentation/pages/AlbumPage";
+import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +31,8 @@ export function App() {
             <Route path="validate" element={<HistoricalValidationPage />} />
             <Route path="brasileirao" element={<BrasileiraoPage />} />
             <Route path="match/:home/:away" element={<MatchDetailPage />} />
+            <Route path="album" element={<AlbumPage />} />
+            <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
