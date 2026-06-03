@@ -56,9 +56,9 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
         style={{ backgroundColor: `${winnerColor}10`, borderBottom: `1px solid ${winnerColor}20` }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
           {group && (
-            <span className="rounded-md bg-neon-green/10 px-1.5 py-0.5 text-[9px] font-black text-neon-green">
+            <span className="rounded-md bg-neon-green/10 px-1.5 py-0.5 text-[10px] font-black text-neon-green">
               {group}
             </span>
           )}
@@ -76,15 +76,21 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
           <TeamAvatar name={prediction.homeTeam} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white">{prediction.homeTeam}</p>
-            <p className="text-[10px] text-slate-500">Mandante</p>
+            <p className="text-[11px] text-slate-500">Mandante</p>
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-center gap-0.5">
-          <span className="text-[10px] font-black text-slate-600">VS</span>
+        <div className="flex shrink-0 flex-col items-center gap-1.5">
+          <span className="text-[11px] font-black text-slate-500">VS</span>
+          {/* Mini probability sparkline */}
+          <div className="flex h-1 w-10 overflow-hidden rounded-full">
+            <div style={{ width: `${prediction.probHome * 100}%`, backgroundColor: homeColor }} />
+            <div style={{ width: `${prediction.probDraw * 100}%`, backgroundColor: outcomeColors.X }} />
+            <div style={{ width: `${prediction.probAway * 100}%`, backgroundColor: awayColor }} />
+          </div>
           {prediction.prediction !== "X" && (
             <div
-              className="h-1 w-6 rounded-full"
+              className="h-0.5 w-6 rounded-full"
               style={{
                 background: `linear-gradient(90deg, ${homeColor}80, ${awayColor}80)`,
               }}
@@ -95,7 +101,7 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2.5">
           <div className="min-w-0 text-right">
             <p className="truncate text-sm font-semibold text-white">{prediction.awayTeam}</p>
-            <p className="text-[10px] text-slate-500">Visitante</p>
+            <p className="text-[11px] text-slate-500">Visitante</p>
           </div>
           <TeamAvatar name={prediction.awayTeam} />
         </div>
@@ -112,18 +118,18 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
 
           <div className="grid grid-cols-2 gap-2">
             <div className="stat-pill">
-              <p className="text-[10px] text-slate-500">Placar provável</p>
+              <p className="text-[11px] text-slate-500">Placar provável</p>
               <p className="mt-0.5 text-sm font-bold text-neon-green">{prediction.poissonScore}</p>
             </div>
             <div className="stat-pill">
-              <p className="text-[10px] text-slate-500">Gols esperados</p>
+              <p className="text-[11px] text-slate-500">Gols esperados</p>
               <p className="mt-0.5 text-sm font-bold text-neon-blue">{prediction.expectedGoals}</p>
             </div>
           </div>
 
           <ConfidenceBar confidence={prediction.confidence} />
 
-          <p className="line-clamp-1 text-[11px] text-slate-600">{prediction.h2hSummary}</p>
+          <p className="line-clamp-1 text-xs text-slate-500">{prediction.h2hSummary}</p>
         </div>
       )}
 
@@ -175,16 +181,16 @@ export function BrasileiraoCard({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate font-bold text-white">
-            {homeTeam} <span className="font-normal text-slate-600">x</span> {awayTeam}
+            {homeTeam} <span className="font-normal text-slate-500">x</span> {awayTeam}
           </h3>
-          <p className="mt-0.5 text-[10px] text-slate-500">{newsCount} notícias analisadas</p>
+          <p className="mt-0.5 text-[11px] text-slate-500">{newsCount} notícias analisadas</p>
         </div>
         <div
           className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl text-xs"
           style={{ backgroundColor: `${predColor}18`, border: `1px solid ${predColor}30` }}
         >
           <span className="text-lg font-black" style={{ color: predColor }}>{prediction}</span>
-          <span className="text-[8px] font-semibold text-slate-500">{formatPercent(confidence)}</span>
+          <span className="text-[10px] font-semibold text-slate-500">{formatPercent(confidence)}</span>
         </div>
       </div>
       <p className="line-clamp-2 text-xs leading-relaxed text-slate-400">{reason}</p>

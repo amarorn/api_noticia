@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getWcGroupStandingsUseCase, getHealthUseCase } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 
@@ -115,7 +115,7 @@ export function WcGroupsPage() {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
+      <p className="text-[11px] uppercase tracking-widest text-slate-500">{label}</p>
       <p className="text-lg font-bold text-white">{value}</p>
     </div>
   );

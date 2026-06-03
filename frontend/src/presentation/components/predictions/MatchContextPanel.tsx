@@ -370,7 +370,7 @@ function KxlProfileCard({
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-white/5 px-2.5 py-2">
-      <p className="text-[10px] text-slate-500">{label}</p>
+      <p className="text-[11px] text-slate-500">{label}</p>
       <p className="font-semibold text-slate-200">{value}</p>
     </div>
   );
@@ -514,7 +514,7 @@ function CollisionDuel({
             <p className="font-mono text-2xl font-bold text-neon-green">
               {collision.home.vEff.toFixed(3)}
             </p>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[11px] text-slate-500">
               Vcar {collision.home.vcarRaw.toFixed(2)} · Vesc {collision.home.vesc.toFixed(2)}
             </p>
           </div>
@@ -531,7 +531,7 @@ function CollisionDuel({
             <p className="font-mono text-2xl font-bold text-neon-purple">
               {collision.away.vEff.toFixed(3)}
             </p>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[11px] text-slate-500">
               Vcar {collision.away.vcarRaw.toFixed(2)} · Vesc {collision.away.vesc.toFixed(2)}
             </p>
           </div>

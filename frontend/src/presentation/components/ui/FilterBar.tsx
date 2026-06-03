@@ -15,7 +15,7 @@ export function FilterChip({ label, active, onClick, count }: FilterChipProps) {
     >
       {label}
       {count != null && (
-        <span className="ml-1.5 text-[10px] opacity-70">({count})</span>
+        <span className="ml-1.5 text-[11px] opacity-70">({count})</span>
       )}
     </button>
   );

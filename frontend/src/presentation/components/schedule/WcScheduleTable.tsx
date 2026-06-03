@@ -61,7 +61,7 @@ function MatchRow({ match, index }: { match: WcScheduleMatch; index: number }) {
         <TeamCell name={match.homeTeam} />
       </td>
       <td className="px-2 py-3.5 text-center">
-        <span className="text-[10px] font-black text-slate-600">×</span>
+        <span className="text-[11px] font-black text-slate-500">×</span>
       </td>
       <td className="px-4 py-3.5">
         <TeamCell name={match.awayTeam} />
@@ -69,7 +69,7 @@ function MatchRow({ match, index }: { match: WcScheduleMatch; index: number }) {
       <td className="hidden px-4 py-3.5 text-xs text-slate-500 lg:table-cell">
         <span className="block truncate">{match.venue ?? "—"}</span>
         {match.city && (
-          <span className="block truncate text-[10px] text-slate-600">{match.city}</span>
+          <span className="block truncate text-[11px] text-slate-500">{match.city}</span>
         )}
       </td>
       <td className="px-4 py-3.5 text-right">
@@ -126,7 +126,7 @@ export function WcScheduleTable({
           </tbody>
         </table>
       </div>
-      <div className="border-t border-white/5 px-4 py-2.5 text-[11px] text-slate-600">
+      <div className="border-t border-white/5 px-4 py-2.5 text-xs text-slate-500">
         {filtered.length} jogo{filtered.length !== 1 ? "s" : ""} · {schedule.totalMatches} no total
       </div>
     </div>
@@ -157,7 +157,7 @@ export function WcGroupGrid({ groups, selectedGroup, onSelectGroup }: GroupGridP
               <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
                 Grupo {group.id}
               </span>
-              <span className="text-[10px] text-slate-600">{group.teams.length} times</span>
+              <span className="text-[11px] text-slate-500">{group.teams.length} times</span>
             </div>
             <ul className="space-y-2">
               {group.teams.map((team) => (

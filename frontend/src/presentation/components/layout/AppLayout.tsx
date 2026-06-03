@@ -8,6 +8,7 @@ import { PageBreadcrumb } from "./PageBreadcrumb";
 import { AmbientBackground } from "./AmbientBackground";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { ApiOfflineBanner } from "./ApiOfflineBanner";
+import { ToastContainer } from "@/presentation/components/ui/toast";
 import { allNavItems } from "./navConfig";
 
 export function AppLayout() {
@@ -47,6 +48,7 @@ export function AppLayout() {
         Ir para o conteúdo
       </a>
 
+      <ToastContainer />
       <AmbientBackground />
 
       <AppSidebar
@@ -81,7 +83,7 @@ export function AppLayout() {
 
         <footer className="relative border-t border-white/[0.06] px-4 py-6 sm:px-6">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
-            <p className="font-display text-xs tracking-wide text-slate-600">
+            <p className="font-display text-xs tracking-wide text-slate-500">
               Bolão AI · Dixon-Coles + Logística + KXL
             </p>
             <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1" aria-label="Rodapé">
@@ -89,7 +91,7 @@ export function AppLayout() {
                 <Link
                   key={to}
                   to={to}
-                  className="text-xs text-slate-600 transition-colors duration-200 hover:text-neon-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 rounded"
+                  className="text-xs text-slate-500 transition-colors duration-200 hover:text-neon-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 rounded"
                 >
                   {label}
                 </Link>

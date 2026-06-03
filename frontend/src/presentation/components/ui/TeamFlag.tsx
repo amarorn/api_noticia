@@ -1,4 +1,5 @@
-import { getTeamIso, teamFlag } from "@/presentation/utils/teamFlags";
+import { getTeamIso } from "@/presentation/utils/teamFlags";
+import { teamColor } from "@/data/teamColors";
 
 const FLAG_CDN = "https://flagcdn.com";
 
@@ -19,14 +20,15 @@ export function TeamFlag({
   const radius = rounded === "full" ? "rounded-full" : "rounded-md";
 
   if (!iso) {
+    const color = teamColor(team);
     return (
       <span
-        className={`inline-flex shrink-0 items-center justify-center bg-white/5 text-lg leading-none ${radius} ${className}`}
-        style={{ width: size, height: size }}
+        className={`inline-flex shrink-0 items-center justify-center text-sm font-bold text-white ${radius} ${className}`}
+        style={{ width: size, height: size, backgroundColor: color }}
         aria-hidden
         title={team}
       >
-        {teamFlag(team)}
+        {team.slice(0, 2).toUpperCase()}
       </span>
     );
   }

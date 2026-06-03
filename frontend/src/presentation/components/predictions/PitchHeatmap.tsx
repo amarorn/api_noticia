@@ -468,7 +468,7 @@ export function PitchHeatmap({
 
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
       <span
         className="h-2 w-2 rounded-full shadow-[0_0_6px_currentColor]"
         style={{ backgroundColor: color, color }}

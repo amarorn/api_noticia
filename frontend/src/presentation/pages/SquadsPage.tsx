@@ -9,7 +9,7 @@ import {
 import { teamColor } from "@/data/teamColors";
 import type { WcSquadSection } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { IconSearch } from "@/presentation/components/ui/Icons";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
@@ -122,7 +122,7 @@ export function SquadsPage() {
               ge.globo.com
             </a>
             {meta.updatedAt && (
-              <span className="text-slate-600"> · atualizado em {meta.updatedAt}</span>
+              <span className="text-slate-500"> · atualizado em {meta.updatedAt}</span>
             )}
           </p>
         </div>
@@ -158,7 +158,7 @@ export function SquadsPage() {
                       <TeamFlag team={item.team} size={22} />
                       <span className="truncate font-medium">{item.team}</span>
                     </span>
-                    <span className="shrink-0 text-[10px] text-slate-600">
+                    <span className="shrink-0 text-[11px] text-slate-500">
                       {item.playerCount}
                     </span>
                   </button>
@@ -281,7 +281,7 @@ function SquadSectionBlock({ section }: { section: WcSquadSection }) {
         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
           {section.role || label}
         </h3>
-        <span className="text-[10px] text-slate-600">({section.players.length})</span>
+        <span className="text-[11px] text-slate-500">({section.players.length})</span>
       </div>
       <ul className="divide-y divide-white/5 rounded-xl border border-white/5 overflow-hidden">
         {section.players.map((player) => {

@@ -78,7 +78,7 @@ export function LethalityGkPanel({
                   <div>
                     <p className="text-xs font-medium capitalize text-white">{m.metodo}</p>
                     {isDom && (
-                      <p className="text-[10px] text-slate-500">via dominante</p>
+                      <p className="text-[11px] text-slate-500">via dominante</p>
                     )}
                   </div>
                 </div>
@@ -94,7 +94,7 @@ export function LethalityGkPanel({
                   style={{ backgroundColor: color }}
                 />
               </div>
-              <div className="mt-2 flex justify-between text-[10px] text-slate-500">
+              <div className="mt-2 flex justify-between text-[11px] text-slate-500">
                 <span>Ataque {m.ataquePct}%</span>
                 <span>GK fraco {m.gkFracoPct}%</span>
               </div>

@@ -14,7 +14,7 @@ import {
 import { ConfidenceBadge, ConfidenceBar } from "@/presentation/components/predictions/ConfidenceBadge";
 import { MatchContextPanel } from "@/presentation/components/predictions/MatchContextPanel";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
 import { IconSwap, IconZap } from "@/presentation/components/ui/Icons";
@@ -29,6 +29,7 @@ import {
   phasesInSchedule,
 } from "@/presentation/utils/officialSchedule";
 import { motion } from "framer-motion";
+import { useToast } from "@/presentation/components/ui/toast";
 
 export function PredictPage() {
   const [searchParams] = useSearchParams();
@@ -115,9 +116,17 @@ export function PredictPage() {
     }
   }, [awayOptions, awayTeam]);
 
+  const { addToast } = useToast();
+
   const predictMutation = useMutation({
     mutationFn: () =>
       predictWcMatchUseCase.execute({ homeTeam, awayTeam, phase }),
+    onSuccess: () => {
+      addToast("Palpite gerado com sucesso!", "success");
+    },
+    onError: () => {
+      addToast("Falha ao gerar palpite. Tente novamente.", "error");
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -199,7 +208,7 @@ export function PredictPage() {
                     ))}
                   </select>
                 )}
-                <p className="mt-1.5 text-[10px] text-slate-600">
+                <p className="mt-1.5 text-[11px] text-slate-500">
                   Ou ajuste mandante e visitante abaixo
                 </p>
               </div>
@@ -398,7 +407,7 @@ export function PredictPage() {
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Resultado previsto</p>
                     <h2 className="mt-1 text-xl font-bold text-white">
                       {predictMutation.data.homeTeam}{" "}
-                      <span className="font-normal text-slate-600">x</span>{" "}
+                      <span className="font-normal text-slate-500">x</span>{" "}
                       {predictMutation.data.awayTeam}
                     </h2>
                     <p className="mt-0.5 text-xs text-slate-500">{predictMutation.data.h2hSummary}</p>
@@ -495,7 +504,7 @@ function StatBox({
 
   return (
     <div className="stat-pill">
-      <p className="text-[9px] uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p>
       <p className={`mt-1 text-sm font-bold ${colorClass}`}>{value}</p>
     </div>
   );

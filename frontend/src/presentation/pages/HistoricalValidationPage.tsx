@@ -16,7 +16,7 @@ import {
 } from "@/presentation/components/charts/ProbabilityCharts";
 import { ConfidenceBar } from "@/presentation/components/predictions/ConfidenceBadge";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { formatPercent, outcomeColors, outcomeLabels } from "@/presentation/theme";
 
@@ -90,7 +90,7 @@ export function HistoricalValidationPage() {
               >
                 <p className="text-2xl font-black text-white">{edition.season}</p>
                 <p className="mt-1 text-xs text-slate-400 line-clamp-2">{edition.label}</p>
-                <p className="mt-2 text-[10px] uppercase tracking-wider text-slate-500">
+                <p className="mt-2 text-[11px] uppercase tracking-wider text-slate-500">
                   {edition.matchCount} jogos
                 </p>
               </button>
@@ -308,7 +308,7 @@ function CompareCard({
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-white/5 p-3 text-center">
-      <p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-[11px] uppercase tracking-wider text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-bold text-white">{value}</p>
     </div>
   );

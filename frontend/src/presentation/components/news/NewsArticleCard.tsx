@@ -72,7 +72,7 @@ export function NewsArticleCard({
               </span>
             ))}
             {article.teamsMentioned.length > 4 && (
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[11px] text-slate-500">
                 +{article.teamsMentioned.length - 4}
               </span>
             )}

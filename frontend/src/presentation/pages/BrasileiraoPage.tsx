@@ -4,7 +4,7 @@ import { PageTransition, StaggerContainer, StaggerItem } from "@/presentation/co
 import { BrasileiraoCard } from "@/presentation/components/predictions/MatchCard";
 import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 
 export function BrasileiraoPage() {
   const query = useQuery({

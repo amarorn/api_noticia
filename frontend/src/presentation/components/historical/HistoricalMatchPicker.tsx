@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import type { OutcomeLabel, WcHistoricalMatch } from "@/domain/entities";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { outcomeColors, outcomeLabels } from "@/presentation/theme";
 import { formatMatchDate, teamFlag } from "@/presentation/utils/teamFlags";
@@ -150,7 +150,7 @@ function PhaseChip({
       }`}
     >
       {label}
-      <span className={`ml-1.5 ${active ? "text-neon-blue/70" : "text-slate-600"}`}>
+      <span className={`ml-1.5 ${active ? "text-neon-blue/70" : "text-slate-500"}`}>
         {count}
       </span>
     </button>
@@ -201,7 +201,7 @@ function MatchRow({
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:hidden">
           {dateLabel && (
-            <span className="text-[10px] uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] uppercase tracking-wider text-slate-500">
               {dateLabel}
             </span>
           )}
@@ -212,7 +212,7 @@ function MatchRow({
 
       <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
         {dateLabel && (
-          <span className="text-[10px] uppercase tracking-wider text-slate-500">
+          <span className="text-[11px] uppercase tracking-wider text-slate-500">
             {dateLabel}
           </span>
         )}

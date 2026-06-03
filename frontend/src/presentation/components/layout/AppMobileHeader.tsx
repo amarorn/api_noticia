@@ -35,7 +35,7 @@ export function AppMobileHeader({
           <BrandMark size="sm" />
           <div className="min-w-0">
             <p className="truncate font-display text-sm font-bold gradient-text">Bolão AI</p>
-            <p className="text-[9px] uppercase tracking-[0.18em] text-slate-600">Copa 2026</p>
+            <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500">Copa 2026</p>
           </div>
         </NavLink>
 
@@ -84,7 +84,7 @@ export function AppMobileHeader({
                   transition={{ delay: 0.04 * gi }}
                   className="mb-4 last:mb-0"
                 >
-                  <p className="mb-2 px-2 font-display text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                  <p className="mb-2 px-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                     {group.label}
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">

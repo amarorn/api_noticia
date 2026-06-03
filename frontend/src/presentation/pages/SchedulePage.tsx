@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getWcScheduleUseCase } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import {

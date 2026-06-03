@@ -152,7 +152,7 @@ function Sticker({
     >
       {/* Número da figurinha */}
       <span
-        className="absolute left-1.5 top-1.5 z-10 font-mono text-[9px] font-bold"
+        className="absolute left-1.5 top-1.5 z-10 font-mono text-[10px] font-bold"
         style={{ color: collected ? style.border : "rgba(255,255,255,0.2)" }}
       >
         #{String(index + 1).padStart(2, "0")}
@@ -160,7 +160,7 @@ function Sticker({
 
       {/* Badge tier */}
       <span
-        className={`absolute right-1.5 top-1.5 z-10 rounded px-1 py-px text-[8px] font-black ${style.label}`}
+        className={`absolute right-1.5 top-1.5 z-10 rounded px-1 py-px text-[10px] font-black ${style.label}`}
       >
         {tier}
       </span>
@@ -214,7 +214,7 @@ function Sticker({
           <StatBar label="CTL" value={team.ctrl} color="#a855f7" />
         </div>
 
-        <p className="text-center font-mono text-[10px] text-slate-500">
+        <p className="text-center font-mono text-[11px] text-slate-500">
           {team.poss}% posse
         </p>
 
@@ -223,7 +223,7 @@ function Sticker({
           <Link
             to={`/album/${encodeURIComponent(team.name)}`}
             onClick={(e) => e.stopPropagation()}
-            className="mt-0.5 rounded-lg border border-white/[0.08] bg-white/[0.04] py-1 text-center text-[9px] font-semibold text-slate-500 transition hover:border-white/20 hover:text-white"
+            className="mt-0.5 rounded-lg border border-white/[0.08] bg-white/[0.04] py-1 text-center text-[10px] font-semibold text-slate-500 transition hover:border-white/20 hover:text-white"
           >
             Ver elenco →
           </Link>
@@ -236,14 +236,14 @@ function Sticker({
 function StatBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="w-5 shrink-0 text-[8px] font-bold text-slate-600">{label}</span>
+      <span className="w-5 shrink-0 text-[10px] font-bold text-slate-500">{label}</span>
       <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${value * 100}%`, backgroundColor: color, opacity: 0.75 }}
         />
       </div>
-      <span className="w-5 shrink-0 text-right font-mono text-[8px] text-slate-600">
+      <span className="w-5 shrink-0 text-right font-mono text-[10px] text-slate-500">
         {Math.round(value * 100)}
       </span>
     </div>
@@ -385,12 +385,12 @@ export function AlbumPage() {
             >
               {tab}
               {tab === "coletados" && collected.size > 0 && (
-                <span className="ml-1.5 rounded-full bg-neon-green/20 px-1.5 py-0.5 text-[9px] text-neon-green">
+                <span className="ml-1.5 rounded-full bg-neon-green/20 px-1.5 py-0.5 text-[10px] text-neon-green">
                   {collected.size}
                 </span>
               )}
               {tab === "faltando" && TEAMS.length - collected.size > 0 && (
-                <span className="ml-1.5 rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] text-slate-400">
+                <span className="ml-1.5 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-slate-400">
                   {TEAMS.length - collected.size}
                 </span>
               )}
@@ -399,7 +399,7 @@ export function AlbumPage() {
         </div>
 
         <div className="relative flex-1 sm:max-w-xs">
-          <IconSearch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600" />
+          <IconSearch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             type="search"
             value={search}

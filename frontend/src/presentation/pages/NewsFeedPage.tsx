@@ -10,7 +10,7 @@ import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { NewsArticleCard } from "@/presentation/components/news/NewsArticleCard";
 import { NewsFeedSkeleton } from "@/presentation/components/ui/Skeleton";
-import { EmptyState, ErrorState } from "@/presentation/components/ui/ErrorState";
+import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState";
 
 const PAGE_SIZE = 12;
 const SYNC_STALE_MS = 60_000;
@@ -317,7 +317,7 @@ function SourceChip({
       }`}
     >
       {label}
-      <span className={`ml-1.5 ${active ? "text-neon-green/80" : "text-slate-600"}`}>
+      <span className={`ml-1.5 ${active ? "text-neon-green/80" : "text-slate-500"}`}>
         {count}
       </span>
     </motion.button>

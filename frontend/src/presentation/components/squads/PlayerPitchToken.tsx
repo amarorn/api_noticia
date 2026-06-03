@@ -59,18 +59,18 @@ export function PlayerPitchToken({
         </div>
 
         <span
-          className="absolute -left-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-md px-1 text-[9px] font-black shadow-md"
+          className="absolute -left-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-md px-1 text-[10px] font-black shadow-md"
           style={{ backgroundColor: teamColor, color: "#0a0f1a" }}
         >
           {player.number}
         </span>
       </div>
 
-      <p className="max-w-full truncate text-center text-[9px] font-bold leading-tight text-white">
+      <p className="max-w-full truncate text-center text-[10px] font-bold leading-tight text-white">
         {displayName}
       </p>
       {!compact && player.club && (
-        <p className="max-w-full truncate text-center text-[8px] text-slate-500">{player.club}</p>
+        <p className="max-w-full truncate text-center text-[10px] text-slate-500">{player.club}</p>
       )}
     </motion.div>
   );

@@ -24,7 +24,7 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
             <p className="font-display text-base font-bold gradient-text-animated leading-tight">
               Bolão AI
             </p>
-            <p className="text-[9px] uppercase tracking-[0.2em] text-slate-600">
+            <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500">
               Previsões esportivas
             </p>
           </div>
@@ -33,7 +33,7 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
         <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin" aria-label="Principal">
           {navGroups.map((group) => (
             <div key={group.id} className="mb-5 last:mb-0">
-              <p className="mb-2 px-3 font-display text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              <p className="mb-2 px-3 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
                 {group.label}
               </p>
               <ul className="space-y-0.5">
@@ -68,7 +68,7 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
                               {label}
                             </span>
                             {description && (
-                              <span className="block truncate text-[10px] text-slate-600 group-hover:text-slate-500">
+                              <span className="block truncate text-[11px] text-slate-500 group-hover:text-slate-400">
                                 {description}
                               </span>
                             )}

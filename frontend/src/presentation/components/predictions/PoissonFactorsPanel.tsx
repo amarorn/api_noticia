@@ -10,7 +10,7 @@ interface PoissonFactorsPanelProps {
 function FactorCell({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
     <div className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2">
-      <p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-[11px] uppercase tracking-wider text-slate-500">{label}</p>
       <p className={`mt-0.5 font-mono text-sm font-semibold ${accent ?? "text-slate-200"}`}>
         {value}
       </p>

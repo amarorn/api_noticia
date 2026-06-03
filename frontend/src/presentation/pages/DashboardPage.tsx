@@ -13,20 +13,20 @@ import { QuickActions } from "@/presentation/components/layout/QuickActions";
 import { MatchCard } from "@/presentation/components/predictions/MatchCard";
 import { ValueBetsSection } from "@/presentation/components/predictions/ValueBetCard";
 import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
+import { RoundTabs } from "@/presentation/components/ui/RoundTabs";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
-import { EmptyState, ErrorState } from "@/presentation/components/ui/ErrorState";
+import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState";
+import { IconCalendar, IconFilter } from "@/presentation/components/ui/Icons";
 import {
   buildMatchGroupLookup,
-  buildMatchRoundLookup,
   groupForMatch,
-  roundForMatchPair,
   sortedGroupIds,
 } from "@/presentation/utils/officialSchedule";
 
 export function DashboardPage() {
   const [selectedGroup, setSelectedGroup] = useState<string | "all">("all");
-  const [selectedRound, setSelectedRound] = useState<number | "all">("all");
+  const [activeRound, setActiveRound] = useState<number | "all">(1);
 
   const round1Query = useQuery({
     queryKey: ["wc-round", 1],
@@ -57,6 +57,12 @@ export function DashboardPage() {
     staleTime: 10 * 60_000,
   });
 
+  const roundQueries: Record<number, typeof round1Query> = {
+    1: round1Query,
+    2: round2Query,
+    3: round3Query,
+  };
+
   const allPredictions = useMemo(() => {
     const merged: WcPrediction[] = [];
     for (const query of [round1Query, round2Query, round3Query]) {
@@ -67,15 +73,16 @@ export function DashboardPage() {
     return merged;
   }, [round1Query.data, round2Query.data, round3Query.data]);
 
+  const currentPredictions = useMemo(() => {
+    if (activeRound === "all") return allPredictions;
+    const q = roundQueries[activeRound as number];
+    return q.data?.predictions ?? [];
+  }, [activeRound, allPredictions, round1Query.data, round2Query.data, round3Query.data]);
+
   const roundMeta = round1Query.data ?? round2Query.data ?? round3Query.data;
 
   const groupLookup = useMemo(
     () => (scheduleQuery.data ? buildMatchGroupLookup(scheduleQuery.data) : new Map()),
-    [scheduleQuery.data],
-  );
-
-  const roundLookup = useMemo(
-    () => (scheduleQuery.data ? buildMatchRoundLookup(scheduleQuery.data) : new Map()),
     [scheduleQuery.data],
   );
 
@@ -84,26 +91,22 @@ export function DashboardPage() {
     [scheduleQuery.data],
   );
 
-  const matchdays = scheduleQuery.data?.matchdays ?? [];
-
   const filteredPredictions = useMemo(() => {
-    return allPredictions.filter((pred) => {
+    if (selectedGroup === "all") return currentPredictions;
+    return currentPredictions.filter((pred) => {
       const group = groupForMatch(pred.homeTeam, pred.awayTeam, groupLookup);
-      const round = roundForMatchPair(pred.homeTeam, pred.awayTeam, roundLookup);
-      if (selectedGroup !== "all" && group !== selectedGroup) return false;
-      if (selectedRound !== "all" && round !== selectedRound) return false;
-      return true;
+      return group === selectedGroup;
     });
-  }, [allPredictions, selectedGroup, selectedRound, groupLookup, roundLookup]);
+  }, [currentPredictions, selectedGroup, groupLookup]);
 
   const roundCounts = useMemo(() => {
     const counts = new Map<number, number>();
-    for (const pred of allPredictions) {
-      const r = roundForMatchPair(pred.homeTeam, pred.awayTeam, roundLookup);
-      if (r != null) counts.set(r, (counts.get(r) ?? 0) + 1);
+    for (let r = 1; r <= 3; r++) {
+      const q = roundQueries[r as 1 | 2 | 3];
+      counts.set(r, q.data?.predictions?.length ?? 0);
     }
     return counts;
-  }, [allPredictions, roundLookup]);
+  }, [round1Query.data, round2Query.data, round3Query.data]);
 
   const valueQuery = useQuery({
     queryKey: ["wc-value"],
@@ -118,11 +121,13 @@ export function DashboardPage() {
         ? "Erro ao carregar value bets"
         : null;
 
-  const hasFilters = selectedGroup !== "all" || selectedRound !== "all";
-  const loadingMoreRounds =
-    round1Query.isSuccess &&
-    (round2Query.isFetching || round3Query.isFetching) &&
-    allPredictions.length < 72;
+  const isLoadingCurrent = activeRound === "all"
+    ? round1Query.isLoading
+    : roundQueries[activeRound as number].isLoading;
+
+  const isFetchingCurrent = activeRound === "all"
+    ? (round1Query.isFetching || round2Query.isFetching || round3Query.isFetching)
+    : roundQueries[activeRound as number].isFetching;
 
   if (round1Query.isLoading) {
     return (
@@ -157,7 +162,14 @@ export function DashboardPage() {
     );
   }
 
-  const gamesLabel = buildGamesLabel(filteredPredictions.length, selectedGroup, selectedRound);
+  const gamesLabel = `${filteredPredictions.length} ${filteredPredictions.length === 1 ? "jogo" : "jogos"}`;
+
+  const tabs = [
+    { value: 1 as const, label: "Rodada 1", count: roundCounts.get(1) },
+    { value: 2 as const, label: "Rodada 2", count: roundCounts.get(2) },
+    { value: 3 as const, label: "Rodada 3", count: roundCounts.get(3) },
+    { value: "all" as const, label: "Todas", count: allPredictions.length },
+  ];
 
   return (
     <PageTransition className="space-y-8">
@@ -167,15 +179,14 @@ export function DashboardPage() {
         badges={[{ label: gamesLabel, color: "blue" }]}
       />
 
-      {loadingMoreRounds && (
-        <SlowLoadingPanel
-          active
-          title="Carregando rodadas 2 e 3…"
-          hint="Os palpites já visíveis da rodada 1 continuam disponíveis enquanto o restante é calculado."
-        />
-      )}
-
       <QuickActions />
+
+      <section className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="section-label m-0">Rodada</p>
+        </div>
+        <RoundTabs tabs={tabs} active={activeRound} onChange={setActiveRound} />
+      </section>
 
       {groupIds.length > 0 && (
         <FilterBar label="Filtrar por grupo">
@@ -195,23 +206,12 @@ export function DashboardPage() {
         </FilterBar>
       )}
 
-      {matchdays.length > 0 && (
-        <FilterBar label="Filtrar por rodada">
-          <FilterChip
-            label="Todas"
-            active={selectedRound === "all"}
-            onClick={() => setSelectedRound("all")}
-          />
-          {matchdays.map((rd) => (
-            <FilterChip
-              key={rd}
-              label={`Rodada ${rd}`}
-              active={selectedRound === rd}
-              onClick={() => setSelectedRound(rd)}
-              count={roundCounts.get(rd)}
-            />
-          ))}
-        </FilterBar>
+      {isFetchingCurrent && !isLoadingCurrent && (
+        <SlowLoadingPanel
+          active
+          title={`Carregando rodada ${activeRound}…`}
+          hint="Os palpites já visíveis continuam disponíveis."
+        />
       )}
 
       <section>
@@ -220,19 +220,18 @@ export function DashboardPage() {
           <EmptyState
             title="Nenhum jogo neste filtro"
             description={
-              loadingMoreRounds
-                ? "Aguarde o carregamento das demais rodadas ou limpe os filtros."
-                : "Tente outro grupo ou rodada, ou volte para ver todos os 72 jogos."
+              isFetchingCurrent
+                ? "Aguarde o carregamento da rodada ou limpe os filtros."
+                : "Tente outro grupo ou rodada."
             }
+            icon={isFetchingCurrent ? IconCalendar : IconFilter}
+            iconColor={isFetchingCurrent ? "#00d4ff" : "#a855f7"}
             action={
-              hasFilters ? (
+              selectedGroup !== "all" ? (
                 <button
                   type="button"
                   className="btn-ghost mt-2"
-                  onClick={() => {
-                    setSelectedGroup("all");
-                    setSelectedRound("all");
-                  }}
+                  onClick={() => setSelectedGroup("all")}
                 >
                   Limpar filtros
                 </button>
@@ -241,7 +240,7 @@ export function DashboardPage() {
           />
         ) : (
           <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredPredictions.map((pred, i) => (
+            {filteredPredictions.map((pred: WcPrediction, i: number) => (
               <StaggerItem key={`${pred.homeTeam}-${pred.awayTeam}`}>
                 <MatchCard
                   prediction={pred}
@@ -263,15 +262,4 @@ export function DashboardPage() {
       />
     </PageTransition>
   );
-}
-
-function buildGamesLabel(
-  count: number,
-  group: string | "all",
-  round: number | "all",
-): string {
-  const parts: string[] = [`${count} jogos`];
-  if (group !== "all") parts.push(`Gr. ${group}`);
-  if (round !== "all") parts.push(`R${round}`);
-  return parts.join(" · ");
 }

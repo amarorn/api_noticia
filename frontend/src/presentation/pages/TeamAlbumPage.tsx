@@ -193,7 +193,7 @@ function PlayerSticker({
 
         {/* Número no canto superior esquerdo */}
         <div
-          className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-[9px] font-black"
+          className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-black"
           style={{ backgroundColor: teamColor, color: "#0a0f1a" }}
         >
           {player.number}
@@ -201,7 +201,7 @@ function PlayerSticker({
 
         {/* Badge posição canto superior direito */}
         <span
-          className="absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[8px] font-black"
+          className="absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-black"
           style={{ backgroundColor: `${posColor}cc`, color: "#0a0f1a" }}
         >
           {player.position}
@@ -209,7 +209,7 @@ function PlayerSticker({
 
         {/* Nome sobreposto na foto */}
         <div className="absolute inset-x-0 bottom-0 px-2 pb-1.5">
-          <p className="truncate text-center text-[10px] font-black leading-tight text-white drop-shadow-lg">
+          <p className="truncate text-center text-[11px] font-black leading-tight text-white drop-shadow-lg">
             {player.name.split(" ").slice(-1)[0].toUpperCase()}
           </p>
         </div>
@@ -239,13 +239,13 @@ function PlayerSticker({
         className="flex flex-col gap-0.5 px-2 py-1.5"
         style={{ background: `linear-gradient(135deg, ${teamColor}18, rgba(5,10,20,0.95))` }}
       >
-        <p className="truncate text-center text-[10px] font-bold leading-tight text-white">
+        <p className="truncate text-center text-[11px] font-bold leading-tight text-white">
           {player.name}
         </p>
-        <p className="truncate text-center text-[8px] text-slate-500">
+        <p className="truncate text-center text-[10px] text-slate-500">
           {player.club}
         </p>
-        <p className="text-center text-[8px] font-semibold" style={{ color: posColor }}>
+        <p className="text-center text-[10px] font-semibold" style={{ color: posColor }}>
           {POSITION_LABEL[player.position]} · {player.born}
         </p>
       </div>
@@ -360,12 +360,12 @@ export function TeamAlbumPage() {
                 { label: "CTL", value: teamEntry.ctrl },
               ].map(({ label, value }) => (
                 <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-center">
-                  <p className="text-[9px] font-bold text-slate-600">{label}</p>
+                  <p className="text-[10px] font-bold text-slate-500">{label}</p>
                   <p className="text-sm font-black text-white">{Math.round(value * 100)}</p>
                 </div>
               ))}
               <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-center">
-                <p className="text-[9px] font-bold text-slate-600">POSSE</p>
+                <p className="text-[10px] font-bold text-slate-500">POSSE</p>
                 <p className="text-sm font-black text-white">{teamEntry.poss}%</p>
               </div>
             </div>

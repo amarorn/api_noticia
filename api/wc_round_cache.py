@@ -12,8 +12,10 @@ _memory: dict[str, dict] = {}
 _disk_loaded = False
 
 
+CACHE_FORMAT_VERSION = 2  # bump quando o formato da resposta mudar
+
 def artifact_fingerprint() -> str:
-    return f"{fixtures_fingerprint()}:{squads_fingerprint()}:{hyperparams_fingerprint()}"
+    return f"{fixtures_fingerprint()}:{squads_fingerprint()}:{hyperparams_fingerprint()}:v{CACHE_FORMAT_VERSION}"
 
 
 def _cache_file() -> Path:

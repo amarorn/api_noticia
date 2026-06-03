@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastProvider } from "@/presentation/components/ui/toast";
 import { AppLayout } from "@/presentation/components/layout/AppLayout";
 import { DashboardPage } from "@/presentation/pages/DashboardPage";
 import { PredictPage } from "@/presentation/pages/PredictPage";
@@ -25,24 +26,26 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="news" element={<NewsFeedPage />} />
-            <Route path="predict" element={<PredictPage />} />
-            <Route path="validate" element={<HistoricalValidationPage />} />
-            <Route path="brasileirao" element={<BrasileiraoPage />} />
-            <Route path="match/:home/:away" element={<MatchDetailPage />} />
-            <Route path="album" element={<AlbumPage />} />
-            <Route path="jogos" element={<SchedulePage />} />
-            <Route path="convocacoes" element={<SquadsPage />} />
-            <Route path="grupos" element={<WcGroupsPage />} />
-            <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="news" element={<NewsFeedPage />} />
+              <Route path="predict" element={<PredictPage />} />
+              <Route path="validate" element={<HistoricalValidationPage />} />
+              <Route path="brasileirao" element={<BrasileiraoPage />} />
+              <Route path="match/:home/:away" element={<MatchDetailPage />} />
+              <Route path="album" element={<AlbumPage />} />
+              <Route path="jogos" element={<SchedulePage />} />
+              <Route path="convocacoes" element={<SquadsPage />} />
+              <Route path="grupos" element={<WcGroupsPage />} />
+              <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

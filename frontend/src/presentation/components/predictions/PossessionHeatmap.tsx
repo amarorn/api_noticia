@@ -699,7 +699,7 @@ function PossessionBar({
         <span className="font-display font-semibold" style={{ color: outcomeColors["1"] }}>
           {homeTeam}
         </span>
-        <span className="truncate text-[10px] text-slate-600">{source}</span>
+        <span className="truncate text-[11px] text-slate-500">{source}</span>
         <span className="font-display font-semibold" style={{ color: outcomeColors["2"] }}>
           {awayTeam}
         </span>
@@ -805,13 +805,13 @@ function ZoneTooltip({
           </p>
         )}
         {homeSnap && awaySnap && depth === 1 && (
-          <p className="border-t border-white/10 pt-1 text-[10px] text-slate-500">
+          <p className="border-t border-white/10 pt-1 text-[11px] text-slate-500">
             Posse real: {homeTeam} {homeSnap.possessionPct.toFixed(1)}% ·{" "}
             {awayTeam} {awaySnap.possessionPct.toFixed(1)}%
           </p>
         )}
       </div>
-      <p className="text-[10px] text-slate-600">Fonte: {sourceMap[depth] ?? "KXL"}</p>
+      <p className="text-[11px] text-slate-500">Fonte: {sourceMap[depth] ?? "KXL"}</p>
     </div>
   );
 }
@@ -860,7 +860,7 @@ function ModeBtn({
 
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-500">
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
       <span
         className="h-2 w-2 rounded-full shadow-[0_0_6px_currentColor]"
         style={{ backgroundColor: color, color }}
@@ -896,7 +896,7 @@ function DataSourcesNote({
   }
 
   return (
-    <p className="text-center text-[10px] leading-relaxed text-slate-600">
+    <p className="text-center text-[11px] leading-relaxed text-slate-500">
       {parts.join(" · ")}
     </p>
   );

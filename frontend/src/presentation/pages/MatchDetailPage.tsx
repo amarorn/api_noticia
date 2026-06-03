@@ -12,7 +12,7 @@ import { MatchContextPanel } from "@/presentation/components/predictions/MatchCo
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
-import { ErrorState } from "@/presentation/components/ui/ErrorState";
+import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { IconArrowLeft } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { formatPercent, outcomeColors } from "@/presentation/theme";
@@ -98,7 +98,7 @@ export function MatchDetailPage() {
           <div className="flex items-center gap-4">
             <TeamHeroAvatar name={pred.homeTeam} />
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-slate-600">Mandante</p>
+              <p className="text-[11px] uppercase tracking-widest text-slate-500">Mandante</p>
               <p className="text-xl font-extrabold text-white">{pred.homeTeam}</p>
               <p className="text-sm font-semibold" style={{ color: outcomeColors["1"] }}>
                 {formatPercent(pred.probHome)}
@@ -111,19 +111,19 @@ export function MatchDetailPage() {
               className="rounded-xl px-4 py-2 text-center"
               style={{ backgroundColor: `${winnerColor}12`, border: `1px solid ${winnerColor}25` }}
             >
-              <p className="text-[9px] uppercase tracking-widest text-slate-500">Palpite</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500">Palpite</p>
               <p className="text-2xl font-black" style={{ color: winnerColor }}>
                 {pred.prediction}
               </p>
             </div>
-            <p className="text-[10px] text-slate-600">
+            <p className="text-[11px] text-slate-500">
               {formatPercent(pred.probDraw)} empate
             </p>
           </div>
 
           <div className="flex items-center gap-4 text-right">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-slate-600">Visitante</p>
+              <p className="text-[11px] uppercase tracking-widest text-slate-500">Visitante</p>
               <p className="text-xl font-extrabold text-white">{pred.awayTeam}</p>
               <p className="text-sm font-semibold" style={{ color: outcomeColors["2"] }}>
                 {formatPercent(pred.probAway)}
@@ -217,7 +217,7 @@ function MetricCard({
 
   return (
     <div className={`rounded-xl border p-4 ${colorMap[accent]}`}>
-      <p className="text-[10px] uppercase tracking-wider text-slate-500">{title}</p>
+      <p className="text-[11px] uppercase tracking-wider text-slate-500">{title}</p>
       <p className={`mt-1 text-xl font-bold ${colorMap[accent].split(" ")[0]}`}>{value}</p>
     </div>
   );
