@@ -53,19 +53,21 @@ _wc_predictor: WcPredictor | None = None
 _wc_artifact_meta: dict = {}
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Treina modelos da Copa na subida para a primeira requisição do frontend não travar."""
+def _warm_wc_models() -> None:
     global _wc_models_ready
-    import asyncio
-
-    loop = asyncio.get_event_loop()
     try:
-        await loop.run_in_executor(None, lambda: get_wc_predictor())
+        get_wc_predictor()
+        warm_from_disk()
         _wc_models_ready = True
-        await loop.run_in_executor(None, warm_from_disk)
     except ValueError:
         _wc_models_ready = False
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Carrega modelos WC em background para a API aceitar tráfego imediatamente (deploy/health)."""
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _warm_wc_models)
     yield
 
 
