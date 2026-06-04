@@ -15,6 +15,8 @@ export class ApiError extends Error {
 
 export const API_TIMEOUT_MS = 30_000;
 export const API_SYNC_TIMEOUT_MS = 180_000;
+/** Sync com fetch_body (~1000 URLs); evita abort no meio da coleta. */
+export const API_SYNC_FETCH_BODY_TIMEOUT_MS = 900_000;
 
 export async function apiFetch<T>(
   path: string,

@@ -3,13 +3,14 @@ import type {
   NewsAllParams,
   NewsCardsParams,
   NewsFeedParams,
+  NewsSyncOptions,
 } from "@/domain/repositories";
 
 export class SyncNewsSourcesUseCase {
   constructor(private readonly repository: INewsRepository) {}
 
-  execute() {
-    return this.repository.syncSources();
+  execute(options?: NewsSyncOptions) {
+    return this.repository.syncSources(options);
   }
 }
 

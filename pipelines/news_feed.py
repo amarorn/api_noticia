@@ -3,12 +3,12 @@ from typing import Any
 
 import pandas as pd
 
+from config import settings
 from ingest.sources_loader import load_sources
 from schemas.national_teams import normalize_national_team
 
 SENTIMENT_POSITIVE = 0.2
 SENTIMENT_NEGATIVE = -0.2
-BODY_PREVIEW_LEN = 280
 MAX_NEWS_ALL = 5000
 
 
@@ -49,14 +49,44 @@ def _sort_key(row: pd.Series) -> datetime:
     return datetime.min.replace(tzinfo=timezone.utc)
 
 
+def _truncate_snippet(text: str, max_len: int) -> str:
+    normalized = _normalize_text(text)
+    if len(normalized) <= max_len:
+        return normalized
+    cut = normalized[:max_len].rsplit(" ", 1)[0]
+    return f"{cut}…"
+
+
+def _normalize_text(text: str) -> str:
+    return " ".join(str(text).split())
+
+
+def _best_article_text(row: pd.Series) -> str:
+    """Maior texto disponível no silver (corpo da página > body > summary > title)."""
+    best = ""
+    for field in ("body", "summary", "title"):
+        raw = row.get(field)
+        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+            continue
+        text = _normalize_text(str(raw))
+        if len(text) > len(best):
+            best = text
+    return best
+
+
 def _body_preview(row: pd.Series) -> str:
-    text = row.get("summary") or row.get("body") or row.get("title") or ""
-    if not isinstance(text, str):
-        text = str(text)
-    text = " ".join(text.split())
-    if len(text) <= BODY_PREVIEW_LEN:
-        return text
-    return text[:BODY_PREVIEW_LEN].rsplit(" ", 1)[0] + "…"
+    text = _best_article_text(row)
+    if not text:
+        return ""
+    max_len = settings.news_body_preview_max_chars
+    if max_len is not None and max_len > 0:
+        return _truncate_snippet(text, max_len)
+    return text
+
+
+def _summary_field(row: pd.Series) -> str | None:
+    text = _best_article_text(row)
+    return text or None
 
 
 def _teams_list(value: Any) -> list[str]:
@@ -197,7 +227,7 @@ def build_news_feed(
                 "source_name": source_names.get(sid, sid.replace("_", " ").title()),
                 "source_url": str(row.get("source_url", "")),
                 "title": str(row.get("title", "")),
-                "summary": row.get("summary") if pd.notna(row.get("summary")) else None,
+                "summary": _summary_field(row),
                 "body_preview": _body_preview(row),
                 "published_at": published.isoformat() if published else None,
                 "scraped_at": scraped.isoformat() if scraped else None,

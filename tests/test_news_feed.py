@@ -8,6 +8,7 @@ from pipelines.news_feed import (
     build_news_cards,
     build_news_feed,
     sentiment_label,
+    _body_preview,
 )
 
 
@@ -90,6 +91,22 @@ def test_build_news_cards_filters_by_teams():
     assert len(result["cards"]) == 1
     assert result["cards"][0]["id"] == "n1"
     assert "Brasil" in result["teams"]
+
+
+def test_body_preview_prefers_full_body_without_truncation():
+    long_body = "futebol " * 200
+    row = pd.DataFrame([{"body": long_body, "summary": "resumo curto"}]).iloc[0]
+    preview = _body_preview(row)
+    assert preview == " ".join(long_body.split())
+    assert len(preview) > 1000
+
+
+def test_summary_matches_longest_field_without_truncation():
+    long_summary = "noticia " * 150
+    row = pd.DataFrame([{"summary": long_summary, "body": "curto"}]).iloc[0]
+    from pipelines.news_feed import _summary_field
+
+    assert _summary_field(row) == " ".join(long_summary.split())
 
 
 def test_build_news_all_returns_every_row():

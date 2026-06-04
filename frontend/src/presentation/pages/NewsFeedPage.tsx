@@ -29,8 +29,8 @@ export function NewsFeedPage() {
   });
 
   const syncQuery = useQuery({
-    queryKey: ["news-sync"],
-    queryFn: () => syncNewsSourcesUseCase.execute(),
+    queryKey: ["news-sync", "fetch-body"],
+    queryFn: () => syncNewsSourcesUseCase.execute({ fetchBody: true }),
     staleTime: SYNC_STALE_MS,
     gcTime: 5 * 60_000,
     enabled: healthQuery.isSuccess,
@@ -106,7 +106,7 @@ export function NewsFeedPage() {
             waitingApi
               ? "Conectando à API..."
               : isSyncing
-                ? "Coletando RSS dos portais e atualizando a base..."
+                ? "Coletando RSS e baixando o texto completo das matérias (pode levar vários minutos)..."
                 : "Montando o feed com as notícias mais recentes..."
           }
         />
@@ -230,9 +230,17 @@ export function NewsFeedPage() {
             <button
               type="button"
               className="btn-primary mt-2"
-              onClick={() => syncQuery.refetch()}
+              onClick={() =>
+                syncNewsSourcesUseCase
+                  .execute({ fetchBody: true, fullRebuild: true })
+                  .then(() => {
+                    queryClient.invalidateQueries({ queryKey: ["news-sync"] });
+                    queryClient.invalidateQueries({ queryKey: ["news-all"] });
+                    queryClient.invalidateQueries({ queryKey: ["health"] });
+                  })
+              }
             >
-              Atualizar fontes novamente
+              Atualizar com texto completo
             </button>
           }
         />

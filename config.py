@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     lake_root: Path = Path("./data/lake")
     sources_yaml: Path = Path("./data/sources.yaml")
     collect_lookback_days: int = 7
+    rss_max_entries_per_source: int = 160  # 14 fontes ativas → meta ~800 únicos por sync
+    news_body_preview_max_chars: int | None = None
+    news_sync_fetch_body: bool = True
     gcp_project: str | None = None
     bq_dataset: str = "sports_news_lake"
     gcs_bucket: str | None = None

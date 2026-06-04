@@ -28,6 +28,46 @@ sources:
     name: Gazeta Esportiva
     url: https://www.gazetaesportiva.com/feed/
 
+  - id: globo_dynamo
+    name: Globo Esporte (dynamo)
+    url: https://ge.globo.com/dynamo/rss2.xml
+
+  - id: meu_timao
+    name: Meu Timão
+    url: https://www.meutimao.com.br/rss
+
+  - id: trivela
+    name: Trivela
+    url: https://trivela.com.br/feed/
+
+  - id: marca
+    name: Marca
+    url: https://www.marca.com/rss/futbol.xml
+
+  - id: google_esporte_br
+    name: Google Notícias — Esporte BR
+    url: https://news.google.com/rss/search?q=esporte+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419
+
+  - id: google_futebol_br
+    name: Google Notícias — Futebol BR
+    url: https://news.google.com/rss/search?q=futebol+brasileiro&hl=pt-BR&gl=BR&ceid=BR:pt-419
+
+  - id: google_selecao
+    name: Google Notícias — Seleção/Copa
+    url: https://news.google.com/rss/search?q=selecao+brasileira+copa&hl=pt-BR&gl=BR&ceid=BR:pt-419
+
+  - id: google_brasileirao
+    name: Google Notícias — Brasileirão
+    url: https://news.google.com/rss/search?q=brasileirao+serie+a&hl=pt-BR&gl=BR&ceid=BR:pt-419
+
+  - id: google_libertadores
+    name: Google Notícias — Libertadores
+    url: https://news.google.com/rss/search?q=libertadores+copa&hl=pt-BR&gl=BR&ceid=BR:pt-419
+
+  - id: google_transferencias
+    name: Google Notícias — Transferências
+    url: https://news.google.com/rss/search?q=transferencias+futebol&hl=pt-BR&gl=BR&ceid=BR:pt-419
+
   # Lance desativado — feed retorna 404/410
   - id: lance
     name: Lance!

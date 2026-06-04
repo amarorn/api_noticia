@@ -6,6 +6,7 @@ import httpx
 import structlog
 from bs4 import BeautifulSoup
 
+from config import settings
 from ingest.sources_loader import RSSSourceConfig, load_sources
 from schemas.models import BronzeArticle
 
@@ -66,7 +67,10 @@ async def collect_rss_source(
 
         articles: list[BronzeArticle] = []
 
-        for entry in feed.entries[:50]:
+        max_entries = settings.rss_max_entries_per_source
+        if source_config.source.startswith("google_"):
+            max_entries = min(max_entries, 100)
+        for entry in feed.entries[:max_entries]:
             url = entry.get("link", "")
             title = entry.get("title", "").strip()
             if not url or not title:

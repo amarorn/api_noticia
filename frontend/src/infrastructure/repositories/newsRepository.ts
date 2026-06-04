@@ -3,16 +3,31 @@ import type {
   NewsAllParams,
   NewsCardsParams,
   NewsFeedParams,
+  NewsSyncOptions,
 } from "@/domain/repositories";
-import { API_SYNC_TIMEOUT_MS, apiFetch } from "../api/client";
+import {
+  API_SYNC_FETCH_BODY_TIMEOUT_MS,
+  API_SYNC_TIMEOUT_MS,
+  apiFetch,
+} from "../api/client";
 import { mapNewsCards, mapNewsFeed, mapNewsSync } from "../mappers/newsMappers";
 
 export class NewsApiRepository implements INewsRepository {
-  async syncSources() {
-    const raw = await apiFetch<Parameters<typeof mapNewsSync>[0]>("/news/sync", {
-      method: "POST",
-      timeoutMs: API_SYNC_TIMEOUT_MS,
-    });
+  async syncSources(options: NewsSyncOptions = {}) {
+    const fetchBody = options.fetchBody ?? true;
+    const fullRebuild = options.fullRebuild ?? false;
+    const params = new URLSearchParams();
+    if (fetchBody) params.set("fetch_body", "true");
+    if (fullRebuild) params.set("full_rebuild", "true");
+    const qs = params.toString();
+
+    const raw = await apiFetch<Parameters<typeof mapNewsSync>[0]>(
+      `/news/sync${qs ? `?${qs}` : ""}`,
+      {
+        method: "POST",
+        timeoutMs: fetchBody ? API_SYNC_FETCH_BODY_TIMEOUT_MS : API_SYNC_TIMEOUT_MS,
+      },
+    );
     return mapNewsSync(raw);
   }
 

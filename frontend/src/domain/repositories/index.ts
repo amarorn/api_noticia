@@ -64,8 +64,15 @@ export interface IHealthRepository {
   getHealth(): Promise<HealthStatus>;
 }
 
+export interface NewsSyncOptions {
+  /** Baixa HTML completo de cada URL (padrão: true na UI). */
+  fetchBody?: boolean;
+  /** Reprocessa todo o bronze no silver (use no botão “Atualizar”). */
+  fullRebuild?: boolean;
+}
+
 export interface INewsRepository {
-  syncSources(): Promise<NewsSyncResult>;
+  syncSources(options?: NewsSyncOptions): Promise<NewsSyncResult>;
   getFeed(params: NewsFeedParams): Promise<NewsFeed>;
   getCards(params: NewsCardsParams): Promise<NewsCards>;
   getAll(params: NewsAllParams): Promise<NewsFeed>;

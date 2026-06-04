@@ -686,9 +686,25 @@ def root():
 
 
 @app.post("/news/sync", response_model=NewsSyncResponse)
-async def news_sync():
+async def news_sync(
+    full_rebuild: bool = Query(
+        False,
+        description="Reprocessa todo o bronze no silver (use após purge-news)",
+    ),
+    fetch_body: bool | None = Query(
+        None,
+        description="Baixa o HTML de cada URL (texto completo no body_preview; bem mais lento)",
+    ),
+):
     try:
-        result = await sync_news_sources(fetch_body=False, run_silver=True)
+        do_fetch = (
+            settings.news_sync_fetch_body if fetch_body is None else fetch_body
+        )
+        result = await sync_news_sources(
+            fetch_body=do_fetch,
+            run_silver=True,
+            full_silver_rebuild=full_rebuild,
+        )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Falha ao sincronizar fontes: {exc}") from exc
     invalidate_lake_counts()

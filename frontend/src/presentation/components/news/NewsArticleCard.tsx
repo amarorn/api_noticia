@@ -54,8 +54,8 @@ export function NewsArticleCard({
         </h3>
 
         <p
-          className={`mt-3 flex-1 text-slate-400 ${
-            featured ? "text-sm leading-relaxed line-clamp-4 sm:line-clamp-5" : "text-sm line-clamp-3"
+          className={`mt-3 flex-1 whitespace-pre-wrap text-slate-400 ${
+            featured ? "text-sm leading-relaxed" : "text-sm leading-relaxed"
           }`}
         >
           {article.bodyPreview}

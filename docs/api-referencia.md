@@ -81,7 +81,14 @@ Lista de endpoints disponíveis.
 
 ### `POST /news/sync`
 
-Dispara coleta RSS → bronze → silver.
+Dispara coleta RSS → bronze → silver (até ~800 artigos: `RSS_MAX_ENTRIES_PER_SOURCE=160` × 5 fontes).
+
+Query opcional:
+
+- `full_rebuild=true` — reprocessa todo o bronze no silver.
+- `fetch_body=true` — baixa o HTML de cada matéria (corpo completo no `body_preview`; sync bem mais lento).
+
+Por padrão, `body_preview` e `summary` usam o maior texto no silver **sem limite de caracteres**. O feed RSS costuma trazer só um trecho; para texto integral use `fetch_body=true` e depois `full_rebuild=true`.
 
 ### `GET /news/feed`
 

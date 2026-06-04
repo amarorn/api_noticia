@@ -54,6 +54,7 @@ dev = [
 [project.scripts]
 collect-news = "ingest.cli:main"
 daily-sync = "ingest.daily:main"
+purge-news = "ingest.purge_news:main"
 import-brasileirao = "ingest.fixtures.cli:main"
 import-fixtures = "ingest.fixtures.import_cli:main"
 sync-gcp = "ingest.gcp.cli:main"

@@ -41,6 +41,8 @@ sources:
 
 ```bash
 collect-news --list-sources
+
+Por padrão, até **~1000 artigos únicos** por sync (14 fontes RSS + feeds Google Notícias; limite `RSS_MAX_ENTRIES_PER_SOURCE=160`).
 ```
 
 ---
