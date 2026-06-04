@@ -40,7 +40,8 @@ fly deploy -a api-noticia
 URL pública: `https://api-noticia.fly.dev` (ou o hostname que a Fly mostrar).
 
 - Swagger: `https://<app>.fly.dev/docs`
-- Health: `https://<app>.fly.dev/health`
+- Liveness (proxy): `https://<app>.fly.dev/health/live`
+- Health completo: `https://<app>.fly.dev/health`
 
 ## 4. Dados da Copa (obrigatório na primeira vez)
 
@@ -102,10 +103,13 @@ CORS da API já aceita `*`; em produção restrita você pode configurar proxy o
 
 | Sintoma | Solução |
 |---------|---------|
+| Proxy `[PR03]` / `[PR01] no healthy instances` | Janela curta durante `fly deploy` (app com **volume** = uma máquina; tráfego cai até o uvicorn subir). Aguarde ~30s e teste `/health/live`. Evite dois deploys seguidos. |
 | `/worldcup/*` 503 | Importar fixtures + `train-wc --force` |
 | Health `wc_models_ready: false` | Ver logs: `fly logs`; conferir fixtures em `/data/lake/fixtures` |
 | Deploy sem volume | Criar volume na mesma região `gru` antes do deploy |
 | Nome de app em uso | Alterar `app = "..."` em `fly.toml` e repetir `fly apps create` |
+
+O health check do proxy usa `GET /health/live` (resposta imediata). O endpoint completo `GET /health` inclui contadores do lake e estado do modelo WC.
 
 ## Atualizar código
 

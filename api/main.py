@@ -3,29 +3,23 @@ import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from api.lake_cache import get_lake_counts, invalidate_lake_counts
-from api.wc_round_cache import (
-    get_cached,
-    invalidate_wc_round_cache,
-    match_key,
-    persist_to_disk,
-    set_cached,
-    warm_from_disk,
-)
 from config import settings
 from ingest.fixtures.brasileirao import load_fixtures
 from ingest.odds.the_odds_api import fetch_live_h2h_odds, merge_schedule_with_odds, save_odds_file
 from ingest.meta import collection_stats
 from models.ev_value import MatchValueReport, evaluate_match
 from models.baseline import predict_baseline, predict_baseline_probs
-from models.wc_predictor import WcPrediction, WcPredictor
+
+if TYPE_CHECKING:
+    from models.wc_predictor import WcPrediction, WcPredictor
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
-from pipelines.current_round import load_round_schedule, predict_round
 from pipelines.gold import build_gold_for_match
 from ingest.news_sync import sync_news_sources
 from pipelines.news_feed import (
@@ -39,25 +33,26 @@ from pipelines.wc_squads import get_squad_by_team, list_squad_teams, load_wc_squ
 from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
 from pipelines.wc_group_pressure import lookup_2026_group
 from pipelines.wc_group_standings import build_group_standings
-from pipelines.wc_validate import (
-    list_edition_matches,
-    list_wc_editions,
-    validate_historical_match,
-)
 from schemas.national_teams import normalize_national_team
 
 WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 
 _wc_models_ready = False
-_wc_predictor: WcPredictor | None = None
+_wc_predictor: Any = None
 _wc_artifact_meta: dict = {}
+
+
+def _wc_round_cache():
+    from api import wc_round_cache
+
+    return wc_round_cache
 
 
 def _warm_wc_models() -> None:
     global _wc_models_ready
     try:
         get_wc_predictor()
-        warm_from_disk()
+        _wc_round_cache().warm_from_disk()
         _wc_models_ready = True
     except ValueError:
         _wc_models_ready = False
@@ -87,7 +82,7 @@ app.add_middleware(
 )
 
 
-def get_wc_predictor(*, force: bool = False) -> WcPredictor:
+def get_wc_predictor(*, force: bool = False) -> "WcPredictor":
     global _wc_predictor, _wc_artifact_meta
     from models.wc_artifact import load_or_train_wc_predictor
 
@@ -98,7 +93,7 @@ def get_wc_predictor(*, force: bool = False) -> WcPredictor:
     return _wc_predictor
 
 
-def _get_wc_predictor() -> WcPredictor:
+def _get_wc_predictor() -> "WcPredictor":
     return get_wc_predictor()
 
 
@@ -501,7 +496,7 @@ def _breakdown_to_response(breakdown: dict) -> WcModelBreakdown:
     )
 
 
-def _wc_prediction_to_response(pred: WcPrediction) -> WcPredictionResponse:
+def _wc_prediction_to_response(pred: "WcPrediction") -> WcPredictionResponse:
     breakdown = pred.model_breakdown
     return WcPredictionResponse(
         home_team=pred.home_team,
@@ -570,6 +565,12 @@ def _sanitize_match_item(data: dict) -> dict:
     else:
         out["group_name"] = str(group)
     return out
+
+
+@app.get("/health/live")
+def health_live():
+    """Liveness para o proxy Fly — sem I/O no lake (sobe antes do warm de modelos)."""
+    return {"status": "ok"}
 
 
 @app.get("/health")
@@ -809,6 +810,8 @@ def predict_match(req: MatchRequest):
 
 @app.get("/round/predict", response_model=RoundResponse)
 def predict_current_round():
+    from pipelines.current_round import load_round_schedule, predict_round
+
     try:
         schedule = load_round_schedule()
     except FileNotFoundError as exc:
@@ -861,11 +864,12 @@ def worldcup_predict(req: WcPredictRequest):
 
 
 def _build_wc_round_predictions(
-    predictor: WcPredictor,
+    predictor: "WcPredictor",
     round_data: dict,
     *,
     matchday: int | None = None,
 ) -> list[WcPredictionResponse]:
+    cache = _wc_round_cache()
     phase_default = round_data.get("phase", "group")
     matches = round_data.get("matches", [])
     if matchday is not None:
@@ -878,9 +882,9 @@ def _build_wc_round_predictions(
         home = normalize_national_team(match["home_team"])
         away = normalize_national_team(match["away_team"])
         match_phase = match.get("phase", phase_default)
-        key = match_key(home, away, match_phase)
+        key = cache.match_key(home, away, match_phase)
 
-        cached = get_cached(key)
+        cached = cache.get_cached(key)
         if cached is not None:
             predictions.append(WcPredictionResponse(**cached))
             continue
@@ -894,7 +898,7 @@ def _build_wc_round_predictions(
                 group_name=match.get("group"),
             )
             resp = _wc_prediction_to_response(pred)
-            set_cached(key, resp.model_dump())
+            cache.set_cached(key, resp.model_dump())
             predictions.append(resp)
             dirty = True
         except Exception as exc:
@@ -904,7 +908,7 @@ def _build_wc_round_predictions(
             ) from exc
 
     if dirty:
-        persist_to_disk()
+        cache.persist_to_disk()
 
     return predictions
 
@@ -1051,6 +1055,8 @@ def worldcup_squad_detail(team: str):
 
 @app.get("/worldcup/editions", response_model=WcEditionsResponse)
 def worldcup_editions():
+    from pipelines.wc_validate import list_wc_editions
+
     try:
         predictor = _get_wc_predictor()
     except ValueError as exc:
@@ -1064,6 +1070,8 @@ def worldcup_editions():
 
 @app.get("/worldcup/editions/{season}/matches", response_model=WcEditionMatchesResponse)
 def worldcup_edition_matches(season: int):
+    from pipelines.wc_validate import list_edition_matches
+
     try:
         predictor = _get_wc_predictor()
     except ValueError as exc:
@@ -1096,6 +1104,8 @@ def worldcup_validate(req: WcValidateRequest):
 
     home = normalize_national_team(req.home_team) if req.home_team else None
     away = normalize_national_team(req.away_team) if req.away_team else None
+
+    from pipelines.wc_validate import validate_historical_match
 
     try:
         result = validate_historical_match(
@@ -1149,7 +1159,7 @@ def worldcup_retrain():
 
         _wc_predictor, _wc_artifact_meta = load_or_train_wc_predictor(force=True)
         _wc_models_ready = True
-        invalidate_wc_round_cache()
+        _wc_round_cache().invalidate_wc_round_cache()
     except ValueError as exc:
         _wc_models_ready = False
         raise HTTPException(status_code=503, detail=str(exc)) from exc

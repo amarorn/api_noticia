@@ -22,11 +22,14 @@ primary_region = "gru"
   processes = ["app"]
 
   [[http_service.checks]]
-    grace_period = "120s"
-    interval = "15s"
+    grace_period = "60s"
+    interval = "10s"
     method = "GET"
-    timeout = "15s"
-    path = "/health"
+    timeout = "5s"
+    path = "/health/live"
+
+[deploy]
+  wait_timeout = "5m"
 
 [[vm]]
   memory = "1gb"
