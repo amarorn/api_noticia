@@ -48,6 +48,7 @@ class WcLogisticModel:
 
         for _, row in train_df.iterrows():
             before = row["match_date"]
+            gcol = row.get("group_name") or row.get("group")
             feats = build_match_features(
                 df,
                 row["home_team"],
@@ -55,6 +56,8 @@ class WcLogisticModel:
                 before_date=before,
                 phase=row.get("phase", "group"),
                 is_neutral=bool(row.get("is_neutral", True)),
+                season=int(row["season"]),
+                group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
             )
             x_rows.append(features_to_vector(feats, before_date=before))
             y_rows.append(row["label"])
@@ -80,6 +83,10 @@ class WcLogisticModel:
                     row["home_team"],
                     row["away_team"],
                     phase=row.get("phase", "group"),
+                    is_neutral=bool(row.get("is_neutral", True)),
+                    before_date=row["match_date"],
+                    season=int(row["season"]),
+                    group_name=row.get("group_name") or row.get("group"),
                 )
                 if pred.prediction == row["label"]:
                     correct += 1
@@ -96,6 +103,8 @@ class WcLogisticModel:
         phase: str = "group",
         is_neutral: bool = True,
         before_date: datetime | None = None,
+        season: int | None = None,
+        group_name: str | None = None,
     ) -> LogisticPrediction:
         if not self._fitted:
             self.fit(fixtures_df)
@@ -107,6 +116,8 @@ class WcLogisticModel:
             before_date=before_date,
             phase=phase,
             is_neutral=is_neutral,
+            season=season,
+            group_name=group_name,
         )
         x = self.scaler.transform([features_to_vector(feats, before_date=before_date)])[0]
         probs = self.model.predict_proba([x])[0]

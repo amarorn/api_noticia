@@ -30,6 +30,9 @@ class WcHyperParams:
     rho_max: float = 0.20
     rho_step: float = 0.01
     draw_prob_floor: float = 0.18
+    poisson_season_half_life: float = 8.0
+    draw_model_blend: float = 0.55
+    knockout_draw_discount: float = 0.82
 
     def home_advantage_goals(self, is_neutral: bool) -> float:
         return self.home_adv_goals_neutral if is_neutral else self.home_adv_goals
@@ -51,6 +54,9 @@ def _from_settings_defaults() -> WcHyperParams:
         rho_max=getattr(settings, "wc_rho_max", 0.20),
         rho_step=getattr(settings, "wc_rho_step", 0.01),
         draw_prob_floor=getattr(settings, "wc_draw_prob_floor", 0.18),
+        poisson_season_half_life=getattr(settings, "wc_poisson_season_half_life", 8.0),
+        draw_model_blend=getattr(settings, "wc_draw_model_blend", 0.55),
+        knockout_draw_discount=getattr(settings, "wc_knockout_draw_discount", 0.82),
     )
 
 

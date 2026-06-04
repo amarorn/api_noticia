@@ -8,6 +8,14 @@ from models.wc_collaborative import CollaborativeWcModel
 from models.dixon_coles_wc import DixonColesWcModel
 from models.logistic_wc import WcLogisticModel
 from models.poisson_wc import goal_model_factors
+from models.wc_draw_model import (
+    WcDrawModel,
+    _wc_draw_rates,
+    apply_two_stage_probs,
+    build_draw_training_rows,
+    draw_features_to_vector,
+)
+from pipelines.wc_stats import group_pressure_from_features
 from pipelines.wc_baselines import (
     blend_with_baseline,
     format_baseline_context,
@@ -72,6 +80,13 @@ def train_wc_predictor(
         validation_season=validation_season,
         logistic_model=predictor.logistic,
     )
+    train_df = predictor.fixtures[predictor.fixtures["season"] != validation_season]
+    x_draw, y_draw = build_draw_training_rows(predictor.fixtures, train_df)
+    predictor.draw_model = WcDrawModel()
+    predictor._draw_metrics = predictor.draw_model.fit(
+        feature_rows=x_draw,
+        labels=y_draw,
+    )
     return predictor
 
 
@@ -85,6 +100,8 @@ class WcPredictor:
         self._dc_metrics = trained._dc_metrics
         self.collaborative = trained.collaborative
         self.collab_metrics = trained.collab_metrics
+        self.draw_model = trained.draw_model
+        self._draw_metrics = trained._draw_metrics
 
     @property
     def training_metrics(self) -> dict:
@@ -98,6 +115,8 @@ class WcPredictor:
         is_neutral: bool = True,
         before_date: datetime | None = None,
         kxl_match: WcKxlMatchInput | None = None,
+        season: int | None = None,
+        group_name: str | None = None,
     ) -> WcPrediction:
         cutoff = before_date or datetime.now(timezone.utc)
         features = build_match_features(
@@ -107,6 +126,8 @@ class WcPredictor:
             before_date=cutoff,
             phase=phase,
             is_neutral=is_neutral,
+            season=season,
+            group_name=group_name,
         )
         h2h = compute_wc_h2h(self.fixtures, home_team, away_team, before_date=cutoff)
 
@@ -124,6 +145,8 @@ class WcPredictor:
             phase=phase,
             is_neutral=is_neutral,
             before_date=cutoff,
+            season=season,
+            group_name=group_name,
         )
 
         pw = self.collaborative.dixon_coles_weight
@@ -137,9 +160,31 @@ class WcPredictor:
         prob_draw /= total
         prob_away /= total
 
+        hp = get_wc_hyperparams()
+        pressure = group_pressure_from_features(features)
+        h_rate, a_rate = _wc_draw_rates(
+            self.fixtures, home_team, away_team, cutoff
+        )
+        p_draw = self.draw_model.predict_draw_prob(
+            draw_features_to_vector(
+                features,
+                pressure,
+                home_draw_rate=h_rate,
+                away_draw_rate=a_rate,
+            )
+        )
+        ensemble_probs = apply_two_stage_probs(
+            {"1": prob_home, "X": prob_draw, "2": prob_away},
+            p_draw,
+            blend=hp.draw_model_blend,
+            knockout=phase not in ("group",),
+        )
+        prob_home = ensemble_probs["1"]
+        prob_draw = ensemble_probs["X"]
+        prob_away = ensemble_probs["2"]
+
         collision_out = collision_predict(home_team, away_team, kxl_match)
 
-        hp = get_wc_hyperparams()
         prob_home, prob_draw, prob_away, baseline_out = blend_with_baseline(
             prob_home,
             prob_draw,
@@ -213,6 +258,11 @@ class WcPredictor:
                     collision_to_breakdown(collision_out) if collision_out else None
                 ),
                 "kxl_dynamic": _dynamic_blocks_used(kxl_match),
+                "draw_model": {
+                    "p_draw": round(p_draw, 3),
+                    "blend": hp.draw_model_blend,
+                    "draw_rate_train": getattr(self._draw_metrics, "draw_rate", None),
+                },
             },
         )
 

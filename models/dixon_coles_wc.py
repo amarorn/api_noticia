@@ -57,6 +57,7 @@ class DixonColesWcModel:
             if history.empty:
                 history = fixtures_df
 
+            gcol = row.get("group_name") or row.get("group")
             features = build_match_features(
                 fixtures_df,
                 row["home_team"],
@@ -64,6 +65,8 @@ class DixonColesWcModel:
                 before_date=before,
                 phase=row.get("phase", "group"),
                 is_neutral=bool(row.get("is_neutral", True)),
+                season=int(row["season"]),
+                group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
             )
             lam_home, lam_away = expected_lambdas(
                 history,

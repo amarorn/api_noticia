@@ -32,6 +32,7 @@ from pipelines.news_feed import build_news_feed
 from pipelines.silver import load_silver
 from pipelines.wc_squads import get_squad_by_team, list_squad_teams, load_wc_squads
 from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
+from pipelines.wc_group_pressure import lookup_2026_group
 from pipelines.wc_group_standings import build_group_standings
 from pipelines.wc_validate import (
     list_edition_matches,
@@ -726,7 +727,14 @@ def worldcup_predict(req: WcPredictRequest):
             detail=f"Confronto {home} x {away} não consta na tabela oficial da fase de grupos.",
         )
     try:
-        pred = predictor.predict(home, away, phase=req.phase, kxl_match=req.kxl_match)
+        pred = predictor.predict(
+            home,
+            away,
+            phase=req.phase,
+            kxl_match=req.kxl_match,
+            season=2026,
+            group_name=lookup_2026_group(home, away) if req.phase == "group" else None,
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return _wc_prediction_to_response(pred)
@@ -758,7 +766,13 @@ def _build_wc_round_predictions(
             continue
 
         try:
-            pred = predictor.predict(home, away, phase=match_phase)
+            pred = predictor.predict(
+                home,
+                away,
+                phase=match_phase,
+                season=round_data.get("season", 2026),
+                group_name=match.get("group"),
+            )
             resp = _wc_prediction_to_response(pred)
             set_cached(key, resp.model_dump())
             predictions.append(resp)

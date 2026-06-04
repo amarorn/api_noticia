@@ -9,11 +9,24 @@ from pipelines.wc_fifa_rankings import fifa_points, load_fifa_rankings
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_market_features import MARKET_FEATURE_NAMES, market_feature_vector
 from pipelines.wc_news_features import NEWS_FEATURE_NAMES, wc_news_feature_vector
+from pipelines.wc_group_pressure import (
+    GroupPressure,
+    compute_group_pressure,
+    lookup_2026_group,
+)
 from pipelines.wc_squad_features import SQUAD_FEATURE_NAMES, squad_feature_vector
 
 EXTRA_FEATURE_NAMES = [
     "fifa_points_diff",
 ] + MARKET_FEATURE_NAMES
+
+GROUP_PRESSURE_FEATURE_NAMES = [
+    "home_must_win",
+    "away_must_win",
+    "home_secured",
+    "away_secured",
+    "group_matchday",
+]
 
 
 @dataclass
@@ -52,6 +65,11 @@ class WcMatchFeatures:
     away_form: str
     phase_knockout: int
     is_neutral: int
+    home_must_win: float = 0.0
+    away_must_win: float = 0.0
+    home_secured: float = 0.0
+    away_secured: float = 0.0
+    group_matchday: float = 0.0
 
 
 def _parse_dt(value) -> datetime:
@@ -198,6 +216,19 @@ def _team_rates(df: pd.DataFrame, team: str) -> tuple[float, float, str]:
     return scored / n, conceded / n, "-".join(form[-5:])
 
 
+def _resolve_group_name(
+    home_team: str,
+    away_team: str,
+    season: int | None,
+    group_name: str | None,
+) -> str | None:
+    if group_name:
+        return str(group_name)
+    if season == 2026:
+        return lookup_2026_group(home_team, away_team)
+    return None
+
+
 def build_match_features(
     fixtures_df: pd.DataFrame,
     home_team: str,
@@ -205,6 +236,8 @@ def build_match_features(
     before_date: datetime | None = None,
     phase: str = "group",
     is_neutral: bool = True,
+    season: int | None = None,
+    group_name: str | None = None,
 ) -> WcMatchFeatures:
     ref_date = before_date or datetime.now(timezone.utc)
     played = _played_before(fixtures_df, ref_date)
@@ -216,6 +249,25 @@ def build_match_features(
     ra = elo.get(away_team, hp.elo_initial)
     gf_h, ga_h, form_h = _team_rates(played, home_team)
     gf_a, ga_a, form_a = _team_rates(played, away_team)
+
+    eff_season = season
+    if eff_season is None and not played.empty and "season" in played.columns:
+        eff_season = int(played["season"].max())
+    if eff_season is None:
+        eff_season = ref_date.year
+
+    gid = _resolve_group_name(home_team, away_team, eff_season, group_name)
+    pressure = GroupPressure(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    if gid and phase == "group":
+        pressure = compute_group_pressure(
+            fixtures_df,
+            season=eff_season,
+            group_name=gid,
+            home_team=home_team,
+            away_team=away_team,
+            before_date=ref_date,
+            phase=phase,
+        )
 
     return WcMatchFeatures(
         home_team=home_team,
@@ -235,6 +287,23 @@ def build_match_features(
         away_form=form_a,
         phase_knockout=1 if phase not in ("group",) else 0,
         is_neutral=1 if is_neutral else 0,
+        home_must_win=pressure.home_must_win,
+        away_must_win=pressure.away_must_win,
+        home_secured=pressure.home_secured,
+        away_secured=pressure.away_secured,
+        group_matchday=pressure.group_matchday,
+    )
+
+
+def group_pressure_from_features(f: WcMatchFeatures) -> GroupPressure:
+    return GroupPressure(
+        home_must_win=f.home_must_win,
+        away_must_win=f.away_must_win,
+        home_secured=f.home_secured,
+        away_secured=f.away_secured,
+        home_points=0.0,
+        away_points=0.0,
+        group_matchday=f.group_matchday,
     )
 
 
@@ -255,6 +324,11 @@ def features_to_vector(
         f.home_form.count("V") - f.away_form.count("V"),
         f.phase_knockout,
         f.is_neutral,
+        f.home_must_win,
+        f.away_must_win,
+        f.home_secured,
+        f.away_secured,
+        f.group_matchday,
     ]
     rankings = load_fifa_rankings()
     fifa_diff = fifa_points(f.home_team, rankings) - fifa_points(f.away_team, rankings)
@@ -280,7 +354,7 @@ FEATURE_NAMES = [
     "form_wins_diff",
     "phase_knockout",
     "is_neutral",
-] + EXTRA_FEATURE_NAMES + SQUAD_FEATURE_NAMES + NEWS_FEATURE_NAMES
+] + GROUP_PRESSURE_FEATURE_NAMES + EXTRA_FEATURE_NAMES + SQUAD_FEATURE_NAMES + NEWS_FEATURE_NAMES
 
 
 def format_wc_context(f: WcMatchFeatures, h2h: WcH2H | None = None) -> str:
@@ -300,4 +374,14 @@ def format_wc_context(f: WcMatchFeatures, h2h: WcH2H | None = None) -> str:
     ]
     if h2h and h2h.last_results:
         lines.append(f"- Sequência: {' '.join(h2h.last_results)}")
+    if f.group_matchday > 0 or f.home_must_win or f.away_must_win:
+        lines.extend(
+            [
+                "",
+                "### Contexto do grupo",
+                f"- Rodada simulada no grupo: {int(f.group_matchday)}",
+                f"- {f.home_team} precisa vencer: {'sim' if f.home_must_win else 'não'}",
+                f"- {f.away_team} precisa vencer: {'sim' if f.away_must_win else 'não'}",
+            ]
+        )
     return "\n".join(lines)

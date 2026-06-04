@@ -56,25 +56,70 @@ def _poisson_prob(k: int, lam: float) -> float:
     return math.exp(-lam) * (lam**k) / math.factorial(k)
 
 
-def _team_attack_defense(fixtures_df: pd.DataFrame) -> tuple[dict[str, float], dict[str, float], float]:
-    df = fixtures_df.copy()
-    avg_home = df["home_score"].mean()
-    avg_away = df["away_score"].mean()
-    league_avg = (avg_home + avg_away) / 2.0
+def _reference_season(df: pd.DataFrame) -> int:
+    if df.empty or "season" not in df.columns:
+        return datetime.now(timezone.utc).year
+    return int(df["season"].max())
 
-    attacks: dict[str, list[float]] = {}
-    defenses: dict[str, list[float]] = {}
+
+def _season_weight(season: int, ref_season: int, half_life: float) -> float:
+    if half_life <= 0:
+        return 1.0
+    years_ago = max(0, ref_season - int(season))
+    return 0.5 ** (years_ago / half_life)
+
+
+def _wmean(pairs: list[tuple[float, float]], default: float = 1.0) -> float:
+    if not pairs:
+        return default
+    total_w = sum(w for _, w in pairs)
+    if total_w <= 0:
+        return sum(v for v, _ in pairs) / len(pairs)
+    return sum(v * w for v, w in pairs) / total_w
+
+
+def _team_attack_defense(
+    fixtures_df: pd.DataFrame,
+    *,
+    ref_season: int | None = None,
+) -> tuple[dict[str, float], dict[str, float], float]:
+    df = fixtures_df.copy()
+    hp = get_wc_hyperparams()
+    ref = ref_season if ref_season is not None else _reference_season(df)
+
+    home_goals_w: list[tuple[float, float]] = []
+    away_goals_w: list[tuple[float, float]] = []
+    teams: set[str] = set()
 
     for _, row in df.iterrows():
+        w = _season_weight(int(row.get("season", ref)), ref, hp.poisson_season_half_life)
         hs, aws = int(row["home_score"]), int(row["away_score"])
         home, away = row["home_team"], row["away_team"]
-        attacks.setdefault(home, []).append(hs / max(avg_home, 0.5))
-        attacks.setdefault(away, []).append(aws / max(avg_away, 0.5))
-        defenses.setdefault(home, []).append(aws / max(avg_away, 0.5))
-        defenses.setdefault(away, []).append(hs / max(avg_home, 0.5))
+        teams.add(home)
+        teams.add(away)
+        home_goals_w.append((hs, w))
+        away_goals_w.append((aws, w))
 
-    attack = {t: sum(v) / len(v) for t, v in attacks.items()}
-    defense = {t: sum(v) / len(v) for t, v in defenses.items()}
+    avg_home = _wmean(home_goals_w, 1.0)
+    avg_away = _wmean(away_goals_w, 1.0)
+    league_avg = (avg_home + avg_away) / 2.0
+
+    attack: dict[str, float] = {}
+    defense: dict[str, float] = {}
+    for team in teams:
+        att_vals: list[tuple[float, float]] = []
+        def_vals: list[tuple[float, float]] = []
+        for _, row in df.iterrows():
+            w = _season_weight(int(row.get("season", ref)), ref, hp.poisson_season_half_life)
+            if row["home_team"] == team:
+                att_vals.append((int(row["home_score"]) / max(avg_home, 0.5), w))
+                def_vals.append((int(row["away_score"]) / max(avg_away, 0.5), w))
+            elif row["away_team"] == team:
+                att_vals.append((int(row["away_score"]) / max(avg_away, 0.5), w))
+                def_vals.append((int(row["home_score"]) / max(avg_home, 0.5), w))
+        attack[team] = _wmean(att_vals, 1.0)
+        defense[team] = _wmean(def_vals, 1.0)
+
     return attack, defense, league_avg
 
 
@@ -97,7 +142,8 @@ def expected_lambdas(
     before_date: datetime | None = None,
 ) -> tuple[float, float]:
     history = _history_until(fixtures_df, before_date)
-    attack, defense, league_avg = _team_attack_defense(history)
+    ref = _reference_season(history)
+    attack, defense, league_avg = _team_attack_defense(history, ref_season=ref)
 
     att_h = attack.get(home_team, 1.0)
     att_a = attack.get(away_team, 1.0)
@@ -127,7 +173,8 @@ def goal_model_factors(
     rho: float = 0.0,
 ) -> GoalModelFactors:
     history = _history_until(fixtures_df, before_date)
-    attack, defense, league_avg = _team_attack_defense(history)
+    ref = _reference_season(history)
+    attack, defense, league_avg = _team_attack_defense(history, ref_season=ref)
 
     att_h = attack.get(home_team, 1.0)
     att_a = attack.get(away_team, 1.0)

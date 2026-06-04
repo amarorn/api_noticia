@@ -25,7 +25,7 @@ from pipelines.wc_stats import FEATURE_NAMES
 
 logger = structlog.get_logger()
 
-ARTIFACT_VERSION = 5
+ARTIFACT_VERSION = 6
 
 
 def fixtures_fingerprint() -> str:
@@ -98,8 +98,10 @@ def save_artifact(predictor: WcPredictor) -> dict:
         "logistic": predictor.logistic,
         "dixon_coles": predictor.dixon_coles,
         "collaborative": predictor.collaborative,
+        "draw_model": predictor.draw_model,
         "_metrics": predictor._metrics,
         "_dc_metrics": predictor._dc_metrics,
+        "_draw_metrics": predictor._draw_metrics,
     }
     _bundle_path().write_bytes(pickle.dumps(bundle, protocol=pickle.HIGHEST_PROTOCOL))
 
@@ -153,6 +155,8 @@ def load_artifact() -> WcPredictor | None:
     predictor._metrics = bundle["_metrics"]
     predictor._dc_metrics = bundle["_dc_metrics"]
     predictor.collab_metrics = predictor.collaborative.metrics
+    predictor.draw_model = bundle["draw_model"]
+    predictor._draw_metrics = bundle["_draw_metrics"]
     return predictor
 
 
