@@ -1,9 +1,9 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDeferredValue, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   getHealthUseCase,
-  getNewsFeedUseCase,
+  getNewsAllUseCase,
   syncNewsSourcesUseCase,
 } from "@/application/container";
 import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
@@ -12,7 +12,6 @@ import { NewsArticleCard } from "@/presentation/components/news/NewsArticleCard"
 import { NewsFeedSkeleton } from "@/presentation/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState";
 
-const PAGE_SIZE = 12;
 const SYNC_STALE_MS = 60_000;
 
 export function NewsFeedPage() {
@@ -46,32 +45,21 @@ export function NewsFeedPage() {
     }
   }, [syncQuery.isSuccess, syncQuery.dataUpdatedAt, queryClient]);
 
-  const feedQuery = useInfiniteQuery({
-    queryKey: ["news-feed", sourceFilter, deferredQuery, syncQuery.dataUpdatedAt],
-    queryFn: ({ pageParam }) =>
-      getNewsFeedUseCase.execute({
-        limit: PAGE_SIZE,
-        offset: pageParam,
+  const feedQuery = useQuery({
+    queryKey: ["news-all", sourceFilter, deferredQuery, syncQuery.dataUpdatedAt],
+    queryFn: () =>
+      getNewsAllUseCase.execute({
         source: sourceFilter,
         query: deferredQuery || null,
         days: 30,
       }),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      const next = lastPage.offset + lastPage.limit;
-      return next < lastPage.total ? next : undefined;
-    },
     enabled: syncQuery.isSuccess,
     staleTime: 0,
   });
 
-  const articles = useMemo(
-    () => feedQuery.data?.pages.flatMap((p) => p.articles) ?? [],
-    [feedQuery.data],
-  );
-
-  const sources = feedQuery.data?.pages[0]?.sources ?? [];
-  const total = feedQuery.data?.pages[0]?.total ?? 0;
+  const articles = feedQuery.data?.articles ?? [];
+  const sources = feedQuery.data?.sources ?? [];
+  const total = feedQuery.data?.total ?? 0;
   const featured = articles[0];
   const gridArticles = articles.slice(1);
   const isSearching = deferredQuery.length > 0;
@@ -276,17 +264,10 @@ export function NewsFeedPage() {
             </div>
           </section>
 
-          {feedQuery.hasNextPage && (
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={() => feedQuery.fetchNextPage()}
-                disabled={feedQuery.isFetchingNextPage}
-                className="btn-primary min-w-[200px]"
-              >
-                {feedQuery.isFetchingNextPage ? "Carregando..." : "Carregar mais"}
-              </button>
-            </div>
+          {total > articles.length && (
+            <p className="text-center text-xs text-slate-500">
+              Exibindo {articles.length} de {total} notícias (limite de segurança da API).
+            </p>
           )}
         </>
       )}

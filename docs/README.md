@@ -16,6 +16,7 @@ Plataforma de previsões esportivas (bolão 1/X/2) que combina **datalake de not
 | [Frontend](frontend.md) | React, rotas, Clean Architecture, componentes |
 | [Motor KXL — Colisão](kxl-colisao.md) | Fórmulas Vcar, Vesc, TBRTL, letalidade×GK |
 | [Glossário](glossario.md) | Termos técnicos e siglas |
+| [Deploy Fly.io](deploy-fly.md) | Container + volume persistente (`gru`) |
 
 ## Início rápido
 

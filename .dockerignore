@@ -10,6 +10,8 @@ __pycache__
 data/lake
 data/training
 tests
-scripts
+frontend
+node_modules
+.mlflow.db
 terminals
 agent-transcripts

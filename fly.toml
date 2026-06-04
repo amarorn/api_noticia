@@ -1,0 +1,39 @@
+# Fly.io — API Bolão / Copa (container + volume em /data)
+# Docs: docs/deploy-fly.md
+
+app = "api-noticia"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  LAKE_ROOT = "/data/lake"
+  WC_ARTIFACT_DIR = "/data/lake/artifacts/wc_predictor"
+  API_HOST = "0.0.0.0"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "90s"
+    interval = "20s"
+    method = "GET"
+    timeout = "10s"
+    path = "/health"
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[mounts]
+  source = "api_noticia_data"
+  destination = "/data"
+  initial_size = "3gb"

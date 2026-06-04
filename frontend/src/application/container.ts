@@ -3,6 +3,8 @@ import {
 } from "@/application/use-cases/brasileiraoUseCases";
 import { GetHealthUseCase } from "@/application/use-cases/healthUseCases";
 import {
+  GetNewsAllUseCase,
+  GetNewsCardsUseCase,
   GetNewsFeedUseCase,
   SyncNewsSourcesUseCase,
 } from "@/application/use-cases/newsUseCases";
@@ -43,6 +45,8 @@ export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
 export const getHealthUseCase = new GetHealthUseCase(healthRepository);
 export const syncNewsSourcesUseCase = new SyncNewsSourcesUseCase(newsRepository);
 export const getNewsFeedUseCase = new GetNewsFeedUseCase(newsRepository);
+export const getNewsCardsUseCase = new GetNewsCardsUseCase(newsRepository);
+export const getNewsAllUseCase = new GetNewsAllUseCase(newsRepository);
 export const getWcEditionsUseCase = new GetWcEditionsUseCase(
   historicalValidationRepository,
 );

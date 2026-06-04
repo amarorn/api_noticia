@@ -1,6 +1,6 @@
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { predictWcMatchUseCase } from "@/application/container";
+import { getNewsCardsUseCase, predictWcMatchUseCase } from "@/application/container";
 import type { WcPrediction } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import {
@@ -12,7 +12,8 @@ import { MatchContextPanel } from "@/presentation/components/predictions/MatchCo
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
-import { ErrorState } from "@/presentation/components/ui/EmptyState";
+import { NewsArticleCard } from "@/presentation/components/news/NewsArticleCard";
+import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState";
 import { IconArrowLeft } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { formatPercent, outcomeColors } from "@/presentation/theme";
@@ -35,6 +36,19 @@ export function MatchDetailPage() {
       }),
     enabled: !!homeTeam && !!awayTeam && !statePrediction,
     initialData: statePrediction,
+  });
+
+  const newsQuery = useQuery({
+    queryKey: ["news-cards", homeTeam, awayTeam],
+    queryFn: () =>
+      getNewsCardsUseCase.execute({
+        homeTeam,
+        awayTeam,
+        limit: 6,
+        days: 14,
+      }),
+    enabled: !!homeTeam && !!awayTeam,
+    staleTime: 60_000,
   });
 
   if (query.isLoading && !query.data) {
@@ -192,6 +206,47 @@ export function MatchDetailPage() {
         <p className="section-label">Contexto pré-jogo</p>
         <MatchContextPanel prediction={pred} />
       </div>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="section-label">Notícias do confronto</p>
+            <h2 className="text-lg font-semibold text-white">
+              Cobertura recente
+            </h2>
+          </div>
+          {newsQuery.data && newsQuery.data.total > 0 && (
+            <span className="text-xs text-slate-500">
+              {newsQuery.data.total} no lake (14 dias)
+            </span>
+          )}
+        </div>
+
+        {newsQuery.isLoading && (
+          <p className="text-sm text-slate-500">Carregando notícias…</p>
+        )}
+
+        {newsQuery.isError && (
+          <p className="text-sm text-slate-500">
+            Não foi possível carregar notícias para este jogo.
+          </p>
+        )}
+
+        {newsQuery.data && newsQuery.data.cards.length === 0 && !newsQuery.isLoading && (
+          <EmptyState
+            title="Sem notícias recentes"
+            description={`Nenhuma matéria nos últimos 14 dias citando ${homeTeam} ou ${awayTeam}.`}
+          />
+        )}
+
+        {newsQuery.data && newsQuery.data.cards.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {newsQuery.data.cards.map((article, index) => (
+              <NewsArticleCard key={article.id} article={article} index={index} />
+            ))}
+          </div>
+        )}
+      </section>
     </PageTransition>
   );
 }

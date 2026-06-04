@@ -1,5 +1,6 @@
 import type {
   NewsArticle,
+  NewsCards,
   NewsFeed,
   NewsSentimentLabel,
   NewsSyncResult,
@@ -81,5 +82,23 @@ export function mapNewsFeed(raw: ApiNewsFeed): NewsFeed {
       count: s.count,
     })),
     articles: raw.articles.map(mapArticle),
+  };
+}
+
+interface ApiNewsCards {
+  total: number;
+  limit: number;
+  offset: number;
+  teams: string[];
+  cards: ApiNewsArticle[];
+}
+
+export function mapNewsCards(raw: ApiNewsCards): NewsCards {
+  return {
+    total: raw.total,
+    limit: raw.limit,
+    offset: raw.offset,
+    teams: raw.teams ?? [],
+    cards: raw.cards.map(mapArticle),
   };
 }

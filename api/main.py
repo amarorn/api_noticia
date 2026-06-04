@@ -28,7 +28,12 @@ from schemas.wc_kxl_dynamic import WcKxlMatchInput
 from pipelines.current_round import load_round_schedule, predict_round
 from pipelines.gold import build_gold_for_match
 from ingest.news_sync import sync_news_sources
-from pipelines.news_feed import build_news_feed
+from pipelines.news_feed import (
+    build_news_all,
+    build_news_cards,
+    build_news_feed,
+    resolve_news_teams,
+)
 from pipelines.silver import load_silver
 from pipelines.wc_squads import get_squad_by_team, list_squad_teams, load_wc_squads
 from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
@@ -415,6 +420,16 @@ class NewsFeedResponse(BaseModel):
     articles: list[NewsArticleItem]
 
 
+class NewsCardsResponse(BaseModel):
+    """Notícias formatadas para NewsArticleCard no frontend."""
+
+    total: int
+    limit: int
+    offset: int
+    teams: list[str] = Field(default_factory=list)
+    cards: list[NewsArticleItem]
+
+
 class NewsSyncResponse(BaseModel):
     collected: int
     by_source: dict[str, int]
@@ -579,6 +594,8 @@ def root():
         "health": "/health",
         "endpoints": [
             "/news/feed",
+            "/news/cards",
+            "/news/all",
             "/news/sync",
             "/context",
             "/predict",
@@ -639,6 +656,107 @@ async def news_feed(
         offset=payload["offset"],
         sources=[NewsSourceItem(**s) for s in payload["sources"]],
         articles=[NewsArticleItem(**a) for a in payload["articles"]],
+    )
+
+
+@app.get("/news/all", response_model=NewsFeedResponse)
+async def news_all(
+    offset: int = 0,
+    source: str | None = None,
+    q: str | None = None,
+    days: int | None = Query(
+        None,
+        description="Janela em dias; omita para trazer todo o histórico no lake",
+    ),
+    team: str | None = None,
+    home_team: str | None = None,
+    away_team: str | None = None,
+    teams: str | None = Query(None, description="Brasil,Marrocos"),
+):
+    offset = max(offset, 0)
+    if days is not None:
+        days = min(max(days, 1), 3650)
+
+    team_list: list[str] | None = None
+    if teams:
+        team_list = [t.strip() for t in teams.split(",") if t.strip()]
+
+    resolved_teams = None
+    if team_list or team or home_team or away_team:
+        resolved_teams = resolve_news_teams(
+            team=normalize_national_team(team) if team else None,
+            home_team=normalize_national_team(home_team) if home_team else None,
+            away_team=normalize_national_team(away_team) if away_team else None,
+            teams=team_list,
+        )
+
+    silver_df = await asyncio.to_thread(load_silver)
+    payload = await asyncio.to_thread(
+        build_news_all,
+        silver_df,
+        offset=offset,
+        source=source,
+        query=q,
+        days=days,
+        teams=resolved_teams,
+    )
+    return NewsFeedResponse(
+        total=payload["total"],
+        limit=len(payload["articles"]),
+        offset=payload["offset"],
+        sources=[NewsSourceItem(**s) for s in payload["sources"]],
+        articles=[NewsArticleItem(**a) for a in payload["articles"]],
+    )
+
+
+@app.get("/news/cards", response_model=NewsCardsResponse)
+async def news_cards(
+    limit: int = 12,
+    offset: int = 0,
+    source: str | None = None,
+    q: str | None = None,
+    days: int | None = 14,
+    team: str | None = Query(None, description="Filtrar por um time/seleção"),
+    home_team: str | None = Query(None, description="Mandante (usa com away_team)"),
+    away_team: str | None = Query(None, description="Visitante"),
+    teams: str | None = Query(
+        None,
+        description="Lista separada por vírgula, ex: Brasil,Marrocos",
+    ),
+):
+    limit = min(max(limit, 1), 48)
+    offset = max(offset, 0)
+    if days is not None:
+        days = min(max(days, 1), 90)
+
+    team_list: list[str] | None = None
+    if teams:
+        team_list = [t.strip() for t in teams.split(",") if t.strip()]
+
+    home = normalize_national_team(home_team) if home_team else None
+    away = normalize_national_team(away_team) if away_team else None
+    single = normalize_national_team(team) if team else None
+
+    silver_df = await asyncio.to_thread(load_silver)
+    payload = await asyncio.to_thread(
+        build_news_cards,
+        silver_df,
+        limit=limit,
+        offset=offset,
+        source=source,
+        query=q,
+        days=days,
+        team=single,
+        home_team=home,
+        away_team=away,
+        teams=team_list,
+    )
+    return NewsCardsResponse(
+        total=payload["total"],
+        limit=payload["limit"],
+        offset=payload["offset"],
+        teams=payload["teams"],
+        cards=[NewsArticleItem(**c) for c in payload["cards"]],
     )
 
 

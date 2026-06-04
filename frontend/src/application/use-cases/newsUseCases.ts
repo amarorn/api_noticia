@@ -1,4 +1,9 @@
-import type { INewsRepository, NewsFeedParams } from "@/domain/repositories";
+import type {
+  INewsRepository,
+  NewsAllParams,
+  NewsCardsParams,
+  NewsFeedParams,
+} from "@/domain/repositories";
 
 export class SyncNewsSourcesUseCase {
   constructor(private readonly repository: INewsRepository) {}
@@ -13,5 +18,21 @@ export class GetNewsFeedUseCase {
 
   execute(params: NewsFeedParams = {}) {
     return this.repository.getFeed(params);
+  }
+}
+
+export class GetNewsCardsUseCase {
+  constructor(private readonly repository: INewsRepository) {}
+
+  execute(params: NewsCardsParams = {}) {
+    return this.repository.getCards(params);
+  }
+}
+
+export class GetNewsAllUseCase {
+  constructor(private readonly repository: INewsRepository) {}
+
+  execute(params: NewsAllParams = {}) {
+    return this.repository.getAll(params);
   }
 }

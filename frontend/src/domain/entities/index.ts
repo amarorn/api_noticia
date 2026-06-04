@@ -334,6 +334,14 @@ export interface NewsFeed {
   articles: NewsArticle[];
 }
 
+export interface NewsCards {
+  total: number;
+  limit: number;
+  offset: number;
+  teams: string[];
+  cards: NewsArticle[];
+}
+
 export interface NewsSyncResult {
   collected: number;
   bySource: Record<string, number>;

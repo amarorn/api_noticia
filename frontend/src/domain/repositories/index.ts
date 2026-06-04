@@ -1,6 +1,8 @@
 import type {
   BrasileiraoRound,
   HealthStatus,
+  NewsCards,
+  NewsCards,
   NewsFeed,
   NewsSyncResult,
   ValueBetsReport,
@@ -18,6 +20,29 @@ export interface NewsFeedParams {
   source?: string | null;
   query?: string | null;
   days?: number;
+}
+
+export interface NewsAllParams {
+  offset?: number;
+  source?: string | null;
+  query?: string | null;
+  days?: number | null;
+  team?: string | null;
+  homeTeam?: string | null;
+  awayTeam?: string | null;
+  teams?: string[] | null;
+}
+
+export interface NewsCardsParams {
+  limit?: number;
+  offset?: number;
+  source?: string | null;
+  query?: string | null;
+  days?: number;
+  team?: string | null;
+  homeTeam?: string | null;
+  awayTeam?: string | null;
+  teams?: string[] | null;
 }
 
 export interface IWcRepository {
@@ -42,6 +67,8 @@ export interface IHealthRepository {
 export interface INewsRepository {
   syncSources(): Promise<NewsSyncResult>;
   getFeed(params: NewsFeedParams): Promise<NewsFeed>;
+  getCards(params: NewsCardsParams): Promise<NewsCards>;
+  getAll(params: NewsAllParams): Promise<NewsFeed>;
 }
 
 export type {

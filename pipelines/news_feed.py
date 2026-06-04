@@ -4,10 +4,12 @@ from typing import Any
 import pandas as pd
 
 from ingest.sources_loader import load_sources
+from schemas.national_teams import normalize_national_team
 
 SENTIMENT_POSITIVE = 0.2
 SENTIMENT_NEGATIVE = -0.2
 BODY_PREVIEW_LEN = 280
+MAX_NEWS_ALL = 5000
 
 
 def _source_name_map() -> dict[str, str]:
@@ -65,6 +67,52 @@ def _teams_list(value: Any) -> list[str]:
     return []
 
 
+def _normalize_team_set(teams: list[str]) -> set[str]:
+    return {normalize_national_team(t).casefold() for t in teams if t and str(t).strip()}
+
+
+def row_matches_teams(row: pd.Series, teams: list[str] | None) -> bool:
+    if not teams:
+        return True
+    targets = _normalize_team_set(teams)
+    if not targets:
+        return True
+
+    for field in ("teams_mentioned", "national_teams_mentioned"):
+        for name in _teams_list(row.get(field)):
+            if normalize_national_team(name).casefold() in targets:
+                return True
+
+    haystack = " ".join(
+        [
+            str(row.get("title") or ""),
+            str(row.get("summary") or ""),
+            str(row.get("body") or ""),
+        ]
+    ).casefold()
+    return any(t in haystack for t in targets)
+
+
+def resolve_news_teams(
+    *,
+    team: str | None = None,
+    home_team: str | None = None,
+    away_team: str | None = None,
+    teams: list[str] | None = None,
+) -> list[str] | None:
+    merged: list[str] = []
+    if teams:
+        merged.extend(teams)
+    if team:
+        merged.append(team)
+    if home_team:
+        merged.append(home_team)
+    if away_team:
+        merged.append(away_team)
+    normalized = [normalize_national_team(t) for t in merged if t and str(t).strip()]
+    return normalized or None
+
+
 def build_news_feed(
     silver_df: pd.DataFrame,
     *,
@@ -73,6 +121,7 @@ def build_news_feed(
     source: str | None = None,
     query: str | None = None,
     days: int | None = 30,
+    teams: list[str] | None = None,
 ) -> dict[str, Any]:
     source_names = _source_name_map()
     empty = {
@@ -107,6 +156,10 @@ def build_news_feed(
                 + df.get("body", pd.Series([""] * len(df))).fillna("").astype(str)
             ).str.lower()
             df = df[searchable.str.contains(q, regex=False)]
+
+    if teams:
+        mask = df.apply(lambda row: row_matches_teams(row, teams), axis=1)
+        df = df[mask]
 
     df = df.copy()
     df["_sort_dt"] = df.apply(_sort_key, axis=1)
@@ -162,4 +215,65 @@ def build_news_feed(
         "offset": offset,
         "sources": sources_meta,
         "articles": articles,
+    }
+
+
+def build_news_all(
+    silver_df: pd.DataFrame,
+    *,
+    offset: int = 0,
+    source: str | None = None,
+    query: str | None = None,
+    days: int | None = None,
+    teams: list[str] | None = None,
+    max_items: int = MAX_NEWS_ALL,
+) -> dict[str, Any]:
+    """Retorna todas as notícias do silver (com teto de segurança)."""
+    cap = min(max(max_items, 1), MAX_NEWS_ALL)
+    return build_news_feed(
+        silver_df,
+        limit=cap,
+        offset=offset,
+        source=source,
+        query=query,
+        days=days,
+        teams=teams,
+    )
+
+
+def build_news_cards(
+    silver_df: pd.DataFrame,
+    *,
+    limit: int = 12,
+    offset: int = 0,
+    source: str | None = None,
+    query: str | None = None,
+    days: int | None = 14,
+    team: str | None = None,
+    home_team: str | None = None,
+    away_team: str | None = None,
+    teams: list[str] | None = None,
+) -> dict[str, Any]:
+    """Payload otimizado para NewsArticleCard (grid de cards)."""
+    resolved = resolve_news_teams(
+        team=team,
+        home_team=home_team,
+        away_team=away_team,
+        teams=teams,
+    )
+    feed = build_news_feed(
+        silver_df,
+        limit=limit,
+        offset=offset,
+        source=source,
+        query=query,
+        days=days,
+        teams=resolved,
+    )
+    return {
+        "total": feed["total"],
+        "limit": feed["limit"],
+        "offset": feed["offset"],
+        "teams": resolved or [],
+        "cards": feed["articles"],
     }

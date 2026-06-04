@@ -34,6 +34,34 @@ Dispara coleta RSS → bronze → silver.
 
 Feed agregado de artigos silver (filtros via query params — ver Swagger).
 
+### `GET /news/all`
+
+Retorna **todas** as notícias do silver em uma única resposta (mesmo formato do `/news/feed`).
+
+| Query | Descrição | Padrão |
+|-------|-----------|--------|
+| `days` | Janela em dias | omitido = histórico completo no lake |
+| `offset` | Deslocamento se passar de 5000 itens | `0` |
+| `source`, `q`, `team`, `home_team`, `away_team`, `teams` | Mesmos filtros do feed/cards | — |
+
+Teto interno: **5000** artigos por requisição (proteção de memória).
+
+### `GET /news/cards`
+
+Notícias formatadas para cards no frontend (`NewsArticleCard`).
+
+| Query | Descrição | Padrão |
+|-------|-----------|--------|
+| `limit` | Máx. cards | `12` (máx. 48) |
+| `offset` | Paginação | `0` |
+| `days` | Janela em dias | `14` |
+| `team` | Um time/seleção | — |
+| `home_team` / `away_team` | Filtro por confronto | — |
+| `teams` | Lista `Brasil,Marrocos` | — |
+| `source`, `q` | Fonte e busca textual | — |
+
+**Resposta:** `{ total, limit, offset, teams, cards[] }` — cada item tem `title`, `body_preview`, `sentiment_label`, `teams_mentioned`, etc.
+
 ---
 
 ## Brasileirão (notícias + heurística)
