@@ -63,6 +63,7 @@ Crie `.env` se necessário:
 
 ```env
 VITE_API_URL=/api
+# VITE_API_KEY=...   # obrigatório se a API tiver API_KEY configurada
 ```
 
 Para apontar direto à API (sem proxy):

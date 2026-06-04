@@ -1,4 +1,5 @@
 import { IconWifi } from "@/presentation/components/ui/Icons";
+import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import type { HealthStatus } from "@/domain/entities";
 
 interface ApiStatusBadgeProps {
@@ -14,7 +15,11 @@ export function ApiStatusBadge({
   isError,
   compact = false,
 }: ApiStatusBadgeProps) {
-  if (isPending) {
+  const pulse = useDataPulse();
+  const articlesSilver = pulse?.articlesSilver ?? health?.articlesSilver;
+  const hasSignal = pulse != null || health != null;
+
+  if (isPending && !hasSignal) {
     return (
       <div
         className="flex items-center gap-2 text-xs text-slate-500"
@@ -27,7 +32,7 @@ export function ApiStatusBadge({
     );
   }
 
-  if (isError || !health) {
+  if (isError || !hasSignal) {
     return (
       <div
         className="flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-1.5 text-xs text-amber-300"
@@ -52,7 +57,9 @@ export function ApiStatusBadge({
           <span className="text-white/20" aria-hidden>
             |
           </span>
-          <span className="text-slate-400">{health.articlesSilver} artigos</span>
+          <span className="text-slate-400">
+            {articlesSilver ?? 0} artigos
+          </span>
         </>
       )}
     </div>

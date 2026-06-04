@@ -1,4 +1,7 @@
+import { applyDataPulseFromHeaders } from "./dataPulseStore";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+const API_KEY = import.meta.env.VITE_API_KEY?.trim() || undefined;
 
 export class ApiError extends Error {
   constructor(
@@ -29,6 +32,7 @@ export async function apiFetch<T>(
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
+        ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
         ...fetchInit.headers,
       },
     });
@@ -43,6 +47,8 @@ export async function apiFetch<T>(
   } finally {
     clearTimeout(timer);
   }
+
+  applyDataPulseFromHeaders(response.headers);
 
   if (!response.ok) {
     let detail = response.statusText;

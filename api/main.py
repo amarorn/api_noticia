@@ -9,6 +9,12 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from api.auth import ApiKeyMiddleware, api_key_enabled
+from api.data_pulse import (
+    DataPulseMiddleware,
+    build_pulse_snapshot,
+    invalidate_pulse_meta_cache,
+)
 from api.lake_cache import get_lake_counts, invalidate_lake_counts
 from config import settings
 from ingest.fixtures.brasileirao import load_fixtures
@@ -79,7 +85,53 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "X-Data-Pulse-At",
+        "X-Articles-Silver",
+        "X-Fixtures",
+        "X-WC-Models-Ready",
+        "X-Collections-Last-Run",
+        "X-Latest-Silver-At",
+    ],
 )
+
+app.add_middleware(
+    DataPulseMiddleware,
+    wc_models_ready=lambda: _wc_models_ready,
+)
+
+app.add_middleware(ApiKeyMiddleware)
+
+
+def _custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    from fastapi.openapi.utils import get_openapi
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    if api_key_enabled():
+        schema.setdefault("components", {})["securitySchemes"] = {
+            "ApiKeyHeader": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-API-Key",
+            },
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+            },
+        }
+        schema["security"] = [{"ApiKeyHeader": []}, {"BearerAuth": []}]
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = _custom_openapi
 
 
 def get_wc_predictor(*, force: bool = False) -> "WcPredictor":
@@ -588,14 +640,27 @@ async def health():
     }
 
 
+@app.get("/data/pulse")
+async def data_pulse():
+    """Heartbeat do datalake (GET) — mesmo snapshot anexado via headers em cada requisição."""
+    return await asyncio.to_thread(
+        build_pulse_snapshot,
+        wc_models_ready=_wc_models_ready,
+        force_lake_counts=True,
+    )
+
+
 @app.get("/")
 def root():
     return {
         "name": "api-noticia",
         "status": "running",
+        "auth_required": api_key_enabled(),
         "docs": "/docs",
         "health": "/health",
+        "data_pulse": "/data/pulse",
         "endpoints": [
+            "/data/pulse",
             "/news/feed",
             "/news/cards",
             "/news/all",
@@ -627,6 +692,7 @@ async def news_sync():
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Falha ao sincronizar fontes: {exc}") from exc
     invalidate_lake_counts()
+    invalidate_pulse_meta_cache()
     return NewsSyncResponse(**result)
 
 

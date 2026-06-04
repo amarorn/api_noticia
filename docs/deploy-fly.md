@@ -25,9 +25,12 @@ Região **`gru`** (São Paulo) reduz latência para usuários no Brasil.
 ## 2. Segredos (opcional)
 
 ```bash
+fly secrets set API_KEY="$(openssl rand -hex 32)" -a api-noticia
 fly secrets set ODDS_API_KEY=sua_chave -a api-noticia
 # fly secrets set API_FOOTBALL_KEY=... -a api-noticia
 ```
+
+No build do frontend use a mesma chave em `VITE_API_KEY`.
 
 Liste com `fly secrets list -a api-noticia`.
 

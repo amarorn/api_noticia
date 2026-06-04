@@ -6,6 +6,37 @@ Versão: **0.2.0**
 
 Todas as respostas são JSON. CORS habilitado (`*`).
 
+## Autenticação (API key)
+
+Quando `API_KEY` está definida no ambiente do servidor, **todas as rotas** exigem chave, exceto:
+
+- `GET /health/live` (liveness Fly)
+- `/docs`, `/redoc`, `/openapi.json`
+
+Envie a chave de uma destas formas:
+
+| Forma | Exemplo |
+|-------|---------|
+| Header | `X-API-Key: sua-chave` |
+| Bearer | `Authorization: Bearer sua-chave` |
+
+Várias chaves válidas: `API_KEY=chave-antiga,chave-nova` (rotação).
+
+Sem `API_KEY` no servidor, a API permanece aberta (desenvolvimento local).
+
+```bash
+# Fly.io
+fly secrets set API_KEY="$(openssl rand -hex 32)" -a api-noticia
+
+curl -H "X-API-Key: $API_KEY" https://api-noticia.fly.dev/news/all
+```
+
+Frontend (build/deploy):
+
+```env
+VITE_API_KEY=mesma-chave-do-servidor
+```
+
 ---
 
 ## Saúde e meta
@@ -16,6 +47,28 @@ Status do datalake e contadores.
 
 ```bash
 curl -s http://localhost:8000/health
+```
+
+### `GET /data/pulse`
+
+Pulso do datalake (mesmo uso no navegador): contadores, `latest_silver_at`, última coleta em `_meta/collections.jsonl` e links das ações (`POST /news/sync`, `GET /news/all`).
+
+**Em cada requisição** (exceto `/health/live` e docs), a API inclui headers de pulso na resposta:
+
+| Header | Conteúdo |
+|--------|----------|
+| `X-Data-Pulse-At` | ISO8601 do snapshot |
+| `X-Articles-Silver` | Artigos no silver |
+| `X-Fixtures` | Fixtures (Brasileirão) |
+| `X-WC-Models-Ready` | `true` / `false` |
+| `X-Collections-Last-Run` | Última linha em `_meta/collections.jsonl` |
+| `X-Latest-Silver-At` | mtime do parquet silver mais recente |
+
+O frontend lê esses headers em todo `apiFetch` e atualiza o badge de status.
+
+```bash
+curl -sI http://localhost:8000/news/all | grep -i x-data-pulse
+curl -s http://localhost:8000/data/pulse
 ```
 
 ### `GET /`

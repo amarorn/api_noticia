@@ -34,6 +34,7 @@ pip install -e ".[gcp]"   # BigQuery, GCS
 | `ODDS_DEFAULT_REGIONS` | Regiões bookmakers | `eu` |
 | `API_HOST` | Host uvicorn | `0.0.0.0` |
 | `API_PORT` | Porta API | `8000` |
+| `API_KEY` | Chave da API (`X-API-Key` / Bearer); omitir = sem auth | — |
 
 > **Nunca commite** `.env` — já está no `.gitignore`.
 

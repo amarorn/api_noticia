@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     mlflow_experiment_bolao: str = "api-noticia/bolao-benchmark"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    api_key: str | None = None
 
     @property
     def bronze_path(self) -> Path:
