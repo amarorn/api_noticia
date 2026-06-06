@@ -87,38 +87,50 @@ def _team_attack_defense(
     hp = get_wc_hyperparams()
     ref = ref_season if ref_season is not None else _reference_season(df)
 
-    home_goals_w: list[tuple[float, float]] = []
-    away_goals_w: list[tuple[float, float]] = []
-    teams: set[str] = set()
+    df["_w"] = df["season"].fillna(ref).astype(int).apply(
+        lambda s: _season_weight(s, ref, hp.poisson_season_half_life)
+    )
 
-    for _, row in df.iterrows():
-        w = _season_weight(int(row.get("season", ref)), ref, hp.poisson_season_half_life)
-        hs, aws = int(row["home_score"]), int(row["away_score"])
-        home, away = row["home_team"], row["away_team"]
-        teams.add(home)
-        teams.add(away)
-        home_goals_w.append((hs, w))
-        away_goals_w.append((aws, w))
-
-    avg_home = _wmean(home_goals_w, 1.0)
-    avg_away = _wmean(away_goals_w, 1.0)
+    avg_home = float((df["home_score"] * df["_w"]).sum() / max(df["_w"].sum(), 1e-12))
+    avg_away = float((df["away_score"] * df["_w"]).sum() / max(df["_w"].sum(), 1e-12))
     league_avg = (avg_home + avg_away) / 2.0
 
+    # Attack e defesa como mandante
+    home_att = df.groupby("home_team").apply(
+        lambda g: float((g["home_score"] * g["_w"]).sum() / max(g["_w"].sum(), 1e-12)) / max(avg_home, 0.5),
+        include_groups=False,
+    )
+    home_def = df.groupby("home_team").apply(
+        lambda g: float((g["away_score"] * g["_w"]).sum() / max(g["_w"].sum(), 1e-12)) / max(avg_away, 0.5),
+        include_groups=False,
+    )
+
+    # Attack e defesa como visitante
+    away_att = df.groupby("away_team").apply(
+        lambda g: float((g["away_score"] * g["_w"]).sum() / max(g["_w"].sum(), 1e-12)) / max(avg_away, 0.5),
+        include_groups=False,
+    )
+    away_def = df.groupby("away_team").apply(
+        lambda g: float((g["home_score"] * g["_w"]).sum() / max(g["_w"].sum(), 1e-12)) / max(avg_home, 0.5),
+        include_groups=False,
+    )
+
+    teams: set[str] = set(df["home_team"]).union(set(df["away_team"]))
     attack: dict[str, float] = {}
     defense: dict[str, float] = {}
     for team in teams:
-        att_vals: list[tuple[float, float]] = []
-        def_vals: list[tuple[float, float]] = []
-        for _, row in df.iterrows():
-            w = _season_weight(int(row.get("season", ref)), ref, hp.poisson_season_half_life)
-            if row["home_team"] == team:
-                att_vals.append((int(row["home_score"]) / max(avg_home, 0.5), w))
-                def_vals.append((int(row["away_score"]) / max(avg_away, 0.5), w))
-            elif row["away_team"] == team:
-                att_vals.append((int(row["away_score"]) / max(avg_away, 0.5), w))
-                def_vals.append((int(row["home_score"]) / max(avg_home, 0.5), w))
-        attack[team] = _wmean(att_vals, 1.0)
-        defense[team] = _wmean(def_vals, 1.0)
+        a_vals: list[tuple[float, float]] = []
+        d_vals: list[tuple[float, float]] = []
+        if team in home_att.index:
+            w_home = float(df[df["home_team"] == team]["_w"].sum())
+            a_vals.append((home_att[team], w_home))
+            d_vals.append((home_def[team], w_home))
+        if team in away_att.index:
+            w_away = float(df[df["away_team"] == team]["_w"].sum())
+            a_vals.append((away_att[team], w_away))
+            d_vals.append((away_def[team], w_away))
+        attack[team] = _wmean(a_vals, 1.0)
+        defense[team] = _wmean(d_vals, 1.0)
 
     return attack, defense, league_avg
 

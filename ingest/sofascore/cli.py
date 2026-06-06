@@ -8,6 +8,7 @@ from pathlib import Path
 import structlog
 
 from config import settings
+from ingest.sofascore.compact_stats import compact_match_stats_json
 from ingest.sofascore.fept_ingest import build_team_map_from_squads, ingest_fept
 from ingest.sofascore.history_ingest import (
     ingest_all_teams_history,
@@ -86,6 +87,11 @@ def main() -> None:
         help="Reconstrói data/wc/sofascore_teams.json a partir das convocações",
     )
     parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Ingere tudo: fixtures WC (openfootball) + últimos jogos de cada seleção",
+    )
+    parser.add_argument(
         "--history",
         action="store_true",
         help="Ingere histórico de estatísticas em massa para match_stats.parquet",
@@ -118,7 +124,58 @@ def main() -> None:
         default=None,
         help="Com --from-fixtures: limita quantidade de fixtures processados",
     )
+    parser.add_argument(
+        "--compact-parquet",
+        action="store_true",
+        help="Consolida *_stats.json em match_stats.parquet (sem chamar API)",
+    )
     args = parser.parse_args()
+
+    if args.compact_parquet:
+        report = compact_match_stats_json()
+        if args.json:
+            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(
+                f"Compactado: {report.json_files} JSON → "
+                f"{report.rows_written} jogos em {report.parquet_path}"
+            )
+        return
+
+    if args.all:
+        fx_report = ingest_fixtures_history(
+            since_year=1930,
+            limit=None,
+            save=not args.no_save,
+        )
+        teams_report = ingest_all_teams_history(
+            max_per_team=args.max_per_team,
+            save=not args.no_save,
+        )
+        combined = {
+            "fixtures": fx_report.to_dict(),
+            "all_teams": teams_report.to_dict(),
+            "parquet_matches": teams_report.parquet_matches,
+        }
+        if args.json:
+            print(json.dumps(combined, ensure_ascii=False, indent=2))
+        else:
+            print(
+                "Sofascore ALL — fixtures WC: "
+                f"{fx_report.events_ingested} novos, "
+                f"{fx_report.events_skipped} ignorados, "
+                f"{fx_report.events_failed} falhas "
+                f"({fx_report.events_attempted} tentados)"
+            )
+            print(
+                "Sofascore ALL — seleções: "
+                f"{teams_report.teams_processed} times, "
+                f"{teams_report.events_ingested} novos, "
+                f"{teams_report.events_skipped} ignorados, "
+                f"{teams_report.events_failed} falhas"
+            )
+            print(f"Total no parquet: {teams_report.parquet_matches} jogos")
+        return
 
     if args.history:
         if args.from_fixtures:

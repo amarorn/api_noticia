@@ -5,31 +5,36 @@
     "elo_initial": 1500.0,
     "home_adv_goals": 0.12,
     "home_adv_goals_neutral": 0.03,
+    "home_adv_corners": 0.45,
+    "home_adv_corners_neutral": 0.15,
     "logistic_c": 1.0,
     "logistic_class_weight": "balanced",
     "logistic_max_iter": 3000,
     "ensemble_weight_steps": 40,
-    "kxl_blend_weight": 0.25,
+    "kxl_blend_weight": 0.15,
     "rho_min": -0.2,
     "rho_max": 0.2,
     "rho_step": 0.01,
-    "draw_prob_floor": 0.16
+    "draw_prob_floor": 0.16,
+    "poisson_season_half_life": 8.0,
+    "draw_model_blend": 0.55,
+    "knockout_draw_discount": 0.82
   },
-  "tuned_at": "2026-06-03T12:44:17.842486+00:00",
+  "tuned_at": "2026-06-06T06:38:34.943468+00:00",
   "validation_season": 2022,
   "fast_mode": true,
   "metrics": {
-    "brier": 0.18472544313934358,
-    "accuracy": 0.515625,
+    "brier": 0.17152456735176183,
+    "accuracy": 0.640625,
     "n": 64,
     "pred_distribution": {
-      "1": 51,
+      "1": 49,
       "X": 0,
-      "2": 13
+      "2": 15
     },
     "ensemble_weights": {
-      "dixon_coles": 0.325,
-      "logistic": 0.675
+      "dixon_coles": 0.1,
+      "logistic": 0.9
     },
     "phase2": true
   }

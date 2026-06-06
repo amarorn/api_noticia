@@ -26,6 +26,11 @@ from pipelines.wc_kxl_collision import (
     format_collision_context,
 )
 from pipelines.wc_hyperparams import get_wc_hyperparams
+from pipelines.wc_sofascore_features import (
+    apply_sofascore_nudge,
+    format_sofascore_context,
+    sofascore_breakdown,
+)
 from pipelines.wc_stats import build_match_features, compute_wc_h2h, format_wc_context
 from schemas.models import BolaoLabel
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
@@ -223,7 +228,20 @@ class WcPredictor:
             before_date=cutoff,
             season=season,
             group_name=group_name,
+            include_sofascore=True,
         )
+        logistic_no_sofa = self.logistic.predict_match(
+            self.fixtures,
+            home_team,
+            away_team,
+            phase=phase,
+            is_neutral=is_neutral,
+            before_date=cutoff,
+            season=season,
+            group_name=group_name,
+            include_sofascore=False,
+        )
+        sofa_info = sofascore_breakdown(home_team, away_team, before_date=cutoff)
 
         pw = self.collaborative.dixon_coles_weight
         lw = self.collaborative.logistic_weight
@@ -258,6 +276,15 @@ class WcPredictor:
         prob_home = ensemble_probs["1"]
         prob_draw = ensemble_probs["X"]
         prob_away = ensemble_probs["2"]
+
+        sofa_nudge_meta = None
+        nudged, sofa_nudge_meta = apply_sofascore_nudge(
+            {"1": prob_home, "X": prob_draw, "2": prob_away},
+            home_team,
+            away_team,
+            before_date=cutoff,
+        )
+        prob_home, prob_draw, prob_away = nudged["1"], nudged["X"], nudged["2"]
 
         collision_out = collision_predict(home_team, away_team, kxl_match)
 
@@ -306,7 +333,13 @@ class WcPredictor:
             poisson_score=poisson.most_likely_score,
             expected_goals=f"{poisson.expected_home_goals:.1f}x{poisson.expected_away_goals:.1f}",
             context=_build_context(
-                features, h2h, home_team, away_team, baseline_out, collision_out
+                features,
+                h2h,
+                home_team,
+                away_team,
+                baseline_out,
+                collision_out,
+                before_date=cutoff,
             ),
             h2h_summary=h2h_summary,
             model_breakdown={
@@ -320,6 +353,14 @@ class WcPredictor:
                     "X": round(logistic.prob_draw, 3),
                     "2": round(logistic.prob_away, 3),
                 },
+                "logistic_without_sofascore": {
+                    "1": round(logistic_no_sofa.prob_home, 3),
+                    "X": round(logistic_no_sofa.prob_draw, 3),
+                    "2": round(logistic_no_sofa.prob_away, 3),
+                    "prediction": logistic_no_sofa.prediction,
+                },
+                "sofascore": sofa_info,
+                "sofascore_nudge": sofa_nudge_meta,
                 "dixon_coles_rho": self._dc_metrics.get("rho"),
                 "poisson_factors": factors.as_dict(),
                 "holdout_2022_accuracy": self._metrics.get("holdout_accuracy"),
@@ -343,8 +384,11 @@ class WcPredictor:
         )
 
 
-def _build_context(features, h2h, home_team, away_team, baseline_out, collision_out):
+def _build_context(features, h2h, home_team, away_team, baseline_out, collision_out, *, before_date=None):
     parts = [format_wc_context(features, h2h)]
+    sofa_ctx = format_sofascore_context(home_team, away_team, before_date=before_date)
+    if sofa_ctx:
+        parts.append(sofa_ctx)
     dna = format_baseline_context(home_team, away_team, baseline_out)
     if dna:
         parts.append(dna)

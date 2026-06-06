@@ -4,6 +4,8 @@ import pandas as pd
 
 from pipelines.wc_sofascore_features import (
     SOFASCORE_FEATURE_NAMES,
+    format_sofascore_context,
+    sofascore_breakdown,
     sofascore_feature_vector,
     team_rolling_stats,
 )
@@ -81,3 +83,15 @@ def test_sofascore_feature_vector_diff_and_availability():
     assert vec[-1] == 1.0
     assert vec[0] > 0.0
     assert vec[2] == 5.0
+
+
+def test_sofascore_breakdown_and_context():
+    df = _stats_df()
+    cutoff = datetime(2024, 3, 1, tzinfo=timezone.utc)
+    info = sofascore_breakdown("Brasil", "Argentina", before_date=cutoff, stats_df=df)
+    assert info["available"] is True
+    assert info["home_last5"]["samples"] == 5
+    ctx = format_sofascore_context("Brasil", "Argentina", before_date=cutoff)
+    assert ctx is not None
+    assert "Sofascore" in ctx
+    assert "Δ xG a favor" in ctx

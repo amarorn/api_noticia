@@ -84,6 +84,17 @@ def team_rolling_stats(
     )
 
 
+def _rolling_to_dict(stats: TeamRollingStats) -> dict[str, float | int]:
+    return {
+        "xg_for": round(stats.xg_for, 2),
+        "xg_against": round(stats.xg_against, 2),
+        "possession_pct": round(stats.possession, 1),
+        "shots_on_target": round(stats.shots_on_target, 1),
+        "big_chances": round(stats.big_chances, 1),
+        "samples": stats.samples,
+    }
+
+
 def sofascore_feature_vector(
     home_team: str,
     away_team: str,
@@ -106,3 +117,98 @@ def sofascore_feature_vector(
         home.big_chances - away.big_chances,
         1.0,
     ]
+
+
+def sofascore_breakdown(
+    home_team: str,
+    away_team: str,
+    *,
+    before_date: datetime | None = None,
+    stats_df: pd.DataFrame | None = None,
+) -> dict:
+    df = stats_df if stats_df is not None else load_match_stats_history(before_date=before_date)
+    home = team_rolling_stats(df, home_team)
+    away = team_rolling_stats(df, away_team)
+    vec = sofascore_feature_vector(
+        home_team, away_team, before_date=before_date, stats_df=df
+    )
+    features = dict(zip(SOFASCORE_FEATURE_NAMES, vec, strict=True))
+    return {
+        "available": features["sofa_stats_available"] == 1.0,
+        "window": ROLLING_WINDOW,
+        "min_team_matches": MIN_TEAM_MATCHES,
+        "features": {k: round(v, 3) for k, v in features.items()},
+        "home_last5": _rolling_to_dict(home) if home else None,
+        "away_last5": _rolling_to_dict(away) if away else None,
+        "parquet_matches_before": len(df),
+    }
+
+
+def format_sofascore_context(
+    home_team: str,
+    away_team: str,
+    *,
+    before_date: datetime | None = None,
+) -> str | None:
+    info = sofascore_breakdown(home_team, away_team, before_date=before_date)
+    if not info["available"]:
+        return (
+            "## Sofascore (últimos 5 jogos)\n"
+            "- Dados indisponíveis no histórico parquet antes desta data "
+            f"({info['parquet_matches_before']} jogos no recorte)."
+        )
+
+    h = info["home_last5"]
+    a = info["away_last5"]
+    f = info["features"]
+    lines = [
+        "## Sofascore (média últimos 5 jogos)",
+        "",
+        f"### {home_team}",
+        f"- xG a favor: {h['xg_for']} | xG contra: {h['xg_against']} | posse: {h['possession_pct']}%",
+        f"- Chutes no gol: {h['shots_on_target']} | grandes chances: {h['big_chances']} (n={h['samples']})",
+        "",
+        f"### {away_team}",
+        f"- xG a favor: {a['xg_for']} | xG contra: {a['xg_against']} | posse: {a['possession_pct']}%",
+        f"- Chutes no gol: {a['shots_on_target']} | grandes chances: {a['big_chances']} (n={a['samples']})",
+        "",
+        "### Diferenciais (mandante − visitante)",
+        f"- Δ xG a favor: {f['sofa_xg_for_diff_last5']:+.2f}",
+        f"- Δ xG contra: {f['sofa_xg_against_diff_last5']:+.2f}",
+        f"- Δ posse: {f['sofa_possession_diff_last5']:+.1f} pp",
+        f"- Δ chutes no gol: {f['sofa_shots_on_target_diff_last5']:+.1f}",
+        f"- Δ grandes chances: {f['sofa_big_chances_diff_last5']:+.1f}",
+    ]
+    return "\n".join(lines)
+
+
+def apply_sofascore_nudge(
+    probs: dict[str, float],
+    home_team: str,
+    away_team: str,
+    *,
+    before_date: datetime | None = None,
+    scale: float = 0.06,
+) -> tuple[dict[str, float], dict | None]:
+    """Desloca levemente 1/X/2 quando há rolling Sofascore (sinal de xG + posse)."""
+    info = sofascore_breakdown(home_team, away_team, before_date=before_date)
+    if not info["available"]:
+        return probs, None
+
+    feats = info["features"]
+    xg_diff = float(feats["sofa_xg_for_diff_last5"])
+    poss_diff = float(feats["sofa_possession_diff_last5"]) / 100.0
+    signal = 0.75 * xg_diff + 0.25 * poss_diff
+    delta = scale * max(-1.0, min(1.0, signal / 2.0))
+
+    p1 = probs["1"] + delta
+    p2 = probs["2"] - delta
+    px = probs["X"]
+    total = max(p1 + px + p2, 1e-9)
+    adjusted = {"1": p1 / total, "X": px / total, "2": p2 / total}
+    meta = {
+        "delta_home": round(delta, 4),
+        "signal": round(signal, 3),
+        "scale": scale,
+    }
+    return adjusted, meta

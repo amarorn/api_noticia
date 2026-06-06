@@ -5,6 +5,7 @@ from pathlib import Path
 import structlog
 
 from config import settings
+from ingest.sofascore.paths import MATCH_STATS_PARQUET
 
 logger = structlog.get_logger()
 
@@ -13,6 +14,7 @@ LAYER_TABLES = {
     "silver": "silver_articles",
     "gold": "gold_bolao_context",
     "fixtures": "fixtures_results",
+    "sofascore": "sofascore_match_stats",
 }
 
 
@@ -64,6 +66,22 @@ def load_parquet_to_bigquery(
     logger.info("bq_loaded", table=table_ref, source=gcs_uri)
 
 
+def upload_parquet_file(local_path: Path, gcs_blob: str) -> str:
+    _require_gcp()
+    from google.cloud import storage
+
+    if not local_path.is_file():
+        logger.warning("gcs_upload_skip", path=str(local_path), reason="missing")
+        return ""
+
+    client = storage.Client(project=settings.gcp_project)
+    bucket = client.bucket(settings.gcs_bucket)
+    bucket.blob(gcs_blob).upload_from_filename(str(local_path))
+    uri = f"gs://{settings.gcs_bucket}/{gcs_blob}"
+    logger.info("gcs_uploaded", blob=gcs_blob)
+    return uri
+
+
 def sync_layer(layer: str, write_disposition: str = "WRITE_APPEND") -> dict:
     layer_paths = {
         "bronze": settings.bronze_path,
@@ -71,13 +89,19 @@ def sync_layer(layer: str, write_disposition: str = "WRITE_APPEND") -> dict:
         "gold": settings.gold_path,
         "fixtures": settings.fixtures_path,
     }
-    local_dir = layer_paths.get(layer)
-    if local_dir is None:
-        raise ValueError(f"Camada inválida: {layer}")
-
-    gcs_prefix = f"lake/{layer}"
-    uploaded = upload_parquet_dir(local_dir, gcs_prefix)
     table = LAYER_TABLES[layer]
+    uploaded: list[str] = []
+
+    if layer == "sofascore":
+        parquet_path = settings.sofascore_stats_dir / MATCH_STATS_PARQUET
+        uri = upload_parquet_file(parquet_path, f"lake/sofascore/{MATCH_STATS_PARQUET}")
+        if uri:
+            uploaded.append(uri)
+    else:
+        local_dir = layer_paths.get(layer)
+        if local_dir is None:
+            raise ValueError(f"Camada inválida: {layer}")
+        uploaded = upload_parquet_dir(local_dir, f"lake/{layer}")
 
     for uri in uploaded:
         load_parquet_to_bigquery(uri, table, write_disposition=write_disposition)

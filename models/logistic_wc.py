@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 from pipelines.wc_hyperparams import get_wc_hyperparams
+from pipelines.wc_sofascore_features import SOFASCORE_FEATURE_NAMES
 from pipelines.wc_stats import (
     FEATURE_NAMES,
     build_match_features,
@@ -124,6 +125,7 @@ class WcLogisticModel:
         before_date: datetime | None = None,
         season: int | None = None,
         group_name: str | None = None,
+        include_sofascore: bool = True,
     ) -> LogisticPrediction:
         if not self._fitted:
             self.fit(fixtures_df)
@@ -138,7 +140,12 @@ class WcLogisticModel:
             season=season,
             group_name=group_name,
         )
-        x = self.scaler.transform([features_to_vector(feats, before_date=before_date)])[0]
+        x = features_to_vector(feats, before_date=before_date)
+        if not include_sofascore:
+            start = len(FEATURE_NAMES) - len(SOFASCORE_FEATURE_NAMES)
+            for i in range(start, len(x)):
+                x[i] = 0.0
+        x = self.scaler.transform([x])[0]
         probs = self.model.predict_proba([x])[0]
         classes = list(self.model.classes_)
 

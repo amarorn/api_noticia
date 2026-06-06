@@ -170,6 +170,55 @@ Integração recomendada: [Unsloth](https://github.com/unslothai/unsloth).
 
 ---
 
+## Storage: Parquet local + DuckDB + BigQuery
+
+### Camada local (padrão)
+
+| Dado | Path | Formato |
+|------|------|---------|
+| Notícias | `data/lake/bronze`, `silver`, `gold` | Parquet particionado |
+| Fixtures | `data/lake/fixtures/` | Parquet |
+| Stats Sofascore | `data/lake/sofascore/match_stats.parquet` | Parquet único |
+| Auditoria Sofascore | `data/lake/sofascore/*_stats.json` | JSON por jogo (opcional) |
+
+Cada ingestão Sofascore grava JSON + upsert no parquet. Para reconstruir o parquet a partir dos JSONs:
+
+```bash
+ingest-sofascore --compact-parquet
+ingest-sofascore --compact-parquet --json
+```
+
+### Consultas SQL locais (DuckDB)
+
+```bash
+pip install -e ".[analytics]"
+lake-query --preset summary
+lake-query --preset team-xg --team Brasil --limit 10
+lake-query --sql "SELECT home_team, AVG(home_xg) AS avg_xg FROM sofascore GROUP BY 1 ORDER BY 2 DESC LIMIT 5"
+```
+
+Views disponíveis: `bronze`, `silver`, `gold`, `fixtures`, `sofascore`.
+
+### Quando ativar BigQuery + GCS
+
+| Gatilho | Ação |
+|---------|------|
+| Lake > ~500 MB ou histórico longo de notícias | `sync-gcp --layer all` |
+| Múltiplos ambientes (dev/staging/prod) | Sync periódico para GCS |
+| Dashboards / SQL ad hoc na nuvem | BigQuery como camada analítica |
+| Sofascore no BQ para joins com fixtures | `sync-gcp --layer sofascore` |
+
+```bash
+pip install -e ".[gcp]"
+# .env: GCP_PROJECT, BQ_DATASET, GCS_BUCKET
+sync-gcp --layer all
+sync-gcp --layer sofascore --truncate
+```
+
+Tabelas BigQuery: `bronze_articles`, `silver_articles`, `gold_bolao_context`, `fixtures_results`, `sofascore_match_stats`.
+
+**Não substitua** o Parquet local — a API e os modelos ML continuam lendo arquivos no volume (`LAKE_ROOT`). O BigQuery é camada analítica/backup, não storage primário de runtime.
+
 ## Escalabilidade GCP (opcional)
 
 ```bash

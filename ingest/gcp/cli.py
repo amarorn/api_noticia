@@ -18,7 +18,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--layer",
-        choices=["bronze", "silver", "gold", "fixtures", "all"],
+        choices=["bronze", "silver", "gold", "fixtures", "sofascore", "all"],
         default="all",
     )
     parser.add_argument(

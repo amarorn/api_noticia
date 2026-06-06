@@ -155,6 +155,8 @@ def ingest_match_stats(
     away_team: str | None = None,
     event_id: int | None = None,
     match_date: date | None = None,
+    client: SofascoreClient | None = None,
+    team_map: dict[str, dict] | None = None,
     save: bool = True,
     output_dir: Path | None = None,
     include_incidents: bool = True,
@@ -164,6 +166,8 @@ def ingest_match_stats(
         away_team=away_team,
         event_id=event_id,
         match_date=match_date,
+        client=client,
+        team_map=team_map,
         include_incidents=include_incidents,
     )
     payload = result.to_payload()
