@@ -13,7 +13,7 @@ from config import settings
 from ingest.sofascore.client import SofascoreClient
 from ingest.sofascore.paths import MATCH_STATS_PARQUET
 from ingest.sofascore.event_helpers import resolve_match_date
-from ingest.sofascore.fept_ingest import build_fept_payload, find_event_id
+from ingest.sofascore.event_helpers import find_event_id
 from ingest.sofascore.stats_mapper import flatten_match_stats
 from ingest.sofascore.teams import load_team_map
 from schemas.national_teams import normalize_national_team

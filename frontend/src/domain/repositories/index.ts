@@ -13,6 +13,7 @@ import type {
   WcSquadDetail,
   WcSquadsIndex,
   WcGroupStandings,
+  WcFriendlies,
 } from "../entities";
 
 export interface NewsFeedParams {
@@ -70,6 +71,19 @@ export interface IWcRepository {
   getTeams(): Promise<string[]>;
   getValueBets(): Promise<ValueBetsReport>;
   getGroupStandings(): Promise<WcGroupStandings>;
+  getFriendlies(request: {
+    team: string;
+    includeFinished?: boolean;
+    includeUpcoming?: boolean;
+  }): Promise<WcFriendlies>;
+  simulateMatch(request: {
+    homeTeam: string;
+    awayTeam: string;
+    phase: string;
+    matchDate?: string;
+    fifaMatchId?: string;
+    sofascoreEventId?: number;
+  }): Promise<import("@/domain/entities").WcSimulation>;
 }
 
 export interface IBrasileiraoRepository {

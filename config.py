@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     sofascore_min_interval_sec: float = 0.12
     sofascore_fept_dir: Path = Path("data/lake/fept")
     sofascore_stats_dir: Path = Path("data/lake/sofascore")
+    sofascore_enrich_dir: Path = Path("data/lake/sofascore/enrich")
+    fifa_matches_dir: Path = Path("data/lake/fifa/matches")
+    fifa_rankings_cache_path: Path = Path("data/lake/fifa/rankings_live.json")
+    fifa_window_cache_path: Path = Path("data/lake/fifa/window_matches.json")
     ner_enabled: bool = False
     ner_model: str = "pierreguillou/ner-bert-base-cased-pt-lenerbr"
     bolao_model_path: Path = Path("models/checkpoints/bolao-unsloth")

@@ -133,6 +133,13 @@ export interface KxlBaselineBreakdown {
   awaySnapshot: KxlTeamSnapshot | null;
 }
 
+export interface KxlFeptPlayer {
+  name: string;
+  position: string | null;
+  line: string | null;
+  sofascoreRating: number | null;
+}
+
 export interface KxlFeptMeta {
   source: string;
   eventId: number;
@@ -140,6 +147,8 @@ export interface KxlFeptMeta {
   ratingsMissing: number;
   esquemaMandante: string | null;
   esquemaVisitante: string | null;
+  homePlayers?: KxlFeptPlayer[];
+  awayPlayers?: KxlFeptPlayer[];
   absencesHome?: number;
   absencesAway?: number;
   referee?: string | null;
@@ -244,6 +253,66 @@ export interface WcSchedule {
   matchdays: number[];
   matches: WcScheduleMatch[];
   totalMatches: number;
+}
+
+export interface WcFriendlyMatch {
+  eventId: number | null;
+  fifaMatchId: string | null;
+  sources: string[];
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string | null;
+  status: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  tournament: string;
+  isHome: boolean;
+}
+
+export interface WcSimulationLineupPlayer {
+  name: string;
+  shirtNumber: number | null;
+  position: string | null;
+  line?: string | null;
+  isCaptain: boolean;
+  pictureUrl: string | null;
+  sofascoreRating?: number | null;
+  yellowCards?: number;
+  redCards?: number;
+  isStarter?: boolean;
+}
+
+export interface WcSimulation {
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string | null;
+  prediction: OutcomeLabel;
+  confidence: number;
+  probHome: number;
+  probDraw: number;
+  probAway: number;
+  fifaHomeLineup: WcSimulationLineupPlayer[] | null;
+  fifaAwayLineup: WcSimulationLineupPlayer[] | null;
+  fifaHomeBench: WcSimulationLineupPlayer[] | null;
+  fifaAwayBench: WcSimulationLineupPlayer[] | null;
+  fifaHomeTactics: string | null;
+  fifaAwayTactics: string | null;
+  fifaHomeCoach: string | null;
+  fifaAwayCoach: string | null;
+  fifaStadium: string | null;
+  fifaHomePoints: number | null;
+  fifaAwayPoints: number | null;
+  fifaPointsDiff: number | null;
+  lineupSource: string | null;
+  warnings: string[];
+}
+
+export interface WcFriendlies {
+  team: string;
+  year: number;
+  count: number;
+  friendlies: WcFriendlyMatch[];
+  source: string;
 }
 
 export interface WcSquadPlayer {

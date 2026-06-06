@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from ingest.sofascore.stats_dataset import STAT_COLUMNS, load_match_stats_history
+from ingest.sofascore.stats_dataset import load_match_stats_history
 
 SOFASCORE_FEATURE_NAMES = [
     "sofa_xg_for_diff_last5",

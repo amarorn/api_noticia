@@ -43,6 +43,12 @@ export const navGroups: NavGroup[] = [
         description: "Tabela oficial",
       },
       {
+        to: "/amistosos",
+        label: "Amistosos",
+        Icon: IconCalendar,
+        description: "Datas preparatórias",
+      },
+      {
         to: "/grupos",
         label: "Grupos",
         Icon: IconTrophy,

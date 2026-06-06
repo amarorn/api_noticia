@@ -2,8 +2,10 @@ import type { IWcRepository } from "@/domain/repositories";
 import type {
   SofascoreResolvedEvent,
   WcCornersPrediction,
+  WcFriendlies,
   WcGroupStandings,
   WcPrediction,
+  WcSimulation,
   WcRound,
   WcSchedule,
   WcSquadDetail,
@@ -96,5 +98,32 @@ export class GetWcGroupStandingsUseCase {
 
   execute(): Promise<WcGroupStandings> {
     return this.repository.getGroupStandings();
+  }
+}
+
+export class GetWcFriendliesUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    team: string;
+    includeFinished?: boolean;
+    includeUpcoming?: boolean;
+  }): Promise<WcFriendlies> {
+    return this.repository.getFriendlies(dto);
+  }
+}
+
+export class SimulateWcMatchUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    phase: string;
+    matchDate?: string;
+    fifaMatchId?: string;
+    sofascoreEventId?: number;
+  }): Promise<WcSimulation> {
+    return this.repository.simulateMatch(dto);
   }
 }

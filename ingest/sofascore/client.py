@@ -86,6 +86,18 @@ class SofascoreClient:
     def event_incidents(self, event_id: int) -> dict[str, Any]:
         return self.get_json(f"event/{event_id}/incidents")
 
+    def event_pregame_form(self, event_id: int) -> dict[str, Any]:
+        """Forma pré-jogo: posição, pontos, avgRating, sequência de resultados."""
+        return self.get_json(f"event/{event_id}/pregame-form")
+
+    def event_team_streaks(self, event_id: int) -> dict[str, Any]:
+        """Séries do time: invencibilidade, vitórias seguidas, etc."""
+        return self.get_json(f"event/{event_id}/team-streaks")
+
+    def event_h2h(self, event_id: int) -> dict[str, Any]:
+        """Histórico direto (head-to-head) entre os dois times."""
+        return self.get_json(f"event/{event_id}/h2h")
+
     def search_team(self, query: str) -> dict[str, Any] | None:
         data = self.get_json("search/teams", params={"q": query})
         for item in data.get("results") or []:
@@ -99,5 +111,19 @@ class SofascoreClient:
         return list(data.get("seasons") or [])
 
     def team_recent_events(self, team_id: int, page: int = 0) -> list[dict[str, Any]]:
-        data = self.get_json(f"team/{team_id}/events/last/{page}")
+        try:
+            data = self.get_json(f"team/{team_id}/events/last/{page}")
+        except SofascoreClientError as exc:
+            if "HTTP 404" in str(exc):
+                return []
+            raise
+        return list(data.get("events") or [])
+
+    def team_upcoming_events(self, team_id: int, page: int = 0) -> list[dict[str, Any]]:
+        try:
+            data = self.get_json(f"team/{team_id}/events/next/{page}")
+        except SofascoreClientError as exc:
+            if "HTTP 404" in str(exc):
+                return []
+            raise
         return list(data.get("events") or [])

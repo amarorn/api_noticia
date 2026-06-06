@@ -144,7 +144,18 @@ def save_wc_fixtures(matches: list[MatchResult]) -> Path | None:
     return out_path
 
 
-def load_wc_fixtures(seasons: list[int] | None = None) -> pd.DataFrame:
+def load_wc_fixtures(
+    seasons: list[int] | None = None,
+    *,
+    include_fifa: bool = True,
+) -> pd.DataFrame:
+    """Carrega fixtures de Copa do Mundo, opcionalmente incluindo jogos FIFA.
+
+    Args:
+        seasons: Filtra por temporadas específicas. Se None, carrega todas.
+        include_fifa: Se True, concatena jogos da janela FIFA (amistosos,
+            eliminatórias, etc.) além dos jogos de Copa do Mundo.
+    """
     from ingest.gcp.lake_store import cloud_lake_enabled, read_layer_snapshot
 
     if cloud_lake_enabled():
@@ -156,21 +167,39 @@ def load_wc_fixtures(seasons: list[int] | None = None) -> pd.DataFrame:
         return df
 
     root = settings.fixtures_path
-    if not root.exists():
-        return pd.DataFrame()
+    frames: list[pd.DataFrame] = []
 
-    if seasons:
-        frames = []
-        for season in seasons:
-            path = root / f"world_cup_{season}.parquet"
-            if path.exists():
-                frames.append(pd.read_parquet(path))
-        return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    if root.exists():
+        if seasons:
+            for season in seasons:
+                path = root / f"world_cup_{season}.parquet"
+                if path.exists():
+                    frames.append(pd.read_parquet(path))
+        else:
+            files = sorted(root.glob("world_cup_*.parquet"))
+            for f in files:
+                frames.append(pd.read_parquet(f))
 
-    files = sorted(root.glob("world_cup_*.parquet"))
-    if not files:
+    if include_fifa:
+        from ingest.fifa.fixtures_importer import load_fifa_fixtures
+
+        fifa_df = load_fifa_fixtures()
+        if not fifa_df.empty:
+            if seasons and "season" in fifa_df.columns:
+                fifa_df = fifa_df[fifa_df["season"].isin(seasons)].reset_index(drop=True)
+            frames.append(fifa_df)
+
+        from ingest.sofascore.fixtures_importer import load_sofascore_fixtures
+
+        sofa_df = load_sofascore_fixtures()
+        if not sofa_df.empty:
+            if seasons and "season" in sofa_df.columns:
+                sofa_df = sofa_df[sofa_df["season"].isin(seasons)].reset_index(drop=True)
+            frames.append(sofa_df)
+
+    if not frames:
         return pd.DataFrame()
-    return pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+    return pd.concat(frames, ignore_index=True)
 
 
 async def import_wc_seasons(

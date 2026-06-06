@@ -6,7 +6,6 @@ from typing import Any
 import pandas as pd
 import structlog
 
-from config import settings
 from ingest.sofascore.client import SofascoreClient, SofascoreClientError
 from ingest.sofascore.stats_dataset import load_match_stats_history, stats_training_summary
 from ingest.sofascore.stats_ingest import ingest_match_stats

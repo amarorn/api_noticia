@@ -3,8 +3,18 @@ from __future__ import annotations
 from typing import Any
 
 from ingest.sofascore.kxl_sofascore_ingest import build_kxl_sofascore_payload
+from pipelines.wc_kxl_fept import fept_players_for_side
 from schemas.national_teams import normalize_national_team
-from schemas.wc_kxl_dynamic import WcKxlMatchInput, WcKxlPartida
+from schemas.wc_kxl_dynamic import FeptJogador, WcKxlMatchInput, WcKxlPartida
+
+
+def _serialize_fept_player(player: FeptJogador) -> dict[str, Any]:
+    return {
+        "name": player.nome,
+        "position": player.posicao,
+        "line": player.linha,
+        "sofascore_rating": player.nota_sofascore,
+    }
 
 
 def _merge_meta(result, *, auto_merged: bool, note: str | None = None) -> dict[str, Any]:
@@ -15,6 +25,12 @@ def _merge_meta(result, *, auto_merged: bool, note: str | None = None) -> dict[s
         "ratings_missing": result.ratings_missing,
         "esquema_mandante": result.fept.esquema_mandante,
         "esquema_visitante": result.fept.esquema_visitante,
+        "home_players": [
+            _serialize_fept_player(player) for player in fept_players_for_side(result.fept, True)
+        ],
+        "away_players": [
+            _serialize_fept_player(player) for player in fept_players_for_side(result.fept, False)
+        ],
         "absences_home": result.absences_home,
         "absences_away": result.absences_away,
         "auto_merged": auto_merged,

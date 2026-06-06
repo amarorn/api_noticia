@@ -7,7 +7,6 @@ import structlog
 
 from config import settings
 from ingest.gcp.medallion import (
-    GCS_LAYER_PREFIX,
     MEDALLION_TABLES,
     SYNC_LAYER_ORDER,
     gcs_snapshot_blob,
@@ -15,7 +14,7 @@ from ingest.gcp.medallion import (
 )
 from ingest.gcp.lake_frames import load_layer_dataframe, prepare_dataframe_for_bq
 from ingest.sofascore.bronze_dataset import load_bronze_sofascore_events
-from ingest.sofascore.paths import MATCH_STATS_PARQUET
+from ingest.sofascore.paths import MATCH_ENRICH_PARQUET, MATCH_STATS_PARQUET
 from pipelines.wc_sofascore_features import build_gold_wc_match_features_df
 
 logger = structlog.get_logger()
@@ -210,6 +209,10 @@ def _layer_local_parquets(layer: str) -> list[Path]:
     }
     if layer == "silver_sofascore":
         path = settings.sofascore_stats_dir / MATCH_STATS_PARQUET
+        return [path] if path.is_file() else []
+
+    if layer == "silver_sofascore_enrich":
+        path = settings.sofascore_enrich_dir / MATCH_ENRICH_PARQUET
         return [path] if path.is_file() else []
 
     local_dir = layer_paths.get(layer)

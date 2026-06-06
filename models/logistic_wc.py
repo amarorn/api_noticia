@@ -13,6 +13,7 @@ from pipelines.wc_stats import (
     FEATURE_NAMES,
     build_match_features,
     features_to_vector,
+    precompute_elo_timeline,
 )
 from schemas.models import BolaoLabel
 
@@ -50,6 +51,9 @@ class WcLogisticModel:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = df[df["season"] != holdout_season] if holdout_season else df
 
+        # Pré-computa timeline Elo para evitar recalcular do zero a cada jogo
+        elo_timeline = precompute_elo_timeline(df)
+
         x_rows: list[list[float]] = []
         y_rows: list[str] = []
         train_total = len(train_df)
@@ -66,6 +70,7 @@ class WcLogisticModel:
                 is_neutral=bool(row.get("is_neutral", True)),
                 season=int(row["season"]),
                 group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
+                elo_timeline=elo_timeline,
             )
             x_rows.append(features_to_vector(feats, before_date=before))
             y_rows.append(row["label"])

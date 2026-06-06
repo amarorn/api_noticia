@@ -290,6 +290,16 @@ class WcPredictRequest(BaseModel):
     home_team: str = Field(..., examples=["Brasil"])
     away_team: str = Field(..., examples=["Marrocos"])
     phase: str = Field("group", examples=["group"])
+    match_date: str | None = Field(
+        None,
+        description="Data do confronto (ISO); usada em /simulate e busca Sofascore",
+        examples=["2026-06-06"],
+    )
+    fifa_match_id: str | None = Field(
+        None,
+        description="IdMatch FIFA; evita busca na janela quando conhecido",
+        examples=["400123456"],
+    )
     sofascore_event_id: int | None = Field(
         None,
         description="ID do evento Sofascore; preenche FEPT automaticamente se kxl_match.fept ausente",
@@ -344,6 +354,55 @@ class WcPredictionResponse(BaseModel):
     model_breakdown: WcModelBreakdown
 
 
+class WcSimulationScore(BaseModel):
+    score: str
+    prob: float
+
+
+class WcSimulationScenario(BaseModel):
+    name: str
+    description: str
+    prob: float
+
+
+class WcSimulationResponse(BaseModel):
+    home_team: str
+    away_team: str
+    match_date: str | None
+    prediction: str
+    confidence: float
+    prob_home: float
+    prob_draw: float
+    prob_away: float
+
+    # Dados reais da FIFA
+    fifa_home_lineup: list[dict[str, Any]] | None = None
+    fifa_away_lineup: list[dict[str, Any]] | None = None
+    fifa_home_bench: list[dict[str, Any]] | None = None
+    fifa_away_bench: list[dict[str, Any]] | None = None
+    fifa_home_goals: list[dict[str, Any]] | None = None
+    fifa_away_goals: list[dict[str, Any]] | None = None
+    fifa_home_tactics: str | None = None
+    fifa_away_tactics: str | None = None
+    fifa_home_coach: str | None = None
+    fifa_away_coach: str | None = None
+    fifa_stadium: str | None = None
+    fifa_attendance: int | None = None
+    fifa_home_points: float | None = None
+    fifa_away_points: float | None = None
+    fifa_points_diff: float | None = None
+    lineup_source: str | None = Field(
+        None,
+        description="Origem das escalações exibidas: fifa ou sofascore",
+    )
+
+    # Dados enriquecidos
+    enrich_features: dict[str, Any] | None = None
+    stats_features: dict[str, Any] | None = None
+    model_breakdown: dict[str, Any]
+    warnings: list[str]
+
+
 class WcRoundResponse(BaseModel):
     season: int
     competition: str
@@ -381,6 +440,28 @@ class WcGroupStandingsResponse(BaseModel):
 class WcTeamsResponse(BaseModel):
     teams: list[str]
     count: int
+
+
+class WcFriendlyItem(BaseModel):
+    event_id: int | None = None
+    fifa_match_id: str | None = None
+    sources: list[str] = Field(default_factory=lambda: ["sofascore"])
+    home_team: str
+    away_team: str
+    match_date: str | None = None
+    status: str
+    home_score: int | None = None
+    away_score: int | None = None
+    tournament: str
+    is_home: bool
+
+
+class WcFriendliesResponse(BaseModel):
+    team: str
+    year: int
+    count: int
+    friendlies: list[WcFriendlyItem]
+    source: str = "sofascore+fifa"
 
 
 class WcScheduleGroup(BaseModel):
@@ -735,6 +816,7 @@ def root():
             "/worldcup/squads",
             "/worldcup/squads/{team}",
             "/worldcup/teams",
+            "/worldcup/friendlies",
             "/worldcup/value/live",
             "/worldcup/editions",
             "/worldcup/editions/{season}/matches",
@@ -1007,7 +1089,7 @@ def worldcup_sofascore_resolve(
     from datetime import date as date_type
 
     from ingest.sofascore.client import SofascoreClient, SofascoreClientError
-    from ingest.sofascore.fept_ingest import find_event_id
+    from ingest.sofascore.event_helpers import find_event_id
     from ingest.sofascore.teams import event_team_names
 
     home = normalize_national_team(home_team)
@@ -1051,7 +1133,7 @@ def worldcup_sofascore_statistics(
 ):
     from datetime import datetime, timezone
 
-    from ingest.sofascore.client import SofascoreClient, SofascoreClientError
+    from ingest.sofascore.client import SofascoreClientError
     from ingest.sofascore.stats_ingest import ingest_match_stats, load_match_stats
 
     if not refresh:
@@ -1196,6 +1278,82 @@ def worldcup_predict(req: WcPredictRequest):
     return response
 
 
+@app.post("/worldcup/simulate", response_model=WcSimulationResponse)
+def worldcup_simulate(req: WcPredictRequest):
+    """Analisa um confronto entre duas seleções com dados reais da FIFA.
+
+    Diferente de /worldcup/predict, este endpoint:
+    - Busca escalações oficiais da FIFA (se jogo constar na janela atual)
+    - Busca pontos FIFA ao vivo (atualizados a cada jogo)
+    - Busca dados enriquecidos do Sofascore (forma, séries, H2H)
+    - Retorna predição dos modelos + dados brutos reais
+    """
+    from models.wc_match_simulator import simulate_match
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError:
+        predictor = None
+
+    from datetime import date as date_type
+
+    home = normalize_national_team(req.home_team)
+    away = normalize_national_team(req.away_team)
+    parsed_date: date_type | None = None
+    if req.match_date:
+        try:
+            parsed_date = date_type.fromisoformat(req.match_date[:10])
+        except ValueError:
+            raise HTTPException(status_code=400, detail="match_date inválida") from None
+
+    try:
+        result = simulate_match(
+            home_team=home,
+            away_team=away,
+            match_date=parsed_date,
+            phase=req.phase,
+            is_neutral=True,
+            season=2026,
+            group_name=lookup_2026_group(home, away) if req.phase == "group" else None,
+            predictor=predictor,
+            fifa_match_id=req.fifa_match_id,
+            sofascore_event_id=req.sofascore_event_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return WcSimulationResponse(
+        home_team=result.home_team,
+        away_team=result.away_team,
+        match_date=result.match_date,
+        prediction=result.prediction,
+        confidence=result.confidence,
+        prob_home=result.prob_home,
+        prob_draw=result.prob_draw,
+        prob_away=result.prob_away,
+        fifa_home_lineup=result.fifa_home_lineup,
+        fifa_away_lineup=result.fifa_away_lineup,
+        fifa_home_bench=result.fifa_home_bench,
+        fifa_away_bench=result.fifa_away_bench,
+        fifa_home_goals=result.fifa_home_goals,
+        fifa_away_goals=result.fifa_away_goals,
+        fifa_home_tactics=result.fifa_home_tactics,
+        fifa_away_tactics=result.fifa_away_tactics,
+        fifa_home_coach=result.fifa_home_coach,
+        fifa_away_coach=result.fifa_away_coach,
+        fifa_stadium=result.fifa_stadium,
+        fifa_attendance=result.fifa_attendance,
+        fifa_home_points=result.fifa_home_points,
+        fifa_away_points=result.fifa_away_points,
+        fifa_points_diff=result.fifa_points_diff,
+        lineup_source=result.lineup_source,
+        enrich_features=result.enrich_features,
+        stats_features=result.stats_features,
+        model_breakdown=result.model_breakdown,
+        warnings=result.warnings,
+    )
+
+
 def _build_wc_round_predictions(
     predictor: "WcPredictor",
     round_data: dict,
@@ -1332,6 +1490,54 @@ def worldcup_teams():
 
     sorted_teams = sorted(teams, key=str.casefold)
     return WcTeamsResponse(teams=sorted_teams, count=len(sorted_teams))
+
+
+@app.get("/worldcup/friendlies", response_model=WcFriendliesResponse)
+def worldcup_friendlies(
+    team: str = Query(..., description="Seleção (nome canônico em português)"),
+    pages: int = Query(2, ge=1, le=5, description="Páginas de histórico Sofascore por seleção"),
+    year: int | None = Query(
+        None,
+        ge=2000,
+        le=2100,
+        description="Ano do calendário; padrão: ano corrente (UTC)",
+    ),
+    include_finished: bool = Query(True, description="Incluir amistosos já disputados"),
+    include_upcoming: bool = Query(True, description="Incluir amistosos futuros/agendados"),
+):
+    from datetime import datetime, timezone
+
+    from ingest.sofascore.client import SofascoreClient, SofascoreClientError
+    from ingest.sofascore.friendlies import list_team_friendlies, save_friendlies_snapshot
+
+    canonical = normalize_national_team(team)
+    filter_year = year if year is not None else datetime.now(timezone.utc).year
+    try:
+        friendlies = list_team_friendlies(
+            canonical,
+            pages=pages,
+            year=filter_year,
+            include_finished=include_finished,
+            include_upcoming=include_upcoming,
+            client=SofascoreClient(),
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SofascoreClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    try:
+        save_friendlies_snapshot(canonical, filter_year, friendlies)
+    except OSError:
+        pass
+
+    items = [WcFriendlyItem(**row.to_dict()) for row in friendlies]
+    return WcFriendliesResponse(
+        team=canonical,
+        year=filter_year,
+        count=len(items),
+        friendlies=items,
+    )
 
 
 @app.get("/worldcup/schedule", response_model=WcScheduleResponse)

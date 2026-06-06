@@ -7,7 +7,7 @@ import pandas as pd
 import structlog
 
 from config import settings
-from ingest.gcp.medallion import GCS_LAYER_PREFIX, MEDALLION_TABLES, gcs_snapshot_blob
+from ingest.gcp.medallion import MEDALLION_TABLES, gcs_snapshot_blob
 from ingest.gcp.sync import (
     _ensure_adc,
     load_parquet_to_bigquery,
@@ -15,7 +15,7 @@ from ingest.gcp.sync import (
     upload_parquet_file,
 )
 from ingest.gcp.lake_frames import prepare_dataframe_for_bq
-from ingest.sofascore.paths import MATCH_STATS_PARQUET
+from ingest.sofascore.paths import MATCH_ENRICH_PARQUET, MATCH_STATS_PARQUET
 
 logger = structlog.get_logger()
 
@@ -24,6 +24,7 @@ LAYER_SNAPSHOT_FILES: dict[str, str] = {
     "silver": "articles.parquet",
     "gold": "articles.parquet",
     "silver_sofascore": MATCH_STATS_PARQUET,
+    "silver_sofascore_enrich": MATCH_ENRICH_PARQUET,
     "silver_fixtures": "world_cup_fixtures.parquet",
     "bronze_sofascore": "events.parquet",
     "gold_wc": "match_features.parquet",

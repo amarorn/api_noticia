@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 
@@ -15,7 +15,7 @@ from ingest.sofascore.event_helpers import (
     find_event_id,
     resolve_match_date,
 )
-from ingest.sofascore.fept_mapper import map_lineups_to_fept
+from ingest.sofascore.fept_mapper import map_lineups_bench, map_lineups_to_fept
 from ingest.sofascore.teams import event_team_names, load_team_map, sides_for_event
 from schemas.national_teams import normalize_national_team
 from schemas.wc_kxl_dynamic import (
@@ -42,6 +42,8 @@ class KxlSofascoreIngestResult:
     ratings_missing: int
     absences_home: int
     absences_away: int
+    home_bench: list[dict[str, Any]] = field(default_factory=list)
+    away_bench: list[dict[str, Any]] = field(default_factory=list)
     source: str = "sofascore"
 
     def to_payload(self) -> dict[str, Any]:
@@ -84,6 +86,8 @@ class KxlSofascoreIngestResult:
             fept=self.fept,
             ratings_found=self.ratings_found,
             ratings_missing=self.ratings_missing,
+            home_bench=self.home_bench,
+            away_bench=self.away_bench,
         )
 
 
@@ -147,6 +151,12 @@ def build_kxl_sofascore_payload(
         fetch_statistics=fetch_statistics,
         rating_cache=rating_cache,
     )
+    home_bench, away_bench = map_lineups_bench(
+        lineups,
+        home_is_event_home=home_is_event_home,
+        fetch_statistics=fetch_statistics,
+        rating_cache=rating_cache,
+    )
     fede = map_lineups_to_fede(
         lineups,
         home_is_event_home=home_is_event_home,
@@ -176,6 +186,8 @@ def build_kxl_sofascore_payload(
         event_id=event_id,
         match_date=resolved_date,
         fept=fept,
+        home_bench=home_bench,
+        away_bench=away_bench,
         fede=fede,
         feju=feju,
         ratings_found=found,

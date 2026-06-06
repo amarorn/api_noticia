@@ -154,6 +154,60 @@ def map_side_to_structured(
     )
 
 
+def map_side_bench_players(
+    side_block: dict[str, Any],
+    *,
+    rating_cache: dict[int, float | None],
+    fetch_statistics,
+) -> list[dict[str, Any]]:
+    """Reservas do jogo (substitute=true) com nota quando disponível."""
+    bench: list[dict[str, Any]] = []
+    for entry in side_block.get("players") or []:
+        if entry.get("substitute") is not True:
+            continue
+        player = entry.get("player") or {}
+        position = entry.get("position") or player.get("position")
+        rating = resolve_player_rating(
+            entry,
+            rating_cache=rating_cache,
+            fetch_statistics=fetch_statistics,
+        )
+        payload = _player_payload(entry, rating)
+        payload["linha"] = _line_from_position(position)
+        bench.append(payload)
+    return bench
+
+
+def map_lineups_bench(
+    lineups: dict[str, Any],
+    *,
+    home_is_event_home: bool,
+    fetch_statistics,
+    rating_cache: dict[int, float | None] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    cache = rating_cache if rating_cache is not None else {}
+    home_block = lineups.get("home") or {}
+    away_block = lineups.get("away") or {}
+
+    if home_is_event_home:
+        mandante_block, visitante_block = home_block, away_block
+    else:
+        mandante_block, visitante_block = away_block, home_block
+
+    return (
+        map_side_bench_players(
+            mandante_block,
+            rating_cache=cache,
+            fetch_statistics=fetch_statistics,
+        ),
+        map_side_bench_players(
+            visitante_block,
+            rating_cache=cache,
+            fetch_statistics=fetch_statistics,
+        ),
+    )
+
+
 def map_lineups_to_fept(
     lineups: dict[str, Any],
     *,

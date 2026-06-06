@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from pipelines.news_feed import (
-    MAX_NEWS_ALL,
     build_news_all,
     build_news_cards,
     build_news_feed,

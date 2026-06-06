@@ -12,7 +12,6 @@ from models.poisson_corners import (
     corner_model_factors,
     predict_corners,
 )
-from pipelines.wc_stats import build_match_features
 
 
 def _sample_corners_df() -> pd.DataFrame:

@@ -4,6 +4,7 @@ import type {
   KxlBaselineBreakdown,
   KxlCollisionBreakdown,
   KxlFeptMeta,
+  KxlFeptPlayer,
   KxlLethalityBreakdown,
   KxlTeamSnapshot,
   ModelBreakdown,
@@ -21,6 +22,10 @@ import type {
   WcSquadsIndex,
   WcGroupStandings,
   WcArtifactHealth,
+  WcFriendlies,
+  WcFriendlyMatch,
+  WcSimulation,
+  WcSimulationLineupPlayer,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -79,6 +84,18 @@ export interface ApiModelBreakdown {
     referee?: string | null;
     referee_profile?: string | null;
     referee_cards_per_game?: number | null;
+    home_players?: Array<{
+      name: string;
+      position?: string | null;
+      line?: string | null;
+      sofascore_rating?: number | null;
+    }>;
+    away_players?: Array<{
+      name: string;
+      position?: string | null;
+      line?: string | null;
+      sofascore_rating?: number | null;
+    }>;
     auto_merged: boolean;
     note?: string | null;
   } | null;
@@ -268,6 +285,20 @@ function mapKxlCollision(raw: ApiModelBreakdown["kxl_collision"]): KxlCollisionB
   };
 }
 
+function mapKxlFeptPlayer(raw: {
+  name: string;
+  position?: string | null;
+  line?: string | null;
+  sofascore_rating?: number | null;
+}): KxlFeptPlayer {
+  return {
+    name: raw.name,
+    position: raw.position ?? null,
+    line: raw.line ?? null,
+    sofascoreRating: raw.sofascore_rating ?? null,
+  };
+}
+
 function mapKxlFept(raw: ApiModelBreakdown["kxl_fept"]): KxlFeptMeta | null {
   if (!raw) return null;
   return {
@@ -277,6 +308,8 @@ function mapKxlFept(raw: ApiModelBreakdown["kxl_fept"]): KxlFeptMeta | null {
     ratingsMissing: raw.ratings_missing,
     esquemaMandante: raw.esquema_mandante ?? null,
     esquemaVisitante: raw.esquema_visitante ?? null,
+    homePlayers: raw.home_players?.map(mapKxlFeptPlayer),
+    awayPlayers: raw.away_players?.map(mapKxlFeptPlayer),
     absencesHome: raw.absences_home,
     absencesAway: raw.absences_away,
     referee: raw.referee ?? null,
@@ -454,6 +487,134 @@ function mapWcScheduleMatch(raw: ApiWcScheduleMatch): WcScheduleMatch {
     kickoff: raw.kickoff,
     venue: raw.venue,
     city: raw.city,
+  };
+}
+
+interface ApiWcFriendlyItem {
+  event_id: number | null;
+  fifa_match_id: string | null;
+  sources: string[];
+  home_team: string;
+  away_team: string;
+  match_date: string | null;
+  status: string;
+  home_score: number | null;
+  away_score: number | null;
+  tournament: string;
+  is_home: boolean;
+}
+
+interface ApiWcFriendlies {
+  team: string;
+  year: number;
+  count: number;
+  friendlies: ApiWcFriendlyItem[];
+  source: string;
+}
+
+function mapWcFriendlyMatch(raw: ApiWcFriendlyItem): WcFriendlyMatch {
+  return {
+    eventId: raw.event_id,
+    fifaMatchId: raw.fifa_match_id,
+    sources: raw.sources ?? ["sofascore"],
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    matchDate: raw.match_date,
+    status: raw.status,
+    homeScore: raw.home_score,
+    awayScore: raw.away_score,
+    tournament: raw.tournament,
+    isHome: raw.is_home,
+  };
+}
+
+export function mapWcFriendlies(raw: ApiWcFriendlies): WcFriendlies {
+  return {
+    team: raw.team,
+    year: raw.year,
+    count: raw.count,
+    friendlies: raw.friendlies.map(mapWcFriendlyMatch),
+    source: raw.source,
+  };
+}
+
+interface ApiWcSimulationLineupPlayer {
+  name: string;
+  shirt_number: number | null;
+  position: string | null;
+  line?: string | null;
+  is_captain?: boolean;
+  is_starter?: boolean;
+  picture_url: string | null;
+  sofascore_rating?: number | null;
+  yellow_cards?: number;
+  red_cards?: number;
+}
+
+interface ApiWcSimulation {
+  home_team: string;
+  away_team: string;
+  match_date: string | null;
+  prediction: string;
+  confidence: number;
+  prob_home: number;
+  prob_draw: number;
+  prob_away: number;
+  fifa_home_lineup: ApiWcSimulationLineupPlayer[] | null;
+  fifa_away_lineup: ApiWcSimulationLineupPlayer[] | null;
+  fifa_home_bench?: ApiWcSimulationLineupPlayer[] | null;
+  fifa_away_bench?: ApiWcSimulationLineupPlayer[] | null;
+  fifa_home_tactics: string | null;
+  fifa_away_tactics: string | null;
+  fifa_home_coach: string | null;
+  fifa_away_coach: string | null;
+  fifa_stadium: string | null;
+  fifa_home_points: number | null;
+  fifa_away_points: number | null;
+  fifa_points_diff: number | null;
+  lineup_source: string | null;
+  warnings: string[];
+}
+
+function mapWcSimulationLineupPlayer(raw: ApiWcSimulationLineupPlayer): WcSimulationLineupPlayer {
+  return {
+    name: raw.name,
+    shirtNumber: raw.shirt_number,
+    position: raw.position,
+    line: raw.line ?? null,
+    isCaptain: raw.is_captain ?? false,
+    pictureUrl: raw.picture_url,
+    sofascoreRating: raw.sofascore_rating ?? null,
+    yellowCards: raw.yellow_cards ?? 0,
+    redCards: raw.red_cards ?? 0,
+    isStarter: raw.is_starter ?? true,
+  };
+}
+
+export function mapWcSimulation(raw: ApiWcSimulation): WcSimulation {
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    matchDate: raw.match_date,
+    prediction: mapOutcome(raw.prediction),
+    confidence: raw.confidence,
+    probHome: raw.prob_home,
+    probDraw: raw.prob_draw,
+    probAway: raw.prob_away,
+    fifaHomeLineup: raw.fifa_home_lineup?.map(mapWcSimulationLineupPlayer) ?? null,
+    fifaAwayLineup: raw.fifa_away_lineup?.map(mapWcSimulationLineupPlayer) ?? null,
+    fifaHomeBench: raw.fifa_home_bench?.map(mapWcSimulationLineupPlayer) ?? null,
+    fifaAwayBench: raw.fifa_away_bench?.map(mapWcSimulationLineupPlayer) ?? null,
+    fifaHomeTactics: raw.fifa_home_tactics,
+    fifaAwayTactics: raw.fifa_away_tactics,
+    fifaHomeCoach: raw.fifa_home_coach,
+    fifaAwayCoach: raw.fifa_away_coach,
+    fifaStadium: raw.fifa_stadium,
+    fifaHomePoints: raw.fifa_home_points,
+    fifaAwayPoints: raw.fifa_away_points,
+    fifaPointsDiff: raw.fifa_points_diff,
+    lineupSource: raw.lineup_source,
+    warnings: raw.warnings ?? [],
   };
 }
 

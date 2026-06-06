@@ -16,6 +16,8 @@ import {
   mapWcSquadDetail,
   mapWcSquadsIndex,
   mapWcGroupStandings,
+  mapWcFriendlies,
+  mapWcSimulation,
 } from "../mappers";
 
 export class WcApiRepository implements IWcRepository {
@@ -114,6 +116,48 @@ export class WcApiRepository implements IWcRepository {
       "/worldcup/group-standings",
     );
     return mapWcGroupStandings(raw);
+  }
+
+  async getFriendlies(dto: {
+    team: string;
+    includeFinished?: boolean;
+    includeUpcoming?: boolean;
+  }) {
+    const params = new URLSearchParams({ team: dto.team });
+    if (dto.includeFinished === false) {
+      params.set("include_finished", "false");
+    }
+    if (dto.includeUpcoming === false) {
+      params.set("include_upcoming", "false");
+    }
+    const raw = await apiFetch<Parameters<typeof mapWcFriendlies>[0]>(
+      `/worldcup/friendlies?${params}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapWcFriendlies(raw);
+  }
+
+  async simulateMatch(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    phase: string;
+    matchDate?: string;
+    fifaMatchId?: string;
+    sofascoreEventId?: number;
+  }) {
+    const raw = await apiFetch<Parameters<typeof mapWcSimulation>[0]>("/worldcup/simulate", {
+      method: "POST",
+      timeoutMs: API_SYNC_TIMEOUT_MS,
+      body: JSON.stringify({
+        home_team: dto.homeTeam,
+        away_team: dto.awayTeam,
+        phase: dto.phase,
+        ...(dto.matchDate ? { match_date: dto.matchDate } : {}),
+        ...(dto.fifaMatchId ? { fifa_match_id: dto.fifaMatchId } : {}),
+        ...(dto.sofascoreEventId != null ? { sofascore_event_id: dto.sofascoreEventId } : {}),
+      }),
+    });
+    return mapWcSimulation(raw);
   }
 }
 

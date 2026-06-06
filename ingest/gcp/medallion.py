@@ -5,6 +5,7 @@ MEDALLION_TABLES: dict[str, str] = {
     "bronze_sofascore": "bronze_sofascore_events",
     "silver": "silver_articles",
     "silver_sofascore": "silver_sofascore_match_stats",
+    "silver_sofascore_enrich": "silver_sofascore_match_enrich",
     "silver_fixtures": "silver_fixtures_results",
     "gold": "gold_bolao_context",
     "gold_wc": "gold_wc_match_features",
@@ -12,6 +13,7 @@ MEDALLION_TABLES: dict[str, str] = {
 
 LAYER_ALIASES: dict[str, str] = {
     "sofascore": "silver_sofascore",
+    "sofascore_enrich": "silver_sofascore_enrich",
     "fixtures": "silver_fixtures",
 }
 
@@ -20,6 +22,7 @@ SYNC_LAYER_ORDER: list[str] = [
     "bronze_sofascore",
     "silver",
     "silver_sofascore",
+    "silver_sofascore_enrich",
     "silver_fixtures",
     "gold",
     "gold_wc",
@@ -36,6 +39,7 @@ GCS_LAYER_PREFIX: dict[str, str] = {
     "bronze_sofascore": "lake/bronze/sofascore",
     "silver": "lake/silver/articles",
     "silver_sofascore": "lake/silver/sofascore",
+    "silver_sofascore_enrich": "lake/silver/sofascore_enrich",
     "silver_fixtures": "lake/silver/fixtures",
     "gold": "lake/gold/bolao",
     "gold_wc": "lake/gold/wc",

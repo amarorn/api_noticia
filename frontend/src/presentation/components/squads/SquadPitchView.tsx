@@ -1,7 +1,14 @@
 import { useMemo } from "react";
-import type { WcSquad } from "@/domain/entities";
+import type { WcSimulationLineupPlayer, WcSquad } from "@/domain/entities";
 import { assignSquadNumbers } from "@/presentation/utils/playerPortrait";
+import { placeStartersOnPitch } from "@/presentation/utils/pitchPlacement";
+import {
+  isPlayerInMatchLineup,
+  type PlayerMatchStats,
+} from "@/presentation/utils/playerMatchStats";
+import { PitchField } from "./PitchField";
 import { PlayerPitchToken, type PitchPlayer } from "./PlayerPitchToken";
+import { ReserveBenchPanel } from "./ReserveBenchPanel";
 
 const LINE_Y: Record<string, number[]> = {
   GK: [88],
@@ -32,39 +39,73 @@ function distributeRow(count: number): number[] {
   return Array.from({ length: count }, (_, i) => margin + (i / (count - 1)) * span);
 }
 
-function placeSection(
-  players: PitchPlayer[],
-  position: string,
-  startIndex: number,
-): { placed: PlacedPlayer[]; nextIndex: number } {
+function placeSection(players: PitchPlayer[], position: string): PlacedPlayer[] {
   const yLines = LINE_Y[position] ?? [50];
   const perRow = Math.ceil(players.length / yLines.length);
   const placed: PlacedPlayer[] = [];
-  let idx = 0;
 
   yLines.forEach((y, rowIdx) => {
     const rowPlayers = players.slice(rowIdx * perRow, (rowIdx + 1) * perRow);
     const xs = distributeRow(rowPlayers.length);
     rowPlayers.forEach((player, i) => {
       placed.push({ ...player, x: xs[i] ?? 50, y });
-      idx += 1;
     });
   });
 
-  return { placed, nextIndex: startIndex + idx };
+  return placed;
 }
 
 interface SquadPitchViewProps {
   squad: WcSquad;
   teamColor: string;
+  matchStatsLookup?: Map<string, PlayerMatchStats>;
+  matchLineup?: WcSimulationLineupPlayer[] | null;
+  matchFormation?: string | null;
 }
 
-export function SquadPitchView({ squad, teamColor }: SquadPitchViewProps) {
-  const { placedPlayers, sections } = useMemo(() => {
-    const { sections: numbered } = assignSquadNumbers(squad);
-    const allPlaced: PlacedPlayer[] = [];
-    let animIndex = 0;
+export function SquadPitchView({
+  squad,
+  teamColor,
+  matchStatsLookup,
+  matchLineup,
+  matchFormation,
+}: SquadPitchViewProps) {
+  const lineupMode = Boolean(matchLineup && matchLineup.length > 0);
 
+  const { fieldPlayers, reservePlayers, sections, formationLabel } = useMemo(() => {
+    const { sections: numbered } = assignSquadNumbers(squad);
+
+    if (lineupMode && matchLineup) {
+      const startersOnField = placeStartersOnPitch(matchLineup, matchFormation ?? null);
+      const reserves: PitchPlayer[] = [];
+
+      for (const section of numbered) {
+        for (const player of section.players) {
+          if (isPlayerInMatchLineup(player.name, matchStatsLookup)) continue;
+          reserves.push({
+            name: player.name,
+            club: player.club,
+            number: player.number,
+            position: section.position,
+            isStarter: false,
+          });
+        }
+      }
+
+      return {
+        fieldPlayers: startersOnField,
+        reservePlayers: reserves,
+        sections: numbered.map((section) => ({
+          position: section.position,
+          role: section.role,
+          color: POSITION_COLOR[section.position] ?? "#64748b",
+          count: section.players.length,
+        })),
+        formationLabel: matchFormation,
+      };
+    }
+
+    const allPlaced: PlacedPlayer[] = [];
     const sectionMeta = numbered.map((section) => {
       const players: PitchPlayer[] = section.players.map((p) => ({
         name: p.name,
@@ -72,11 +113,8 @@ export function SquadPitchView({ squad, teamColor }: SquadPitchViewProps) {
         number: p.number,
         position: section.position,
       }));
-
-      const { placed, nextIndex } = placeSection(players, section.position, animIndex);
-      animIndex = nextIndex;
+      const placed = placeSection(players, section.position);
       allPlaced.push(...placed);
-
       return {
         position: section.position,
         role: section.role,
@@ -85,72 +123,69 @@ export function SquadPitchView({ squad, teamColor }: SquadPitchViewProps) {
       };
     });
 
-    return { placedPlayers: allPlaced, sections: sectionMeta };
-  }, [squad]);
+    return {
+      fieldPlayers: allPlaced,
+      reservePlayers: [] as PitchPlayer[],
+      sections: sectionMeta,
+      formationLabel: null,
+    };
+  }, [squad, lineupMode, matchLineup, matchFormation, matchStatsLookup]);
+
+  const legend = (
+    <div className="flex flex-wrap justify-center gap-3 border-t border-white/8 bg-black/25 px-4 py-2.5">
+      {formationLabel ? (
+        <span className="text-[10px] font-semibold text-neon-green/90">
+          Titulares · {formationLabel}
+        </span>
+      ) : null}
+      {sections.map((s) => (
+        <span key={s.position} className="flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: s.color, boxShadow: `0 0 6px ${s.color}` }}
+          />
+          {s.role.replace(/:$/, "")} ({s.count})
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
-      <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-neon-green/15 shadow-[inset_0_0_60px_rgba(0,255,136,0.06)]">
-        <div
-          className="relative aspect-[68/105] w-full"
-          style={{
-            background:
-              "linear-gradient(180deg, #0d4a28 0%, #0a3d22 35%, #0a3d22 65%, #0d4a28 100%)",
-          }}
-        >
-          <PitchMarkings />
-
-          {placedPlayers.map((player, i) => (
+      <div className="flex flex-col gap-3 md:flex-row md:items-stretch">
+        <PitchField footer={legend}>
+          {fieldPlayers.map((player, i) => (
             <div
               key={`${player.name}-${player.number}`}
-              className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+              className="absolute z-10 overflow-visible -translate-x-1/2 -translate-y-1/2"
               style={{ left: `${player.x}%`, top: `${player.y}%` }}
             >
               <PlayerPitchToken
                 player={player}
                 teamName={squad.team}
                 teamColor={teamColor}
-                positionColor={POSITION_COLOR[player.position] ?? "#64748b"}
+                positionColor={
+                  POSITION_COLOR[player.position] ??
+                  POSITION_COLOR[player.line?.toUpperCase() ?? ""] ??
+                  "#64748b"
+                }
                 index={i}
-                compact={placedPlayers.length > 18}
+                compact
+                matchStatsLookup={matchStatsLookup}
               />
             </div>
           ))}
-        </div>
+        </PitchField>
 
-        <div className="flex flex-wrap justify-center gap-3 border-t border-white/8 bg-black/25 px-4 py-2.5">
-          {sections.map((s) => (
-            <span key={s.position} className="flex items-center gap-1.5 text-[10px] text-slate-400">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: s.color, boxShadow: `0 0 6px ${s.color}` }}
-              />
-              {s.role.replace(/:$/, "")} ({s.count})
-            </span>
-          ))}
-        </div>
+        {reservePlayers.length > 0 ? (
+          <ReserveBenchPanel
+            players={reservePlayers}
+            teamName={squad.team}
+            teamColor={teamColor}
+            matchStatsLookup={matchStatsLookup}
+          />
+        ) : null}
       </div>
     </div>
-  );
-}
-
-function PitchMarkings() {
-  return (
-    <svg
-      className="pointer-events-none absolute inset-0 h-full w-full opacity-35"
-      viewBox="0 0 68 105"
-      preserveAspectRatio="none"
-      aria-hidden
-    >
-      <rect x="2" y="2" width="64" height="101" fill="none" stroke="white" strokeWidth="0.4" />
-      <line x1="34" y1="2" x2="34" y2="103" stroke="white" strokeWidth="0.35" />
-      <circle cx="34" cy="52.5" r="9" fill="none" stroke="white" strokeWidth="0.35" />
-      <circle cx="34" cy="52.5" r="0.8" fill="white" />
-      <rect x="18" y="2" width="32" height="14" fill="none" stroke="white" strokeWidth="0.3" />
-      <rect x="18" y="89" width="32" height="14" fill="none" stroke="white" strokeWidth="0.3" />
-      {[20, 40, 60, 80].map((y) => (
-        <rect key={y} x="0" y={y} width="68" height="10" fill="white" fillOpacity="0.03" />
-      ))}
-    </svg>
   );
 }

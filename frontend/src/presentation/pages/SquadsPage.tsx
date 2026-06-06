@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
+  getWcFriendliesUseCase,
   getWcSquadsIndexUseCase,
   getWcSquadUseCase,
   getWcScheduleUseCase,
+  simulateWcMatchUseCase,
 } from "@/application/container";
 import { teamColor } from "@/data/teamColors";
 import type { WcSquadSection } from "@/domain/entities";
@@ -14,6 +17,7 @@ import { IconSearch } from "@/presentation/components/ui/Icons";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { SquadPitchView } from "@/presentation/components/squads/SquadPitchView";
+import { buildSquadMatchStatsLookup } from "@/presentation/utils/playerMatchStats";
 
 const SECTION_COLORS: Record<string, string> = {
   GK: "#fbbf24",
@@ -34,9 +38,15 @@ const SECTION_LABEL: Record<string, string> = {
 type SquadView = "pitch" | "list";
 
 export function SquadsPage() {
+  const [searchParams] = useSearchParams();
   const [selectedTeam, setSelectedTeam] = useState("Brasil");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<SquadView>("pitch");
+
+  const eventIdFromUrl = searchParams.get("eventId");
+  const homeFromUrl = searchParams.get("home");
+  const awayFromUrl = searchParams.get("away");
+  const dateFromUrl = searchParams.get("date");
 
   const indexQuery = useQuery({
     queryKey: ["wc-squads-index"],
@@ -56,6 +66,89 @@ export function SquadsPage() {
     enabled: Boolean(selectedTeam),
     staleTime: 30 * 60_000,
   });
+
+  const friendliesQuery = useQuery({
+    queryKey: ["wc-friendlies-squad", selectedTeam],
+    queryFn: () =>
+      getWcFriendliesUseCase.execute({
+        team: selectedTeam,
+        includeUpcoming: true,
+        includeFinished: true,
+      }),
+    enabled: !eventIdFromUrl && Boolean(selectedTeam),
+    staleTime: 5 * 60_000,
+  });
+
+  const matchForStats = useMemo(() => {
+    if (eventIdFromUrl && homeFromUrl && awayFromUrl) {
+      return {
+        eventId: Number.parseInt(eventIdFromUrl, 10),
+        homeTeam: homeFromUrl,
+        awayTeam: awayFromUrl,
+        matchDate: dateFromUrl,
+      };
+    }
+    const friendly =
+      friendliesQuery.data?.friendlies.find((item) => item.eventId != null) ?? null;
+    if (!friendly?.eventId) return null;
+    return {
+      eventId: friendly.eventId,
+      homeTeam: friendly.homeTeam,
+      awayTeam: friendly.awayTeam,
+      matchDate: friendly.matchDate,
+    };
+  }, [
+    eventIdFromUrl,
+    homeFromUrl,
+    awayFromUrl,
+    dateFromUrl,
+    friendliesQuery.data,
+  ]);
+
+  const simulateQuery = useQuery({
+    queryKey: [
+      "wc-simulate-squad",
+      matchForStats?.eventId,
+      matchForStats?.homeTeam,
+      matchForStats?.awayTeam,
+    ],
+    queryFn: () =>
+      simulateWcMatchUseCase.execute({
+        homeTeam: matchForStats!.homeTeam,
+        awayTeam: matchForStats!.awayTeam,
+        phase: "friendly",
+        matchDate: matchForStats!.matchDate ?? undefined,
+        sofascoreEventId: matchForStats!.eventId,
+      }),
+    enabled: Boolean(matchForStats?.eventId),
+    staleTime: 5 * 60_000,
+  });
+
+  const matchLineup = useMemo(() => {
+    if (!simulateQuery.data) return null;
+    return selectedTeam === simulateQuery.data.homeTeam
+      ? simulateQuery.data.fifaHomeLineup
+      : simulateQuery.data.fifaAwayLineup;
+  }, [simulateQuery.data, selectedTeam]);
+
+  const matchFormation = useMemo(() => {
+    if (!simulateQuery.data) return null;
+    return selectedTeam === simulateQuery.data.homeTeam
+      ? simulateQuery.data.fifaHomeTactics
+      : simulateQuery.data.fifaAwayTactics;
+  }, [simulateQuery.data, selectedTeam]);
+
+  const matchBench = useMemo(() => {
+    if (!simulateQuery.data) return null;
+    return selectedTeam === simulateQuery.data.homeTeam
+      ? simulateQuery.data.fifaHomeBench
+      : simulateQuery.data.fifaAwayBench;
+  }, [simulateQuery.data, selectedTeam]);
+
+  const matchStatsLookup = useMemo(() => {
+    if (!matchLineup?.length) return undefined;
+    return buildSquadMatchStatsLookup(matchLineup, matchBench);
+  }, [matchLineup, matchBench]);
 
   const teamGroup = useMemo(() => {
     if (!scheduleQuery.data || !selectedTeam) return null;
@@ -244,10 +337,19 @@ export function SquadsPage() {
                 </div>
 
                 <div className="p-5">
+                  {matchForStats && view === "pitch" ? (
+                    <p className="mb-3 text-center text-[11px] text-slate-500">
+                      Notas Sofascore do amistoso {matchForStats.homeTeam} x {matchForStats.awayTeam}
+                      {simulateQuery.isFetching ? " · carregando…" : ""}
+                    </p>
+                  ) : null}
                   {view === "pitch" ? (
                     <SquadPitchView
                       squad={squadQuery.data.squad}
                       teamColor={teamColor(selectedTeam)}
+                      matchStatsLookup={matchStatsLookup}
+                      matchLineup={matchLineup}
+                      matchFormation={matchFormation}
                     />
                   ) : (
                     <div className="space-y-5">

@@ -1,6 +1,8 @@
+import bisect
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import math
+from typing import Any
 
 import pandas as pd
 
@@ -74,6 +76,16 @@ class WcMatchFeatures:
     home_secured: float = 0.0
     away_secured: float = 0.0
     group_matchday: float = 0.0
+    # Features enriquecidas (disponíveis apenas para jogos atuais/simulações)
+    form_points_diff: float = 0.0
+    streak_unbeaten_diff: float = 0.0
+    streak_wins_diff: float = 0.0
+    h2h_home_win_rate_all: float = 0.0
+    h2h_home_wins_recent5: int = 0
+    avgrating_diff: float = 0.0
+    position_diff: float = 0.0
+    points_diff: float = 0.0
+    fifa_points_diff: float = 0.0
 
 
 def _parse_dt(value) -> datetime:
@@ -97,11 +109,104 @@ def _update_elo(rating: float, expected: float, actual: float, k: float = 32.0) 
     return rating + k * (actual - expected)
 
 
+@dataclass
+class EloTimeline:
+    """Timeline de ratings Elo pré-computada para lookup rápido."""
+
+    team_dates: dict[str, list[datetime]]
+    team_ratings: dict[str, list[float]]
+
+
+def precompute_elo_timeline(fixtures_df: pd.DataFrame) -> EloTimeline:
+    """Pré-computa ratings Elo de forma incremental para consulta rápida.
+
+    Itera uma única vez sobre o dataframe ordenado por data, atualizando
+    ratings após cada jogo. O resultado permite consultar o rating de
+    qualquer time em qualquer data com busca binária O(log n).
+    """
+    df = fixtures_df.sort_values("match_date")
+    hp = get_wc_hyperparams()
+    ratings: dict[str, float] = {}
+
+    team_dates: dict[str, list[datetime]] = {}
+    team_ratings: dict[str, list[float]] = {}
+
+    def _record(team: str, date: datetime, rating: float) -> None:
+        team_dates.setdefault(team, []).append(date)
+        team_ratings.setdefault(team, []).append(rating)
+
+    def _get(team: str) -> float:
+        return ratings.setdefault(team, hp.elo_initial)
+
+    cols = {c: i for i, c in enumerate(df.columns)}
+    ht_idx = cols.get("home_team")
+    at_idx = cols.get("away_team")
+    hs_idx = cols.get("home_score")
+    aws_idx = cols.get("away_score")
+    neutral_idx = cols.get("is_neutral")
+    date_idx = cols.get("match_date")
+
+    for tup in df.itertuples(index=False):
+        home = tup[ht_idx] if ht_idx is not None else tup.home_team
+        away = tup[at_idx] if at_idx is not None else tup.away_team
+        rh = _get(home)
+        ra = _get(away)
+
+        is_neutral = bool(tup[neutral_idx]) if neutral_idx is not None else True
+        if is_neutral:
+            home_adv = hp.elo_home_adv * 0.35
+        else:
+            home_adv = hp.elo_home_adv
+        rh_adj = rh + home_adv
+        exp_home = _expected_score(rh_adj, ra)
+        exp_away = 1.0 - exp_home
+
+        hs = int(tup[hs_idx]) if hs_idx is not None else int(tup.home_score)
+        aws = int(tup[aws_idx]) if aws_idx is not None else int(tup.away_score)
+        if hs > aws:
+            act_home, act_away = 1.0, 0.0
+        elif hs < aws:
+            act_home, act_away = 0.0, 1.0
+        else:
+            act_home, act_away = 0.5, 0.5
+
+        new_rh = _update_elo(rh, exp_home, act_home, k=hp.elo_k)
+        new_ra = _update_elo(ra, exp_away, act_away, k=hp.elo_k)
+
+        ratings[home] = new_rh
+        ratings[away] = new_ra
+
+        match_date = _parse_dt(tup[date_idx]) if date_idx is not None else _parse_dt(tup.match_date)
+        _record(home, match_date, new_rh)
+        _record(away, match_date, new_ra)
+
+    return EloTimeline(team_dates=team_dates, team_ratings=team_ratings)
+
+
+def get_elo_at_date(timeline: EloTimeline, team: str, before_date: datetime) -> float:
+    """Retorna o rating Elo de um time imediatamente antes de uma data.
+
+    Usa busca binária sobre a timeline pré-computada. Se o time nunca
+    jogou, retorna o rating inicial (1500 por padrão).
+    """
+    dates = timeline.team_dates.get(team)
+    if not dates:
+        return get_wc_hyperparams().elo_initial
+
+    cutoff = _parse_dt(before_date)
+    # Encontra o índice mais à direita onde date < cutoff
+    idx = bisect.bisect_left(dates, cutoff) - 1
+    if idx < 0:
+        return get_wc_hyperparams().elo_initial
+
+    return timeline.team_ratings[team][idx]
+
+
 def compute_elo_ratings(
     fixtures_df: pd.DataFrame,
     before_date: datetime | None = None,
 ) -> dict[str, float]:
-    df = fixtures_df.copy()
+    df = fixtures_df
     if before_date:
         df = _played_before(df, before_date)
     df = df.sort_values("match_date")
@@ -112,13 +217,22 @@ def compute_elo_ratings(
     def _get(team: str) -> float:
         return ratings.setdefault(team, hp.elo_initial)
 
-    for _, row in df.iterrows():
-        home = row["home_team"]
-        away = row["away_team"]
+    # Usa itertuples (mais rápido que iterrows) com nomes normalizados
+    cols = {c: i for i, c in enumerate(df.columns)}
+    ht_idx = cols.get("home_team")
+    at_idx = cols.get("away_team")
+    hs_idx = cols.get("home_score")
+    aws_idx = cols.get("away_score")
+    neutral_idx = cols.get("is_neutral")
+
+    for tup in df.itertuples(index=False):
+        home = tup[ht_idx] if ht_idx is not None else tup.home_team
+        away = tup[at_idx] if at_idx is not None else tup.away_team
         rh = _get(home)
         ra = _get(away)
 
-        if bool(row.get("is_neutral", True)):
+        is_neutral = bool(tup[neutral_idx]) if neutral_idx is not None else True
+        if is_neutral:
             home_adv = hp.elo_home_adv * 0.35
         else:
             home_adv = hp.elo_home_adv
@@ -126,7 +240,8 @@ def compute_elo_ratings(
         exp_home = _expected_score(rh_adj, ra)
         exp_away = 1.0 - exp_home
 
-        hs, aws = int(row["home_score"]), int(row["away_score"])
+        hs = int(tup[hs_idx]) if hs_idx is not None else int(tup.home_score)
+        aws = int(tup[aws_idx]) if aws_idx is not None else int(tup.away_score)
         if hs > aws:
             act_home, act_away = 1.0, 0.0
         elif hs < aws:
@@ -242,15 +357,22 @@ def build_match_features(
     is_neutral: bool = True,
     season: int | None = None,
     group_name: str | None = None,
+    enrich_data: dict[str, Any] | None = None,
+    elo_timeline: EloTimeline | None = None,
 ) -> WcMatchFeatures:
     ref_date = before_date or datetime.now(timezone.utc)
     played = _played_before(fixtures_df, ref_date)
-    elo = compute_elo_ratings(played)
-    h2h = compute_wc_h2h(played, home_team, away_team)
 
     hp = get_wc_hyperparams()
-    rh = elo.get(home_team, hp.elo_initial)
-    ra = elo.get(away_team, hp.elo_initial)
+    if elo_timeline is not None:
+        rh = get_elo_at_date(elo_timeline, home_team, ref_date)
+        ra = get_elo_at_date(elo_timeline, away_team, ref_date)
+    else:
+        elo = compute_elo_ratings(played)
+        rh = elo.get(home_team, hp.elo_initial)
+        ra = elo.get(away_team, hp.elo_initial)
+
+    h2h = compute_wc_h2h(played, home_team, away_team)
     gf_h, ga_h, form_h = _team_rates(played, home_team)
     gf_a, ga_a, form_a = _team_rates(played, away_team)
 
@@ -272,6 +394,20 @@ def build_match_features(
             before_date=ref_date,
             phase=phase,
         )
+
+    # Busca pontos FIFA ao vivo se disponível
+    fifa_points_diff = 0.0
+    try:
+        from ingest.fifa.rankings_live import get_team_points_live
+        hp_live = get_team_points_live(home_team)
+        ap_live = get_team_points_live(away_team)
+        if hp_live is not None and ap_live is not None:
+            fifa_points_diff = round(hp_live - ap_live, 2)
+    except Exception:
+        pass
+
+    # Preenche dados enriquecidos se fornecidos
+    enrich = enrich_data or {}
 
     return WcMatchFeatures(
         home_team=home_team,
@@ -296,6 +432,15 @@ def build_match_features(
         home_secured=pressure.home_secured,
         away_secured=pressure.away_secured,
         group_matchday=pressure.group_matchday,
+        form_points_diff=enrich.get("form_points_diff", 0.0),
+        streak_unbeaten_diff=enrich.get("streak_unbeaten_diff", 0.0),
+        streak_wins_diff=enrich.get("streak_wins_diff", 0.0),
+        h2h_home_win_rate_all=enrich.get("h2h_home_win_rate", 0.0),
+        h2h_home_wins_recent5=enrich.get("h2h_home_wins_recent5", 0),
+        avgrating_diff=enrich.get("avgrating_diff", 0.0),
+        position_diff=enrich.get("position_diff", 0.0),
+        points_diff=enrich.get("points_diff", 0.0),
+        fifa_points_diff=fifa_points_diff,
     )
 
 
@@ -309,6 +454,19 @@ def group_pressure_from_features(f: WcMatchFeatures) -> GroupPressure:
         away_points=0.0,
         group_matchday=f.group_matchday,
     )
+
+
+ENRICH_FEATURE_NAMES = [
+    "form_points_diff",
+    "streak_unbeaten_diff",
+    "streak_wins_diff",
+    "h2h_home_win_rate_all",
+    "h2h_home_wins_recent5",
+    "avgrating_diff",
+    "position_diff",
+    "points_diff",
+    "fifa_points_diff_live",
+]
 
 
 def features_to_vector(
@@ -336,13 +494,26 @@ def features_to_vector(
     ]
     rankings = load_fifa_rankings()
     fifa_diff = fifa_points(f.home_team, rankings) - fifa_points(f.away_team, rankings)
+    # Usa fifa_points_diff_live se disponível, senão usa o estático
+    effective_fifa_diff = f.fifa_points_diff if f.fifa_points_diff != 0.0 else fifa_diff
     return (
         base
-        + [fifa_diff]
+        + [effective_fifa_diff]
         + market_feature_vector(f.home_team, f.away_team)
         + squad_feature_vector(f.home_team, f.away_team)
         + wc_news_feature_vector(f.home_team, f.away_team, before_date=before_date)
         + sofascore_feature_vector(f.home_team, f.away_team, before_date=before_date)
+        + [
+            f.form_points_diff,
+            f.streak_unbeaten_diff,
+            f.streak_wins_diff,
+            f.h2h_home_win_rate_all,
+            f.h2h_home_wins_recent5,
+            f.avgrating_diff,
+            f.position_diff,
+            f.points_diff,
+            effective_fifa_diff,
+        ]
     )
 
 
@@ -359,7 +530,7 @@ FEATURE_NAMES = [
     "form_wins_diff",
     "phase_knockout",
     "is_neutral",
-] + GROUP_PRESSURE_FEATURE_NAMES + EXTRA_FEATURE_NAMES + SQUAD_FEATURE_NAMES + NEWS_FEATURE_NAMES + SOFASCORE_FEATURE_NAMES
+] + GROUP_PRESSURE_FEATURE_NAMES + EXTRA_FEATURE_NAMES + SQUAD_FEATURE_NAMES + NEWS_FEATURE_NAMES + SOFASCORE_FEATURE_NAMES + ENRICH_FEATURE_NAMES
 
 
 def format_wc_context(f: WcMatchFeatures, h2h: WcH2H | None = None) -> str:

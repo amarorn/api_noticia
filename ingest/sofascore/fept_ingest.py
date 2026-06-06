@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -10,10 +10,8 @@ import structlog
 
 from config import settings
 from ingest.sofascore.client import SofascoreClient
-from ingest.sofascore.event_helpers import find_event_id
 from ingest.sofascore.kxl_sofascore_ingest import build_kxl_sofascore_payload
 from ingest.sofascore.teams import (
-    load_team_map,
     sofascore_search_query,
 )
 from schemas.national_teams import normalize_national_team
@@ -31,6 +29,8 @@ class FeptIngestResult:
     fept: FeptEscalacao
     ratings_found: int
     ratings_missing: int
+    home_bench: list[dict[str, Any]] = field(default_factory=list)
+    away_bench: list[dict[str, Any]] = field(default_factory=list)
     source: str = "sofascore"
 
     def to_payload(self) -> dict[str, Any]:

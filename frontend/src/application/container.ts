@@ -21,9 +21,11 @@ import {
   GetWcSquadsIndexUseCase,
   GetWcSquadUseCase,
   GetWcTeamsUseCase,
+  GetWcFriendliesUseCase,
   PredictWcCornersUseCase,
   PredictWcMatchUseCase,
   ResolveSofascoreEventUseCase,
+  SimulateWcMatchUseCase,
 } from "@/application/use-cases/wcUseCases";
 import {
   brasileiraoRepository,
@@ -42,6 +44,8 @@ export const predictWcMatchUseCase = new PredictWcMatchUseCase(wcRepository);
 export const predictWcCornersUseCase = new PredictWcCornersUseCase(wcRepository);
 export const resolveSofascoreEventUseCase = new ResolveSofascoreEventUseCase(wcRepository);
 export const getWcTeamsUseCase = new GetWcTeamsUseCase(wcRepository);
+export const getWcFriendliesUseCase = new GetWcFriendliesUseCase(wcRepository);
+export const simulateWcMatchUseCase = new SimulateWcMatchUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
   brasileiraoRepository,

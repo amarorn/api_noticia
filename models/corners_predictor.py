@@ -14,7 +14,7 @@ from models.poisson_corners import (
     predict_corners,
 )
 from models.poisson_wc import goal_model_factors
-from pipelines.wc_stats import WcMatchFeatures, build_match_features
+from pipelines.wc_stats import build_match_features
 
 
 @dataclass

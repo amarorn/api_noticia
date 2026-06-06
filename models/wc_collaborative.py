@@ -8,7 +8,7 @@ import pandas as pd
 from models.dixon_coles_wc import DixonColesWcModel
 from models.logistic_wc import WcLogisticModel
 from pipelines.wc_hyperparams import get_wc_hyperparams
-from pipelines.wc_stats import build_match_features
+from pipelines.wc_stats import build_match_features, precompute_elo_timeline
 
 
 @dataclass
@@ -87,6 +87,7 @@ class CollaborativeWcModel:
         if not self.dixon_coles._fitted:
             self.dixon_coles.fit(df, holdout_season=validation_season)
 
+        elo_timeline = precompute_elo_timeline(df)
         base_rows: list[dict] = []
         valid_total = len(valid_df)
         for valid_index, (_, row) in enumerate(valid_df.iterrows(), start=1):
@@ -106,6 +107,7 @@ class CollaborativeWcModel:
                 before_date=before,
                 phase=phase,
                 is_neutral=is_neutral,
+                elo_timeline=elo_timeline,
             )
             dc = self.dixon_coles.predict(
                 history,

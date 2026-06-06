@@ -12,7 +12,7 @@ from models.poisson_wc import (
     score_probability,
 )
 from pipelines.wc_hyperparams import get_wc_hyperparams
-from pipelines.wc_stats import WcMatchFeatures, build_match_features
+from pipelines.wc_stats import WcMatchFeatures, build_match_features, precompute_elo_timeline
 
 
 def _normalized_score_prob(
@@ -61,6 +61,7 @@ class DixonColesWcModel:
         if len(train_df) < 20:
             return 0.0
 
+        elo_timeline = precompute_elo_timeline(fixtures_df)
         prepared: list[tuple[int, int, float, float]] = []
         train_total = len(train_df)
         for train_index, (_, row) in enumerate(train_df.iterrows(), start=1):
@@ -79,6 +80,7 @@ class DixonColesWcModel:
                 is_neutral=bool(row.get("is_neutral", True)),
                 season=int(row["season"]),
                 group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
+                elo_timeline=elo_timeline,
             )
             lam_home, lam_away = expected_lambdas(
                 history,

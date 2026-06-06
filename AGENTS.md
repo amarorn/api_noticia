@@ -74,7 +74,14 @@ api_noticia/
 │   ├── sources.py          # Lógica de fetch RSS
 │   ├── storage.py          # Escrita Parquet particionada (bronze)
 │   ├── fixtures/           # Import de fixtures (Brasileirão, Copa do Mundo)
-│   ├── sofascore/          # Cliente curl_cffi, FEPT, stats, histórico
+│   ├── sofascore/          # Cliente curl_cffi, FEPT, stats, histórico, amistosos
+│   │   └── friendlies.py   # list_team_friendlies, merge FIFA+Sofascore, snapshot JSON
+│   ├── fifa/               # APIs inside.fifa.com / api.fifa.com
+│   │   ├── client.py       # HTTP FIFA
+│   │   ├── match_ingest.py # detalhes de jogo, load_fifa_window_matches (cache)
+│   │   ├── rankings_live.py# rankings ao vivo (cache rankings_live.json)
+│   │   ├── teams.py        # nome canônico → código FIFA (BRA, EGY, …)
+│   │   └── friendlies.py   # amistosos na janela FIFA (SeasonName Friendly)
 │   ├── gcp/                # Medalhão GCP: sync, lake_store, lake_frames, medallion
 │   │   ├── sync.py         # sync-gcp (local ou GCS → BQ)
 │   │   ├── lake_store.py   # read/write snapshots GCS (cloud_lake_enabled)
@@ -99,6 +106,7 @@ api_noticia/
 │   ├── wc_draw_model.py    # Modelo dedicado para empate
 │   ├── wc_predictor.py     # Pipeline completo WC (treino + inferência)
 │   ├── wc_artifact.py      # Persistência pickle + manifest JSON do predictor
+│   ├── wc_match_simulator.py # simulate_match: FIFA + Sofascore + ensemble WC
 │   ├── ev_value.py         # Expected Value + Kelly
 │   ├── economics.py        # CES blend (Dixit-Stiglitz)
 │   ├── corners_predictor.py# Previsão de escanteios
@@ -126,6 +134,10 @@ api_noticia/
 │   │   ├── fixtures/
 │   │   ├── sofascore/      # match_stats.parquet (stats xG)
 │   │   ├── fept/           # JSON por evento (não vai ao GCS por padrão)
+│   │   ├── fifa/           # cache local FIFA (gitignored em dev)
+│   │   │   ├── rankings_live.json
+│   │   │   └── window_matches.json
+│   │   ├── friendlies/     # snapshot por seleção/ano ({year}.json)
 │   │   └── artifacts/      # predictor WC (pickle + manifest)
 │   ├── sources.yaml        # Configuração declarativa de fontes RSS
 │   ├── rounds/             # Rodadas planejadas (current.json, wc_2026.json)
@@ -134,8 +146,9 @@ api_noticia/
 ├── docs/                   # Documentação em português
 ├── config.py               # Settings central (pydantic-settings)
 ├── pyproject.toml          # Dependências, scripts, ruff, pytest
-├── .devcontainer/          # Dev Container local (recomendado para codar)
-├── Dockerfile              # API produção + deps gcp/sofascore
+├── .devcontainer/          # Dev Container (Cursor/VS Code — ambiente isolado local)
+├── .vscode/extensions.json # recomenda extensão Dev Containers
+├── Dockerfile              # API + deps gcp/sofascore
 ├── docker-compose.yml      # perfis local (lake disco) e cloud (GCS/BQ)
 ├── docker-compose.env.example
 ├── fly.toml                # Configuração Fly.io
@@ -178,6 +191,7 @@ ruff format .         # formatação
 ### Rodar API localmente
 ```bash
 ./scripts/dev-api.sh          # reload apenas em api/ (evita reinício ao gravar parquet)
+./scripts/dev-api-stable.sh   # reload em api/, models/, ingest/, pipelines/ (amistosos/simulate)
 # ou manualmente:
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -248,20 +262,22 @@ Aliases CLI: `sofascore` → `silver_sofascore`, `fixtures` → `silver_fixtures
 
 Leitores/escritores (`save_bronze`, `load_silver`, `upsert_match_stats`, `load_wc_fixtures`, etc.) respeitam `cloud_lake_enabled()` em `ingest/gcp/lake_store.py`. Com `LAKE_PRIMARY=local`, usam `data/lake/`; com `cloud`, leem/escrevem snapshots no GCS.
 
-### Dev Container (recomendado para dev local)
-Abra o projeto com **Dev Containers** (Cursor/VS Code): `.devcontainer/devcontainer.json`.
+### Dev Container (ambiente isolado ao abrir o projeto)
+A pasta fica na **raiz do repositório**: `.devcontainer/devcontainer.json` (não dentro de `.cursor/`).
 
-- Lake em disco (`LAKE_PRIMARY=local`), sem custo GCP
-- `post-create.sh` instala `.[dev,gcp,sofascore,analytics]` + `npm install` no frontend
-- Portas encaminhadas: **8000** (API), **5173** (Vite)
+Requisito: extensão **Dev Containers** (`anysphere.remote-containers` no Cursor).
+
+1. Command Palette → `Dev Containers: Reopen in Container`
+2. Na primeira vez: build da imagem + `post-create.sh` (pip, npm, pastas do lake)
+3. Terminal e extensões rodam **dentro do container**; lake em `/workspace/data/lake` (`LAKE_PRIMARY=local`)
 
 ```bash
-# Dentro do container
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 cd frontend && npm run dev
 daily-sync
-pytest tests/ -q
 ```
+
+Para **Cursor Cloud Agents** (máquina remota), use `.cursor/environment.json` — feature separada.
 
 ### Docker Compose (API em container, sem IDE)
 ```bash
@@ -330,6 +346,7 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 ### Configuração
 - Toda configuração sensível ou variável por ambiente vai para `config.py` (Pydantic Settings) e é sobrescrita via `.env`.
 - Chaves relevantes do lake: `LAKE_ROOT`, `LAKE_PRIMARY` (`local` | `cloud`), `LAKE_SYNC_BQ_ON_WRITE`, `GCS_BUCKET`, `GCP_PROJECT`, `BQ_DATASET`, `GOOGLE_APPLICATION_CREDENTIALS`.
+- Cache FIFA (dev offline): `fifa_rankings_cache_path` (`data/lake/fifa/rankings_live.json`), `fifa_window_cache_path` (`data/lake/fifa/window_matches.json`). Falha de rede não deve derrubar endpoints — usar cache antigo ou retornar só Sofascore.
 - Nunca hardcode chaves de API ou caminhos absolutos em código de produção.
 - Nunca commitar `.env` nem `credentials/`.
 
@@ -390,6 +407,35 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 - A API recarrega o artifact no startup (em background thread para não bloquear health checks).  
 - Se o artifact estiver desatualizado ou ausente, retrain automático é disparado.
 
+### Amistosos internacionais (Sofascore + FIFA)
+Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no frontend).
+
+| Camada | Responsabilidade |
+|--------|------------------|
+| `ingest/sofascore/friendlies.py` | Agenda via `team/{id}/events/next` + `events/last`; filtro ano UTC; `merge_friendlies()` |
+| `ingest/fifa/friendlies.py` | Amistosos na janela FIFA (`SeasonName` com "Friendly"); filtro por `fifa_country_code` |
+| `ingest/fifa/teams.py` | Mapa nome PT → código FIFA (ex.: Egito → `EGY`) |
+| `models/wc_match_simulator.py` | `simulate_match()`: ensemble WC + rankings FIFA + enrich/stats/FEPT Sofascore |
+
+**Fontes de dados (prioridade operacional):**
+- **Agenda**: Sofascore é principal (inclui jogos futuros, ex. Brasil x Egito). FIFA complementa quando o jogo está na janela (~1055 jogos).
+- **Escalações**: FIFA (`ingest_match_details`) se `fifa_match_id` ou jogo na janela; senão **FEPT Sofascore** (`build_fept_payload`) com `lineup_source: "sofascore"`.
+- **Pré-jogo**: stats Sofascore retornam 404 antes do apito — não exibir como erro ao usuário.
+
+**Endpoints API:**
+- `GET /worldcup/friendlies?team=Brasil&year=2026` — merge Sofascore+FIFA; snapshot em `data/lake/friendlies/{year}.json`; falha FIFA → só Sofascore (sem 500).
+- `POST /worldcup/simulate` — body `WcPredictRequest` aceita `match_date`, `fifa_match_id`, `sofascore_event_id`; resposta inclui `lineup_source`, escalações, rankings, `warnings`.
+- `POST /worldcup/predict` — palpite ensemble/KXL; amistosos usam `phase=round_16` (evita gate `official_match_exists`).
+
+**Frontend** (`/amistosos`, `/predict`):
+- `FriendliesPage.tsx` — badges por fonte (`sources: ["sofascore"]`, `["fifa"]` ou ambos); link palpite com `simulate=1&eventId=&date=`.
+- `PredictPage.tsx` — modo `source=friendly` + `simulate=1` chama `SimulateWcMatchUseCase` → painel com escalações (FIFA ou Sofascore) e probabilidades.
+- Use cases: `GetWcFriendliesUseCase`, `SimulateWcMatchUseCase` em `application/container.ts`.
+
+**Testes:** `tests/test_sofascore_friendlies.py`, `tests/test_fifa_friendlies.py`, `tests/test_fifa_window_cache.py`, `tests/test_wc_match_simulator.py`.
+
+**Limitação conhecida:** nem todo amistoso Sofascore consta na janela FIFA (ex. Brasil x Egito 2026-06-06). Badge FIFA só aparece após cruzamento real na janela.
+
 ---
 
 ## 9. Convenções para agentes
@@ -405,6 +451,9 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 - **CLI para automação**: operações recorrentes (coleta, transformação, treino) devem expor um entrypoint via `pyproject.toml` `[project.scripts]`.
 - **Métricas de qualidade**: quando adicionar modelos, inclua métricas de Brier, log-loss e accuracy. Use MLflow opcionalmente (`pip install -e ".[ml]"`).
 - **Frontend**: mantenha a arquitetura limada (domain → application → infrastructure → presentation). Novas páginas adicionam rota em `App.tsx`, use case em `application/`, repositório em `infrastructure/`, e componentes em `presentation/`.
+- **Amistosos**: não bloquear UX quando FIFA estiver offline — `load_fifa_window_matches()` com cache + fallback; merge FIFA em `list_team_friendlies` dentro de `try/except`. Resolver `event_id`/`match_date` da URL no frontend (`resolvedSofascoreEventId`, `resolvedMatchDate`).
+- **Simulate**: ao estender `simulate_match`, manter ordem FIFA → rankings → resolve contexto Sofascore → enrich → stats → FEPT fallback para escalações.
+- **Dev Container**: `.devcontainer/Dockerfile` remove repo Yarn inválido antes do `apt-get` (evita `NO_PUBKEY` no build).
 
 ---
 
@@ -421,4 +470,6 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 | Frontend | `docs/frontend.md` |
 | Deploy Fly.io | `docs/deploy-fly.md` |
 | Dev Container | `.devcontainer/devcontainer.json` |
+| Amistosos (ingest) | `ingest/sofascore/friendlies.py`, `ingest/fifa/friendlies.py` |
+| Simulate WC | `models/wc_match_simulator.py`, `POST /worldcup/simulate` |
 | Docker compose | `docker-compose.yml`, `scripts/docker-dev.sh` |

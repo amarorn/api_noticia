@@ -25,7 +25,8 @@ def main() -> None:
         default="all",
         help=(
             "Camada medalhão: bronze, bronze_sofascore, silver, silver_sofascore, "
-            "silver_fixtures, gold, gold_wc (aliases: sofascore, fixtures)"
+            "silver_sofascore_enrich, silver_fixtures, gold, gold_wc "
+            "(aliases: sofascore, sofascore_enrich, fixtures)"
         ),
     )
     parser.add_argument(
