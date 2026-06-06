@@ -134,7 +134,8 @@ api_noticia/
 ├── docs/                   # Documentação em português
 ├── config.py               # Settings central (pydantic-settings)
 ├── pyproject.toml          # Dependências, scripts, ruff, pytest
-├── Dockerfile              # API + deps gcp/sofascore
+├── .devcontainer/          # Dev Container local (recomendado para codar)
+├── Dockerfile              # API produção + deps gcp/sofascore
 ├── docker-compose.yml      # perfis local (lake disco) e cloud (GCS/BQ)
 ├── docker-compose.env.example
 ├── fly.toml                # Configuração Fly.io
@@ -247,7 +248,22 @@ Aliases CLI: `sofascore` → `silver_sofascore`, `fixtures` → `silver_fixtures
 
 Leitores/escritores (`save_bronze`, `load_silver`, `upsert_match_stats`, `load_wc_fixtures`, etc.) respeitam `cloud_lake_enabled()` em `ingest/gcp/lake_store.py`. Com `LAKE_PRIMARY=local`, usam `data/lake/`; com `cloud`, leem/escrevem snapshots no GCS.
 
-### Docker (dev)
+### Dev Container (recomendado para dev local)
+Abra o projeto com **Dev Containers** (Cursor/VS Code): `.devcontainer/devcontainer.json`.
+
+- Lake em disco (`LAKE_PRIMARY=local`), sem custo GCP
+- `post-create.sh` instala `.[dev,gcp,sofascore,analytics]` + `npm install` no frontend
+- Portas encaminhadas: **8000** (API), **5173** (Vite)
+
+```bash
+# Dentro do container
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+cd frontend && npm run dev
+daily-sync
+pytest tests/ -q
+```
+
+### Docker Compose (API em container, sem IDE)
 ```bash
 ./scripts/docker-dev.sh up                    # API local (perfil local, padrão)
 ./scripts/docker-dev.sh run daily-sync
@@ -404,4 +420,5 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 | KXL Colisão | `docs/kxl-colisao.md` |
 | Frontend | `docs/frontend.md` |
 | Deploy Fly.io | `docs/deploy-fly.md` |
+| Dev Container | `.devcontainer/devcontainer.json` |
 | Docker compose | `docker-compose.yml`, `scripts/docker-dev.sh` |

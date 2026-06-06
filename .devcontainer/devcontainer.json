@@ -1,0 +1,60 @@
+{
+  "name": "api-noticia (dev local)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests", "-q", "--tb=short"],
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        "editor.formatOnSave": true,
+        "files.watcherExclude": {
+          "**/data/lake/**": true,
+          "**/.venv/**": true,
+          "**/node_modules/**": true
+        }
+      }
+    }
+  },
+  "forwardPorts": [8000, 5173],
+  "portsAttributes": {
+    "8000": {
+      "label": "API FastAPI",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Frontend Vite",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteEnv": {
+    "LAKE_PRIMARY": "local",
+    "LAKE_SYNC_BQ_ON_WRITE": "false",
+    "LAKE_ROOT": "/workspace/data/lake",
+    "SOFASCORE_STATS_DIR": "/workspace/data/lake/sofascore",
+    "SOFASCORE_FEPT_DIR": "/workspace/data/lake/fept",
+    "WC_ARTIFACT_DIR": "/workspace/data/lake/artifacts/wc_predictor",
+    "PYTHONPATH": "/workspace"
+  }
+}
