@@ -31,6 +31,7 @@ from pipelines.wc_sofascore_features import (
     format_sofascore_context,
     sofascore_breakdown,
 )
+from pipelines.wc_holdout import wc_holdout_train_df
 from pipelines.wc_stats import build_match_features, compute_wc_h2h, format_wc_context
 from schemas.models import BolaoLabel
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
@@ -158,7 +159,7 @@ def train_wc_predictor(
 
     log.info("wc_train_step", step="draw_model")
     reporter.step_start("draw_model")
-    train_df = predictor.fixtures[predictor.fixtures["season"] != validation_season]
+    train_df = wc_holdout_train_df(predictor.fixtures, validation_season)
     x_draw, y_draw = build_draw_training_rows(predictor.fixtures, train_df)
     predictor.draw_model = WcDrawModel()
     predictor._draw_metrics = predictor.draw_model.fit(

@@ -3,10 +3,13 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import pandas as pd
+import structlog
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
+from models.wc_feature_cache import load_cached_features, save_cached_features
+from pipelines.wc_holdout import wc_holdout_test_df, wc_holdout_train_df
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_sofascore_features import SOFASCORE_FEATURE_NAMES
 from pipelines.wc_stats import (
@@ -18,6 +21,7 @@ from pipelines.wc_stats import (
 from schemas.models import BolaoLabel
 
 LABELS: list[BolaoLabel] = ["1", "X", "2"]
+_log = structlog.get_logger()
 
 
 @dataclass
@@ -38,7 +42,11 @@ class WcLogisticModel:
             random_state=42,
             solver="lbfgs",
         )
-        self.model = CalibratedClassifierCV(base, cv=3, method="sigmoid")
+        self.model = CalibratedClassifierCV(
+            base,
+            cv=max(2, hp.logistic_calibration_cv),
+            method="sigmoid",
+        )
         self.scaler = StandardScaler()
         self._fitted = False
 
@@ -49,51 +57,72 @@ class WcLogisticModel:
         on_progress: Callable[[int, int, str], None] | None = None,
     ) -> dict:
         df = fixtures_df.sort_values("match_date").copy()
-        train_df = df[df["season"] != holdout_season] if holdout_season else df
+        train_df = (
+            wc_holdout_train_df(df, holdout_season)
+            if holdout_season
+            else df
+        )
 
-        # Pré-computa timeline Elo para evitar recalcular do zero a cada jogo
-        elo_timeline = precompute_elo_timeline(df)
+        cached = load_cached_features(train_df)
+        if cached:
+            x_rows, y_rows = cached
+            _log.info("wc_logistic_features_cache_hit", train_size=len(y_rows))
+            if on_progress:
+                on_progress(len(y_rows), len(y_rows), "features (cache)")
+        else:
+            elo_timeline = precompute_elo_timeline(df)
+            x_rows = []
+            y_rows = []
+            train_total = len(train_df)
+            _log.info("wc_logistic_features_build_start", train_size=train_total)
 
-        x_rows: list[list[float]] = []
-        y_rows: list[str] = []
-        train_total = len(train_df)
+            for index, (_, row) in enumerate(train_df.iterrows(), start=1):
+                before = row["match_date"]
+                gcol = row.get("group_name") or row.get("group")
+                feats = build_match_features(
+                    df,
+                    row["home_team"],
+                    row["away_team"],
+                    before_date=before,
+                    phase=row.get("phase", "group"),
+                    is_neutral=bool(row.get("is_neutral", True)),
+                    season=int(row["season"]),
+                    group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
+                    elo_timeline=elo_timeline,
+                )
+                x_rows.append(features_to_vector(feats, before_date=before))
+                y_rows.append(row["label"])
+                if on_progress and (index == 1 or index % 25 == 0 or index == train_total):
+                    on_progress(index, train_total, "features")
 
-        for index, (_, row) in enumerate(train_df.iterrows(), start=1):
-            before = row["match_date"]
-            gcol = row.get("group_name") or row.get("group")
-            feats = build_match_features(
-                df,
-                row["home_team"],
-                row["away_team"],
-                before_date=before,
-                phase=row.get("phase", "group"),
-                is_neutral=bool(row.get("is_neutral", True)),
-                season=int(row["season"]),
-                group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
-                elo_timeline=elo_timeline,
-            )
-            x_rows.append(features_to_vector(feats, before_date=before))
-            y_rows.append(row["label"])
-            if on_progress and (index == 1 or index % 25 == 0 or index == train_total):
-                on_progress(index, train_total, "features")
+            save_cached_features(train_df, x_rows, y_rows)
+            _log.info("wc_logistic_features_build_done", train_size=len(y_rows))
 
         if len(x_rows) < 50:
             raise ValueError(f"Dados insuficientes para treino ({len(x_rows)} jogos)")
 
+        hp = get_wc_hyperparams()
         if on_progress:
             on_progress(0, 1, "calibracao")
+        _log.info(
+            "wc_logistic_calibration_start",
+            samples=len(x_rows),
+            cv=hp.logistic_calibration_cv,
+            max_iter=hp.logistic_max_iter,
+        )
 
         x_scaled = self.scaler.fit_transform(x_rows)
         self.model.fit(x_scaled, y_rows)
         self._fitted = True
+        _log.info("wc_logistic_calibration_done", samples=len(x_rows))
 
         metrics: dict = {
             "train_size": len(x_rows),
             "features": FEATURE_NAMES,
-            "calibration": "platt_sigmoid_cv3",
+            "calibration": f"platt_sigmoid_cv{hp.logistic_calibration_cv}",
         }
         if holdout_season and holdout_season in df["season"].values:
-            test_df = df[df["season"] == holdout_season]
+            test_df = wc_holdout_test_df(df, holdout_season)
             correct = 0
             holdout_total = len(test_df)
             for holdout_index, (_, row) in enumerate(test_df.iterrows(), start=1):

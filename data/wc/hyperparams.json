@@ -10,6 +10,7 @@
     "logistic_c": 1.0,
     "logistic_class_weight": "balanced",
     "logistic_max_iter": 3000,
+    "logistic_calibration_cv": 2,
     "ensemble_weight_steps": 40,
     "kxl_blend_weight": 0.15,
     "rho_min": -0.2,

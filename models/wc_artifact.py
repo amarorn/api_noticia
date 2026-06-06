@@ -238,6 +238,15 @@ def load_or_train_wc_predictor(
 
 
 def main() -> None:
+    import os
+    import sys
+
+    os.environ.setdefault("PYTHONUNBUFFERED", "1")
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, OSError):
+        pass
+
     structlog.configure(
         processors=[
             structlog.processors.TimeStamper(fmt="iso"),

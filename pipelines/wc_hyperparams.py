@@ -26,6 +26,7 @@ class WcHyperParams:
     logistic_c: float = 0.85
     logistic_class_weight: str | None = "balanced"
     logistic_max_iter: int = 3000
+    logistic_calibration_cv: int = 3
     ensemble_weight_steps: int = 40
     kxl_blend_weight: float = 0.20
     rho_min: float = -0.20
@@ -55,6 +56,7 @@ def _from_settings_defaults() -> WcHyperParams:
         logistic_c=getattr(settings, "wc_logistic_c", 0.85),
         logistic_class_weight=getattr(settings, "wc_logistic_class_weight", "balanced"),
         logistic_max_iter=getattr(settings, "wc_logistic_max_iter", 3000),
+        logistic_calibration_cv=getattr(settings, "wc_logistic_calibration_cv", 3),
         ensemble_weight_steps=getattr(settings, "wc_ensemble_weight_steps", 40),
         kxl_blend_weight=getattr(settings, "wc_kxl_blend_weight", 0.20),
         rho_min=getattr(settings, "wc_rho_min", -0.20),
@@ -74,13 +76,25 @@ def _merge_dict(base: WcHyperParams, overrides: dict[str, Any]) -> WcHyperParams
     return replace(base, **valid) if valid else base
 
 
+def _fast_train_overrides(data: dict) -> dict[str, Any]:
+    if not data.get("fast_mode"):
+        return {}
+    return {
+        "logistic_calibration_cv": 2,
+        "logistic_max_iter": min(
+            int(data.get("hyperparams", {}).get("logistic_max_iter", 3000)),
+            1500,
+        ),
+    }
+
+
 @lru_cache(maxsize=1)
 def load_hyperparams_file(path: Path | None = None) -> WcHyperParams | None:
     p = path or HYPERPARAMS_PATH
     if not p.exists():
         return None
     data = json.loads(p.read_text(encoding="utf-8"))
-    block = data.get("hyperparams", data)
+    block = {**data.get("hyperparams", data), **_fast_train_overrides(data)}
     base = _from_settings_defaults()
     return _merge_dict(base, block)
 

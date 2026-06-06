@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     wc_logistic_c: float = 0.85
     wc_logistic_class_weight: str = "balanced"
     wc_logistic_max_iter: int = 3000
+    wc_logistic_calibration_cv: int = 3
     wc_ensemble_weight_steps: int = 40
     wc_kxl_blend_weight: float = 0.20
     wc_rho_min: float = -0.20
