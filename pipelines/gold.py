@@ -226,10 +226,23 @@ def save_gold(contexts: list[GoldBolaoContext], suffix: str = "bolao_context") -
     if not contexts:
         return None
 
-    settings.gold_path.mkdir(parents=True, exist_ok=True)
+    from ingest.gcp.lake_store import cloud_lake_enabled, write_layer_snapshot
+    from ingest.gcp.lake_frames import normalize_gold_df
+    from models.dataset import load_gold_dataset
+
     records = [c.model_dump(mode="json") for c in contexts]
     df = pd.DataFrame(records)
 
+    if cloud_lake_enabled():
+        existing = load_gold_dataset()
+        combined = pd.concat([existing, df], ignore_index=True)
+        if "match_id" in combined.columns:
+            combined = combined.drop_duplicates(subset=["match_id"], keep="last")
+        write_layer_snapshot("gold", normalize_gold_df(combined))
+        logger.info("gold_saved_cloud", rows=len(combined), batch=len(df))
+        return settings.gold_path / "cloud_snapshot.parquet"
+
+    settings.gold_path.mkdir(parents=True, exist_ok=True)
     dt = datetime.now(timezone.utc)
     out_path = (
         settings.gold_path

@@ -8,6 +8,11 @@ logger = structlog.get_logger()
 
 def load_gold_dataset(gold_path: Path | None = None) -> pd.DataFrame:
     from config import settings
+    from ingest.gcp.lake_store import cloud_lake_enabled, read_layer_snapshot
+    from ingest.gcp.lake_frames import normalize_gold_df
+
+    if gold_path is None and cloud_lake_enabled():
+        return normalize_gold_df(read_layer_snapshot("gold"))
 
     root = gold_path or settings.gold_path
     if not root.exists():

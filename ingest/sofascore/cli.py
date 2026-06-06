@@ -15,7 +15,11 @@ from ingest.sofascore.history_ingest import (
     ingest_fixtures_history,
     ingest_team_history,
 )
-from ingest.sofascore.stats_ingest import ingest_fept_and_stats, ingest_match_stats
+from ingest.sofascore.stats_ingest import (
+    backfill_match_dates,
+    ingest_fept_and_stats,
+    ingest_match_stats,
+)
 from schemas.national_teams import normalize_national_team
 
 structlog.configure(
@@ -129,7 +133,23 @@ def main() -> None:
         action="store_true",
         help="Consolida *_stats.json em match_stats.parquet (sem chamar API)",
     )
+    parser.add_argument(
+        "--backfill-dates",
+        action="store_true",
+        help="Preenche match_date no parquet/JSON via startTimestamp do evento Sofascore",
+    )
     args = parser.parse_args()
+
+    if args.backfill_dates:
+        report = backfill_match_dates(limit=args.limit)
+        if args.json:
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        else:
+            print(
+                f"Datas preenchidas: {report['updated']} de {report['total']} "
+                f"({report['skipped']} sem timestamp, {report['failed']} falhas)"
+            )
+        return
 
     if args.compact_parquet:
         report = compact_match_stats_json()
@@ -143,15 +163,27 @@ def main() -> None:
         return
 
     if args.all:
-        fx_report = ingest_fixtures_history(
-            since_year=1930,
-            limit=None,
-            save=not args.no_save,
+        from contextlib import nullcontext
+
+        from ingest.gcp.lake_store import cloud_lake_enabled
+        from ingest.sofascore.stats_dataset import match_stats_batch_write
+
+        save = not args.no_save
+        batch = (
+            match_stats_batch_write()
+            if save and cloud_lake_enabled()
+            else nullcontext()
         )
-        teams_report = ingest_all_teams_history(
-            max_per_team=args.max_per_team,
-            save=not args.no_save,
-        )
+        with batch:
+            fx_report = ingest_fixtures_history(
+                since_year=args.since_year,
+                limit=None,
+                save=save,
+            )
+            teams_report = ingest_all_teams_history(
+                max_per_team=args.max_per_team,
+                save=save,
+            )
         combined = {
             "fixtures": fx_report.to_dict(),
             "all_teams": teams_report.to_dict(),

@@ -120,18 +120,41 @@ def save_wc_fixtures(matches: list[MatchResult]) -> Path | None:
     if not matches:
         return None
 
-    settings.fixtures_path.mkdir(parents=True, exist_ok=True)
-    records = [m.model_dump(mode="json") for m in matches]
-    df = pd.DataFrame(records)
+    from ingest.gcp.lake_store import cloud_lake_enabled, read_layer_snapshot, write_layer_snapshot
 
+    records = [m.model_dump(mode="json") for m in matches]
+    new_df = pd.DataFrame(records)
     season = matches[0].season
+
+    if cloud_lake_enabled():
+        existing = read_layer_snapshot("silver_fixtures")
+        if not existing.empty and "season" in existing.columns:
+            existing = existing[existing["season"] != season]
+            combined = pd.concat([existing, new_df], ignore_index=True)
+        else:
+            combined = new_df
+        write_layer_snapshot("silver_fixtures", combined)
+        logger.info("wc_fixtures_saved_cloud", season=season, rows=len(new_df), total=len(combined))
+        return settings.fixtures_path / f"world_cup_{season}.parquet"
+
+    settings.fixtures_path.mkdir(parents=True, exist_ok=True)
     out_path = settings.fixtures_path / f"world_cup_{season}.parquet"
-    df.to_parquet(out_path, index=False)
-    logger.info("wc_fixtures_saved", path=str(out_path), rows=len(df))
+    new_df.to_parquet(out_path, index=False)
+    logger.info("wc_fixtures_saved", path=str(out_path), rows=len(new_df))
     return out_path
 
 
 def load_wc_fixtures(seasons: list[int] | None = None) -> pd.DataFrame:
+    from ingest.gcp.lake_store import cloud_lake_enabled, read_layer_snapshot
+
+    if cloud_lake_enabled():
+        df = read_layer_snapshot("silver_fixtures")
+        if df.empty:
+            return df
+        if seasons and "season" in df.columns:
+            return df[df["season"].isin(seasons)].reset_index(drop=True)
+        return df
+
     root = settings.fixtures_path
     if not root.exists():
         return pd.DataFrame()

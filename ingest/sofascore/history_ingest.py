@@ -100,23 +100,30 @@ def ingest_all_teams_history(
     client: SofascoreClient | None = None,
     save: bool = True,
 ) -> HistoryIngestReport:
+    from contextlib import nullcontext
+
+    from ingest.gcp.lake_store import cloud_lake_enabled
+    from ingest.sofascore.stats_dataset import match_stats_batch_write
+
     team_map = load_team_map()
     roster = teams or sorted(team_map.keys())
     sofascore = client or SofascoreClient()
+    batch = match_stats_batch_write() if save and cloud_lake_enabled() else nullcontext()
 
     attempted = ingested = skipped = failed = 0
-    for team in roster:
-        ok, skip, fail = ingest_team_history(
-            team,
-            max_events=max_per_team,
-            client=sofascore,
-            team_map=team_map,
-            save=save,
-        )
-        attempted += ok + skip + fail
-        ingested += ok
-        skipped += skip
-        failed += fail
+    with batch:
+        for team in roster:
+            ok, skip, fail = ingest_team_history(
+                team,
+                max_events=max_per_team,
+                client=sofascore,
+                team_map=team_map,
+                save=save,
+            )
+            attempted += ok + skip + fail
+            ingested += ok
+            skipped += skip
+            failed += fail
 
     summary = stats_training_summary(load_match_stats_history())
     report = HistoryIngestReport(
@@ -138,7 +145,11 @@ def ingest_fixtures_history(
     client: SofascoreClient | None = None,
     save: bool = True,
 ) -> HistoryIngestReport:
+    from contextlib import nullcontext
+
     from ingest.fixtures.world_cup import load_wc_fixtures
+    from ingest.gcp.lake_store import cloud_lake_enabled
+    from ingest.sofascore.stats_dataset import match_stats_batch_write
 
     sofascore = client or SofascoreClient()
     fixtures = load_wc_fixtures()
@@ -151,32 +162,34 @@ def ingest_fixtures_history(
 
     existing = _existing_event_ids()
     ingested = skipped = failed = 0
-    for _, row in subset.iterrows():
-        match_date = pd.to_datetime(row["match_date"], utc=True).date()
-        home = normalize_national_team(row["home_team"])
-        away = normalize_national_team(row["away_team"])
-        try:
-            result = ingest_match_stats(
-                home_team=home,
-                away_team=away,
-                match_date=match_date,
-                client=sofascore,
-                save=save,
-            )
-            if int(result.event_id) in existing:
-                skipped += 1
-            else:
-                existing.add(int(result.event_id))
-                ingested += 1
-        except (LookupError, SofascoreClientError, ValueError) as exc:
-            failed += 1
-            logger.debug(
-                "sofascore_fixture_history_miss",
-                home=home,
-                away=away,
-                date=match_date.isoformat(),
-                error=str(exc),
-            )
+    batch = match_stats_batch_write() if save and cloud_lake_enabled() else nullcontext()
+    with batch:
+        for _, row in subset.iterrows():
+            match_date = pd.to_datetime(row["match_date"], utc=True).date()
+            home = normalize_national_team(row["home_team"])
+            away = normalize_national_team(row["away_team"])
+            try:
+                result = ingest_match_stats(
+                    home_team=home,
+                    away_team=away,
+                    match_date=match_date,
+                    client=sofascore,
+                    save=save,
+                )
+                if int(result.event_id) in existing:
+                    skipped += 1
+                else:
+                    existing.add(int(result.event_id))
+                    ingested += 1
+            except (LookupError, SofascoreClientError, ValueError) as exc:
+                failed += 1
+                logger.debug(
+                    "sofascore_fixture_history_miss",
+                    home=home,
+                    away=away,
+                    date=match_date.isoformat(),
+                    error=str(exc),
+                )
 
     summary = stats_training_summary(load_match_stats_history())
     report = HistoryIngestReport(

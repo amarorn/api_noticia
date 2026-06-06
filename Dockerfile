@@ -23,7 +23,7 @@ COPY data/wc ./data/wc
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 RUN pip install --upgrade pip && \
-    pip install . && \
+    pip install ".[gcp,sofascore]" && \
     pip install scikit-learn && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 

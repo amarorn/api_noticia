@@ -12,6 +12,7 @@ import structlog
 from config import settings
 from ingest.sofascore.client import SofascoreClient
 from ingest.sofascore.paths import MATCH_STATS_PARQUET
+from ingest.sofascore.event_helpers import resolve_match_date
 from ingest.sofascore.fept_ingest import build_fept_payload, find_event_id
 from ingest.sofascore.stats_mapper import flatten_match_stats
 from ingest.sofascore.teams import load_team_map
@@ -59,7 +60,7 @@ def build_match_stats_payload(
 
             home = canonical_from_event_team(event.get("homeTeam") or {}, team_map)
             away = canonical_from_event_team(event.get("awayTeam") or {}, team_map)
-        resolved_date = match_date.isoformat() if match_date else None
+        resolved_date = resolve_match_date(event, match_date)
     else:
         if match_date is None or not home_team or not away_team:
             raise ValueError("Informe event_id ou home_team + away_team + match_date")
@@ -73,7 +74,7 @@ def build_match_stats_payload(
             team_map=team_map,
         )
         event_id = int(event["id"])
-        resolved_date = match_date.isoformat()
+        resolved_date = resolve_match_date(event, match_date)
 
     statistics_payload = sofascore.event_statistics(event_id)
     incidents_payload = (
@@ -106,7 +107,12 @@ def build_match_stats_payload(
     )
 
 
-def save_match_stats_json(payload: dict[str, Any], *, output_dir: Path | None = None) -> Path:
+def save_match_stats_json(payload: dict[str, Any], *, output_dir: Path | None = None) -> Path | None:
+    from ingest.gcp.lake_store import cloud_lake_enabled
+
+    if cloud_lake_enabled():
+        return None
+
     root = output_dir or settings.sofascore_stats_dir
     root.mkdir(parents=True, exist_ok=True)
     event_id = payload.get("event_id", "unknown")
@@ -122,27 +128,19 @@ def upsert_match_stats_parquet(
     *,
     output_dir: Path | None = None,
 ) -> Path:
-    root = output_dir or settings.sofascore_stats_dir
-    root.mkdir(parents=True, exist_ok=True)
-    path = root / MATCH_STATS_PARQUET
+    from ingest.sofascore.stats_dataset import upsert_match_stats_row
 
-    new_df = pd.DataFrame([row])
-    if path.is_file():
-        existing = pd.read_parquet(path)
-        combined = pd.concat([existing, new_df], ignore_index=True)
-        combined = combined.drop_duplicates(subset=["event_id"], keep="last")
-    else:
-        combined = new_df
-    combined.to_parquet(path, index=False)
-    return path
+    upsert_match_stats_row(row, stats_dir=output_dir)
+    root = output_dir or settings.sofascore_stats_dir
+    return root / MATCH_STATS_PARQUET
 
 
 def load_match_stats(event_id: int, *, output_dir: Path | None = None) -> dict[str, Any] | None:
-    root = output_dir or settings.sofascore_stats_dir
-    path = root / MATCH_STATS_PARQUET
-    if not path.is_file():
+    from ingest.sofascore.stats_dataset import load_raw_match_stats_df
+
+    df = load_raw_match_stats_df(stats_dir=output_dir)
+    if df.empty:
         return None
-    df = pd.read_parquet(path)
     rows = df[df["event_id"] == event_id]
     if rows.empty:
         return None
@@ -185,6 +183,82 @@ def ingest_match_stats(
         json_path=json_path,
         parquet_path=parquet_path,
     )
+
+
+def _update_stats_json_match_date(
+    stats_dir: Path,
+    event_id: int,
+    match_date: str,
+) -> bool:
+    matches = list(stats_dir.glob(f"{event_id}_*_stats.json"))
+    if not matches:
+        return False
+    for path in matches:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["match_date"] = match_date
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return True
+
+
+def backfill_match_dates(
+    *,
+    client: SofascoreClient | None = None,
+    output_dir: Path | None = None,
+    limit: int | None = None,
+    update_json: bool = True,
+) -> dict[str, int]:
+    from ingest.gcp.lake_store import cloud_lake_enabled
+    from ingest.sofascore.event_helpers import match_date_from_event
+    from ingest.sofascore.stats_dataset import load_raw_match_stats_df, save_raw_match_stats_df
+
+    df = load_raw_match_stats_df(stats_dir=output_dir).copy()
+    if df.empty:
+        return {"total": 0, "updated": 0, "skipped": 0, "failed": 0}
+
+    missing_mask = df["match_date"].isna() | (df["match_date"].astype(str).str.strip() == "")
+    targets = df[missing_mask]
+    if limit is not None:
+        targets = targets.head(limit)
+
+    sofascore = client or SofascoreClient()
+    updated = skipped = failed = 0
+
+    for idx, row in targets.iterrows():
+        event_id = int(row["event_id"])
+        try:
+            event = sofascore.event(event_id)
+            date_str = match_date_from_event(event)
+            if not date_str:
+                skipped += 1
+                continue
+            df.at[idx, "match_date"] = date_str
+            updated += 1
+            if update_json and not cloud_lake_enabled():
+                root = output_dir or settings.sofascore_stats_dir
+                _update_stats_json_match_date(root, event_id, date_str)
+        except Exception as exc:
+            failed += 1
+            logger.warning(
+                "sofascore_backfill_date_failed",
+                event_id=event_id,
+                error=str(exc),
+            )
+
+    df["match_date"] = pd.to_datetime(df["match_date"], utc=True, errors="coerce")
+    save_raw_match_stats_df(df, stats_dir=output_dir)
+    logger.info(
+        "sofascore_backfill_dates_complete",
+        total=len(targets),
+        updated=updated,
+        skipped=skipped,
+        failed=failed,
+    )
+    return {
+        "total": len(targets),
+        "updated": updated,
+        "skipped": skipped,
+        "failed": failed,
+    }
 
 
 def ingest_fept_and_stats(

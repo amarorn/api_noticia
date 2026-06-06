@@ -11,7 +11,7 @@
 **api-noticia** (também referido como *Bolão AI*) é um datalake de notícias esportivas com pipeline de coleta, transformação e previsão de resultados de bolão (formato **1 / X / 2**) para futebol. O sistema combina:
 
 - Coleta de RSS de portais esportivos (Globo Esporte, ESPN BR, UOL, Lance!, Fogaonet, Gazeta Esportiva).
-- Arquitetura em camadas (Bronze → Silver → Gold) armazenada localmente em Parquet.
+- Arquitetura medalhão (Bronze → Silver → Gold) em Parquet; **dev padrão: lake local** (`LAKE_PRIMARY=local`); publicação opcional em **GCS + BigQuery** (`sync-gcp`).
 - Modelos estatísticos e de ML: Dixon-Coles, regressão logística, gradient boosting, ensemble colaborativo e motor tático **KXL** (Energy × Space × Time).
 - API REST em FastAPI que serve previsões, notícias, validação histórica e odds ao vivo.
 - Frontend web em React + TypeScript + Tailwind CSS + Vite.
@@ -26,7 +26,7 @@
 |--------|-----------|
 | API | FastAPI + Uvicorn |
 | Configuração | Pydantic Settings (`.env`) |
-| Datalake | Pandas + PyArrow (Parquet) |
+| Datalake | Pandas + PyArrow (Parquet); GCS + BigQuery (opcional, `[gcp]`) |
 | ML / Estatística | scikit-learn, Poisson customizado, Dixon-Coles |
 | LLM (opcional) | transformers + Unsloth (Qwen2.5-0.5B-Instruct com PEFT/LoRA) |
 | MLflow (opcional) | Tracking local SQLite (`mlflow.db`) |
@@ -50,7 +50,8 @@
 ### Infraestrutura
 | Camada | Tecnologia |
 |--------|-----------|
-| Container | Docker (`python:3.11-slim`) |
+| Container | Docker (`python:3.11-slim`) + `docker-compose.yml` (perfis `local` / `cloud`) |
+| Cloud (opcional) | GCS (`lake/…`) + BigQuery (`sports_news_lake`) — projeto `beanalytic-dev` |
 | Deploy (API) | Fly.io (região `gru`, volume em `/data`) |
 | CI/CD | GitHub Actions (`ci.yml`, `daily-collect.yml`) |
 | Pre-commit | ruff + hooks padrão |
@@ -74,7 +75,11 @@ api_noticia/
 │   ├── storage.py          # Escrita Parquet particionada (bronze)
 │   ├── fixtures/           # Import de fixtures (Brasileirão, Copa do Mundo)
 │   ├── sofascore/          # Cliente curl_cffi, FEPT, stats, histórico
-│   ├── gcp/                # Sync Parquet → GCS → BigQuery
+│   ├── gcp/                # Medalhão GCP: sync, lake_store, lake_frames, medallion
+│   │   ├── sync.py         # sync-gcp (local ou GCS → BQ)
+│   │   ├── lake_store.py   # read/write snapshots GCS (cloud_lake_enabled)
+│   │   ├── lake_frames.py  # normalização bronze/silver/gold para BQ
+│   │   └── medallion.py    # mapa camada → tabela BQ / prefixo GCS
 │   └── odds/               # The Odds API
 ├── pipelines/              # Transformações silver/gold + pipelines WC
 │   ├── silver.py           # Bronze → Silver
@@ -119,16 +124,21 @@ api_noticia/
 │   │   ├── silver/
 │   │   ├── gold/
 │   │   ├── fixtures/
-│   │   └── reports/
+│   │   ├── sofascore/      # match_stats.parquet (stats xG)
+│   │   ├── fept/           # JSON por evento (não vai ao GCS por padrão)
+│   │   └── artifacts/      # predictor WC (pickle + manifest)
 │   ├── sources.yaml        # Configuração declarativa de fontes RSS
 │   ├── rounds/             # Rodadas planejadas (current.json, wc_2026.json)
 │   └── wc/                 # Dados estáticos WC (squads, baselines, rankings, odds)
-├── scripts/                # Utilitários e entrypoints de desenvolvimento
+├── scripts/                # Utilitários (dev-api.sh, docker-dev.sh, cron_collect.sh)
 ├── docs/                   # Documentação em português
 ├── config.py               # Settings central (pydantic-settings)
 ├── pyproject.toml          # Dependências, scripts, ruff, pytest
-├── Dockerfile
+├── Dockerfile              # API + deps gcp/sofascore
+├── docker-compose.yml      # perfis local (lake disco) e cloud (GCS/BQ)
+├── docker-compose.env.example
 ├── fly.toml                # Configuração Fly.io
+├── credentials/            # Service account GCP (gitignored)
 └── .env / .env.example     # Variáveis de ambiente
 ```
 
@@ -141,7 +151,10 @@ api_noticia/
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+pip install -e ".[gcp]"       # opcional: sync-gcp, lake cloud
+pip install -e ".[sofascore]" # opcional: ingest-sofascore
 cp .env.example .env
+# Dev recomendado: LAKE_PRIMARY=local, LAKE_SYNC_BQ_ON_WRITE=false
 ```
 
 ### Executar testes
@@ -177,8 +190,11 @@ cd frontend && npm install && npm run dev
 
 ### Coleta de dados
 ```bash
-daily-sync              # coleta RSS + silver (use 2-3x/dia)
+daily-sync              # RSS → bronze → silver (2–3x/dia: 8h, 14h, 20h ou 11h, 17h, 23h UTC no CI)
 collect-news            # só bronze
+ingest-sofascore --history --all-teams   # stats xG (últimos jogos por seleção)
+ingest-sofascore --all                   # fixtures WC (since-year 2018) + seleções
+ingest-sofascore --backfill-dates        # preenche match_date via Sofascore API
 ```
 
 ### Importar fixtures
@@ -192,6 +208,51 @@ import-world-cup --missing-only    # 1930–2022
 run-pipeline silver
 run-pipeline gold --season 2024
 run-pipeline export                # JSONL para treino
+```
+
+### Datalake local vs GCP
+
+**Dev padrão (sem custo GCP):**
+```env
+LAKE_PRIMARY=local
+LAKE_SYNC_BQ_ON_WRITE=false
+```
+
+**Publicar na nuvem (manual):**
+```bash
+sync-gcp --list-layers
+sync-gcp --layer all --truncate
+sync-gcp --layer silver_sofascore
+```
+
+**Produção / cloud-first:**
+```env
+LAKE_PRIMARY=cloud
+LAKE_SYNC_BQ_ON_WRITE=true
+GCS_BUCKET=beanalytic-dev-sports-news-lake
+GCP_PROJECT=beanalytic-dev
+GOOGLE_APPLICATION_CREDENTIALS=./credentials/beanalytic-dev.json
+```
+
+| Camada | Tabela BQ | Snapshot GCS |
+|--------|-----------|--------------|
+| bronze | `bronze_articles` | `lake/bronze/articles/articles.parquet` |
+| silver | `silver_articles` | `lake/silver/articles/articles.parquet` |
+| gold | `gold_bolao_context` | `lake/gold/bolao/articles.parquet` |
+| silver_sofascore | `silver_sofascore_match_stats` | `lake/silver/sofascore/match_stats.parquet` |
+| silver_fixtures | `silver_fixtures_results` | `lake/silver/fixtures/world_cup_fixtures.parquet` |
+| gold_wc | `gold_wc_match_features` | `lake/gold/wc/match_features.parquet` |
+
+Aliases CLI: `sofascore` → `silver_sofascore`, `fixtures` → `silver_fixtures`.
+
+Leitores/escritores (`save_bronze`, `load_silver`, `upsert_match_stats`, `load_wc_fixtures`, etc.) respeitam `cloud_lake_enabled()` em `ingest/gcp/lake_store.py`. Com `LAKE_PRIMARY=local`, usam `data/lake/`; com `cloud`, leem/escrevem snapshots no GCS.
+
+### Docker (dev)
+```bash
+./scripts/docker-dev.sh up                    # API local (perfil local, padrão)
+./scripts/docker-dev.sh run daily-sync
+./scripts/docker-dev.sh cloud up              # API apontando para GCS/BQ
+./scripts/docker-dev.sh cloud run sync-gcp --layer all
 ```
 
 ### Previsões
@@ -241,14 +302,20 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 - Testes: `test_<modulo>.py`.
 
 ### Datalake
-- Bronze: `data/lake/bronze/<source>/<year>/<month>/articles_HHMMSS.parquet`
-- Silver: `data/lake/silver/year=<year>/month=<month>/day=<day>/articles.parquet`
-- Gold: `data/lake/gold/competition=<comp>/season=<season>/round=<round>/context.parquet`
-- Fixtures: `data/lake/fixtures/<competition>_<season>.parquet`
+- **Local** (`LAKE_PRIMARY=local`): Parquet em `data/lake/` (gitignored).
+- **Cloud** (`LAKE_PRIMARY=cloud`): snapshots consolidados no GCS; BQ opcional via `LAKE_SYNC_BQ_ON_WRITE`.
+- Bronze local: `data/lake/bronze/source=<fonte>/year=…/month=…/day=…/articles_*.parquet`
+- Silver local: `data/lake/silver/year=…/month=…/day=…/articles_*.parquet`
+- Gold local: `data/lake/gold/year=…/month=…/context_*.parquet`
+- Fixtures WC: `data/lake/fixtures/world_cup_<season>.parquet` (local) ou `silver_fixtures` no GCS
+- Sofascore stats: `data/lake/sofascore/match_stats.parquet` (local) ou `silver_sofascore` no GCS
+- Ingest em massa Sofascore usa `match_stats_batch_write()` para um único upload GCS por execução.
 
 ### Configuração
 - Toda configuração sensível ou variável por ambiente vai para `config.py` (Pydantic Settings) e é sobrescrita via `.env`.
+- Chaves relevantes do lake: `LAKE_ROOT`, `LAKE_PRIMARY` (`local` | `cloud`), `LAKE_SYNC_BQ_ON_WRITE`, `GCS_BUCKET`, `GCP_PROJECT`, `BQ_DATASET`, `GOOGLE_APPLICATION_CREDENTIALS`.
 - Nunca hardcode chaves de API ou caminhos absolutos em código de produção.
+- Nunca commitar `.env` nem `credentials/`.
 
 ---
 
@@ -264,7 +331,7 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
   - `lint` → `test-and-benchmark` (timeout 20 min) → `wc-model` (timeout 25 min).
   - Benchmarks rodam em CI após os testes: `benchmark-bolao-models --eval-season 2024` e `walkforward-wc-models --max-editions 6 --min-season 1990`.
   - Artefatos de benchmark são preservados por 14 dias.
-- **Coleta diária:** Workflow `daily-collect.yml` roda `daily-sync` em cron (`11h, 17h, 23h`) e faz upload do lake como artefato (30 dias).
+- **Coleta diária:** Workflow `daily-collect.yml` roda `daily-sync` em cron (`11h, 17h, 23h UTC`) e faz upload do lake local como artefato (30 dias). Em dev local, `daily-sync` não toca GCP; use `sync-gcp` para publicar.
 
 ---
 
@@ -294,7 +361,7 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 3. **Blend**: `lm_weight=0.55` mistura probabilidades baseline com o palpite do LM.
 
 ### Copa do Mundo (WC)
-1. **Feature engineering** (`pipelines/wc_stats.py`): Elo iterativo, H2H, forma, squad features, notícias, Sofascore, FIFA rankings, market features (odds).
+1. **Feature engineering** (`pipelines/wc_stats.py`, `pipelines/wc_sofascore_features.py`): Elo iterativo, H2H, forma, squad features, notícias, rolling xG Sofascore (6 features), FIFA rankings, market features (odds). Dataset gold WC: `gold_wc_match_features`.
 2. **Poisson / Dixon-Coles** (`models/poisson_wc.py`, `models/dixon_coles_wc.py`): força de ataque/defesa com decaimento temporal e correlação rho.
 3. **Logistic Regression** (`models/logistic_wc.py`): calibrada com `CalibratedClassifierCV`.
 4. **Collaborative Ensemble** (`models/wc_collaborative.py`): blend otimizado por Brier entre Dixon-Coles e logística.
@@ -316,7 +383,9 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 - **Adicione testes** para qualquer lógica nova em `models/`, `pipelines/` ou `api/`.
 - **Respeite o `.env`**: novas configurações devem ser adicionadas a `config.py` (com defaults sensatos) e documentadas em `.env.example`.
 - **Pydantic para schemas**: qualquer contrato de dados público (request/response da API, linhas do lake) deve ter um schema Pydantic em `schemas/`.
-- **Parquet para lake**: dados tabulares vão para Parquet particionado; JSON/JSONL apenas para configs, exemplos ou export de treino.
+- **Parquet para lake**: dados tabulares vão para Parquet (particionado localmente; snapshot consolidado no GCS). JSON/JSONL apenas para configs, FEPT, exemplos ou export de treino.
+- **Lake local em dev**: prefira `LAKE_PRIMARY=local` para evitar custo BQ durante desenvolvimento. Integrações GCP devem funcionar com `sync-gcp` sem exigir `LAKE_PRIMARY=cloud` no dia a dia.
+- **Normalização GCS/BQ**: ao escrever snapshots, use `normalize_*_df` / `normalize_match_stats_snapshot_df` em `lake_frames.py` e `stats_dataset.py` (timestamps em microssegundos, `match_date` sempre datetime).
 - **CLI para automação**: operações recorrentes (coleta, transformação, treino) devem expor um entrypoint via `pyproject.toml` `[project.scripts]`.
 - **Métricas de qualidade**: quando adicionar modelos, inclua métricas de Brier, log-loss e accuracy. Use MLflow opcionalmente (`pip install -e ".[ml]"`).
 - **Frontend**: mantenha a arquitetura limada (domain → application → infrastructure → presentation). Novas páginas adicionam rota em `App.tsx`, use case em `application/`, repositório em `infrastructure/`, e componentes em `presentation/`.
@@ -328,9 +397,11 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 | Recurso | Local |
 |---------|-------|
 | Docs completos | `docs/README.md` |
+| Datalake e pipelines | `docs/datalake-e-pipelines.md` |
 | Referência API | `docs/api-referencia.md` |
 | Arquitetura | `docs/arquitetura.md` |
 | Modelos preditivos | `docs/modelos-preditivos.md` |
 | KXL Colisão | `docs/kxl-colisao.md` |
 | Frontend | `docs/frontend.md` |
 | Deploy Fly.io | `docs/deploy-fly.md` |
+| Docker compose | `docker-compose.yml`, `scripts/docker-dev.sh` |
