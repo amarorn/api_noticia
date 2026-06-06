@@ -133,14 +133,23 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
         </div>
       )}
 
-      <Link
-        to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}`}
-        state={{ prediction }}
-        className="relative mx-4 mb-4 flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2.5 text-sm font-medium text-slate-400 transition-all group-hover:border-neon-green/25 group-hover:bg-neon-green/4 group-hover:text-neon-green"
-      >
-        Ver análise completa
-        <IconChevronRight className="h-3.5 w-3.5" />
-      </Link>
+      <div className="relative mx-4 mb-4 flex flex-col gap-2">
+        <Link
+          to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}`}
+          state={{ prediction }}
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2.5 text-sm font-medium text-slate-400 transition-all group-hover:border-neon-green/25 group-hover:bg-neon-green/4 group-hover:text-neon-green"
+        >
+          Ver análise completa
+          <IconChevronRight className="h-3.5 w-3.5" />
+        </Link>
+        <Link
+          to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}?sofascore=1`}
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2 text-xs font-medium text-slate-500 transition-all hover:border-neon-blue/25 hover:bg-neon-blue/4 hover:text-neon-blue"
+        >
+          Palpite com escalação Sofascore
+          <IconChevronRight className="h-3 w-3" />
+        </Link>
+      </div>
     </motion.article>
   );
 }

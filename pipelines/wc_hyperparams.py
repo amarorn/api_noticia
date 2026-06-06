@@ -21,6 +21,8 @@ class WcHyperParams:
     elo_initial: float = 1500.0
     home_adv_goals: float = 0.12
     home_adv_goals_neutral: float = 0.04
+    home_adv_corners: float = 0.45
+    home_adv_corners_neutral: float = 0.15
     logistic_c: float = 0.85
     logistic_class_weight: str | None = "balanced"
     logistic_max_iter: int = 3000
@@ -37,6 +39,9 @@ class WcHyperParams:
     def home_advantage_goals(self, is_neutral: bool) -> float:
         return self.home_adv_goals_neutral if is_neutral else self.home_adv_goals
 
+    def home_advantage_corners(self, is_neutral: bool) -> float:
+        return self.home_adv_corners_neutral if is_neutral else self.home_adv_corners
+
 
 def _from_settings_defaults() -> WcHyperParams:
     return WcHyperParams(
@@ -45,6 +50,8 @@ def _from_settings_defaults() -> WcHyperParams:
         elo_initial=getattr(settings, "wc_elo_initial", 1500.0),
         home_adv_goals=getattr(settings, "wc_home_adv_goals", 0.12),
         home_adv_goals_neutral=getattr(settings, "wc_home_adv_goals_neutral", 0.04),
+        home_adv_corners=getattr(settings, "wc_home_adv_corners", 0.45),
+        home_adv_corners_neutral=getattr(settings, "wc_home_adv_corners_neutral", 0.15),
         logistic_c=getattr(settings, "wc_logistic_c", 0.85),
         logistic_class_weight=getattr(settings, "wc_logistic_class_weight", "balanced"),
         logistic_max_iter=getattr(settings, "wc_logistic_max_iter", 3000),

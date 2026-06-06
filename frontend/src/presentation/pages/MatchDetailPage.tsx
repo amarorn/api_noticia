@@ -1,6 +1,11 @@
-import { Link, useLocation, useParams } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getNewsCardsUseCase, predictWcMatchUseCase } from "@/application/container";
+import {
+  getNewsCardsUseCase,
+  getWcScheduleUseCase,
+  predictWcCornersUseCase,
+} from "@/application/container";
 import type { WcPrediction } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import {
@@ -9,7 +14,10 @@ import {
 } from "@/presentation/components/charts/ProbabilityCharts";
 import { ConfidenceBadge, ConfidenceBar } from "@/presentation/components/predictions/ConfidenceBadge";
 import { MatchContextPanel } from "@/presentation/components/predictions/MatchContextPanel";
+import { CornersPredictionPanel } from "@/presentation/components/predictions/CornersPredictionPanel";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
+import { SofascoreFeptPanel } from "@/presentation/components/predictions/SofascoreFeptPanel";
+import { SofascoreToggle } from "@/presentation/components/predictions/SofascoreToggle";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
 import { NewsArticleCard } from "@/presentation/components/news/NewsArticleCard";
@@ -17,25 +25,83 @@ import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState"
 import { IconArrowLeft } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { formatPercent, outcomeColors } from "@/presentation/theme";
+import { findMatchInSchedule, kickoffDateFromIso } from "@/presentation/utils/sofascore";
+import { predictWithOptionalSofascore } from "@/presentation/utils/sofascorePredict";
 
 export function MatchDetailPage() {
   const { home, away } = useParams<{ home: string; away: string }>();
   const location = useLocation();
-  const statePrediction = (location.state as { prediction?: WcPrediction } | null)?.prediction;
+  const [searchParams] = useSearchParams();
+  const sofascoreFromUrl = searchParams.get("sofascore") === "1";
+  const statePrediction = !sofascoreFromUrl
+    ? (location.state as { prediction?: WcPrediction } | null)?.prediction
+    : undefined;
 
   const homeTeam = decodeURIComponent(home ?? "");
   const awayTeam = decodeURIComponent(away ?? "");
 
+  const [useSofascore, setUseSofascore] = useState(sofascoreFromUrl);
+  const [sofascoreEventIdInput, setSofascoreEventIdInput] = useState("");
+
+  const scheduleQuery = useQuery({
+    queryKey: ["wc-schedule"],
+    queryFn: () => getWcScheduleUseCase.execute(),
+    staleTime: 10 * 60_000,
+  });
+
+  const scheduleMatch = useMemo(
+    () =>
+      scheduleQuery.data
+        ? findMatchInSchedule(scheduleQuery.data, homeTeam, awayTeam)
+        : undefined,
+    [scheduleQuery.data, homeTeam, awayTeam],
+  );
+
+  const manualSofascoreEventId = useMemo(() => {
+    const parsed = Number.parseInt(sofascoreEventIdInput, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  }, [sofascoreEventIdInput]);
+
+  const kickoffDate = kickoffDateFromIso(scheduleMatch?.kickoff);
+  const canResolveSofascore =
+    manualSofascoreEventId != null || kickoffDate != null;
+
   const query = useQuery({
-    queryKey: ["wc-match", homeTeam, awayTeam],
+    queryKey: [
+      "wc-match",
+      homeTeam,
+      awayTeam,
+      useSofascore,
+      manualSofascoreEventId,
+      kickoffDate,
+    ],
     queryFn: () =>
-      predictWcMatchUseCase.execute({
+      predictWithOptionalSofascore({
         homeTeam,
         awayTeam,
-        phase: "group",
+        phase: scheduleMatch?.phase ?? "group",
+        useSofascore,
+        manualEventId: manualSofascoreEventId,
+        kickoffDate,
       }),
-    enabled: !!homeTeam && !!awayTeam && !statePrediction,
+    enabled:
+      !!homeTeam &&
+      !!awayTeam &&
+      (!useSofascore || canResolveSofascore),
     initialData: statePrediction,
+    staleTime: useSofascore ? 0 : 5 * 60_000,
+  });
+
+  const cornersQuery = useQuery({
+    queryKey: ["wc-corners", homeTeam, awayTeam, scheduleMatch?.phase],
+    queryFn: () =>
+      predictWcCornersUseCase.execute({
+        homeTeam,
+        awayTeam,
+        phase: scheduleMatch?.phase ?? "group",
+      }),
+    enabled: !!homeTeam && !!awayTeam,
+    staleTime: 5 * 60_000,
   });
 
   const newsQuery = useQuery({
@@ -51,13 +117,24 @@ export function MatchDetailPage() {
     staleTime: 60_000,
   });
 
-  if (query.isLoading && !query.data) {
+  const needsSofascoreResolution = useSofascore && !canResolveSofascore;
+  const awaitingPrediction =
+    !query.data &&
+    (query.isLoading ||
+      query.isFetching ||
+      (needsSofascoreResolution && scheduleQuery.isLoading));
+
+  if (awaitingPrediction) {
     return (
       <PageTransition>
         <SlowLoadingPanel
           active
           title={`Analisando ${homeTeam} x ${awayTeam}…`}
-          hint="Montando palpite completo com breakdown dos modelos."
+          hint={
+            useSofascore
+              ? "Buscando escalação no Sofascore e montando palpite com FEPT."
+              : "Montando palpite completo com breakdown dos modelos."
+          }
         />
         <DashboardSkeleton />
       </PageTransition>
@@ -77,7 +154,36 @@ export function MatchDetailPage() {
     );
   }
 
-  const pred = query.data!;
+  if (!query.data) {
+    return (
+      <PageTransition className="space-y-5">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+        >
+          <IconArrowLeft className="h-4 w-4" />
+          Voltar aos palpites
+        </Link>
+        <SofascoreToggle
+          enabled={useSofascore}
+          onChange={setUseSofascore}
+          eventId={sofascoreEventIdInput}
+          onEventIdChange={setSofascoreEventIdInput}
+          hint={
+            kickoffDate
+              ? `Busca automática pela data ${kickoffDate}`
+              : "Informe o ID do evento ou aguarde a tabela oficial carregar"
+          }
+        />
+        <p className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-400">
+          Não foi possível obter a data deste jogo na tabela oficial. Informe o ID do evento
+          Sofascore manualmente.
+        </p>
+      </PageTransition>
+    );
+  }
+
+  const pred = query.data;
   const winnerColor = outcomeColors[pred.prediction];
 
   return (
@@ -90,12 +196,34 @@ export function MatchDetailPage() {
         Voltar aos palpites
       </Link>
 
+      <SofascoreToggle
+        enabled={useSofascore}
+        onChange={setUseSofascore}
+        eventId={sofascoreEventIdInput}
+        onEventIdChange={setSofascoreEventIdInput}
+        hint={
+          kickoffDate
+            ? `Busca automática pela data ${kickoffDate}`
+            : "Informe o ID do evento ou aguarde a tabela oficial carregar"
+        }
+      />
+
+      {useSofascore && !canResolveSofascore && (
+        <p className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-400">
+          Não foi possível obter a data deste jogo na tabela oficial. Informe o ID do evento
+          Sofascore manualmente.
+        </p>
+      )}
+
+      {query.isFetching && query.data && (
+        <p className="text-xs text-slate-500">Atualizando palpite…</p>
+      )}
+
       {/* Match hero */}
       <div
         className="relative overflow-hidden rounded-2xl border"
         style={{ borderColor: `${winnerColor}25` }}
       >
-        {/* Imagem de duelo gerada pelo modelo */}
         <img
           src="/images/match-duel-banner.png"
           alt=""
@@ -108,7 +236,6 @@ export function MatchDetailPage() {
           style={{ background: `radial-gradient(ellipse at top right, ${winnerColor}, transparent 60%)` }}
         />
         <div className="relative flex flex-wrap items-center justify-between gap-6 px-6 py-6 sm:px-8">
-          {/* Times */}
           <div className="flex items-center gap-4">
             <TeamHeroAvatar name={pred.homeTeam} />
             <div>
@@ -147,7 +274,6 @@ export function MatchDetailPage() {
           </div>
         </div>
 
-        {/* H2H strip */}
         <div className="border-t border-white/[0.05] px-6 py-3 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="text-xs text-slate-500">{pred.h2hSummary}</p>
@@ -156,7 +282,6 @@ export function MatchDetailPage() {
         </div>
       </div>
 
-      {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="glass-card p-4">
           <ProbabilityDonut
@@ -176,15 +301,28 @@ export function MatchDetailPage() {
         </div>
       </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <MetricCard title="Placar provável" value={pred.poissonScore} accent="green" />
         <MetricCard title="Gols esperados" value={pred.expectedGoals} accent="blue" />
+        <MetricCard
+          title="Escanteios esp."
+          value={cornersQuery.data?.expectedCorners ?? "…"}
+          accent="amber"
+        />
         <MetricCard title="Prob. casa" value={formatPercent(pred.probHome)} accent="green" />
         <MetricCard title="Prob. fora" value={formatPercent(pred.probAway)} accent="purple" />
       </div>
 
-      {/* Confidence + ensemble */}
+      {cornersQuery.isLoading && (
+        <p className="text-xs text-slate-500">Calculando escanteios…</p>
+      )}
+      {cornersQuery.isError && (
+        <p className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-400">
+          Não foi possível carregar a previsão de escanteios.
+        </p>
+      )}
+      {cornersQuery.data && <CornersPredictionPanel prediction={cornersQuery.data} />}
+
       <div className="glass-card p-5 space-y-4">
         <ConfidenceBar confidence={pred.confidence} />
         <div className="grid gap-3 sm:grid-cols-3">
@@ -201,6 +339,8 @@ export function MatchDetailPage() {
           awayTeam={pred.awayTeam}
         />
       )}
+
+      <SofascoreFeptPanel fept={pred.modelBreakdown.kxlFept} />
 
       <div className="glass-card p-5">
         <p className="section-label">Contexto pré-jogo</p>
@@ -262,12 +402,13 @@ function MetricCard({
 }: {
   title: string;
   value: string;
-  accent: "green" | "blue" | "purple";
+  accent: "green" | "blue" | "purple" | "amber";
 }) {
   const colorMap = {
     green: "text-neon-green border-neon-green/15 bg-neon-green/4",
     blue: "text-neon-blue border-neon-blue/15 bg-neon-blue/4",
     purple: "text-neon-purple border-neon-purple/15 bg-neon-purple/4",
+    amber: "text-amber-300 border-amber-500/15 bg-amber-500/4",
   };
 
   return (

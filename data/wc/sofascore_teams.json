@@ -1,0 +1,294 @@
+{
+  "version": 1,
+  "source": "sofascore_search",
+  "teams": {
+    "Alemanha": {
+      "sofascore_id": 4711,
+      "sofascore_name": "Germany",
+      "slug": "germany",
+      "search_query": "Germany"
+    },
+    "Argentina": {
+      "sofascore_id": 4819,
+      "sofascore_name": "Argentina",
+      "slug": "argentina",
+      "search_query": "Argentina"
+    },
+    "Argélia": {
+      "sofascore_id": 4691,
+      "sofascore_name": "Algeria",
+      "slug": "algeria",
+      "search_query": "Algeria"
+    },
+    "Arábia Saudita": {
+      "sofascore_id": 4834,
+      "sofascore_name": "Saudi Arabia",
+      "slug": "saudi-arabia",
+      "search_query": "Saudi Arabia"
+    },
+    "Austrália": {
+      "sofascore_id": 4741,
+      "sofascore_name": "Australia",
+      "slug": "australia",
+      "search_query": "Australia"
+    },
+    "Brasil": {
+      "sofascore_id": 4748,
+      "sofascore_name": "Brazil",
+      "slug": "brazil",
+      "search_query": "Brazil"
+    },
+    "Bósnia": {
+      "sofascore_id": 4479,
+      "sofascore_name": "Bosnia & Herzegovina",
+      "slug": "bosnia-and-herzegovina",
+      "search_query": "Bosnia"
+    },
+    "Bélgica": {
+      "sofascore_id": 4717,
+      "sofascore_name": "Belgium",
+      "slug": "belgium",
+      "search_query": "Belgium"
+    },
+    "Cabo Verde": {
+      "sofascore_id": 4753,
+      "sofascore_name": "Cabo Verde",
+      "slug": "cape-verde",
+      "search_query": "Cape Verde"
+    },
+    "Canadá": {
+      "sofascore_id": 4752,
+      "sofascore_name": "Canada",
+      "slug": "canada",
+      "search_query": "Canada"
+    },
+    "Catar": {
+      "sofascore_id": 4792,
+      "sofascore_name": "Qatar",
+      "slug": "qatar",
+      "search_query": "Qatar"
+    },
+    "Colômbia": {
+      "sofascore_id": 4820,
+      "sofascore_name": "Colombia",
+      "slug": "colombia",
+      "search_query": "Colombia"
+    },
+    "Coreia do Sul": {
+      "sofascore_id": 4735,
+      "sofascore_name": "South Korea",
+      "slug": "south-korea",
+      "search_query": "South Korea"
+    },
+    "Costa do Marfim": {
+      "sofascore_id": 933582,
+      "sofascore_name": "Ivory Coast",
+      "slug": "ivory-coast",
+      "search_query": "Ivory Coast"
+    },
+    "Croácia": {
+      "sofascore_id": 4715,
+      "sofascore_name": "Croatia",
+      "slug": "croatia",
+      "search_query": "Croatia"
+    },
+    "Curaçau": {
+      "sofascore_id": 55827,
+      "sofascore_name": "Curaçao",
+      "slug": "curacao",
+      "search_query": "Curacao"
+    },
+    "Egito": {
+      "sofascore_id": 4758,
+      "sofascore_name": "Egypt",
+      "slug": "egypt",
+      "search_query": "Egypt"
+    },
+    "Equador": {
+      "sofascore_id": 4757,
+      "sofascore_name": "Ecuador",
+      "slug": "ecuador",
+      "search_query": "Equador"
+    },
+    "Escócia": {
+      "sofascore_id": 4695,
+      "sofascore_name": "Scotland",
+      "slug": "scotland",
+      "search_query": "Scotland"
+    },
+    "Espanha": {
+      "sofascore_id": 4698,
+      "sofascore_name": "Spain",
+      "slug": "spain",
+      "search_query": "Spain"
+    },
+    "Estados Unidos": {
+      "sofascore_id": 4724,
+      "sofascore_name": "USA",
+      "slug": "usa",
+      "search_query": "USA"
+    },
+    "França": {
+      "sofascore_id": 4481,
+      "sofascore_name": "France",
+      "slug": "france",
+      "search_query": "France"
+    },
+    "Gana": {
+      "sofascore_id": 4764,
+      "sofascore_name": "Ghana",
+      "slug": "ghana",
+      "search_query": "Ghana"
+    },
+    "Haiti": {
+      "sofascore_id": 7229,
+      "sofascore_name": "Haiti",
+      "slug": "haiti",
+      "search_query": "Haiti"
+    },
+    "Holanda": {
+      "sofascore_id": 4705,
+      "sofascore_name": "Netherlands",
+      "slug": "netherlands",
+      "search_query": "Netherlands"
+    },
+    "Inglaterra": {
+      "sofascore_id": 4713,
+      "sofascore_name": "England",
+      "slug": "england",
+      "search_query": "England"
+    },
+    "Iraque": {
+      "sofascore_id": 4767,
+      "sofascore_name": "Iraq",
+      "slug": "iraq",
+      "search_query": "Iraq"
+    },
+    "Irã": {
+      "sofascore_id": 4766,
+      "sofascore_name": "Iran",
+      "slug": "iran",
+      "search_query": "Iran"
+    },
+    "Japão": {
+      "sofascore_id": 4770,
+      "sofascore_name": "Japan",
+      "slug": "japan",
+      "search_query": "Japão"
+    },
+    "Jordânia": {
+      "sofascore_id": 4771,
+      "sofascore_name": "Jordan",
+      "slug": "jordan",
+      "search_query": "Jordan"
+    },
+    "Marrocos": {
+      "sofascore_id": 4778,
+      "sofascore_name": "Morocco",
+      "slug": "morocco",
+      "search_query": "Morocco"
+    },
+    "México": {
+      "sofascore_id": 4781,
+      "sofascore_name": "Mexico",
+      "slug": "mexico",
+      "search_query": "Mexico"
+    },
+    "Noruega": {
+      "sofascore_id": 4475,
+      "sofascore_name": "Norway",
+      "slug": "norway",
+      "search_query": "Noruega"
+    },
+    "Nova Zelândia": {
+      "sofascore_id": 187755,
+      "sofascore_name": "New Zealand",
+      "slug": "new-zealand",
+      "search_query": "New Zealand"
+    },
+    "Panamá": {
+      "sofascore_id": 5164,
+      "sofascore_name": "Panama",
+      "slug": "panama",
+      "search_query": "Panama"
+    },
+    "Paraguai": {
+      "sofascore_id": 4789,
+      "sofascore_name": "Paraguay",
+      "slug": "paraguay",
+      "search_query": "Paraguai"
+    },
+    "Portugal": {
+      "sofascore_id": 4704,
+      "sofascore_name": "Portugal",
+      "slug": "portugal",
+      "search_query": "Portugal"
+    },
+    "República Democrática do Congo": {
+      "sofascore_id": 4823,
+      "sofascore_name": "DR Congo",
+      "slug": "dr-congo",
+      "search_query": "DR Congo"
+    },
+    "República Tcheca": {
+      "sofascore_id": 4714,
+      "sofascore_name": "Czechia",
+      "slug": "czech-republic",
+      "search_query": "Czech Republic"
+    },
+    "Senegal": {
+      "sofascore_id": 4739,
+      "sofascore_name": "Senegal",
+      "slug": "senegal",
+      "search_query": "Senegal"
+    },
+    "Suécia": {
+      "sofascore_id": 4688,
+      "sofascore_name": "Sweden",
+      "slug": "sweden",
+      "search_query": "Sweden"
+    },
+    "Suíça": {
+      "sofascore_id": 4699,
+      "sofascore_name": "Switzerland",
+      "slug": "switzerland",
+      "search_query": "Switzerland"
+    },
+    "Tunísia": {
+      "sofascore_id": 4729,
+      "sofascore_name": "Tunisia",
+      "slug": "tunisia",
+      "search_query": "Tunisia"
+    },
+    "Turquia": {
+      "sofascore_id": 528538,
+      "sofascore_name": "Turkey",
+      "slug": "turkey",
+      "search_query": "Turkey"
+    },
+    "Uruguai": {
+      "sofascore_id": 4725,
+      "sofascore_name": "Uruguay",
+      "slug": "uruguay",
+      "search_query": "Uruguai"
+    },
+    "Uzbequistão": {
+      "sofascore_id": 4723,
+      "sofascore_name": "Uzbekistan",
+      "slug": "uzbekistan",
+      "search_query": "Uzbekistan"
+    },
+    "África do Sul": {
+      "sofascore_id": 4736,
+      "sofascore_name": "South Africa",
+      "slug": "south-africa",
+      "search_query": "South Africa"
+    },
+    "Áustria": {
+      "sofascore_id": 4718,
+      "sofascore_name": "Austria",
+      "slug": "austria",
+      "search_query": "Austria"
+    }
+  }
+}

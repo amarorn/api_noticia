@@ -2,10 +2,11 @@ import type {
   BrasileiraoRound,
   HealthStatus,
   NewsCards,
-  NewsCards,
   NewsFeed,
   NewsSyncResult,
+  SofascoreResolvedEvent,
   ValueBetsReport,
+  WcCornersPrediction,
   WcPrediction,
   WcRound,
   WcSchedule,
@@ -50,7 +51,22 @@ export interface IWcRepository {
   getSchedule(): Promise<WcSchedule>;
   getSquadsIndex(): Promise<WcSquadsIndex>;
   getSquad(team: string): Promise<WcSquadDetail>;
-  predictMatch(homeTeam: string, awayTeam: string, phase: string): Promise<WcPrediction>;
+  predictMatch(request: {
+    homeTeam: string;
+    awayTeam: string;
+    phase: string;
+    sofascoreEventId?: number;
+  }): Promise<WcPrediction>;
+  predictCorners(request: {
+    homeTeam: string;
+    awayTeam: string;
+    phase: string;
+  }): Promise<WcCornersPrediction>;
+  resolveSofascoreEvent(request: {
+    homeTeam: string;
+    awayTeam: string;
+    date: string;
+  }): Promise<SofascoreResolvedEvent>;
   getTeams(): Promise<string[]>;
   getValueBets(): Promise<ValueBetsReport>;
   getGroupStandings(): Promise<WcGroupStandings>;

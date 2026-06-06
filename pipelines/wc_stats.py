@@ -15,6 +15,10 @@ from pipelines.wc_group_pressure import (
     lookup_2026_group,
 )
 from pipelines.wc_squad_features import SQUAD_FEATURE_NAMES, squad_feature_vector
+from pipelines.wc_sofascore_features import (
+    SOFASCORE_FEATURE_NAMES,
+    sofascore_feature_vector,
+)
 
 EXTRA_FEATURE_NAMES = [
     "fifa_points_diff",
@@ -338,6 +342,7 @@ def features_to_vector(
         + market_feature_vector(f.home_team, f.away_team)
         + squad_feature_vector(f.home_team, f.away_team)
         + wc_news_feature_vector(f.home_team, f.away_team, before_date=before_date)
+        + sofascore_feature_vector(f.home_team, f.away_team, before_date=before_date)
     )
 
 
@@ -354,7 +359,7 @@ FEATURE_NAMES = [
     "form_wins_diff",
     "phase_knockout",
     "is_neutral",
-] + GROUP_PRESSURE_FEATURE_NAMES + EXTRA_FEATURE_NAMES + SQUAD_FEATURE_NAMES + NEWS_FEATURE_NAMES
+] + GROUP_PRESSURE_FEATURE_NAMES + EXTRA_FEATURE_NAMES + SQUAD_FEATURE_NAMES + NEWS_FEATURE_NAMES + SOFASCORE_FEATURE_NAMES
 
 
 def format_wc_context(f: WcMatchFeatures, h2h: WcH2H | None = None) -> str:

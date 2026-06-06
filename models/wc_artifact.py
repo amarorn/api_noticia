@@ -25,7 +25,7 @@ from pipelines.wc_stats import FEATURE_NAMES
 
 logger = structlog.get_logger()
 
-ARTIFACT_VERSION = 6
+ARTIFACT_VERSION = 7
 
 
 def fixtures_fingerprint() -> str:
@@ -84,8 +84,6 @@ def artifact_is_valid(manifest: dict | None = None) -> bool:
     if manifest.get("odds_fingerprint") != odds_fp:
         return False
     if manifest.get("baselines_fingerprint") != baselines_fingerprint():
-        return False
-    if manifest.get("silver_fingerprint") != silver_fingerprint():
         return False
     if manifest.get("feature_names") != FEATURE_NAMES:
         return False
@@ -160,31 +158,119 @@ def load_artifact() -> WcPredictor | None:
     return predictor
 
 
-def load_or_train_wc_predictor(*, force: bool = False) -> tuple[WcPredictor, dict]:
+def _touch_manifest_silver_fingerprint(manifest: dict) -> dict:
+    current = silver_fingerprint()
+    if manifest.get("silver_fingerprint") != current:
+        manifest = {**manifest, "silver_fingerprint": current}
+        _manifest_path().write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    return manifest
+
+
+def _log_train_to_mlflow(manifest: dict) -> str | None:
+    from models.wc_train_progress import read_train_progress
+
+    try:
+        from pipelines.mlflow_tracking import log_wc_train_run
+    except ImportError as exc:
+        logger.warning("mlflow_unavailable", error=str(exc))
+        return None
+
+    progress = read_train_progress()
+    elapsed = progress.elapsed_sec if progress else None
+    try:
+        run_id = log_wc_train_run(manifest=manifest, elapsed_sec=elapsed)
+        logger.info("mlflow_train_logged", run_id=run_id)
+        return run_id
+    except Exception as exc:
+        logger.warning("mlflow_log_failed", error=str(exc))
+        return None
+
+
+def load_or_train_wc_predictor(
+    *,
+    force: bool = False,
+    allow_train: bool = True,
+    progress: "TrainProgressReporter | None" = None,
+    enable_mlflow: bool = False,
+) -> tuple[WcPredictor, dict]:
+    from models.wc_train_progress import NullTrainProgressReporter
+
+    reporter = progress or NullTrainProgressReporter()
     if not force:
         loaded = load_artifact()
         if loaded is not None:
-            manifest = read_manifest() or {}
+            manifest = _touch_manifest_silver_fingerprint(read_manifest() or {})
             manifest["loaded_from_cache"] = True
             logger.info("wc_artifact_loaded", created_at=manifest.get("created_at"))
             return loaded, manifest
 
-    predictor = train_wc_predictor()
-    manifest = save_artifact(predictor)
-    manifest["loaded_from_cache"] = False
-    return predictor, manifest
+    if not allow_train:
+        raise ValueError(
+            "Modelo WC indisponível (artefato ausente ou desatualizado). "
+            "Execute: train-wc --force"
+        )
+
+    try:
+        predictor = train_wc_predictor(progress=reporter)
+        reporter.step_start("persist_artifact")
+        manifest = save_artifact(predictor)
+        manifest["loaded_from_cache"] = False
+        reporter.step_done("persist_artifact")
+        reporter.complete(
+            {
+                "fixture_rows": manifest.get("fixture_rows"),
+                "holdout_accuracy": manifest.get("training_metrics", {}).get("holdout_accuracy"),
+                "ensemble_brier": manifest.get("collab_metrics", {}).get("brier_score"),
+                "ensemble_weights": manifest.get("ensemble_weights"),
+            }
+        )
+        if enable_mlflow:
+            run_id = _log_train_to_mlflow(manifest)
+            if run_id:
+                manifest["mlflow_run_id"] = run_id
+        return predictor, manifest
+    except Exception as exc:
+        reporter.fail(str(exc))
+        raise
 
 
 def main() -> None:
+    structlog.configure(
+        processors=[
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.dev.ConsoleRenderer(),
+        ]
+    )
     parser = argparse.ArgumentParser(description="Treina e persiste o modelo da Copa do Mundo")
     parser.add_argument("--force", action="store_true", help="Ignora artefato em cache e retreina")
+    parser.add_argument(
+        "--mlflow",
+        action="store_true",
+        help="Registra métricas e artefatos no MLflow (requer pip install -e '.[ml]')",
+    )
     args = parser.parse_args()
-    predictor, manifest = load_or_train_wc_predictor(force=args.force)
+    from models.wc_train_progress import WcTrainProgressReporter
+
+    reporter = WcTrainProgressReporter(console=True)
+    if args.force:
+        logger.info("wc_train_cli", mode="force_retrain")
+    predictor, manifest = load_or_train_wc_predictor(
+        force=args.force,
+        progress=reporter,
+        enable_mlflow=args.mlflow,
+    )
     print(f"Artefato: {settings.wc_artifact_dir}")
     print(f"Jogos no lake: {len(predictor.fixtures)}")
     print(f"Holdout acurácia: {manifest.get('training_metrics', {}).get('holdout_accuracy')}")
     print(f"Ensemble Brier: {manifest.get('collab_metrics', {}).get('brier_score')}")
     print(f"Pesos: {manifest.get('ensemble_weights')}")
+    if manifest.get("mlflow_run_id"):
+        print(f"MLflow run: {manifest['mlflow_run_id']}")
+        print(f"Experimento: {settings.mlflow_experiment_wc_train}")
+        print("UI: mlflow-ui  →  http://127.0.0.1:5001")
 
 
 if __name__ == "__main__":

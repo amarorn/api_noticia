@@ -1,6 +1,8 @@
 import asyncio
 import json
+import threading
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -20,6 +22,7 @@ from config import settings
 from ingest.fixtures.brasileirao import load_fixtures
 from ingest.odds.the_odds_api import fetch_live_h2h_odds, merge_schedule_with_odds, save_odds_file
 from ingest.meta import collection_stats
+from models.corners_predictor import CornersPredictor
 from models.ev_value import MatchValueReport, evaluate_match
 from models.baseline import predict_baseline, predict_baseline_probs
 
@@ -46,6 +49,8 @@ WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 _wc_models_ready = False
 _wc_predictor: Any = None
 _wc_artifact_meta: dict = {}
+_wc_train_lock = threading.Lock()
+_wc_train_thread: threading.Thread | None = None
 
 
 def _wc_round_cache():
@@ -54,9 +59,21 @@ def _wc_round_cache():
     return wc_round_cache
 
 
+def _warm_sofascore_imports() -> None:
+    """Carrega módulos Sofascore no thread principal (evita deadlock no thread pool)."""
+    try:
+        import ingest.sofascore.client  # noqa: F401
+        import ingest.sofascore.fept_ingest  # noqa: F401
+        import ingest.sofascore.stats_ingest  # noqa: F401
+    except ImportError:
+        pass
+
+
 def _warm_wc_models() -> None:
     global _wc_models_ready
+    _warm_sofascore_imports()
     try:
+        CornersPredictor()
         get_wc_predictor()
         _wc_round_cache().warm_from_disk()
         _wc_models_ready = True
@@ -140,7 +157,8 @@ def get_wc_predictor(*, force: bool = False) -> "WcPredictor":
 
     if force or _wc_predictor is None:
         _wc_predictor, _wc_artifact_meta = load_or_train_wc_predictor(
-            force=force or settings.wc_artifact_force_retrain
+            force=force or settings.wc_artifact_force_retrain,
+            allow_train=force or settings.wc_artifact_force_retrain,
         )
     return _wc_predictor
 
@@ -232,10 +250,51 @@ class WcValueResponse(BaseModel):
     edges: list[WcMatchValueResponse]
 
 
+class WcCornersPredictRequest(BaseModel):
+    home_team: str = Field(..., examples=["Brasil"])
+    away_team: str = Field(..., examples=["Marrocos"])
+    phase: str = Field("group", examples=["group"])
+
+
+class WcCornerFactors(BaseModel):
+    league_avg: float
+    home_attack: float
+    away_attack: float
+    home_defense: float
+    away_defense: float
+    home_advantage: float
+    elo_factor_home: float
+    elo_factor_away: float
+    lambda_home: float
+    lambda_away: float
+    training_matches: int
+    blend_with_goal_proxy: float
+
+
+class WcCornersPredictResponse(BaseModel):
+    home_team: str
+    away_team: str
+    data_source: str
+    expected_corners: str
+    expected_total_corners: float
+    most_likely_corners: str
+    prob_home_more_corners: float
+    prob_draw_corners: float
+    prob_away_more_corners: float
+    line_probs: dict[str, float]
+    factors: WcCornerFactors
+    training_summary: dict
+
+
 class WcPredictRequest(BaseModel):
     home_team: str = Field(..., examples=["Brasil"])
     away_team: str = Field(..., examples=["Marrocos"])
     phase: str = Field("group", examples=["group"])
+    sofascore_event_id: int | None = Field(
+        None,
+        description="ID do evento Sofascore; preenche FEPT automaticamente se kxl_match.fept ausente",
+        examples=[11774480],
+    )
     kxl_match: WcKxlMatchInput | None = Field(
         None,
         description="Entrada dinâmica KXL (FECL, FEJU, FEDE, FEPT, FEEM) — opcional",
@@ -267,6 +326,7 @@ class WcModelBreakdown(BaseModel):
     kxl_baseline: dict | None = None
     kxl_collision: dict | None = None
     kxl_dynamic: dict | None = None
+    kxl_fept: dict | None = None
 
 
 class WcPredictionResponse(BaseModel):
@@ -545,6 +605,7 @@ def _breakdown_to_response(breakdown: dict) -> WcModelBreakdown:
         kxl_baseline=breakdown.get("kxl_baseline"),
         kxl_collision=breakdown.get("kxl_collision"),
         kxl_dynamic=breakdown.get("kxl_dynamic"),
+        kxl_fept=breakdown.get("kxl_fept"),
     )
 
 
@@ -917,8 +978,179 @@ def predict_current_round():
     )
 
 
+class WcSofascoreResolveResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    match_date: str
+    sofascore_home: str | None = None
+    sofascore_away: str | None = None
+
+
+class WcSofascoreStatsResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    match_date: str | None = None
+    stats: dict[str, float | int | str | None]
+    fetched_at: str
+    source: str = "sofascore"
+    cached: bool = False
+
+
+@app.get("/worldcup/sofascore/resolve", response_model=WcSofascoreResolveResponse)
+def worldcup_sofascore_resolve(
+    home_team: str = Query(...),
+    away_team: str = Query(...),
+    date: str = Query(..., description="Data do jogo (YYYY-MM-DD)"),
+):
+    from datetime import date as date_type
+
+    from ingest.sofascore.client import SofascoreClient, SofascoreClientError
+    from ingest.sofascore.fept_ingest import find_event_id
+    from ingest.sofascore.teams import event_team_names
+
+    home = normalize_national_team(home_team)
+    away = normalize_national_team(away_team)
+    try:
+        match_date = date_type.fromisoformat(date)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Data inválida; use YYYY-MM-DD") from exc
+
+    try:
+        client = SofascoreClient()
+        event = find_event_id(
+            client,
+            home_team=home,
+            away_team=away,
+            match_date=match_date,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SofascoreClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    event_home, event_away = event_team_names(event)
+    return WcSofascoreResolveResponse(
+        event_id=int(event["id"]),
+        home_team=home,
+        away_team=away,
+        match_date=match_date.isoformat(),
+        sofascore_home=event_home or None,
+        sofascore_away=event_away or None,
+    )
+
+
+@app.get(
+    "/worldcup/sofascore/{event_id}/statistics",
+    response_model=WcSofascoreStatsResponse,
+)
+def worldcup_sofascore_statistics(
+    event_id: int,
+    refresh: bool = Query(False, description="Força nova coleta no Sofascore"),
+):
+    from datetime import datetime, timezone
+
+    from ingest.sofascore.client import SofascoreClient, SofascoreClientError
+    from ingest.sofascore.stats_ingest import ingest_match_stats, load_match_stats
+
+    if not refresh:
+        cached = load_match_stats(event_id)
+        if cached:
+            fetched_at = cached.get("fetched_at")
+            if not isinstance(fetched_at, str):
+                fetched_at = datetime.now(timezone.utc).isoformat()
+            stats = {
+                k: v
+                for k, v in cached.items()
+                if k
+                not in (
+                    "event_id",
+                    "home_team",
+                    "away_team",
+                    "match_date",
+                    "source",
+                    "fetched_at",
+                )
+            }
+            return WcSofascoreStatsResponse(
+                event_id=int(cached["event_id"]),
+                home_team=str(cached["home_team"]),
+                away_team=str(cached["away_team"]),
+                match_date=cached.get("match_date"),
+                stats=stats,
+                fetched_at=fetched_at,
+                cached=True,
+            )
+
+    try:
+        result = ingest_match_stats(event_id=event_id, save=True)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SofascoreClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    payload = result.to_payload()
+    stats = {
+        k: v
+        for k, v in payload.items()
+        if k
+        not in (
+            "event_id",
+            "home_team",
+            "away_team",
+            "match_date",
+            "source",
+            "fetched_at",
+        )
+    }
+    return WcSofascoreStatsResponse(
+        event_id=result.event_id,
+        home_team=result.home_team,
+        away_team=result.away_team,
+        match_date=result.match_date,
+        stats=stats,
+        fetched_at=str(payload["fetched_at"]),
+        cached=False,
+    )
+
+
+@app.post("/worldcup/corners/predict", response_model=WcCornersPredictResponse)
+def worldcup_corners_predict(req: WcCornersPredictRequest):
+    home = normalize_national_team(req.home_team)
+    away = normalize_national_team(req.away_team)
+    if req.phase == "group" and not official_match_exists(home, away, phase="group"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Confronto {home} x {away} não consta na tabela oficial da fase de grupos.",
+        )
+
+    result = CornersPredictor().predict(home, away, phase=req.phase)
+    pred = result.prediction
+    factors = result.factors.as_dict()
+    return WcCornersPredictResponse(
+        home_team=result.home_team,
+        away_team=result.away_team,
+        data_source=result.data_source,
+        expected_corners=f"{pred.expected_home_corners:.1f}x{pred.expected_away_corners:.1f}",
+        expected_total_corners=round(pred.expected_total_corners, 2),
+        most_likely_corners=pred.most_likely_score,
+        prob_home_more_corners=round(pred.prob_home_more, 4),
+        prob_draw_corners=round(pred.prob_draw_corners, 4),
+        prob_away_more_corners=round(pred.prob_away_more, 4),
+        line_probs={k: round(v, 4) for k, v in pred.line_probs.items()},
+        factors=WcCornerFactors(**factors),
+        training_summary=result.training_summary,
+    )
+
+
 @app.post("/worldcup/predict", response_model=WcPredictionResponse)
 def worldcup_predict(req: WcPredictRequest):
+    from ingest.sofascore.client import SofascoreClientError
+    from ingest.sofascore.kxl_merge import merge_sofascore_fept
+
     try:
         predictor = _get_wc_predictor()
     except ValueError as exc:
@@ -931,18 +1163,37 @@ def worldcup_predict(req: WcPredictRequest):
             status_code=400,
             detail=f"Confronto {home} x {away} não consta na tabela oficial da fase de grupos.",
         )
+
+    try:
+        kxl_match, fept_meta = merge_sofascore_fept(
+            kxl_match=req.kxl_match,
+            sofascore_event_id=req.sofascore_event_id,
+            home_team=home,
+            away_team=away,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except SofascoreClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     try:
         pred = predictor.predict(
             home,
             away,
             phase=req.phase,
-            kxl_match=req.kxl_match,
+            kxl_match=kxl_match,
             season=2026,
             group_name=lookup_2026_group(home, away) if req.phase == "group" else None,
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return _wc_prediction_to_response(pred)
+
+    response = _wc_prediction_to_response(pred)
+    if fept_meta:
+        response.model_breakdown.kxl_fept = fept_meta
+    return response
 
 
 def _build_wc_round_predictions(
@@ -1233,13 +1484,79 @@ def worldcup_walkforward():
     return json.loads(report_path.read_text(encoding="utf-8"))
 
 
+def _run_wc_retrain_background(*, enable_mlflow: bool = False) -> None:
+    global _wc_predictor, _wc_artifact_meta, _wc_models_ready, _wc_train_thread
+    from models.wc_artifact import load_or_train_wc_predictor
+    from models.wc_train_progress import WcTrainProgressReporter
+
+    reporter = WcTrainProgressReporter(console=False)
+    try:
+        predictor, manifest = load_or_train_wc_predictor(
+            force=True,
+            progress=reporter,
+            enable_mlflow=enable_mlflow,
+        )
+        with _wc_train_lock:
+            _wc_predictor = predictor
+            _wc_artifact_meta = manifest
+            _wc_models_ready = True
+        _wc_round_cache().invalidate_wc_round_cache()
+    except Exception as exc:
+        with _wc_train_lock:
+            _wc_models_ready = False
+        reporter.fail(str(exc))
+    finally:
+        with _wc_train_lock:
+            _wc_train_thread = None
+
+
+@app.get("/worldcup/train/status")
+def worldcup_train_status():
+    from models.wc_train_progress import read_train_progress
+
+    state = read_train_progress()
+    with _wc_train_lock:
+        thread_alive = _wc_train_thread is not None and _wc_train_thread.is_alive()
+    if state is None:
+        return {
+            "status": "running" if thread_alive else "idle",
+            "running": thread_alive,
+        }
+    payload = asdict(state)
+    payload["running"] = thread_alive or state.status == "running"
+    return payload
+
+
 @app.post("/worldcup/retrain")
-def worldcup_retrain():
-    global _wc_predictor, _wc_artifact_meta, _wc_models_ready
+def worldcup_retrain(
+    background: bool = Query(False),
+    mlflow: bool = Query(False, description="Registra o treino no MLflow"),
+):
+    global _wc_predictor, _wc_artifact_meta, _wc_models_ready, _wc_train_thread
+
+    if background:
+        with _wc_train_lock:
+            if _wc_train_thread is not None and _wc_train_thread.is_alive():
+                raise HTTPException(status_code=409, detail="Treino WC já em andamento")
+            _wc_train_thread = threading.Thread(
+                target=_run_wc_retrain_background,
+                kwargs={"enable_mlflow": mlflow},
+                name="wc-retrain",
+                daemon=True,
+            )
+            _wc_train_thread.start()
+        return {"status": "started", "poll": "/worldcup/train/status", "mlflow": mlflow}
+
     try:
         from models.wc_artifact import load_or_train_wc_predictor
+        from models.wc_train_progress import WcTrainProgressReporter
 
-        _wc_predictor, _wc_artifact_meta = load_or_train_wc_predictor(force=True)
+        reporter = WcTrainProgressReporter(console=False)
+        _wc_predictor, _wc_artifact_meta = load_or_train_wc_predictor(
+            force=True,
+            progress=reporter,
+            enable_mlflow=mlflow,
+        )
         _wc_models_ready = True
         _wc_round_cache().invalidate_wc_round_cache()
     except ValueError as exc:

@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     odds_default_odds_format: str = "decimal"
     api_football_key: str | None = None
     api_football_base_url: str = "https://v3.football.api-sports.io"
+    sofascore_base_url: str = "https://api.sofascore.com/api/v1"
+    sofascore_impersonate: str = "chrome124"
+    sofascore_timeout_sec: float = 25.0
+    sofascore_min_interval_sec: float = 0.12
+    sofascore_fept_dir: Path = Path("data/lake/fept")
+    sofascore_stats_dir: Path = Path("data/lake/sofascore")
     ner_enabled: bool = False
     ner_model: str = "pierreguillou/ner-bert-base-cased-pt-lenerbr"
     bolao_model_path: Path = Path("models/checkpoints/bolao-unsloth")
@@ -41,6 +47,8 @@ class Settings(BaseSettings):
     wc_elo_initial: float = 1500.0
     wc_home_adv_goals: float = 0.12
     wc_home_adv_goals_neutral: float = 0.04
+    wc_home_adv_corners: float = 0.45
+    wc_home_adv_corners_neutral: float = 0.15
     wc_logistic_c: float = 0.85
     wc_logistic_class_weight: str = "balanced"
     wc_logistic_max_iter: int = 3000
@@ -58,6 +66,7 @@ class Settings(BaseSettings):
     dixit_sigma: float = 2.0
     mlflow_tracking_uri: str = "sqlite:///./mlflow.db"
     mlflow_experiment_wc: str = "api-noticia/wc-benchmark"
+    mlflow_experiment_wc_train: str = "api-noticia/wc-train"
     mlflow_experiment_bolao: str = "api-noticia/bolao-benchmark"
     api_host: str = "0.0.0.0"
     api_port: int = 8000

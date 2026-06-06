@@ -3,13 +3,16 @@ import type {
   HealthStatus,
   KxlBaselineBreakdown,
   KxlCollisionBreakdown,
+  KxlFeptMeta,
   KxlLethalityBreakdown,
   KxlTeamSnapshot,
   ModelBreakdown,
+  SofascoreResolvedEvent,
   OutcomeLabel,
   ValueBetsReport,
   ValueMatch,
   ValueOutcome,
+  WcCornersPrediction,
   WcPrediction,
   WcRound,
   WcSchedule,
@@ -63,6 +66,21 @@ export interface ApiModelBreakdown {
     mandante?: KxlCollisionSideApi;
     visitante?: KxlCollisionSideApi;
     notes?: string[];
+  } | null;
+  kxl_fept?: {
+    source: string;
+    event_id: number;
+    ratings_found: number;
+    ratings_missing: number;
+    esquema_mandante?: string | null;
+    esquema_visitante?: string | null;
+    absences_home?: number;
+    absences_away?: number;
+    referee?: string | null;
+    referee_profile?: string | null;
+    referee_cards_per_game?: number | null;
+    auto_merged: boolean;
+    note?: string | null;
   } | null;
 }
 
@@ -250,6 +268,43 @@ function mapKxlCollision(raw: ApiModelBreakdown["kxl_collision"]): KxlCollisionB
   };
 }
 
+function mapKxlFept(raw: ApiModelBreakdown["kxl_fept"]): KxlFeptMeta | null {
+  if (!raw) return null;
+  return {
+    source: raw.source,
+    eventId: raw.event_id,
+    ratingsFound: raw.ratings_found,
+    ratingsMissing: raw.ratings_missing,
+    esquemaMandante: raw.esquema_mandante ?? null,
+    esquemaVisitante: raw.esquema_visitante ?? null,
+    absencesHome: raw.absences_home,
+    absencesAway: raw.absences_away,
+    referee: raw.referee ?? null,
+    refereeProfile: raw.referee_profile ?? null,
+    refereeCardsPerGame: raw.referee_cards_per_game ?? null,
+    autoMerged: raw.auto_merged,
+    note: raw.note ?? null,
+  };
+}
+
+export function mapSofascoreResolvedEvent(raw: {
+  event_id: number;
+  home_team: string;
+  away_team: string;
+  match_date: string;
+  sofascore_home?: string | null;
+  sofascore_away?: string | null;
+}): SofascoreResolvedEvent {
+  return {
+    eventId: raw.event_id,
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    matchDate: raw.match_date,
+    sofascoreHome: raw.sofascore_home ?? null,
+    sofascoreAway: raw.sofascore_away ?? null,
+  };
+}
+
 export function mapModelBreakdown(raw: ApiModelBreakdown): ModelBreakdown {
   const dc = raw.dixon_coles ?? raw.poisson ?? {};
   const dcWeight = raw.ensemble_weights.dixon_coles ?? raw.ensemble_weights.poisson ?? 0;
@@ -289,6 +344,7 @@ export function mapModelBreakdown(raw: ApiModelBreakdown): ModelBreakdown {
     ensembleBrier: raw.ensemble_brier,
     kxlBaseline: mapKxlBaseline(raw.kxl_baseline),
     kxlCollision: mapKxlCollision(raw.kxl_collision),
+    kxlFept: mapKxlFept(raw.kxl_fept),
   };
 }
 
@@ -531,6 +587,78 @@ export function mapWcGroupStandings(raw: {
       group: g.group,
       standings: g.standings.map((r) => ({ ...r })),
     })),
+  };
+}
+
+interface ApiWcCornersPrediction {
+  home_team: string;
+  away_team: string;
+  data_source: string;
+  expected_corners: string;
+  expected_total_corners: number;
+  most_likely_corners: string;
+  prob_home_more_corners: number;
+  prob_draw_corners: number;
+  prob_away_more_corners: number;
+  line_probs: Record<string, number>;
+  factors: {
+    league_avg: number;
+    home_attack: number;
+    away_attack: number;
+    home_defense: number;
+    away_defense: number;
+    home_advantage: number;
+    elo_factor_home: number;
+    elo_factor_away: number;
+    lambda_home: number;
+    lambda_away: number;
+    training_matches: number;
+    blend_with_goal_proxy: number;
+  };
+  training_summary: {
+    matches: number;
+    teams: number;
+    avg_home_corners: number | null;
+    avg_away_corners: number | null;
+    avg_total_corners: number | null;
+  };
+}
+
+export function mapWcCornersPrediction(raw: ApiWcCornersPrediction): WcCornersPrediction {
+  const f = raw.factors;
+  const ts = raw.training_summary;
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    dataSource: raw.data_source,
+    expectedCorners: raw.expected_corners,
+    expectedTotalCorners: raw.expected_total_corners,
+    mostLikelyCorners: raw.most_likely_corners,
+    probHomeMoreCorners: raw.prob_home_more_corners,
+    probDrawCorners: raw.prob_draw_corners,
+    probAwayMoreCorners: raw.prob_away_more_corners,
+    lineProbs: raw.line_probs,
+    factors: {
+      leagueAvg: f.league_avg,
+      homeAttack: f.home_attack,
+      awayAttack: f.away_attack,
+      homeDefense: f.home_defense,
+      awayDefense: f.away_defense,
+      homeAdvantage: f.home_advantage,
+      eloFactorHome: f.elo_factor_home,
+      eloFactorAway: f.elo_factor_away,
+      lambdaHome: f.lambda_home,
+      lambdaAway: f.lambda_away,
+      trainingMatches: f.training_matches,
+      blendWithGoalProxy: f.blend_with_goal_proxy,
+    },
+    trainingSummary: {
+      matches: ts.matches,
+      teams: ts.teams,
+      avgHomeCorners: ts.avg_home_corners,
+      avgAwayCorners: ts.avg_away_corners,
+      avgTotalCorners: ts.avg_total_corners,
+    },
   };
 }
 

@@ -1,4 +1,5 @@
 import math
+from collections.abc import Callable
 from datetime import datetime
 
 import pandas as pd
@@ -36,22 +37,33 @@ class DixonColesWcModel:
         self.rho: float = 0.0
         self._fitted = False
 
-    def fit(self, fixtures_df: pd.DataFrame, holdout_season: int | None = 2022) -> dict:
+    def fit(
+        self,
+        fixtures_df: pd.DataFrame,
+        holdout_season: int | None = 2022,
+        on_progress: Callable[[int, int], None] | None = None,
+    ) -> dict:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = df[df["season"] != holdout_season] if holdout_season else df
         if train_df.empty:
             train_df = df
 
-        self.rho = self._estimate_rho(fixtures_df, train_df)
+        self.rho = self._estimate_rho(fixtures_df, train_df, on_progress=on_progress)
         self._fitted = True
         return {"rho": round(self.rho, 4), "train_size": len(train_df)}
 
-    def _estimate_rho(self, fixtures_df: pd.DataFrame, train_df: pd.DataFrame) -> float:
+    def _estimate_rho(
+        self,
+        fixtures_df: pd.DataFrame,
+        train_df: pd.DataFrame,
+        on_progress: Callable[[int, int], None] | None = None,
+    ) -> float:
         if len(train_df) < 20:
             return 0.0
 
         prepared: list[tuple[int, int, float, float]] = []
-        for _, row in train_df.iterrows():
+        train_total = len(train_df)
+        for train_index, (_, row) in enumerate(train_df.iterrows(), start=1):
             before = row["match_date"]
             history = fixtures_df[fixtures_df["match_date"] < before]
             if history.empty:
@@ -76,6 +88,10 @@ class DixonColesWcModel:
                 before_date=before,
             )
             prepared.append((int(row["home_score"]), int(row["away_score"]), lam_home, lam_away))
+            if on_progress and (
+                train_index == 1 or train_index % 25 == 0 or train_index == train_total
+            ):
+                on_progress(train_index, train_total)
 
         hp = get_wc_hyperparams()
         best_rho = 0.0
@@ -83,6 +99,8 @@ class DixonColesWcModel:
 
         steps = int(round((hp.rho_max - hp.rho_min) / hp.rho_step))
         for i in range(steps + 1):
+            if on_progress and (i == 0 or i % max(1, steps // 10) == 0 or i == steps):
+                on_progress(i + 1, steps + 1)
             rho = hp.rho_min + i * hp.rho_step
             log_likelihood = 0.0
             for hs, aws, lam_home, lam_away in prepared:

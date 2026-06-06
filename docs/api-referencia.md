@@ -168,6 +168,48 @@ Palpite avulso com ensemble completo.
 }
 ```
 
+**Body com FEPT automático (Sofascore):**
+
+```json
+{
+  "home_team": "Brasil",
+  "away_team": "Argentina",
+  "phase": "group",
+  "sofascore_event_id": 11774480
+}
+```
+
+Quando `sofascore_event_id` é enviado e `kxl_match.fept` está ausente, a API busca escalação + notas no Sofascore (requer `curl_cffi` no servidor). Metadados em `model_breakdown.kxl_fept`.
+
+### Estatísticas Sofascore (escanteios, chutes, posse)
+
+`GET /worldcup/sofascore/{event_id}/statistics?refresh=false`
+
+Retorna métricas achatadas (`home_corners`, `away_corners`, `home_possession_pct`, `home_xg`, cartões via incidentes, etc.). Com `refresh=false`, lê cache em `data/lake/sofascore/match_stats.parquet` se existir.
+
+CLI equivalente:
+
+```bash
+ingest-sofascore --event-id 11774480 --stats-only --json
+ingest-sofascore --event-id 11774480 --with-stats
+```
+
+### Previsão de escanteios (Poisson)
+
+`POST /worldcup/corners/predict`
+
+```json
+{
+  "home_team": "Brasil",
+  "away_team": "Marrocos",
+  "phase": "group"
+}
+```
+
+Resposta inclui `expected_corners` (ex. `"5.8x4.2"`), `expected_total_corners`, probabilidades `over_9.5` / `under_9.5` e fatores do modelo (`lambda_home`, `lambda_away`). Treina com histórico em `data/lake/sofascore/match_stats.parquet`; com poucos jogos, faz blend com λ de gols (proxy).
+
+CLI: `predict-corners --home Brasil --away Marrocos --json`
+
 **Body com entrada dinâmica KXL** (opcional):
 
 ```json

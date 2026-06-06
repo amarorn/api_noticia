@@ -63,8 +63,10 @@ Crie `.env` se necessário:
 
 ```env
 VITE_API_URL=/api
-# VITE_API_KEY=...   # obrigatório se a API tiver API_KEY configurada
+# VITE_API_KEY=...   # só se não usar API_KEY no .env da raiz do repo
 ```
+
+Com `API_KEY` no `.env` da **raiz** do projeto, `npm run dev` já envia `X-API-Key` (via `vite.config.ts`). Reinicie o Vite após alterar a chave.
 
 Para apontar direto à API (sem proxy):
 

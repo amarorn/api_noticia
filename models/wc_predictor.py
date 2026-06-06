@@ -59,27 +59,100 @@ class WcPrediction:
 def train_wc_predictor(
     fixtures_df: pd.DataFrame | None = None,
     validation_season: int = 2022,
+    progress: "TrainProgressReporter | None" = None,
 ) -> "WcPredictor":
+    import structlog
+
+    from models.wc_train_progress import NullTrainProgressReporter
+
+    log = structlog.get_logger()
+    reporter = progress or NullTrainProgressReporter()
     predictor = WcPredictor.__new__(WcPredictor)
     predictor.fixtures = fixtures_df if fixtures_df is not None else load_wc_fixtures()
     if predictor.fixtures.empty:
         raise ValueError(
             "Nenhum dado de Copa do Mundo. Execute: import-world-cup"
         )
+    log.info(
+        "wc_train_start",
+        fixtures=len(predictor.fixtures),
+        holdout_season=validation_season,
+    )
+    reporter.start(len(predictor.fixtures))
+
+    def on_logistic_progress(current: int, total: int, phase: str) -> None:
+        reporter.step_progress(current, total, f"logística · {phase}")
+
+    log.info("wc_train_step", step="logistic_regression")
+    reporter.step_start("logistic_regression")
     predictor.logistic = WcLogisticModel()
     predictor._metrics = predictor.logistic.fit(
-        predictor.fixtures, holdout_season=validation_season
+        predictor.fixtures,
+        holdout_season=validation_season,
+        on_progress=on_logistic_progress,
     )
+    reporter.step_done(
+        "logistic_regression",
+        {"holdout_accuracy": predictor._metrics.get("holdout_accuracy")},
+    )
+    log.info(
+        "wc_train_step_done",
+        step="logistic_regression",
+        holdout_accuracy=predictor._metrics.get("holdout_accuracy"),
+    )
+
+    def on_dc_progress(current: int, total: int) -> None:
+        reporter.step_progress(current, total, "Dixon-Coles · rho")
+
+    log.info("wc_train_step", step="dixon_coles")
+    reporter.step_start("dixon_coles")
     predictor.dixon_coles = DixonColesWcModel()
     predictor._dc_metrics = predictor.dixon_coles.fit(
-        predictor.fixtures, holdout_season=validation_season
+        predictor.fixtures,
+        holdout_season=validation_season,
+        on_progress=on_dc_progress,
     )
+    reporter.step_done("dixon_coles", {"rho": predictor._dc_metrics.get("rho")})
+    log.info(
+        "wc_train_step_done",
+        step="dixon_coles",
+        rho=predictor._dc_metrics.get("rho"),
+    )
+
+    def on_collab_progress(current: int, total: int, phase: str) -> None:
+        reporter.step_progress(current, total, f"ensemble · {phase}")
+
+    log.info("wc_train_step", step="collaborative_ensemble")
+    reporter.step_start("collaborative_ensemble")
     predictor.collaborative = CollaborativeWcModel(dixon_coles=predictor.dixon_coles)
     predictor.collab_metrics = predictor.collaborative.fit(
         predictor.fixtures,
         validation_season=validation_season,
         logistic_model=predictor.logistic,
+        on_progress=on_collab_progress,
     )
+    reporter.step_done(
+        "collaborative_ensemble",
+        {
+            "brier_score": predictor.collab_metrics.brier_score,
+            "ensemble_weights": {
+                "dixon_coles": predictor.collaborative.dixon_coles_weight,
+                "logistic": predictor.collaborative.logistic_weight,
+            },
+        },
+    )
+    log.info(
+        "wc_train_step_done",
+        step="collaborative_ensemble",
+        brier_score=predictor.collab_metrics.brier_score,
+        weights={
+            "dixon_coles": predictor.collaborative.dixon_coles_weight,
+            "logistic": predictor.collaborative.logistic_weight,
+        },
+    )
+
+    log.info("wc_train_step", step="draw_model")
+    reporter.step_start("draw_model")
     train_df = predictor.fixtures[predictor.fixtures["season"] != validation_season]
     x_draw, y_draw = build_draw_training_rows(predictor.fixtures, train_df)
     predictor.draw_model = WcDrawModel()
@@ -87,6 +160,9 @@ def train_wc_predictor(
         feature_rows=x_draw,
         labels=y_draw,
     )
+    reporter.step_done("draw_model", {"samples": len(y_draw)})
+    log.info("wc_train_step_done", step="draw_model", samples=len(y_draw))
+    log.info("wc_train_complete")
     return predictor
 
 

@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  getWcScheduleUseCase,
-  predictWcMatchUseCase,
-} from "@/application/container";
+import { getWcScheduleUseCase } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import {
@@ -14,6 +11,8 @@ import {
 import { ConfidenceBadge, ConfidenceBar } from "@/presentation/components/predictions/ConfidenceBadge";
 import { MatchContextPanel } from "@/presentation/components/predictions/MatchContextPanel";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
+import { SofascoreFeptPanel } from "@/presentation/components/predictions/SofascoreFeptPanel";
+import { SofascoreToggle } from "@/presentation/components/predictions/SofascoreToggle";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
@@ -28,6 +27,8 @@ import {
   matchesForPhase,
   phasesInSchedule,
 } from "@/presentation/utils/officialSchedule";
+import { kickoffDateFromIso } from "@/presentation/utils/sofascore";
+import { predictWithOptionalSofascore } from "@/presentation/utils/sofascorePredict";
 import { motion } from "framer-motion";
 import { useToast } from "@/presentation/components/ui/toast";
 
@@ -36,6 +37,10 @@ export function PredictPage() {
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
   const [phase, setPhase] = useState("group");
+  const [useSofascore, setUseSofascore] = useState(
+    () => searchParams.get("sofascore") === "1",
+  );
+  const [sofascoreEventIdInput, setSofascoreEventIdInput] = useState("");
   const urlParamsApplied = useRef(false);
 
   const homeFromUrl = searchParams.get("home");
@@ -118,14 +123,32 @@ export function PredictPage() {
 
   const { addToast } = useToast();
 
+  const manualSofascoreEventId = useMemo(() => {
+    const parsed = Number.parseInt(sofascoreEventIdInput, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  }, [sofascoreEventIdInput]);
+
   const predictMutation = useMutation({
     mutationFn: () =>
-      predictWcMatchUseCase.execute({ homeTeam, awayTeam, phase }),
+      predictWithOptionalSofascore({
+        homeTeam,
+        awayTeam,
+        phase,
+        useSofascore,
+        manualEventId: manualSofascoreEventId,
+        kickoffDate: kickoffDateFromIso(selectedMatch?.kickoff),
+      }),
     onSuccess: () => {
-      addToast("Palpite gerado com sucesso!", "success");
+      addToast(
+        useSofascore ? "Palpite com escalação Sofascore gerado!" : "Palpite gerado com sucesso!",
+        "success",
+      );
     },
-    onError: () => {
-      addToast("Falha ao gerar palpite. Tente novamente.", "error");
+    onError: (error) => {
+      addToast(
+        error instanceof Error ? error.message : "Falha ao gerar palpite. Tente novamente.",
+        "error",
+      );
     },
   });
 
@@ -324,6 +347,19 @@ export function PredictPage() {
                 </p>
               )}
 
+              <SofascoreToggle
+                enabled={useSofascore}
+                onChange={setUseSofascore}
+                eventId={sofascoreEventIdInput}
+                onEventIdChange={setSofascoreEventIdInput}
+                disabled={!hasOfficialMatches}
+                hint={
+                  selectedMatch?.kickoff
+                    ? `Busca automática pela data ${kickoffDateFromIso(selectedMatch.kickoff)}`
+                    : "Selecione um jogo da tabela para resolver o evento automaticamente"
+                }
+              />
+
               <button
                 type="submit"
                 disabled={predictMutation.isPending || !selectedMatch}
@@ -461,6 +497,8 @@ export function PredictPage() {
                   awayTeam={predictMutation.data.awayTeam}
                 />
               )}
+
+              <SofascoreFeptPanel fept={predictMutation.data.modelBreakdown.kxlFept} />
 
               <div className="glass-card p-5">
                 <p className="section-label">Contexto pré-jogo</p>

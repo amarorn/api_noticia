@@ -14,6 +14,44 @@ export interface GoalModelFactors {
   rho: number;
 }
 
+export interface CornerModelFactors {
+  leagueAvg: number;
+  homeAttack: number;
+  awayAttack: number;
+  homeDefense: number;
+  awayDefense: number;
+  homeAdvantage: number;
+  eloFactorHome: number;
+  eloFactorAway: number;
+  lambdaHome: number;
+  lambdaAway: number;
+  trainingMatches: number;
+  blendWithGoalProxy: number;
+}
+
+export interface CornersTrainingSummary {
+  matches: number;
+  teams: number;
+  avgHomeCorners: number | null;
+  avgAwayCorners: number | null;
+  avgTotalCorners: number | null;
+}
+
+export interface WcCornersPrediction {
+  homeTeam: string;
+  awayTeam: string;
+  dataSource: string;
+  expectedCorners: string;
+  expectedTotalCorners: number;
+  mostLikelyCorners: string;
+  probHomeMoreCorners: number;
+  probDrawCorners: number;
+  probAwayMoreCorners: number;
+  lineProbs: Record<string, number>;
+  factors: CornerModelFactors;
+  trainingSummary: CornersTrainingSummary;
+}
+
 export interface KxlSectorScore {
   setor: string;
   colisao: number;
@@ -95,6 +133,31 @@ export interface KxlBaselineBreakdown {
   awaySnapshot: KxlTeamSnapshot | null;
 }
 
+export interface KxlFeptMeta {
+  source: string;
+  eventId: number;
+  ratingsFound: number;
+  ratingsMissing: number;
+  esquemaMandante: string | null;
+  esquemaVisitante: string | null;
+  absencesHome?: number;
+  absencesAway?: number;
+  referee?: string | null;
+  refereeProfile?: string | null;
+  refereeCardsPerGame?: number | null;
+  autoMerged: boolean;
+  note?: string | null;
+}
+
+export interface SofascoreResolvedEvent {
+  eventId: number;
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string;
+  sofascoreHome: string | null;
+  sofascoreAway: string | null;
+}
+
 export interface ModelBreakdown {
   dixonColes: Record<OutcomeLabel, number>;
   logistic: Record<OutcomeLabel, number>;
@@ -105,6 +168,7 @@ export interface ModelBreakdown {
   ensembleBrier: number | null;
   kxlBaseline: KxlBaselineBreakdown | null;
   kxlCollision: KxlCollisionBreakdown | null;
+  kxlFept: KxlFeptMeta | null;
 }
 
 export interface PreMatchTeamStats {

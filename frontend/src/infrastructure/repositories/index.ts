@@ -3,11 +3,13 @@ import type {
   IHealthRepository,
   IWcRepository,
 } from "@/domain/repositories";
-import { apiFetch } from "../api/client";
+import { apiFetch, API_SYNC_TIMEOUT_MS } from "../api/client";
 import {
   mapBrasileiraoRound,
   mapHealth,
+  mapSofascoreResolvedEvent,
   mapValueBets,
+  mapWcCornersPrediction,
   mapWcPrediction,
   mapWcRound,
   mapWcSchedule,
@@ -19,7 +21,9 @@ import {
 export class WcApiRepository implements IWcRepository {
   async getRound(matchday?: number) {
     const qs = matchday != null ? `?round=${matchday}` : "";
-    const raw = await apiFetch<Parameters<typeof mapWcRound>[0]>(`/worldcup/round${qs}`);
+    const raw = await apiFetch<Parameters<typeof mapWcRound>[0]>(`/worldcup/round${qs}`, {
+      timeoutMs: API_SYNC_TIMEOUT_MS,
+    });
     return mapWcRound(raw);
   }
 
@@ -40,16 +44,56 @@ export class WcApiRepository implements IWcRepository {
     return mapWcSquadDetail(raw);
   }
 
-  async predictMatch(homeTeam: string, awayTeam: string, phase: string) {
+  async predictMatch(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    phase: string;
+    sofascoreEventId?: number;
+  }) {
+    const usesSofascore = dto.sofascoreEventId != null;
     const raw = await apiFetch<Parameters<typeof mapWcPrediction>[0]>("/worldcup/predict", {
       method: "POST",
+      timeoutMs: usesSofascore ? API_SYNC_TIMEOUT_MS : undefined,
       body: JSON.stringify({
-        home_team: homeTeam,
-        away_team: awayTeam,
-        phase,
+        home_team: dto.homeTeam,
+        away_team: dto.awayTeam,
+        phase: dto.phase,
+        ...(usesSofascore ? { sofascore_event_id: dto.sofascoreEventId } : {}),
       }),
     });
     return mapWcPrediction(raw);
+  }
+
+  async predictCorners(dto: { homeTeam: string; awayTeam: string; phase: string }) {
+    const raw = await apiFetch<Parameters<typeof mapWcCornersPrediction>[0]>(
+      "/worldcup/corners/predict",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          home_team: dto.homeTeam,
+          away_team: dto.awayTeam,
+          phase: dto.phase,
+        }),
+      },
+    );
+    return mapWcCornersPrediction(raw);
+  }
+
+  async resolveSofascoreEvent(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    date: string;
+  }) {
+    const params = new URLSearchParams({
+      home_team: dto.homeTeam,
+      away_team: dto.awayTeam,
+      date: dto.date,
+    });
+    const raw = await apiFetch<Parameters<typeof mapSofascoreResolvedEvent>[0]>(
+      `/worldcup/sofascore/resolve?${params}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapSofascoreResolvedEvent(raw);
   }
 
   async getTeams() {

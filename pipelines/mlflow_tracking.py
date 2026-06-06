@@ -44,3 +44,73 @@ def log_classification_benchmark(
             if "weights" in m:
                 for key, value in m["weights"].items():
                     mlflow.log_param(f"{prefix}_blend_weight_{key}", value)
+
+
+def log_wc_train_run(
+    *,
+    manifest: dict,
+    elapsed_sec: float | None = None,
+    run_name: str | None = None,
+) -> str:
+    import mlflow
+
+    setup_mlflow(settings.mlflow_experiment_wc_train)
+
+    created_at = manifest.get("created_at", "")
+    if run_name is None:
+        run_name = created_at[:19].replace(":", "-") if created_at else "wc-train"
+
+    training = manifest.get("training_metrics") or {}
+    collab = manifest.get("collab_metrics") or {}
+    ensemble = manifest.get("ensemble_weights") or {}
+    hyperparams = manifest.get("hyperparams") or {}
+
+    with mlflow.start_run(run_name=run_name) as run:
+        mlflow.log_param("artifact_version", manifest.get("artifact_version"))
+        mlflow.log_param("fixture_rows", manifest.get("fixture_rows"))
+        mlflow.log_param("train_size", training.get("train_size"))
+        mlflow.log_param("holdout_season", training.get("holdout_season"))
+        mlflow.log_param("feature_count", manifest.get("feature_count"))
+        mlflow.log_param("logistic_calibration", manifest.get("logistic_calibration"))
+
+        for key in (
+            "fixtures_fingerprint",
+            "squads_fingerprint",
+            "hyperparams_fingerprint",
+            "fifa_fingerprint",
+            "odds_fingerprint",
+            "baselines_fingerprint",
+            "silver_fingerprint",
+        ):
+            if manifest.get(key):
+                mlflow.log_param(key, manifest[key])
+
+        for key, value in hyperparams.items():
+            mlflow.log_param(f"hp_{key}", value)
+
+        if training.get("holdout_accuracy") is not None:
+            mlflow.log_metric("holdout_accuracy", float(training["holdout_accuracy"]))
+        if collab.get("accuracy") is not None:
+            mlflow.log_metric("ensemble_accuracy", float(collab["accuracy"]))
+        if collab.get("brier_score") is not None:
+            mlflow.log_metric("ensemble_brier", float(collab["brier_score"]))
+        if collab.get("log_loss") is not None:
+            mlflow.log_metric("ensemble_log_loss", float(collab["log_loss"]))
+        if collab.get("validation_size") is not None:
+            mlflow.log_metric("validation_size", float(collab["validation_size"]))
+        if ensemble.get("dixon_coles") is not None:
+            mlflow.log_metric("weight_dixon_coles", float(ensemble["dixon_coles"]))
+        if ensemble.get("logistic") is not None:
+            mlflow.log_metric("weight_logistic", float(ensemble["logistic"]))
+        if elapsed_sec is not None:
+            mlflow.log_metric("train_elapsed_sec", float(elapsed_sec))
+
+        manifest_path = settings.wc_artifact_dir / "manifest.json"
+        if manifest_path.exists():
+            mlflow.log_artifact(str(manifest_path))
+
+        predictor_path = settings.wc_artifact_dir / "predictor.pkl"
+        if predictor_path.exists():
+            mlflow.log_artifact(str(predictor_path))
+
+        return run.info.run_id

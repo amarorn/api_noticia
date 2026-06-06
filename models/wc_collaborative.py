@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from math import log
@@ -68,6 +69,7 @@ class CollaborativeWcModel:
         fixtures_df: pd.DataFrame,
         validation_season: int = 2022,
         logistic_model: WcLogisticModel | None = None,
+        on_progress: Callable[[int, int, str], None] | None = None,
     ) -> CollaborativeMetrics:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = df[df["season"] != validation_season]
@@ -86,7 +88,8 @@ class CollaborativeWcModel:
             self.dixon_coles.fit(df, holdout_season=validation_season)
 
         base_rows: list[dict] = []
-        for _, row in valid_df.iterrows():
+        valid_total = len(valid_df)
+        for valid_index, (_, row) in enumerate(valid_df.iterrows(), start=1):
             before = row["match_date"]
             history_mask = pd.to_datetime(df["match_date"], utc=True) < pd.to_datetime(before, utc=True)
             history = df[history_mask]
@@ -125,6 +128,10 @@ class CollaborativeWcModel:
                     "logistic": {"1": logistic.prob_home, "X": logistic.prob_draw, "2": logistic.prob_away},
                 }
             )
+            if on_progress and (
+                valid_index == 1 or valid_index % 5 == 0 or valid_index == valid_total
+            ):
+                on_progress(valid_index, valid_total, "validacao")
 
         if not base_rows:
             raise ValueError("Não foi possível gerar previsões para calibração.")
@@ -133,6 +140,8 @@ class CollaborativeWcModel:
         steps = max(hp.ensemble_weight_steps, 1)
         best: dict | None = None
         for step in range(0, steps + 1):
+            if on_progress:
+                on_progress(step + 1, steps + 1, "pesos")
             dw = step / steps
             lw = 1.0 - dw
 

@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -39,14 +40,20 @@ class WcLogisticModel:
         self.scaler = StandardScaler()
         self._fitted = False
 
-    def fit(self, fixtures_df: pd.DataFrame, holdout_season: int | None = 2022) -> dict:
+    def fit(
+        self,
+        fixtures_df: pd.DataFrame,
+        holdout_season: int | None = 2022,
+        on_progress: Callable[[int, int, str], None] | None = None,
+    ) -> dict:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = df[df["season"] != holdout_season] if holdout_season else df
 
         x_rows: list[list[float]] = []
         y_rows: list[str] = []
+        train_total = len(train_df)
 
-        for _, row in train_df.iterrows():
+        for index, (_, row) in enumerate(train_df.iterrows(), start=1):
             before = row["match_date"]
             gcol = row.get("group_name") or row.get("group")
             feats = build_match_features(
@@ -61,9 +68,14 @@ class WcLogisticModel:
             )
             x_rows.append(features_to_vector(feats, before_date=before))
             y_rows.append(row["label"])
+            if on_progress and (index == 1 or index % 25 == 0 or index == train_total):
+                on_progress(index, train_total, "features")
 
         if len(x_rows) < 50:
             raise ValueError(f"Dados insuficientes para treino ({len(x_rows)} jogos)")
+
+        if on_progress:
+            on_progress(0, 1, "calibracao")
 
         x_scaled = self.scaler.fit_transform(x_rows)
         self.model.fit(x_scaled, y_rows)
@@ -77,7 +89,8 @@ class WcLogisticModel:
         if holdout_season and holdout_season in df["season"].values:
             test_df = df[df["season"] == holdout_season]
             correct = 0
-            for _, row in test_df.iterrows():
+            holdout_total = len(test_df)
+            for holdout_index, (_, row) in enumerate(test_df.iterrows(), start=1):
                 pred = self.predict_match(
                     df[df["match_date"] < row["match_date"]],
                     row["home_team"],
@@ -90,6 +103,12 @@ class WcLogisticModel:
                 )
                 if pred.prediction == row["label"]:
                     correct += 1
+                if on_progress and (
+                    holdout_index == 1
+                    or holdout_index % 5 == 0
+                    or holdout_index == holdout_total
+                ):
+                    on_progress(holdout_index, holdout_total, "holdout")
             metrics["holdout_season"] = holdout_season
             metrics["holdout_accuracy"] = correct / len(test_df) if len(test_df) else 0.0
 

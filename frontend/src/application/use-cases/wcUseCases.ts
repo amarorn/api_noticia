@@ -1,5 +1,7 @@
 import type { IWcRepository } from "@/domain/repositories";
 import type {
+  SofascoreResolvedEvent,
+  WcCornersPrediction,
   WcGroupStandings,
   WcPrediction,
   WcRound,
@@ -45,7 +47,31 @@ export class PredictWcMatchUseCase {
   constructor(private readonly repository: IWcRepository) {}
 
   execute(dto: WcPredictRequestDto): Promise<WcPrediction> {
-    return this.repository.predictMatch(dto.homeTeam, dto.awayTeam, dto.phase);
+    return this.repository.predictMatch(dto);
+  }
+}
+
+export class PredictWcCornersUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    phase: string;
+  }): Promise<WcCornersPrediction> {
+    return this.repository.predictCorners(dto);
+  }
+}
+
+export class ResolveSofascoreEventUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    date: string;
+  }): Promise<SofascoreResolvedEvent> {
+    return this.repository.resolveSofascoreEvent(dto);
   }
 }
 
