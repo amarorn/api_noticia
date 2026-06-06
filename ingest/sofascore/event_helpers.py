@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 from ingest.sofascore.client import SofascoreClient
@@ -27,6 +27,25 @@ def count_fept_ratings(fept: FeptEscalacao) -> tuple[int, int]:
             else:
                 found += 1
     return found, missing
+
+
+def match_date_from_event(event: dict[str, Any]) -> str | None:
+    ts = event.get("startTimestamp")
+    if ts is None:
+        return None
+    try:
+        return datetime.fromtimestamp(int(ts), tz=timezone.utc).isoformat()
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def resolve_match_date(
+    event: dict[str, Any],
+    match_date: date | None = None,
+) -> str | None:
+    if match_date is not None:
+        return match_date.isoformat()
+    return match_date_from_event(event)
 
 
 def find_event_id(

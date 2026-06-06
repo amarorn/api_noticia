@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     )
 
     lake_root: Path = Path("./data/lake")
+    lake_primary: str = "local"
+    lake_sync_bq_on_write: bool = True
     sources_yaml: Path = Path("./data/sources.yaml")
     collect_lookback_days: int = 7
     rss_max_entries_per_source: int = 160  # 14 fontes ativas → meta ~800 únicos por sync
@@ -19,6 +21,8 @@ class Settings(BaseSettings):
     gcp_project: str | None = None
     bq_dataset: str = "sports_news_lake"
     gcs_bucket: str | None = None
+    gcs_lake_prefix: str = "lake"
+    google_application_credentials: Path | None = None
     odds_api_key: str | None = None
     odds_default_sport: str = "soccer_fifa_world_cup"
     odds_default_regions: str = "eu"

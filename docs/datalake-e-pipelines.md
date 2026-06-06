@@ -197,7 +197,7 @@ lake-query --preset team-xg --team Brasil --limit 10
 lake-query --sql "SELECT home_team, AVG(home_xg) AS avg_xg FROM sofascore GROUP BY 1 ORDER BY 2 DESC LIMIT 5"
 ```
 
-Views disponíveis: `bronze`, `silver`, `gold`, `fixtures`, `sofascore`.
+Views disponíveis: `bronze`, `silver`, `gold`, `fixtures` / `silver_fixtures`, `sofascore` / `silver_sofascore`.
 
 ### Quando ativar BigQuery + GCS
 
@@ -206,18 +206,66 @@ Views disponíveis: `bronze`, `silver`, `gold`, `fixtures`, `sofascore`.
 | Lake > ~500 MB ou histórico longo de notícias | `sync-gcp --layer all` |
 | Múltiplos ambientes (dev/staging/prod) | Sync periódico para GCS |
 | Dashboards / SQL ad hoc na nuvem | BigQuery como camada analítica |
-| Sofascore no BQ para joins com fixtures | `sync-gcp --layer sofascore` |
+| Sofascore no BQ para joins com fixtures | `sync-gcp --layer silver_sofascore` |
 
 ```bash
 pip install -e ".[gcp]"
-# .env: GCP_PROJECT, BQ_DATASET, GCS_BUCKET
-sync-gcp --layer all
-sync-gcp --layer sofascore --truncate
+# .env: GCP_PROJECT, BQ_DATASET, GCS_BUCKET (opcional)
+sync-gcp --list-layers
+sync-gcp --layer all --truncate
+sync-gcp --layer silver_sofascore --truncate
+sync-gcp --layer bronze_sofascore --truncate
+sync-gcp --layer gold_wc --truncate
 ```
 
-Tabelas BigQuery: `bronze_articles`, `silver_articles`, `gold_bolao_context`, `fixtures_results`, `sofascore_match_stats`.
+Tabelas BigQuery (medalhão em `sports_news_lake`):
+
+| Camada | Tabela BQ |
+|--------|-----------|
+| Bronze notícias | `bronze_articles` |
+| Bronze Sofascore | `bronze_sofascore_events` |
+| Silver notícias | `silver_articles` |
+| Silver Sofascore | `silver_sofascore_match_stats` |
+| Silver fixtures WC | `silver_fixtures_results` |
+| Gold bolão | `gold_bolao_context` |
+| Gold WC features | `gold_wc_match_features` |
+
+Tabelas legadas (`sofascore_match_stats`, `fixtures_results`) podem ser removidas manualmente no console BQ após migração.
 
 **Não substitua** o Parquet local — a API e os modelos ML continuam lendo arquivos no volume (`LAKE_ROOT`). O BigQuery é camada analítica/backup, não storage primário de runtime.
+
+### GCS (camada de objetos — padrão GCP)
+
+No desenho correto, o fluxo é **Parquet local → GCS → BigQuery**:
+
+```mermaid
+flowchart LR
+    Local[data/lake Parquet] --> GCS[gs://bucket/lake/...]
+    GCS --> BQ[BigQuery sports_news_lake]
+```
+
+Layout medalhão no bucket (quando `GCS_BUCKET` está definido):
+
+```
+gs://{GCS_BUCKET}/
+└── lake/
+    ├── bronze/articles/...
+    ├── bronze/sofascore/events.parquet
+    ├── silver/articles/...
+    ├── silver/sofascore/match_stats.parquet
+    ├── silver/fixtures/world_cup_fixtures.parquet
+    ├── gold/bolao/...
+    └── gold/wc/match_features.parquet
+```
+
+**Configuração no GCP** (service account `modelo-cp@beanalytic-dev.iam.gserviceaccount.com`):
+
+1. Criar bucket, ex.: `beanalytic-dev-sports-news-lake` (região `US`, mesma do BQ)
+2. IAM no bucket: `Storage Object Admin` (ou `Storage Admin`)
+3. `.env`: `GCS_BUCKET=beanalytic-dev-sports-news-lake`
+4. `sync-gcp --layer all --truncate` — sobe Parquet ao GCS e carrega no BQ a partir de `gs://`
+
+Sem `GCS_BUCKET`, o `sync-gcp` usa **fallback direto** (Parquet local → BQ), útil em dev quando a SA ainda não tem permissão no Storage.
 
 ## Escalabilidade GCP (opcional)
 

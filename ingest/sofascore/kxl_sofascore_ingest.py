@@ -13,6 +13,7 @@ from ingest.sofascore.event_helpers import (
     canonical_from_event_team,
     count_fept_ratings,
     find_event_id,
+    resolve_match_date,
 )
 from ingest.sofascore.fept_mapper import map_lineups_to_fept
 from ingest.sofascore.teams import event_team_names, load_team_map, sides_for_event
@@ -101,7 +102,7 @@ def build_kxl_sofascore_payload(
     if event_id is not None:
         event = sofascore.event(event_id)
         lineups = sofascore.event_lineups(event_id)
-        resolved_date = match_date.isoformat() if match_date else None
+        resolved_date = resolve_match_date(event, match_date)
     else:
         if match_date is None or not home_team or not away_team:
             raise ValueError("Informe --date com --home/--away ou use --event-id")
@@ -116,7 +117,7 @@ def build_kxl_sofascore_payload(
         )
         event_id = int(event["id"])
         lineups = sofascore.event_lineups(event_id)
-        resolved_date = match_date.isoformat()
+        resolved_date = resolve_match_date(event, match_date)
 
     if not lineups.get("home") and not lineups.get("away"):
         raise LookupError(f"Lineups indisponíveis para o evento {event_id}")

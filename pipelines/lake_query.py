@@ -25,12 +25,16 @@ def _sql_path(path: Path) -> str:
 
 def lake_parquet_sources() -> dict[str, str]:
     """Globs Parquet por camada do lake (para SQL DuckDB)."""
+    sofascore = _sql_path(settings.sofascore_stats_dir / MATCH_STATS_PARQUET)
+    fixtures = _sql_path(settings.fixtures_path / "**" / "*.parquet")
     return {
         "bronze": _sql_path(settings.bronze_path / "**" / "*.parquet"),
         "silver": _sql_path(settings.silver_path / "**" / "*.parquet"),
         "gold": _sql_path(settings.gold_path / "**" / "*.parquet"),
-        "fixtures": _sql_path(settings.fixtures_path / "**" / "*.parquet"),
-        "sofascore": _sql_path(settings.sofascore_stats_dir / MATCH_STATS_PARQUET),
+        "fixtures": fixtures,
+        "silver_fixtures": fixtures,
+        "sofascore": sofascore,
+        "silver_sofascore": sofascore,
     }
 
 
@@ -46,7 +50,7 @@ def _glob_exists(glob_path: str) -> bool:
 
 
 def register_lake_views(conn) -> dict[str, bool]:
-    """Registra views bronze/silver/gold/fixtures/sofascore. Retorna disponibilidade."""
+    """Registra views medalhão (bronze/silver/gold + domínios WC/Sofascore)."""
     sources = lake_parquet_sources()
     available: dict[str, bool] = {}
     for layer, glob_path in sources.items():

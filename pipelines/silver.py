@@ -103,10 +103,22 @@ def save_silver(articles: list[SilverArticle]) -> Path | None:
     if not articles:
         return None
 
-    settings.silver_path.mkdir(parents=True, exist_ok=True)
+    from ingest.gcp.lake_store import cloud_lake_enabled, write_layer_snapshot
+    from ingest.gcp.lake_frames import normalize_silver_df
+
     records = [a.model_dump(mode="json") for a in articles]
     df = pd.DataFrame(records)
 
+    if cloud_lake_enabled():
+        existing = load_silver()
+        combined = pd.concat([existing, df], ignore_index=True)
+        dedup_col = "content_hash" if "content_hash" in combined.columns else "id"
+        combined = combined.drop_duplicates(subset=[dedup_col], keep="last")
+        write_layer_snapshot("silver", normalize_silver_df(combined))
+        logger.info("silver_saved_cloud", rows=len(combined), batch=len(df))
+        return settings.silver_path / "cloud_snapshot.parquet"
+
+    settings.silver_path.mkdir(parents=True, exist_ok=True)
     dt = datetime.now(timezone.utc)
     out_path = (
         settings.silver_path
@@ -122,6 +134,11 @@ def save_silver(articles: list[SilverArticle]) -> Path | None:
 
 
 def silver_fingerprint() -> str:
+    from ingest.gcp.lake_store import cloud_lake_enabled, layer_fingerprint
+
+    if cloud_lake_enabled():
+        return layer_fingerprint("silver")
+
     root = settings.silver_path
     if not root.exists():
         return "empty"
@@ -133,6 +150,12 @@ def silver_fingerprint() -> str:
 
 
 def load_silver() -> pd.DataFrame:
+    from ingest.gcp.lake_store import cloud_lake_enabled, read_layer_snapshot
+    from ingest.gcp.lake_frames import normalize_silver_df
+
+    if cloud_lake_enabled():
+        return normalize_silver_df(read_layer_snapshot("silver"))
+
     silver_root = settings.silver_path
     if not silver_root.exists():
         return pd.DataFrame()

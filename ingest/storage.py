@@ -20,6 +20,19 @@ def save_bronze(articles: list[BronzeArticle]) -> Path:
         logger.warning("no_articles_to_save")
         return settings.bronze_path
 
+    from ingest.gcp.lake_store import cloud_lake_enabled, write_layer_snapshot
+    from ingest.gcp.lake_frames import normalize_bronze_df
+
+    if cloud_lake_enabled():
+        records = [a.model_dump(mode="json") for a in articles]
+        new_df = pd.DataFrame(records)
+        existing = load_bronze()
+        combined = pd.concat([existing, new_df], ignore_index=True)
+        combined = combined.drop_duplicates(subset=["content_hash"], keep="last")
+        write_layer_snapshot("bronze", normalize_bronze_df(combined))
+        logger.info("bronze_saved_cloud", rows=len(combined))
+        return settings.bronze_path
+
     settings.bronze_path.mkdir(parents=True, exist_ok=True)
     saved_paths: list[Path] = []
 
@@ -50,6 +63,15 @@ def save_bronze(articles: list[BronzeArticle]) -> Path:
 
 
 def load_bronze(source: str | None = None) -> pd.DataFrame:
+    from ingest.gcp.lake_store import cloud_lake_enabled, read_layer_snapshot
+    from ingest.gcp.lake_frames import normalize_bronze_df
+
+    if cloud_lake_enabled():
+        df = normalize_bronze_df(read_layer_snapshot("bronze"))
+        if source and not df.empty:
+            df = df[df["source"] == source]
+        return df.reset_index(drop=True)
+
     bronze_root = settings.bronze_path
     if not bronze_root.exists():
         return pd.DataFrame()

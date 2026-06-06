@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any
 
 import pandas as pd
 
@@ -93,6 +94,53 @@ def _rolling_to_dict(stats: TeamRollingStats) -> dict[str, float | int]:
         "big_chances": round(stats.big_chances, 1),
         "samples": stats.samples,
     }
+
+
+def build_gold_wc_match_features_df(*, stats_df: pd.DataFrame | None = None) -> pd.DataFrame:
+    history = stats_df if stats_df is not None else load_match_stats_history()
+    if history.empty:
+        return pd.DataFrame(
+            columns=[
+                "event_id",
+                "home_team",
+                "away_team",
+                "match_date",
+                *SOFASCORE_FEATURE_NAMES,
+                "built_at",
+            ]
+        )
+
+    ordered = history.sort_values("match_date").reset_index(drop=True)
+    rows: list[dict[str, Any]] = []
+    built_at = datetime.now(timezone.utc).isoformat()
+
+    for _, match in ordered.iterrows():
+        match_date = match.get("match_date")
+        if pd.isna(match_date):
+            continue
+        before = pd.to_datetime(match_date, utc=True).to_pydatetime()
+        vec = sofascore_feature_vector(
+            str(match["home_team"]),
+            str(match["away_team"]),
+            before_date=before,
+            stats_df=history,
+        )
+        rows.append(
+            {
+                "event_id": int(match["event_id"]),
+                "home_team": match["home_team"],
+                "away_team": match["away_team"],
+                "match_date": before,
+                **dict(zip(SOFASCORE_FEATURE_NAMES, vec, strict=True)),
+                "built_at": built_at,
+            }
+        )
+
+    if not rows:
+        return pd.DataFrame()
+    out = pd.DataFrame(rows)
+    out["match_date"] = pd.to_datetime(out["match_date"], utc=True, errors="coerce")
+    return out
 
 
 def sofascore_feature_vector(

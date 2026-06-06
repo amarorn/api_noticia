@@ -1,0 +1,95 @@
+# Perfis:
+#   local  — lake em ./data/lake (sem GCP)
+#   cloud  — lake no GCS + BigQuery (requer credentials/ e .env)
+#
+# API:
+#   docker compose --profile local up api-local -d
+#   docker compose --profile cloud up api-cloud -d
+#
+# Pipeline (one-shot):
+#   docker compose --profile local run --rm pipeline-local daily-sync
+#   docker compose --profile cloud run --rm pipeline-cloud ingest-sofascore --history --all-teams
+#
+# Atalho: ./scripts/docker-dev.sh cloud up
+
+x-app-image: &app-image
+  build: .
+
+x-app-runtime: &app-runtime
+  <<: *app-image
+  working_dir: /app
+  environment: &container-paths
+    LAKE_ROOT: /data/lake
+    SOFASCORE_STATS_DIR: /data/lake/sofascore
+    SOFASCORE_FEPT_DIR: /data/lake/fept
+    WC_ARTIFACT_DIR: /data/lake/artifacts/wc_predictor
+    PORT: "8080"
+
+services:
+  api-local:
+    <<: *app-runtime
+    profiles: [local]
+    ports:
+      - "${API_PORT:-8000}:8080"
+    environment:
+      <<: *container-paths
+      LAKE_PRIMARY: local
+      LAKE_SYNC_BQ_ON_WRITE: "false"
+    volumes:
+      - ./data/lake:/data/lake
+    restart: unless-stopped
+
+  api-cloud:
+    <<: *app-runtime
+    profiles: [cloud]
+    ports:
+      - "${API_PORT:-8000}:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *container-paths
+      LAKE_PRIMARY: cloud
+      LAKE_SYNC_BQ_ON_WRITE: "${LAKE_SYNC_BQ_ON_WRITE:-true}"
+      GCP_PROJECT: "${GCP_PROJECT:-}"
+      BQ_DATASET: "${BQ_DATASET:-sports_news_lake}"
+      GCS_BUCKET: "${GCS_BUCKET:-}"
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/${GCP_CREDENTIALS_FILE:-beanalytic-dev.json}
+    volumes:
+      - ./credentials:/app/credentials:ro
+      - ./data/lake/artifacts:/data/lake/artifacts
+      - ./data/lake/fept:/data/lake/fept
+    restart: unless-stopped
+
+  pipeline-local:
+    <<: *app-runtime
+    profiles: [local]
+    entrypoint: []
+    command: ["daily-sync"]
+    environment:
+      <<: *container-paths
+      LAKE_PRIMARY: local
+      LAKE_SYNC_BQ_ON_WRITE: "false"
+    volumes:
+      - ./data/lake:/data/lake
+
+  pipeline-cloud:
+    <<: *app-runtime
+    profiles: [cloud]
+    entrypoint: []
+    command: ["daily-sync"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *container-paths
+      LAKE_PRIMARY: cloud
+      LAKE_SYNC_BQ_ON_WRITE: "${LAKE_SYNC_BQ_ON_WRITE:-true}"
+      GCP_PROJECT: "${GCP_PROJECT:-}"
+      BQ_DATASET: "${BQ_DATASET:-sports_news_lake}"
+      GCS_BUCKET: "${GCS_BUCKET:-}"
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/${GCP_CREDENTIALS_FILE:-beanalytic-dev.json}
+    volumes:
+      - ./credentials:/app/credentials:ro
+      - ./data/lake/artifacts:/data/lake/artifacts
+      - ./data/lake/fept:/data/lake/fept
