@@ -16,7 +16,7 @@ _active_override = None
 
 @dataclass(frozen=True)
 class WcHyperParams:
-    elo_k: float = 32.0
+    elo_k: float = 24.0
     elo_home_adv: float = 30.0
     elo_initial: float = 1500.0
     home_adv_goals: float = 0.12
@@ -27,13 +27,13 @@ class WcHyperParams:
     logistic_class_weight: str | None = "balanced"
     logistic_max_iter: int = 3000
     logistic_calibration_cv: int = 3
-    ensemble_weight_steps: int = 40
+    ensemble_weight_steps: int = 80
     kxl_blend_weight: float = 0.20
-    rho_min: float = -0.20
-    rho_max: float = 0.20
+    rho_min: float = -0.2
+    rho_max: float = 0.2
     rho_step: float = 0.01
     draw_prob_floor: float = 0.18
-    poisson_season_half_life: float = 8.0
+    poisson_season_half_life: float = 10.0
     draw_model_blend: float = 0.55
     knockout_draw_discount: float = 0.82
 

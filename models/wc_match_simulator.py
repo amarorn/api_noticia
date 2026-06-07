@@ -33,6 +33,8 @@ class MatchSimulationResult:
     prob_home: float
     prob_draw: float
     prob_away: float
+    poisson_score: str | None = None
+    expected_goals: str | None = None
 
     # Dados reais da FIFA
     fifa_match: dict[str, Any] | None = None
@@ -288,7 +290,20 @@ def simulate_match(
         group_name=group_name,
     )
 
-    pred = predictor.predict(home_team, away_team) if predictor else None
+    poisson_score: str | None = None
+    expected_goals: str | None = None
+    pred = (
+        predictor.predict(
+            home_team,
+            away_team,
+            phase=phase,
+            is_neutral=is_neutral,
+            season=season,
+            group_name=group_name,
+        )
+        if predictor
+        else None
+    )
     if pred is None:
         warnings.append("Predictor não disponível — usando apenas dados reais da FIFA")
         model_probs = {"1": 0.33, "X": 0.34, "2": 0.33}
@@ -298,6 +313,8 @@ def simulate_match(
             "X": pred.prob_draw,
             "2": pred.prob_away,
         }
+        poisson_score = pred.poisson_score
+        expected_goals = pred.expected_goals
 
     # 2. Dados da FIFA
     fifa_match_dict: dict[str, Any] | None = None
@@ -494,6 +511,8 @@ def simulate_match(
         prob_home=round(probs["1"], 4),
         prob_draw=round(probs["X"], 4),
         prob_away=round(probs["2"], 4),
+        poisson_score=poisson_score,
+        expected_goals=expected_goals,
         fifa_match=fifa_match_dict,
         fifa_home_lineup=home_lineup,
         fifa_away_lineup=away_lineup,

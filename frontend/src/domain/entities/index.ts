@@ -167,6 +167,59 @@ export interface SofascoreResolvedEvent {
   sofascoreAway: string | null;
 }
 
+export interface WcInPlayPrediction {
+  homeTeam: string;
+  awayTeam: string;
+  currentScore: string;
+  minute: number;
+  matchMinutes: number;
+  remainingFraction: number;
+  lambdaFullHome: number;
+  lambdaFullAway: number;
+  lambdaRemainingHome: number;
+  lambdaRemainingAway: number;
+  rhoUsed: number;
+  probFinalHome: number;
+  probFinalDraw: number;
+  probFinalAway: number;
+  probHtHome: number;
+  probHtDraw: number;
+  probHtAway: number;
+  probNoMoreGoals: number;
+  probNextGoalHome: number;
+  probNextGoalAway: number;
+  finalLineProbs: Record<string, number>;
+  remainderLineProbs: Record<string, number>;
+  htLineProbs: Record<string, number>;
+  secondHalfLineProbs: Record<string, number>;
+  teamFinalLineProbs: Record<string, number>;
+  topFinalScores: Record<string, number>;
+  topHtFt: Record<string, number>;
+  comboMarkets: Record<string, number>;
+  bttsFinal: number;
+  nSimulations: number;
+  marketBenchmark: {
+    h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
+    totals?: Record<string, { marketOver: number; modelOver: number; edgeOver: number }>;
+  } | null;
+}
+
+export interface MonteCarloBreakdown {
+  probHome: number;
+  probDraw: number;
+  probAway: number;
+  expectedGoalsHome: number;
+  expectedGoalsAway: number;
+  over25: number;
+  under25: number;
+  bothTeamsScore: number;
+  cleanSheetHome: number;
+  cleanSheetAway: number;
+  topScores: Record<string, number>;
+  nSimulations: number;
+  rhoUsed: number;
+}
+
 export interface ModelBreakdown {
   dixonColes: Record<OutcomeLabel, number>;
   logistic: Record<OutcomeLabel, number>;
@@ -178,6 +231,7 @@ export interface ModelBreakdown {
   kxlBaseline: KxlBaselineBreakdown | null;
   kxlCollision: KxlCollisionBreakdown | null;
   kxlFept: KxlFeptMeta | null;
+  monteCarlo: MonteCarloBreakdown | null;
 }
 
 export interface PreMatchTeamStats {
@@ -291,6 +345,8 @@ export interface WcSimulation {
   probHome: number;
   probDraw: number;
   probAway: number;
+  poissonScore: string | null;
+  expectedGoals: string | null;
   fifaHomeLineup: WcSimulationLineupPlayer[] | null;
   fifaAwayLineup: WcSimulationLineupPlayer[] | null;
   fifaHomeBench: WcSimulationLineupPlayer[] | null;
@@ -313,6 +369,32 @@ export interface WcFriendlies {
   count: number;
   friendlies: WcFriendlyMatch[];
   source: string;
+}
+
+export interface SuperbetLiveEvent {
+  eventId: number;
+  homeTeam: string;
+  awayTeam: string;
+  eventName: string;
+  sportId: number;
+  tournamentId: number | null;
+  utcDate: string | null;
+  betradarId: string | null;
+  minute: number;
+  homeScore: number;
+  awayScore: number;
+  periodLabel: string | null;
+  status: string | null;
+  marketCount: number;
+  h2hOdds: Record<string, number>;
+  capturedAt: string;
+}
+
+export interface SuperbetLiveFeed {
+  count: number;
+  sportId: number | null;
+  events: SuperbetLiveEvent[];
+  capturedAt: string;
 }
 
 export interface WcSquadPlayer {

@@ -1,0 +1,13 @@
+{
+  "bets": [
+    {
+      "superbet_event_id": 13247229,
+      "market": "h2h",
+      "outcome": "1",
+      "stake": 100,
+      "odds_placed": 2.1,
+      "bankroll": 1000,
+      "note": "Brasil vence — amistoso"
+    }
+  ]
+}

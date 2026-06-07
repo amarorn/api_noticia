@@ -25,6 +25,8 @@ from pipelines.wc_kxl_collision import (
     collision_to_breakdown,
     format_collision_context,
 )
+from config import settings
+from models.wc_monte_carlo import simulate_match_mc
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_sofascore_features import (
     apply_sofascore_nudge,
@@ -323,6 +325,23 @@ class WcPredictor:
             rho=self.dixon_coles.rho,
         )
 
+        history = self.fixtures
+        if before_date is not None:
+            history = self.fixtures[self.fixtures["match_date"] < cutoff]
+        rho = self.dixon_coles.rho
+        if rho is None:
+            rho = self._dc_metrics.get("rho") if self._dc_metrics else 0.0
+        seed = hash((home_team, away_team, cutoff.isoformat())) % (2**32)
+        mc = simulate_match_mc(
+            history,
+            home_team,
+            away_team,
+            features=features,
+            n_simulations=settings.wc_mc_simulations,
+            rho=float(rho or 0.0),
+            random_seed=seed,
+        )
+
         return WcPrediction(
             home_team=home_team,
             away_team=away_team,
@@ -381,6 +400,7 @@ class WcPredictor:
                     "blend": hp.draw_model_blend,
                     "draw_rate_train": getattr(self._draw_metrics, "draw_rate", None),
                 },
+                "monte_carlo": mc.to_dict(),
             },
         )
 

@@ -1,17 +1,19 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#   "unsloth",
 #   "datasets>=2.18.0",
+#   "transformers>=4.40.0",
 #   "trl>=0.12.0",
+#   "peft>=0.12.0",
+#   "accelerate>=0.30.0",
+#   "torch",
 # ]
 # ///
-"""
-Fine-tuning com Unsloth a partir do JSONL exportado pelo pipeline gold.
+"""SFT do bolão com TRL+LoRA (sem Unsloth). Funciona no Mac (MPS/CPU) e em GPU NVIDIA.
 
 Uso:
   run-pipeline export
-  python scripts/unsloth_train.py --dataset data/training/bolao_train.jsonl
+  python scripts/trl_train_local.py --dataset data/training/bolao_train.jsonl
 """
 
 from __future__ import annotations
@@ -24,13 +26,13 @@ from models.dataset import export_jsonl
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="SFT bolão com Unsloth")
+    parser = argparse.ArgumentParser(description="SFT bolão local com TRL (sem Unsloth)")
     parser.add_argument(
         "--dataset",
         type=Path,
         default=Path("data/training/bolao_train.jsonl"),
     )
-    parser.add_argument("--base-model", type=str, default="unsloth/Qwen2.5-0.5B-Instruct")
+    parser.add_argument("--base-model", type=str, default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument("--output-dir", type=Path, default=Path("models/checkpoints/bolao-unsloth"))
     parser.add_argument("--max-steps", type=int, default=200)
     parser.add_argument("--learning-rate", type=float, default=2e-4)
@@ -48,6 +50,16 @@ def load_examples(path: Path) -> list[dict]:
     return rows
 
 
+def resolve_dtype():
+    import torch
+
+    if torch.cuda.is_available():
+        if torch.cuda.is_bf16_supported():
+            return torch.bfloat16, True
+        return torch.float16, True
+    return torch.float32, False
+
+
 def main() -> None:
     args = parse_args()
     if args.export_first or not args.dataset.exists():
@@ -62,58 +74,57 @@ def main() -> None:
         raise SystemExit(f"Dataset muito pequeno: {len(examples)} exemplos (mínimo 20)")
 
     import torch
-
-    if not torch.cuda.is_available():
-        raise SystemExit(
-            "Unsloth exige GPU NVIDIA/CUDA. No Mac use:\n"
-            "  python scripts/trl_train_local.py --dataset data/training/bolao_train.jsonl\n"
-            "Ou na Hugging Face (L4/T4):\n"
-            "  hf jobs uv run scripts/hf_sft_train.py --flavor l4-small --timeout 3600 "
-            "--secrets HF_TOKEN -- --dataset-repo SEU_USER/dataset --hub-model-id SEU_USER/model"
-        )
-
     from datasets import Dataset
-    from unsloth import FastLanguageModel
-    from trl import SFTTrainer
-    from transformers import TrainingArguments
+    from peft import LoraConfig
+    from trl import SFTConfig, SFTTrainer
 
-    texts = [
-        f"{ex['prompt']}\nResposta:\n{ex['completion']}".strip() for ex in examples
-    ]
+    dtype, use_bf16 = resolve_dtype()
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+    )
+    print(f"Dispositivo: {device} | dtype: {dtype} | exemplos: {len(examples)}")
+
+    texts = [f"{ex['prompt']}\nResposta:\n{ex['completion']}".strip() for ex in examples]
     ds = Dataset.from_dict({"text": texts})
 
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=args.base_model,
-        max_seq_length=2048,
-        load_in_4bit=True,
-    )
-    model = FastLanguageModel.get_peft_model(
-        model,
+    peft_config = LoraConfig(
         r=16,
         lora_alpha=32,
+        lora_dropout=0.05,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+        task_type="CAUSAL_LM",
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    trainer = SFTTrainer(
-        model=model,
-        tokenizer=tokenizer,
-        train_dataset=ds,
+    sft_args = SFTConfig(
+        output_dir=str(args.output_dir),
+        learning_rate=args.learning_rate,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=8,
+        max_steps=args.max_steps,
+        warmup_ratio=0.05,
+        logging_steps=10,
+        save_steps=50,
+        bf16=use_bf16,
+        fp16=not use_bf16 and device == "cuda",
+        report_to="none",
         dataset_text_field="text",
-        args=TrainingArguments(
-            output_dir=str(args.output_dir),
-            per_device_train_batch_size=2,
-            gradient_accumulation_steps=8,
-            max_steps=args.max_steps,
-            learning_rate=args.learning_rate,
-            logging_steps=10,
-            save_steps=50,
-            bf16=True,
-        ),
+        model_init_kwargs={"torch_dtype": dtype},
+    )
+
+    trainer = SFTTrainer(
+        model=args.base_model,
+        train_dataset=ds,
+        args=sft_args,
+        peft_config=peft_config,
     )
     trainer.train()
-    model.save_pretrained(str(args.output_dir))
-    tokenizer.save_pretrained(str(args.output_dir))
+    trainer.save_model(str(args.output_dir))
+    trainer.processing_class.save_pretrained(str(args.output_dir))
     print(f"Modelo salvo em {args.output_dir}")
 
 

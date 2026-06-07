@@ -271,6 +271,17 @@ def sync_layer(layer: str, write_disposition: str = "WRITE_APPEND") -> dict:
             write_disposition=write_disposition,
         )
 
+    if layer == "bronze_superbet":
+        from ingest.superbet.dataset import load_bronze_superbet_events
+
+        return _sync_dataframe_layer(
+            load_bronze_superbet_events(),
+            layer,
+            table,
+            gcs_filename="snapshots.parquet",
+            write_disposition=write_disposition,
+        )
+
     if layer == "silver_fixtures":
         import pandas as pd
 

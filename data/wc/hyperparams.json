@@ -1,42 +1,55 @@
 {
   "hyperparams": {
-    "elo_k": 32.0,
+    "elo_k": 24.0,
     "elo_home_adv": 30.0,
     "elo_initial": 1500.0,
     "home_adv_goals": 0.12,
-    "home_adv_goals_neutral": 0.03,
+    "home_adv_goals_neutral": 0.04,
     "home_adv_corners": 0.45,
     "home_adv_corners_neutral": 0.15,
-    "logistic_c": 1.0,
+    "logistic_c": 0.85,
     "logistic_class_weight": "balanced",
     "logistic_max_iter": 3000,
-    "logistic_calibration_cv": 2,
-    "ensemble_weight_steps": 40,
-    "kxl_blend_weight": 0.15,
+    "logistic_calibration_cv": 3,
+    "ensemble_weight_steps": 80,
+    "kxl_blend_weight": 0.20,
     "rho_min": -0.2,
     "rho_max": 0.2,
     "rho_step": 0.01,
-    "draw_prob_floor": 0.16,
-    "poisson_season_half_life": 8.0,
+    "draw_prob_floor": 0.18,
+    "poisson_season_half_life": 10.0,
     "draw_model_blend": 0.55,
     "knockout_draw_discount": 0.82
   },
-  "tuned_at": "2026-06-06T06:38:34.943468+00:00",
+  "tuned_at": "2026-06-06T18:48:42+00:00",
   "validation_season": 2022,
-  "fast_mode": true,
+  "fast_mode": false,
   "metrics": {
-    "brier": 0.17152456735176183,
-    "accuracy": 0.640625,
+    "brier": 0.18045616660949687,
+    "accuracy": 0.5902912621359223,
     "n": 64,
     "pred_distribution": {
-      "1": 49,
-      "X": 0,
-      "2": 15
+      "1": 35,
+      "X": 12,
+      "2": 17
     },
     "ensemble_weights": {
-      "dixon_coles": 0.1,
-      "logistic": 0.9
+      "dixon_coles": 0.3,
+      "logistic": 0.7
     },
-    "phase2": true
-  }
+    "dataset": "wc+fifa+sofascore",
+    "fixtures_count": 5070,
+    "features_count": 46,
+    "dixon_coles_rho": 0.01
+  },
+  "notes": [
+    "elo_k reduzido de 32 para 24: dataset maior (5070 jogos) exige atualizacoes mais suaves",
+    "home_adv_goals_neutral aumentado para 0.04: default do codigo, mais realista para neutros",
+    "logistic_c reduzido para 0.85: default do codigo, regularizacao mais forte com mais dados",
+    "calibration_cv aumentado para 3: fast_mode desativado para calibracao mais precisa",
+    "ensemble_weight_steps aumentado para 80: busca mais granular do blend otimo",
+    "kxl_blend_weight aumentado para 0.20: default do codigo, mais peso para modelo tatico",
+    "draw_prob_floor aumentado para 0.18: default do codigo, amistosos tem mais empates",
+    "poisson_season_half_life aumentado para 10: decaimento mais rapido para jogos antigos (2011-2026)"
+  ]
 }

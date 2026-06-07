@@ -4,6 +4,7 @@ import {
   IconCalendar,
   IconDashboard,
   IconHistory,
+  IconLive,
   IconNewspaper,
   IconTrophy,
   IconUsers,
@@ -47,6 +48,12 @@ export const navGroups: NavGroup[] = [
         label: "Amistosos",
         Icon: IconCalendar,
         description: "Datas preparatórias",
+      },
+      {
+        to: "/ao-vivo",
+        label: "Ao vivo",
+        Icon: IconLive,
+        description: "Jogos Superbet live",
       },
       {
         to: "/grupos",

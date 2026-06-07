@@ -13,6 +13,7 @@ import {
   ProbabilityDonut,
 } from "@/presentation/components/charts/ProbabilityCharts";
 import { ConfidenceBadge, ConfidenceBar } from "@/presentation/components/predictions/ConfidenceBadge";
+import { InPlayPanel } from "@/presentation/components/predictions/InPlayPanel";
 import { MatchContextPanel } from "@/presentation/components/predictions/MatchContextPanel";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { SofascoreFeptPanel } from "@/presentation/components/predictions/SofascoreFeptPanel";
@@ -607,6 +608,21 @@ export function PredictPage() {
                     probAway={simulateMutation.data.probAway}
                     prediction={simulateMutation.data.prediction}
                   />
+                  {(simulateMutation.data.poissonScore ||
+                    simulateMutation.data.expectedGoals) && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <StatBox
+                        label="Placar previsto"
+                        value={simulateMutation.data.poissonScore ?? "—"}
+                        color="green"
+                      />
+                      <StatBox
+                        label="Gols esperados"
+                        value={simulateMutation.data.expectedGoals ?? "—"}
+                        color="blue"
+                      />
+                    </div>
+                  )}
                   {(simulateMutation.data.fifaHomePoints != null ||
                     simulateMutation.data.fifaAwayPoints != null) && (
                     <div className="grid grid-cols-3 gap-2">
@@ -763,6 +779,14 @@ export function PredictPage() {
                 <MatchContextPanel prediction={predictMutation.data} />
               </div>
             </motion.div>
+          )}
+
+          {homeTeam && awayTeam && (
+            <InPlayPanel
+              homeTeam={homeTeam}
+              awayTeam={awayTeam}
+              phase={friendlyMode ? phase : phase}
+            />
           )}
         </div>
       </div>

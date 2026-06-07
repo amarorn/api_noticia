@@ -22,7 +22,9 @@ import {
   GetWcSquadUseCase,
   GetWcTeamsUseCase,
   GetWcFriendliesUseCase,
+  GetSuperbetLiveUseCase,
   PredictWcCornersUseCase,
+  PredictWcInPlayUseCase,
   PredictWcMatchUseCase,
   ResolveSofascoreEventUseCase,
   SimulateWcMatchUseCase,
@@ -42,9 +44,11 @@ export const getWcSquadsIndexUseCase = new GetWcSquadsIndexUseCase(wcRepository)
 export const getWcSquadUseCase = new GetWcSquadUseCase(wcRepository);
 export const predictWcMatchUseCase = new PredictWcMatchUseCase(wcRepository);
 export const predictWcCornersUseCase = new PredictWcCornersUseCase(wcRepository);
+export const predictWcInPlayUseCase = new PredictWcInPlayUseCase(wcRepository);
 export const resolveSofascoreEventUseCase = new ResolveSofascoreEventUseCase(wcRepository);
 export const getWcTeamsUseCase = new GetWcTeamsUseCase(wcRepository);
 export const getWcFriendliesUseCase = new GetWcFriendliesUseCase(wcRepository);
+export const getSuperbetLiveUseCase = new GetSuperbetLiveUseCase(wcRepository);
 export const simulateWcMatchUseCase = new SimulateWcMatchUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(

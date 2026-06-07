@@ -65,6 +65,23 @@ export class PredictWcCornersUseCase {
   }
 }
 
+export class PredictWcInPlayUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: number;
+    awayScore: number;
+    minute: number;
+    phase?: string;
+    matchMinutes?: number;
+    superbetEventId?: number;
+  }) {
+    return this.repository.predictInPlay(dto);
+  }
+}
+
 export class ResolveSofascoreEventUseCase {
   constructor(private readonly repository: IWcRepository) {}
 
@@ -110,6 +127,14 @@ export class GetWcFriendliesUseCase {
     includeUpcoming?: boolean;
   }): Promise<WcFriendlies> {
     return this.repository.getFriendlies(dto);
+  }
+}
+
+export class GetSuperbetLiveUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto?: { sportId?: number; allSports?: boolean }) {
+    return this.repository.getSuperbetLive(dto);
   }
 }
 

@@ -7,6 +7,7 @@ import type {
   SofascoreResolvedEvent,
   ValueBetsReport,
   WcCornersPrediction,
+  WcInPlayPrediction,
   WcPrediction,
   WcRound,
   WcSchedule,
@@ -63,6 +64,16 @@ export interface IWcRepository {
     awayTeam: string;
     phase: string;
   }): Promise<WcCornersPrediction>;
+  predictInPlay(request: {
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: number;
+    awayScore: number;
+    minute: number;
+    phase?: string;
+    matchMinutes?: number;
+    superbetEventId?: number;
+  }): Promise<WcInPlayPrediction>;
   resolveSofascoreEvent(request: {
     homeTeam: string;
     awayTeam: string;
@@ -76,6 +87,10 @@ export interface IWcRepository {
     includeFinished?: boolean;
     includeUpcoming?: boolean;
   }): Promise<WcFriendlies>;
+  getSuperbetLive(request?: {
+    sportId?: number;
+    allSports?: boolean;
+  }): Promise<import("@/domain/entities").SuperbetLiveFeed>;
   simulateMatch(request: {
     homeTeam: string;
     awayTeam: string;

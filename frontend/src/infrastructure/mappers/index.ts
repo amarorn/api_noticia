@@ -14,6 +14,7 @@ import type {
   ValueMatch,
   ValueOutcome,
   WcCornersPrediction,
+  WcInPlayPrediction,
   WcPrediction,
   WcRound,
   WcSchedule,
@@ -98,6 +99,21 @@ export interface ApiModelBreakdown {
     }>;
     auto_merged: boolean;
     note?: string | null;
+  } | null;
+  monte_carlo?: {
+    prob_home: number;
+    prob_draw: number;
+    prob_away: number;
+    expected_goals_home: number;
+    expected_goals_away: number;
+    over_2_5: number;
+    under_2_5: number;
+    both_teams_score: number;
+    clean_sheet_home: number;
+    clean_sheet_away: number;
+    top_scores: Record<string, number>;
+    n_simulations: number;
+    rho_used: number;
   } | null;
 }
 
@@ -378,6 +394,23 @@ export function mapModelBreakdown(raw: ApiModelBreakdown): ModelBreakdown {
     kxlBaseline: mapKxlBaseline(raw.kxl_baseline),
     kxlCollision: mapKxlCollision(raw.kxl_collision),
     kxlFept: mapKxlFept(raw.kxl_fept),
+    monteCarlo: raw.monte_carlo
+      ? {
+          probHome: raw.monte_carlo.prob_home,
+          probDraw: raw.monte_carlo.prob_draw,
+          probAway: raw.monte_carlo.prob_away,
+          expectedGoalsHome: raw.monte_carlo.expected_goals_home,
+          expectedGoalsAway: raw.monte_carlo.expected_goals_away,
+          over25: raw.monte_carlo.over_2_5,
+          under25: raw.monte_carlo.under_2_5,
+          bothTeamsScore: raw.monte_carlo.both_teams_score,
+          cleanSheetHome: raw.monte_carlo.clean_sheet_home,
+          cleanSheetAway: raw.monte_carlo.clean_sheet_away,
+          topScores: raw.monte_carlo.top_scores,
+          nSimulations: raw.monte_carlo.n_simulations,
+          rhoUsed: raw.monte_carlo.rho_used,
+        }
+      : null,
   };
 }
 
@@ -560,6 +593,8 @@ interface ApiWcSimulation {
   prob_home: number;
   prob_draw: number;
   prob_away: number;
+  poisson_score?: string | null;
+  expected_goals?: string | null;
   fifa_home_lineup: ApiWcSimulationLineupPlayer[] | null;
   fifa_away_lineup: ApiWcSimulationLineupPlayer[] | null;
   fifa_home_bench?: ApiWcSimulationLineupPlayer[] | null;
@@ -601,6 +636,8 @@ export function mapWcSimulation(raw: ApiWcSimulation): WcSimulation {
     probHome: raw.prob_home,
     probDraw: raw.prob_draw,
     probAway: raw.prob_away,
+    poissonScore: raw.poisson_score ?? null,
+    expectedGoals: raw.expected_goals ?? null,
     fifaHomeLineup: raw.fifa_home_lineup?.map(mapWcSimulationLineupPlayer) ?? null,
     fifaAwayLineup: raw.fifa_away_lineup?.map(mapWcSimulationLineupPlayer) ?? null,
     fifaHomeBench: raw.fifa_home_bench?.map(mapWcSimulationLineupPlayer) ?? null,
@@ -820,6 +857,148 @@ export function mapWcCornersPrediction(raw: ApiWcCornersPrediction): WcCornersPr
       avgAwayCorners: ts.avg_away_corners,
       avgTotalCorners: ts.avg_total_corners,
     },
+  };
+}
+
+interface ApiWcInPlayPrediction {
+  home_team: string;
+  away_team: string;
+  current_score: string;
+  minute: number;
+  match_minutes: number;
+  remaining_fraction: number;
+  lambda_full_home: number;
+  lambda_full_away: number;
+  lambda_remaining_home: number;
+  lambda_remaining_away: number;
+  rho_used: number;
+  prob_final_home: number;
+  prob_final_draw: number;
+  prob_final_away: number;
+  prob_ht_home: number;
+  prob_ht_draw: number;
+  prob_ht_away: number;
+  prob_no_more_goals: number;
+  prob_next_goal_home: number;
+  prob_next_goal_away: number;
+  final_line_probs: Record<string, number>;
+  remainder_line_probs: Record<string, number>;
+  ht_line_probs: Record<string, number>;
+  second_half_line_probs: Record<string, number>;
+  team_final_line_probs: Record<string, number>;
+  top_final_scores: Record<string, number>;
+  top_ht_ft: Record<string, number>;
+  combo_markets: Record<string, number>;
+  btts_final: number;
+  n_simulations: number;
+  market_benchmark?: {
+    h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
+    totals?: Record<string, { market_over: number; model_over: number; edge_over: number }>;
+  } | null;
+  superbet?: Record<string, unknown> | null;
+}
+
+export function mapWcInPlayPrediction(raw: ApiWcInPlayPrediction): WcInPlayPrediction {
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    currentScore: raw.current_score,
+    minute: raw.minute,
+    matchMinutes: raw.match_minutes,
+    remainingFraction: raw.remaining_fraction,
+    lambdaFullHome: raw.lambda_full_home,
+    lambdaFullAway: raw.lambda_full_away,
+    lambdaRemainingHome: raw.lambda_remaining_home,
+    lambdaRemainingAway: raw.lambda_remaining_away,
+    rhoUsed: raw.rho_used,
+    probFinalHome: raw.prob_final_home,
+    probFinalDraw: raw.prob_final_draw,
+    probFinalAway: raw.prob_final_away,
+    probHtHome: raw.prob_ht_home,
+    probHtDraw: raw.prob_ht_draw,
+    probHtAway: raw.prob_ht_away,
+    probNoMoreGoals: raw.prob_no_more_goals,
+    probNextGoalHome: raw.prob_next_goal_home,
+    probNextGoalAway: raw.prob_next_goal_away,
+    finalLineProbs: raw.final_line_probs,
+    remainderLineProbs: raw.remainder_line_probs,
+    htLineProbs: raw.ht_line_probs,
+    secondHalfLineProbs: raw.second_half_line_probs,
+    teamFinalLineProbs: raw.team_final_line_probs,
+    topFinalScores: raw.top_final_scores,
+    topHtFt: raw.top_ht_ft,
+    comboMarkets: raw.combo_markets,
+    bttsFinal: raw.btts_final,
+    nSimulations: raw.n_simulations,
+    marketBenchmark: raw.market_benchmark
+      ? {
+          h2h: raw.market_benchmark.h2h,
+          totals: raw.market_benchmark.totals
+            ? Object.fromEntries(
+                Object.entries(raw.market_benchmark.totals).map(([k, v]) => [
+                  k,
+                  {
+                    marketOver: v.market_over,
+                    modelOver: v.model_over,
+                    edgeOver: v.edge_over,
+                  },
+                ]),
+              )
+            : undefined,
+        }
+      : null,
+  };
+}
+
+interface ApiSuperbetLiveEvent {
+  event_id: number;
+  home_team: string;
+  away_team: string;
+  event_name: string;
+  sport_id: number;
+  tournament_id: number | null;
+  utc_date: string | null;
+  betradar_id: string | null;
+  minute: number;
+  home_score: number;
+  away_score: number;
+  period_label: string | null;
+  status: string | null;
+  market_count: number;
+  h2h_odds: Record<string, number>;
+  captured_at: string;
+}
+
+interface ApiSuperbetLiveFeed {
+  count: number;
+  sport_id: number | null;
+  events: ApiSuperbetLiveEvent[];
+  captured_at: string;
+}
+
+export function mapSuperbetLiveFeed(raw: ApiSuperbetLiveFeed) {
+  return {
+    count: raw.count,
+    sportId: raw.sport_id,
+    capturedAt: raw.captured_at,
+    events: raw.events.map((event) => ({
+      eventId: event.event_id,
+      homeTeam: event.home_team,
+      awayTeam: event.away_team,
+      eventName: event.event_name,
+      sportId: event.sport_id,
+      tournamentId: event.tournament_id,
+      utcDate: event.utc_date,
+      betradarId: event.betradar_id,
+      minute: event.minute,
+      homeScore: event.home_score,
+      awayScore: event.away_score,
+      periodLabel: event.period_label,
+      status: event.status,
+      marketCount: event.market_count,
+      h2hOdds: event.h2h_odds,
+      capturedAt: event.captured_at,
+    })),
   };
 }
 

@@ -74,6 +74,18 @@ function sourceBadgeLabel(source: string): string {
   return source;
 }
 
+function buildLiveLink(match: WcFriendlyMatch): string | null {
+  const live = match.status === "live" || match.status === "inprogress";
+  if (!live || match.homeScore == null || match.awayScore == null) return null;
+  const params = new URLSearchParams({
+    source: "friendly",
+    phase: "friendly",
+    liveHome: String(match.homeScore),
+    liveAway: String(match.awayScore),
+  });
+  return `/match/${encodeURIComponent(match.homeTeam)}/${encodeURIComponent(match.awayTeam)}?${params}`;
+}
+
 function buildPredictLink(match: WcFriendlyMatch): string {
   const params = new URLSearchParams({
     home: match.homeTeam,
@@ -258,13 +270,24 @@ export function FriendliesPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3.5 text-right">
-                        <Link
-                          to={buildPredictLink(match)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-white/8 bg-white/4 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:border-neon-green/30 hover:text-neon-green"
-                        >
-                          Palpite
-                          <IconChevronRight className="h-3 w-3" />
-                        </Link>
+                        <div className="flex flex-wrap justify-end gap-1.5 opacity-0 transition-all group-hover:opacity-100">
+                          {buildLiveLink(match) && (
+                            <Link
+                              to={buildLiveLink(match)!}
+                              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 hover:border-amber-400/40"
+                            >
+                              Ao vivo
+                              <IconChevronRight className="h-3 w-3" />
+                            </Link>
+                          )}
+                          <Link
+                            to={buildPredictLink(match)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-white/8 bg-white/4 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 hover:border-neon-green/30 hover:text-neon-green"
+                          >
+                            Palpite
+                            <IconChevronRight className="h-3 w-3" />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

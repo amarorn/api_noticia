@@ -15,6 +15,9 @@ import {
 import { ConfidenceBadge, ConfidenceBar } from "@/presentation/components/predictions/ConfidenceBadge";
 import { MatchContextPanel } from "@/presentation/components/predictions/MatchContextPanel";
 import { CornersPredictionPanel } from "@/presentation/components/predictions/CornersPredictionPanel";
+import { BetAdvicePanel } from "@/presentation/components/predictions/BetAdvicePanel";
+import { InPlayPanel } from "@/presentation/components/predictions/InPlayPanel";
+import { MonteCarloPanel } from "@/presentation/components/predictions/MonteCarloPanel";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
 import { SofascoreFeptPanel } from "@/presentation/components/predictions/SofascoreFeptPanel";
 import { SofascoreToggle } from "@/presentation/components/predictions/SofascoreToggle";
@@ -33,6 +36,12 @@ export function MatchDetailPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const sofascoreFromUrl = searchParams.get("sofascore") === "1";
+  const friendlyFromUrl = searchParams.get("source") === "friendly";
+  const phaseFromUrl = searchParams.get("phase");
+  const liveHomeScore = Number.parseInt(searchParams.get("liveHome") ?? "", 10);
+  const liveAwayScore = Number.parseInt(searchParams.get("liveAway") ?? "", 10);
+  const liveMinute = Number.parseInt(searchParams.get("minute") ?? "", 10);
+  const superbetEventId = Number.parseInt(searchParams.get("superbet") ?? "", 10);
   const statePrediction = !sofascoreFromUrl
     ? (location.state as { prediction?: WcPrediction } | null)?.prediction
     : undefined;
@@ -57,6 +66,22 @@ export function MatchDetailPage() {
     [scheduleQuery.data, homeTeam, awayTeam],
   );
 
+  const matchPhase = useMemo(() => {
+    if (scheduleMatch?.phase) return scheduleMatch.phase;
+    if (phaseFromUrl) return phaseFromUrl;
+    if (friendlyFromUrl || (scheduleQuery.isSuccess && !scheduleMatch)) return "friendly";
+    return "group";
+  }, [scheduleMatch, phaseFromUrl, friendlyFromUrl, scheduleQuery.isSuccess]);
+
+  const inPlayDefaults = useMemo(
+    () => ({
+      homeScore: Number.isFinite(liveHomeScore) ? liveHomeScore : 0,
+      awayScore: Number.isFinite(liveAwayScore) ? liveAwayScore : 0,
+      minute: Number.isFinite(liveMinute) ? liveMinute : 0,
+    }),
+    [liveHomeScore, liveAwayScore, liveMinute],
+  );
+
   const manualSofascoreEventId = useMemo(() => {
     const parsed = Number.parseInt(sofascoreEventIdInput, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
@@ -71,6 +96,7 @@ export function MatchDetailPage() {
       "wc-match",
       homeTeam,
       awayTeam,
+      matchPhase,
       useSofascore,
       manualSofascoreEventId,
       kickoffDate,
@@ -79,7 +105,7 @@ export function MatchDetailPage() {
       predictWithOptionalSofascore({
         homeTeam,
         awayTeam,
-        phase: scheduleMatch?.phase ?? "group",
+        phase: matchPhase,
         useSofascore,
         manualEventId: manualSofascoreEventId,
         kickoffDate,
@@ -143,12 +169,42 @@ export function MatchDetailPage() {
 
   if (query.isError) {
     return (
-      <PageTransition>
+      <PageTransition className="space-y-5">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
+        >
+          <IconArrowLeft className="h-4 w-4" />
+          Voltar aos palpites
+        </Link>
         <ErrorState
           message={
             query.error instanceof Error ? query.error.message : "Jogo não encontrado"
           }
           onRetry={() => query.refetch()}
+        />
+        <InPlayPanel
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          phase={matchPhase}
+          initialHomeScore={inPlayDefaults.homeScore}
+          initialAwayScore={inPlayDefaults.awayScore}
+          initialMinute={inPlayDefaults.minute}
+          superbetEventId={
+            Number.isFinite(superbetEventId) && superbetEventId > 0
+              ? superbetEventId
+              : undefined
+          }
+        />
+        <BetAdvicePanel
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          phase={matchPhase}
+          superbetEventId={
+            Number.isFinite(superbetEventId) && superbetEventId > 0
+              ? superbetEventId
+              : undefined
+          }
         />
       </PageTransition>
     );
@@ -339,6 +395,35 @@ export function MatchDetailPage() {
           awayTeam={pred.awayTeam}
         />
       )}
+
+      {pred.modelBreakdown.monteCarlo && (
+        <MonteCarloPanel simulation={pred.modelBreakdown.monteCarlo} />
+      )}
+
+      <InPlayPanel
+        homeTeam={pred.homeTeam}
+        awayTeam={pred.awayTeam}
+        phase={matchPhase}
+        initialHomeScore={inPlayDefaults.homeScore}
+        initialAwayScore={inPlayDefaults.awayScore}
+        initialMinute={inPlayDefaults.minute}
+        superbetEventId={
+          Number.isFinite(superbetEventId) && superbetEventId > 0
+            ? superbetEventId
+            : undefined
+        }
+      />
+
+      <BetAdvicePanel
+        homeTeam={pred.homeTeam}
+        awayTeam={pred.awayTeam}
+        phase={matchPhase}
+        superbetEventId={
+          Number.isFinite(superbetEventId) && superbetEventId > 0
+            ? superbetEventId
+            : undefined
+        }
+      />
 
       <SofascoreFeptPanel fept={pred.modelBreakdown.kxlFept} />
 

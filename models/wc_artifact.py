@@ -18,7 +18,7 @@ from models.wc_predictor import WcPredictor, train_wc_predictor
 from pipelines.wc_fifa_rankings import fifa_rankings_fingerprint
 from pipelines.wc_hyperparams import HYPERPARAMS_PATH, get_wc_hyperparams, load_hyperparams_file
 from pipelines.wc_baselines import baselines_fingerprint
-from pipelines.wc_market_features import DEFAULT_ODDS
+from pipelines.wc_market_features import DEFAULT_ODDS, DEFAULT_SUPERBET_ODDS
 from pipelines.wc_squad_features import squads_fingerprint
 from pipelines.silver import silver_fingerprint
 from pipelines.wc_stats import FEATURE_NAMES
@@ -38,17 +38,24 @@ def fixtures_fingerprint() -> str:
 
 
 def _odds_fingerprint() -> str:
-    if not DEFAULT_ODDS.exists():
-        return "missing"
-    st = DEFAULT_ODDS.stat()
-    return f"{DEFAULT_ODDS.name}:{st.st_mtime_ns}:{st.st_size}"
+    parts: list[str] = []
+    for path in (DEFAULT_ODDS, DEFAULT_SUPERBET_ODDS):
+        if not path.exists():
+            parts.append(f"{path.name}:missing")
+            continue
+        st = path.stat()
+        parts.append(f"{path.name}:{st.st_mtime_ns}:{st.st_size}")
+    return "|".join(parts)
 
 
 def hyperparams_fingerprint() -> str:
     hp = load_hyperparams_file() or get_wc_hyperparams()
     p = HYPERPARAMS_PATH
     mtime = p.stat().st_mtime_ns if p.exists() else 0
-    return f"{hp.elo_home_adv}:{hp.kxl_blend_weight}:{mtime}"
+    return (
+        f"{hp.elo_k}:{hp.elo_home_adv}:{hp.logistic_c}:{hp.kxl_blend_weight}:"
+        f"{hp.draw_prob_floor}:{hp.poisson_season_half_life}:{mtime}"
+    )
 
 
 def _manifest_path() -> Path:
@@ -66,28 +73,38 @@ def read_manifest() -> dict | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _artifact_checks(manifest: dict) -> dict[str, bool]:
+    odds_fp = _odds_fingerprint()
+    return {
+        "version": manifest.get("artifact_version") == ARTIFACT_VERSION,
+        "fixtures": manifest.get("fixtures_fingerprint") == fixtures_fingerprint(),
+        "squads": manifest.get("squads_fingerprint") == squads_fingerprint(),
+        "hyperparams": manifest.get("hyperparams_fingerprint") == hyperparams_fingerprint(),
+        "fifa": manifest.get("fifa_fingerprint") == fifa_rankings_fingerprint(),
+        "odds": manifest.get("odds_fingerprint") == odds_fp,
+        "baselines": manifest.get("baselines_fingerprint") == baselines_fingerprint(),
+        "features": manifest.get("feature_names") == FEATURE_NAMES,
+    }
+
+
 def artifact_is_valid(manifest: dict | None = None) -> bool:
     manifest = manifest or read_manifest()
     if not manifest or not _bundle_path().exists():
         return False
-    if manifest.get("artifact_version") != ARTIFACT_VERSION:
+    checks = _artifact_checks(manifest)
+    return all(checks.values())
+
+
+def artifact_is_loadable(manifest: dict | None = None) -> bool:
+    """Permite servir pickle quando só hiperparâmetros mudaram (retreino recomendado)."""
+    manifest = manifest or read_manifest()
+    if not manifest or not _bundle_path().exists():
         return False
-    if manifest.get("fixtures_fingerprint") != fixtures_fingerprint():
-        return False
-    if manifest.get("squads_fingerprint") != squads_fingerprint():
-        return False
-    if manifest.get("hyperparams_fingerprint") != hyperparams_fingerprint():
-        return False
-    if manifest.get("fifa_fingerprint") != fifa_rankings_fingerprint():
-        return False
-    odds_fp = _odds_fingerprint()
-    if manifest.get("odds_fingerprint") != odds_fp:
-        return False
-    if manifest.get("baselines_fingerprint") != baselines_fingerprint():
-        return False
-    if manifest.get("feature_names") != FEATURE_NAMES:
-        return False
-    return True
+    checks = _artifact_checks(manifest)
+    stale = [name for name, ok in checks.items() if not ok]
+    if not stale:
+        return True
+    return stale == ["hyperparams"]
 
 
 def save_artifact(predictor: WcPredictor) -> dict:
@@ -136,8 +153,16 @@ def save_artifact(predictor: WcPredictor) -> dict:
 
 
 def load_artifact() -> WcPredictor | None:
-    if not artifact_is_valid():
+    manifest = read_manifest()
+    if manifest is None or not _bundle_path().exists():
         return None
+    if not artifact_is_valid(manifest):
+        if not artifact_is_loadable(manifest):
+            return None
+        logger.warning(
+            "wc_artifact_stale_hyperparams",
+            hint="Execute train-wc --force para alinhar pesos ao hyperparams.json",
+        )
     from ingest.fixtures.world_cup import load_wc_fixtures
 
     bundle = pickle.loads(_bundle_path().read_bytes())

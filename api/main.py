@@ -311,6 +311,142 @@ class WcPredictRequest(BaseModel):
     )
 
 
+class WcInPlayRequest(BaseModel):
+    home_team: str = Field(..., examples=["Brasil"])
+    away_team: str = Field(..., examples=["Egito"])
+    home_score: int = Field(..., ge=0, examples=[1])
+    away_score: int = Field(..., ge=0, examples=[1])
+    minute: int = Field(..., ge=0, le=120, description="Minuto de jogo (0–120)", examples=[17])
+    phase: str = Field("group", examples=["group"])
+    match_minutes: int = Field(90, ge=45, le=120, examples=[90])
+    ht_home_score: int | None = Field(
+        None,
+        ge=0,
+        description="Placar no intervalo (casa). Recomendado quando minute > 45.",
+    )
+    ht_away_score: int | None = Field(
+        None,
+        ge=0,
+        description="Placar no intervalo (fora). Recomendado quando minute > 45.",
+    )
+    superbet_event_id: int | None = Field(
+        None,
+        description="ID Superbet: preenche placar/minuto ao vivo e benchmark de mercado",
+        examples=[13247229],
+    )
+    merge_superbet_odds: bool = Field(
+        False,
+        description="Salva snapshot nas odds de mercado (superbet_odds.json) para treino",
+    )
+
+
+class WcInPlayResponse(BaseModel):
+    home_team: str
+    away_team: str
+    current_score: str
+    minute: int
+    match_minutes: int
+    remaining_fraction: float
+    lambda_full_home: float
+    lambda_full_away: float
+    lambda_remaining_home: float
+    lambda_remaining_away: float
+    rho_used: float
+    prob_final_home: float
+    prob_final_draw: float
+    prob_final_away: float
+    prob_ht_home: float
+    prob_ht_draw: float
+    prob_ht_away: float
+    prob_no_more_goals: float
+    prob_next_goal_home: float
+    prob_next_goal_away: float
+    final_line_probs: dict[str, float]
+    remainder_line_probs: dict[str, float]
+    ht_line_probs: dict[str, float]
+    second_half_line_probs: dict[str, float]
+    team_final_line_probs: dict[str, float]
+    top_final_scores: dict[str, float]
+    top_ht_ft: dict[str, float]
+    combo_markets: dict[str, float]
+    btts_final: float
+    n_simulations: int
+    market_benchmark: dict | None = None
+    superbet: dict | None = None
+
+
+class UserBetRequest(BaseModel):
+    market: str = Field(..., examples=["h2h"], description="h2h, over_2_5, btts, next_goal, combo_btts_over_3_5")
+    outcome: str = Field(..., examples=["1"], description="1, X, 2, yes, no, home, away")
+    stake: float = Field(..., gt=0, examples=[100])
+    odds_placed: float = Field(..., gt=1, examples=[2.1])
+
+
+class WcBetAdviceRequest(BaseModel):
+    home_team: str = Field(..., examples=["Brasil"])
+    away_team: str = Field(..., examples=["Egito"])
+    superbet_event_id: int = Field(..., examples=[13247229])
+    phase: str = Field("friendly", examples=["friendly"])
+    bankroll: float = Field(1000, gt=0, examples=[1000])
+    user_bet: UserBetRequest | None = None
+
+
+class WcBetAdviceResponse(BaseModel):
+    home_team: str
+    away_team: str
+    minute: int
+    current_score: str | None
+    cashout: dict | None
+    aportes: list[dict]
+    inplay_summary: dict
+    superbet_event_id: int
+
+
+class WcSuperbetLiveEventResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    event_name: str
+    sport_id: int
+    tournament_id: int | None
+    utc_date: str | None
+    betradar_id: str | None
+    minute: int
+    home_score: int
+    away_score: int
+    period_label: str | None
+    status: str | None
+    market_count: int
+    h2h_odds: dict[str, float]
+    captured_at: str
+
+
+class WcSuperbetLiveResponse(BaseModel):
+    count: int
+    sport_id: int | None
+    events: list[WcSuperbetLiveEventResponse]
+    captured_at: str
+
+
+class WcSuperbetEventResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    event_name: str
+    utc_date: str | None
+    betradar_id: str | None
+    is_live: bool
+    inplay: dict | None
+    h2h_odds: dict[str, float]
+    h2h_implied: dict[str, float]
+    totals_implied: dict[str, dict[str, float]]
+    corners_implied: dict[str, dict[str, float]]
+    combo_markets: dict[str, dict[str, float]]
+    generosity_probs: dict[str, float]
+    raw_market_count: int
+    captured_at: str
+
+
 class WcGoalFactors(BaseModel):
     league_avg: float
     home_attack: float
@@ -325,6 +461,22 @@ class WcGoalFactors(BaseModel):
     rho: float
 
 
+class WcMonteCarloBreakdown(BaseModel):
+    prob_home: float
+    prob_draw: float
+    prob_away: float
+    expected_goals_home: float
+    expected_goals_away: float
+    over_2_5: float
+    under_2_5: float
+    both_teams_score: float
+    clean_sheet_home: float
+    clean_sheet_away: float
+    top_scores: dict[str, float]
+    n_simulations: int
+    rho_used: float
+
+
 class WcModelBreakdown(BaseModel):
     dixon_coles: dict[str, float]
     logistic: dict[str, float]
@@ -337,6 +489,7 @@ class WcModelBreakdown(BaseModel):
     kxl_collision: dict | None = None
     kxl_dynamic: dict | None = None
     kxl_fept: dict | None = None
+    monte_carlo: WcMonteCarloBreakdown | None = None
 
 
 class WcPredictionResponse(BaseModel):
@@ -374,6 +527,8 @@ class WcSimulationResponse(BaseModel):
     prob_home: float
     prob_draw: float
     prob_away: float
+    poisson_score: str | None = None
+    expected_goals: str | None = None
 
     # Dados reais da FIFA
     fifa_home_lineup: list[dict[str, Any]] | None = None
@@ -675,6 +830,7 @@ def _context_to_response(context, include_prediction: bool = False) -> MatchCont
 
 def _breakdown_to_response(breakdown: dict) -> WcModelBreakdown:
     pf = breakdown.get("poisson_factors")
+    mc = breakdown.get("monte_carlo")
     return WcModelBreakdown(
         dixon_coles=breakdown["dixon_coles"],
         logistic=breakdown["logistic"],
@@ -687,6 +843,7 @@ def _breakdown_to_response(breakdown: dict) -> WcModelBreakdown:
         kxl_collision=breakdown.get("kxl_collision"),
         kxl_dynamic=breakdown.get("kxl_dynamic"),
         kxl_fept=breakdown.get("kxl_fept"),
+        monte_carlo=WcMonteCarloBreakdown(**mc) if mc else None,
     )
 
 
@@ -811,6 +968,10 @@ def root():
             "/predict",
             "/round/predict",
             "/worldcup/predict",
+            "/worldcup/inplay",
+            "/worldcup/superbet/live",
+            "/worldcup/superbet/events/{event_id}",
+            "/worldcup/bet/advice",
             "/worldcup/round",
             "/worldcup/schedule",
             "/worldcup/squads",
@@ -1228,6 +1389,209 @@ def worldcup_corners_predict(req: WcCornersPredictRequest):
     )
 
 
+@app.get("/worldcup/superbet/live", response_model=WcSuperbetLiveResponse)
+def worldcup_superbet_live(
+    sport_id: int = Query(5, description="Filtra por esporte (5=futebol)."),
+    all_sports: bool = Query(False, description="Ignora sport_id e retorna todos os esportes."),
+):
+    """Lista jogos ao vivo na Superbet (feed /live)."""
+    from datetime import datetime, timezone
+
+    from ingest.superbet.client import SuperbetClient, SuperbetClientError
+
+    filter_sport = None if all_sports else sport_id
+    try:
+        events = SuperbetClient().fetch_live_events(sport_id=filter_sport)
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    captured_at = datetime.now(timezone.utc).isoformat()
+    return WcSuperbetLiveResponse(
+        count=len(events),
+        sport_id=filter_sport,
+        events=[WcSuperbetLiveEventResponse(**event.to_dict()) for event in events],
+        captured_at=captured_at,
+    )
+
+
+@app.get("/worldcup/superbet/events/{event_id}", response_model=WcSuperbetEventResponse)
+def worldcup_superbet_event(
+    event_id: int,
+    merge_odds: bool = False,
+    save_bronze: bool = True,
+):
+    """Snapshot Superbet: estado ao vivo, odds e probabilidades implícitas."""
+    from ingest.superbet.client import SuperbetClient, SuperbetClientError
+    from ingest.superbet.store import merge_snapshot_into_odds_file, save_event_snapshot
+
+    try:
+        snapshot = SuperbetClient().fetch_event(event_id)
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    if save_bronze:
+        save_event_snapshot(snapshot)
+    if merge_odds and snapshot.h2h_odds:
+        merge_snapshot_into_odds_file(snapshot)
+        from pipelines.wc_market_features import load_match_odds_index
+
+        load_match_odds_index.cache_clear()
+
+    return WcSuperbetEventResponse(**snapshot.to_dict())
+
+
+@app.post("/worldcup/bet/advice", response_model=WcBetAdviceResponse)
+def worldcup_bet_advice(req: WcBetAdviceRequest):
+    """Captura jogo ao vivo (Superbet), roda modelo e recomenda cash-out / aporte."""
+    from ingest.superbet.client import SuperbetClient, SuperbetClientError
+    from ingest.superbet.store import save_event_snapshot
+    from models.wc_bet_advice import UserBetInput, build_bet_advice_report
+    from models.wc_inplay import inplay_from_predictor
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    try:
+        snapshot = SuperbetClient().fetch_event(req.superbet_event_id)
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    save_event_snapshot(snapshot)
+    home = normalize_national_team(req.home_team)
+    away = normalize_national_team(req.away_team)
+
+    if snapshot.inplay:
+        ip = snapshot.inplay
+        home_score, away_score, minute = ip.home_score, ip.away_score, ip.minute
+        ht_h, ht_a = ip.ht_home_score, ip.ht_away_score
+    else:
+        home_score = away_score = minute = 0
+        ht_h = ht_a = None
+
+    result = inplay_from_predictor(
+        predictor,
+        home_team=home,
+        away_team=away,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        phase=req.phase,
+        is_neutral=True,
+        ht_home_score=ht_h,
+        ht_away_score=ht_a,
+    )
+    inplay_dict = result.to_dict()
+    user_bet = None
+    if req.user_bet is not None:
+        user_bet = UserBetInput(
+            market=req.user_bet.market,
+            outcome=req.user_bet.outcome,
+            stake=req.user_bet.stake,
+            odds_placed=req.user_bet.odds_placed,
+        )
+
+    report = build_bet_advice_report(
+        home_team=home,
+        away_team=away,
+        inplay=inplay_dict,
+        snapshot=snapshot,
+        user_bet=user_bet,
+        minute=minute,
+        bankroll=req.bankroll,
+    )
+    return WcBetAdviceResponse(
+        home_team=home,
+        away_team=away,
+        minute=minute,
+        current_score=inplay_dict.get("current_score"),
+        cashout=report.get("cashout"),
+        aportes=report.get("aportes", []),
+        inplay_summary={
+            "prob_final_home": inplay_dict.get("prob_final_home"),
+            "prob_final_draw": inplay_dict.get("prob_final_draw"),
+            "prob_final_away": inplay_dict.get("prob_final_away"),
+            "over_2_5": inplay_dict.get("final_line_probs", {}).get("over_2_5"),
+            "btts": inplay_dict.get("btts_final"),
+        },
+        superbet_event_id=req.superbet_event_id,
+    )
+
+
+@app.post("/worldcup/inplay", response_model=WcInPlayResponse)
+def worldcup_inplay(req: WcInPlayRequest):
+    """Mercados ao vivo condicionados ao placar e minuto (Monte Carlo no tempo restante)."""
+    from ingest.superbet.benchmark import market_benchmark
+    from ingest.superbet.client import SuperbetClient, SuperbetClientError
+    from ingest.superbet.store import merge_snapshot_into_odds_file, save_event_snapshot
+    from models.wc_inplay import inplay_from_predictor
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    home = normalize_national_team(req.home_team)
+    away = normalize_national_team(req.away_team)
+    home_score = req.home_score
+    away_score = req.away_score
+    minute = req.minute
+    ht_home = req.ht_home_score
+    ht_away = req.ht_away_score
+    superbet_payload = None
+    benchmark = None
+    superbet_snapshot = None
+
+    if req.superbet_event_id is not None:
+        try:
+            superbet_snapshot = SuperbetClient().fetch_event(req.superbet_event_id)
+            save_event_snapshot(superbet_snapshot)
+            if req.merge_superbet_odds and superbet_snapshot.h2h_odds:
+                merge_snapshot_into_odds_file(superbet_snapshot)
+                from pipelines.wc_market_features import load_match_odds_index
+
+                load_match_odds_index.cache_clear()
+            superbet_payload = superbet_snapshot.to_dict()
+            if superbet_snapshot.inplay:
+                home_score = superbet_snapshot.inplay.home_score
+                away_score = superbet_snapshot.inplay.away_score
+                minute = superbet_snapshot.inplay.minute
+                if superbet_snapshot.inplay.ht_home_score is not None:
+                    ht_home = superbet_snapshot.inplay.ht_home_score
+                    ht_away = superbet_snapshot.inplay.ht_away_score
+        except SuperbetClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    result = inplay_from_predictor(
+        predictor,
+        home_team=home,
+        away_team=away,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        phase=req.phase,
+        is_neutral=True,
+        match_minutes=req.match_minutes,
+        ht_home_score=ht_home,
+        ht_away_score=ht_away,
+    )
+    payload = result.to_dict()
+    if superbet_snapshot and superbet_snapshot.h2h_implied:
+        benchmark = market_benchmark(
+            superbet_snapshot,
+            model_h2h={
+                "1": payload["prob_final_home"],
+                "X": payload["prob_final_draw"],
+                "2": payload["prob_final_away"],
+            },
+            model_totals=payload.get("final_line_probs"),
+        )
+    payload["market_benchmark"] = benchmark
+    payload["superbet"] = superbet_payload
+    return WcInPlayResponse(**payload)
+
+
 @app.post("/worldcup/predict", response_model=WcPredictionResponse)
 def worldcup_predict(req: WcPredictRequest):
     from ingest.sofascore.client import SofascoreClientError
@@ -1331,6 +1695,8 @@ def worldcup_simulate(req: WcPredictRequest):
         prob_home=result.prob_home,
         prob_draw=result.prob_draw,
         prob_away=result.prob_away,
+        poisson_score=result.poisson_score,
+        expected_goals=result.expected_goals,
         fifa_home_lineup=result.fifa_home_lineup,
         fifa_away_lineup=result.fifa_away_lineup,
         fifa_home_bench=result.fifa_home_bench,
@@ -1472,12 +1838,9 @@ def worldcup_group_standings():
 
 @app.get("/worldcup/teams", response_model=WcTeamsResponse)
 def worldcup_teams():
-    try:
-        predictor = _get_wc_predictor()
-    except ValueError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    from ingest.fixtures.world_cup import load_wc_fixtures
 
-    fixtures = predictor.fixtures
+    fixtures = load_wc_fixtures()
     teams: set[str] = set()
     if not fixtures.empty:
         teams.update(fixtures["home_team"].dropna().unique())

@@ -1,0 +1,21 @@
+{
+  "event_id": 13281779,
+  "fixture": {
+    "betradar_id": "69091564",
+    "event_name": "Ca San Juan Fc·Academica SC",
+    "sport_id": 5,
+    "tournament_id": 38572,
+    "utc_date": "2026-06-07T02:00:00Z"
+  },
+  "inplay_stats": {
+    "away_team_score": "1",
+    "home_team_score": "0",
+    "minutes": "19"
+  },
+  "inplay_stats_metadata": {
+    "event_status_label": "1H",
+    "status": "STARTED",
+    "market_count": 32
+  },
+  "markets": []
+}

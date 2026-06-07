@@ -1,0 +1,383 @@
+"""Mercados in-play condicionados ao placar e minuto (Poisson + Monte Carlo)."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+
+import numpy as np
+
+from config import settings
+from models.wc_monte_carlo import _sample_poisson_bivariate
+
+
+@dataclass
+class InPlayResult:
+    home_team: str
+    away_team: str
+    home_score: int
+    away_score: int
+    minute: int
+    match_minutes: int
+    remaining_fraction: float
+    lambda_full_home: float
+    lambda_full_away: float
+    lambda_remaining_home: float
+    lambda_remaining_away: float
+    rho_used: float
+    prob_final_home: float
+    prob_final_draw: float
+    prob_final_away: float
+    prob_ht_home: float
+    prob_ht_draw: float
+    prob_ht_away: float
+    prob_no_more_goals: float
+    prob_next_goal_home: float
+    prob_next_goal_away: float
+    final_line_probs: dict[str, float]
+    remainder_line_probs: dict[str, float]
+    ht_line_probs: dict[str, float]
+    second_half_line_probs: dict[str, float]
+    team_final_line_probs: dict[str, float]
+    top_final_scores: dict[str, float]
+    top_ht_ft: dict[str, float]
+    combo_markets: dict[str, float]
+    btts_final: float
+    n_simulations: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "home_team": self.home_team,
+            "away_team": self.away_team,
+            "current_score": f"{self.home_score}x{self.away_score}",
+            "minute": self.minute,
+            "match_minutes": self.match_minutes,
+            "remaining_fraction": round(self.remaining_fraction, 4),
+            "lambda_full_home": round(self.lambda_full_home, 3),
+            "lambda_full_away": round(self.lambda_full_away, 3),
+            "lambda_remaining_home": round(self.lambda_remaining_home, 3),
+            "lambda_remaining_away": round(self.lambda_remaining_away, 3),
+            "rho_used": round(self.rho_used, 4),
+            "prob_final_home": round(self.prob_final_home, 4),
+            "prob_final_draw": round(self.prob_final_draw, 4),
+            "prob_final_away": round(self.prob_final_away, 4),
+            "prob_ht_home": round(self.prob_ht_home, 4),
+            "prob_ht_draw": round(self.prob_ht_draw, 4),
+            "prob_ht_away": round(self.prob_ht_away, 4),
+            "prob_no_more_goals": round(self.prob_no_more_goals, 4),
+            "prob_next_goal_home": round(self.prob_next_goal_home, 4),
+            "prob_next_goal_away": round(self.prob_next_goal_away, 4),
+            "final_line_probs": {k: round(v, 4) for k, v in self.final_line_probs.items()},
+            "remainder_line_probs": {k: round(v, 4) for k, v in self.remainder_line_probs.items()},
+            "ht_line_probs": {k: round(v, 4) for k, v in self.ht_line_probs.items()},
+            "second_half_line_probs": {k: round(v, 4) for k, v in self.second_half_line_probs.items()},
+            "team_final_line_probs": {k: round(v, 4) for k, v in self.team_final_line_probs.items()},
+            "top_final_scores": self.top_final_scores,
+            "top_ht_ft": self.top_ht_ft,
+            "combo_markets": {k: round(v, 4) for k, v in self.combo_markets.items()},
+            "btts_final": round(self.btts_final, 4),
+            "n_simulations": self.n_simulations,
+        }
+
+
+def _team_final_lines(final_h: np.ndarray, final_a: np.ndarray) -> dict[str, float]:
+    home = _line_probs_from_totals(final_h, [0.5, 1.5, 2.5, 3.5])
+    away = _line_probs_from_totals(final_a, [0.5, 1.5, 2.5])
+    out: dict[str, float] = {}
+    for key, val in home.items():
+        out[f"home_{key}"] = val
+    for key, val in away.items():
+        out[f"away_{key}"] = val
+    return out
+
+
+def _line_probs_from_totals(totals: np.ndarray, lines: list[float]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    n = len(totals)
+    for line in lines:
+        key_over = f"over_{line}".replace(".", "_")
+        key_under = f"under_{line}".replace(".", "_")
+        out[key_over] = float(np.sum(totals > line) / n)
+        out[key_under] = float(np.sum(totals <= line) / n)
+    return out
+
+
+def _outcome(h: np.ndarray, a: np.ndarray) -> np.ndarray:
+    out = np.full(len(h), "X", dtype=object)
+    out[h > a] = "1"
+    out[h < a] = "2"
+    return out
+
+
+def _half_lambdas(
+    *,
+    minute: int,
+    match_minutes: int,
+    lambda_full_home: float,
+    lambda_full_away: float,
+    ht_home_score: int | None,
+    ht_away_score: int | None,
+) -> tuple[float, float, float, float, int, int]:
+    half = match_minutes // 2
+    if minute <= half:
+        rem_1h_min = half - minute
+        lam_rem_1h_h = lambda_full_home * rem_1h_min / match_minutes
+        lam_rem_1h_a = lambda_full_away * rem_1h_min / match_minutes
+        lam_2h_h = lambda_full_home * half / match_minutes
+        lam_2h_a = lambda_full_away * half / match_minutes
+        return lam_rem_1h_h, lam_rem_1h_a, lam_2h_h, lam_2h_a, 0, 0
+
+    ht_h = ht_home_score if ht_home_score is not None else 0
+    ht_a = ht_away_score if ht_away_score is not None else 0
+    rem_2h_min = match_minutes - minute
+    lam_rem_1h_h = lam_rem_1h_a = 0.0
+    lam_2h_h = lambda_full_home * rem_2h_min / match_minutes
+    lam_2h_a = lambda_full_away * rem_2h_min / match_minutes
+    return lam_rem_1h_h, lam_rem_1h_a, lam_2h_h, lam_2h_a, ht_h, ht_a
+
+
+def _combo_markets(
+    *,
+    ht_h: np.ndarray,
+    ht_a: np.ndarray,
+    final_h: np.ndarray,
+    final_a: np.ndarray,
+    h_2h: np.ndarray,
+    a_2h: np.ndarray,
+    n: int,
+) -> dict[str, float]:
+    ht_total = ht_h + ht_a
+    sh_total = h_2h + a_2h
+    match_total = final_h + final_a
+    btts = (final_h > 0) & (final_a > 0)
+    ht_out = _outcome(ht_h, ht_a)
+    ft_out = _outcome(final_h, final_a)
+    def rate(mask: np.ndarray) -> float:
+        return float(np.sum(mask) / n)
+
+    combos = {
+        "btts_and_over_2_5": rate(btts & (match_total > 2.5)),
+        "btts_and_over_3_5": rate(btts & (match_total > 3.5)),
+        "ft_home_and_btts": rate((final_h > final_a) & btts),
+        "ft_draw_and_btts": rate((final_h == final_a) & btts),
+        "ft_away_and_btts": rate((final_h < final_a) & btts),
+        "ht_or_ft_home": rate((ht_h > ht_a) | (final_h > final_a)),
+        "ht_or_ft_draw": rate((ht_h == ht_a) | (final_h == final_a)),
+        "ht_or_ft_away": rate((ht_h < ht_a) | (final_h < final_a)),
+        "home_wins_either_half": rate((ht_h > ht_a) | (h_2h > a_2h)),
+        "away_wins_either_half": rate((ht_h < ht_a) | (h_2h < a_2h)),
+        "ht_over_0_5_and_match_over_1_5": rate((ht_total > 0.5) & (match_total > 1.5)),
+        "ht_over_0_5_and_match_over_2_5": rate((ht_total > 0.5) & (match_total > 2.5)),
+        "ht_over_1_5_and_match_over_2_5": rate((ht_total > 1.5) & (match_total > 2.5)),
+        "ht_over_1_5_and_match_over_3_5": rate((ht_total > 1.5) & (match_total > 3.5)),
+        "ht_over_0_5_and_2h_over_0_5": rate((ht_total > 0.5) & (sh_total > 0.5)),
+        "ht_over_1_5_and_2h_over_1_5": rate((ht_total > 1.5) & (sh_total > 1.5)),
+        "ht_over_0_5_or_2h_over_0_5": rate((ht_total > 0.5) | (sh_total > 0.5)),
+        "ht_over_1_5_or_2h_over_1_5": rate((ht_total > 1.5) | (sh_total > 1.5)),
+        "ht_over_1_5_or_match_over_2_5": rate((ht_total > 1.5) | (match_total > 2.5)),
+        "ht_over_0_5_or_match_over_2_5": rate((ht_total > 0.5) | (match_total > 2.5)),
+    }
+    return combos
+
+
+def _top_ht_ft(ht_h: np.ndarray, ht_a: np.ndarray, final_h: np.ndarray, final_a: np.ndarray, n: int) -> dict[str, float]:
+    ht_out = _outcome(ht_h, ht_a)
+    ft_out = _outcome(final_h, final_a)
+    counts: dict[str, int] = {}
+    for ho, fo in zip(ht_out, ft_out, strict=False):
+        key = f"{ho}/{fo}"
+        counts[key] = counts.get(key, 0) + 1
+    return {k: round(v / n, 4) for k, v in sorted(counts.items(), key=lambda x: -x[1])[:9]}
+
+
+def simulate_inplay(
+    *,
+    home_team: str,
+    away_team: str,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    lambda_full_home: float,
+    lambda_full_away: float,
+    match_minutes: int = 90,
+    ht_home_score: int | None = None,
+    ht_away_score: int | None = None,
+    rho: float = 0.0,
+    n_simulations: int | None = None,
+    random_seed: int = 42,
+) -> InPlayResult:
+    minute = max(0, min(minute, match_minutes))
+    half = match_minutes // 2
+    remaining_fraction = max(0.0, (match_minutes - minute) / match_minutes)
+    n = n_simulations or settings.wc_mc_simulations
+    rng = np.random.default_rng(random_seed)
+
+    lam_rem_1h_h, lam_rem_1h_a, lam_2h_h, lam_2h_a, ht_fixed_h, ht_fixed_a = _half_lambdas(
+        minute=minute,
+        match_minutes=match_minutes,
+        lambda_full_home=lambda_full_home,
+        lambda_full_away=lambda_full_away,
+        ht_home_score=ht_home_score,
+        ht_away_score=ht_away_score,
+    )
+    lam_h = lam_rem_1h_h + lam_2h_h
+    lam_a = lam_rem_1h_a + lam_2h_a
+
+    h_1h_add, a_1h_add = _sample_poisson_bivariate(lam_rem_1h_h, lam_rem_1h_a, rho, n, rng)
+    h_2h_add, a_2h_add = _sample_poisson_bivariate(lam_2h_h, lam_2h_a, rho, n, rng)
+
+    if minute <= half:
+        ht_h = home_score + h_1h_add
+        ht_a = away_score + a_1h_add
+        h_2h = h_2h_add
+        a_2h = a_2h_add
+        final_h = ht_h + h_2h
+        final_a = ht_a + a_2h
+        h_rem = h_1h_add + h_2h_add
+        a_rem = a_1h_add + a_2h_add
+    else:
+        ht_base_h = ht_home_score if ht_home_score is not None else home_score
+        ht_base_a = ht_away_score if ht_away_score is not None else away_score
+        ht_h_arr = np.full(n, ht_base_h, dtype=int)
+        ht_a_arr = np.full(n, ht_base_a, dtype=int)
+        h_2h_base = max(0, home_score - int(ht_h_arr[0]))
+        a_2h_base = max(0, away_score - int(ht_a_arr[0]))
+        h_2h = h_2h_base + h_2h_add
+        a_2h = a_2h_base + a_2h_add
+        ht_h = ht_h_arr
+        ht_a = ht_a_arr
+        final_h = ht_h + h_2h
+        final_a = ht_a + a_2h
+        h_rem = h_2h_add
+        a_rem = a_2h_add
+
+    total_final = final_h + final_a
+    rem_total = h_rem + a_rem
+    ht_total = ht_h + ht_a
+    sh_total = h_2h + a_2h
+
+    home_wins = int(np.sum(final_h > final_a))
+    draws = int(np.sum(final_h == final_a))
+    away_wins = int(np.sum(final_h < final_a))
+    ht_home_wins = int(np.sum(ht_h > ht_a))
+    ht_draws = int(np.sum(ht_h == ht_a))
+    ht_away_wins = int(np.sum(ht_h < ht_a))
+    no_more = int(np.sum((h_rem == 0) & (a_rem == 0)))
+
+    lam_sum = lam_h + lam_a
+    if lam_sum > 0:
+        p_any = 1.0 - (no_more / n)
+        p_next_home = (lam_h / lam_sum) * p_any
+        p_next_away = (lam_a / lam_sum) * p_any
+    else:
+        p_next_home = p_next_away = 0.0
+
+    scores: dict[str, int] = {}
+    for fh, fa in zip(final_h, final_a, strict=False):
+        key = f"{int(fh)}x{int(fa)}"
+        scores[key] = scores.get(key, 0) + 1
+    top_final = {
+        k: round(v / n, 4)
+        for k, v in sorted(scores.items(), key=lambda x: -x[1])[:8]
+    }
+
+    btts = float(np.sum((final_h > 0) & (final_a > 0)) / n)
+    combo = _combo_markets(
+        ht_h=ht_h,
+        ht_a=ht_a,
+        final_h=final_h,
+        final_a=final_a,
+        h_2h=h_2h,
+        a_2h=a_2h,
+        n=n,
+    )
+    return InPlayResult(
+        home_team=home_team,
+        away_team=away_team,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        match_minutes=match_minutes,
+        remaining_fraction=remaining_fraction,
+        lambda_full_home=lambda_full_home,
+        lambda_full_away=lambda_full_away,
+        lambda_remaining_home=lam_h,
+        lambda_remaining_away=lam_a,
+        rho_used=rho,
+        prob_final_home=home_wins / n,
+        prob_final_draw=draws / n,
+        prob_final_away=away_wins / n,
+        prob_ht_home=ht_home_wins / n,
+        prob_ht_draw=ht_draws / n,
+        prob_ht_away=ht_away_wins / n,
+        prob_no_more_goals=no_more / n,
+        prob_next_goal_home=p_next_home,
+        prob_next_goal_away=p_next_away,
+        final_line_probs=_line_probs_from_totals(total_final, [1.5, 2.5, 3.5, 4.5]),
+        remainder_line_probs=_line_probs_from_totals(rem_total, [0.5, 1.5, 2.5]),
+        ht_line_probs=_line_probs_from_totals(ht_total, [0.5, 1.5, 2.5]),
+        second_half_line_probs=_line_probs_from_totals(sh_total, [0.5, 1.5, 2.5]),
+        team_final_line_probs=_team_final_lines(final_h, final_a),
+        top_final_scores=top_final,
+        top_ht_ft=_top_ht_ft(ht_h, ht_a, final_h, final_a, n),
+        combo_markets=combo,
+        btts_final=btts,
+        n_simulations=n,
+    )
+
+
+def inplay_from_predictor(
+    predictor,
+    *,
+    home_team: str,
+    away_team: str,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    phase: str = "group",
+    is_neutral: bool = True,
+    match_minutes: int = 90,
+    ht_home_score: int | None = None,
+    ht_away_score: int | None = None,
+    n_simulations: int | None = None,
+) -> InPlayResult:
+    from datetime import datetime, timezone
+
+    from models.poisson_wc import goal_model_factors
+    from pipelines.wc_stats import build_match_features
+
+    cutoff = datetime.now(timezone.utc)
+    features = build_match_features(
+        predictor.fixtures,
+        home_team,
+        away_team,
+        before_date=cutoff,
+        phase=phase,
+        is_neutral=is_neutral,
+    )
+    rho = predictor.dixon_coles.rho
+    if rho is None and predictor._dc_metrics:
+        rho = predictor._dc_metrics.get("rho", 0.0)
+    factors = goal_model_factors(
+        predictor.fixtures,
+        home_team,
+        away_team,
+        features=features,
+        before_date=cutoff,
+        rho=rho,
+    )
+    seed = hash((home_team, away_team, home_score, away_score, minute)) % (2**32)
+    return simulate_inplay(
+        home_team=home_team,
+        away_team=away_team,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        lambda_full_home=factors.lambda_home,
+        lambda_full_away=factors.lambda_away,
+        match_minutes=match_minutes,
+        ht_home_score=ht_home_score,
+        ht_away_score=ht_away_score,
+        rho=float(rho or 0.0),
+        n_simulations=n_simulations,
+        random_seed=seed,
+    )

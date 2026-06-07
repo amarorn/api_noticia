@@ -8,6 +8,7 @@ from pathlib import Path
 from schemas.national_teams import normalize_national_team
 
 DEFAULT_ODDS = Path("data/rounds/wc_2026_odds.json")
+DEFAULT_SUPERBET_ODDS = Path("data/rounds/superbet_odds.json")
 NEUTRAL = {"1": 1 / 3, "X": 1 / 3, "2": 1 / 3}
 
 
@@ -17,9 +18,7 @@ def implied_probs_from_odds(odds: dict[str, float]) -> dict[str, float]:
     return {k: v / total for k, v in raw.items()}
 
 
-@lru_cache(maxsize=1)
-def load_match_odds_index(path: str | None = None) -> dict[str, dict[str, float]]:
-    p = Path(path) if path else DEFAULT_ODDS
+def _index_from_odds_file(p: Path) -> dict[str, dict[str, float]]:
     if not p.exists():
         return {}
     data = json.loads(p.read_text(encoding="utf-8"))
@@ -27,11 +26,25 @@ def load_match_odds_index(path: str | None = None) -> dict[str, dict[str, float]
     for match in data.get("matches", []):
         home = normalize_national_team(match["home_team"])
         away = normalize_national_team(match["away_team"])
-        odds = match.get("odds") or {}
-        if not odds:
-            continue
+        implied = match.get("implied")
+        if isinstance(implied, dict) and implied:
+            probs = {k: float(implied[k]) for k in ("1", "X", "2") if k in implied}
+        else:
+            odds = match.get("odds") or {}
+            if not odds:
+                continue
+            probs = implied_probs_from_odds(odds)
         key = f"{home.casefold()}|{away.casefold()}"
-        index[key] = implied_probs_from_odds(odds)
+        index[key] = probs
+    return index
+
+
+@lru_cache(maxsize=1)
+def load_match_odds_index(path: str | None = None) -> dict[str, dict[str, float]]:
+    index = _index_from_odds_file(Path(path) if path else DEFAULT_ODDS)
+    superbet = _index_from_odds_file(DEFAULT_SUPERBET_ODDS)
+    if superbet:
+        index.update(superbet)
     return index
 
 

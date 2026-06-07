@@ -1,0 +1,60 @@
+{
+  "event_id": 13247229,
+  "fixture": {
+    "event_name": "Brasil·Egito",
+    "utc_date": "2026-06-06T22:00:00Z",
+    "betradar_id": "69548860",
+    "event_tags": "superLive,v2"
+  },
+  "inplay_stats": {
+    "home_team_score": "1",
+    "away_team_score": "1",
+    "minutes": "17",
+    "stoppage_time": null,
+    "home_team_corners": "3",
+    "away_team_corners": "2",
+    "home_team_yellow_cards": "0",
+    "away_team_yellow_cards": "1",
+    "periods": [
+      {"num": 1, "home_team_score": "1", "away_team_score": "1", "type": 1}
+    ]
+  },
+  "inplay_stats_metadata": {
+    "event_status_label": "1H",
+    "status": "STARTED"
+  },
+  "markets": [
+    {
+      "name": "Resultado Final",
+      "id": 547,
+      "odds": [
+        {"price": 1.85, "metadata": {"name": "1", "extra": {"generosity_prob_home": "0.52", "generosity_prob_away": "0.18"}}},
+        {"price": 3.4, "metadata": {"name": "X", "extra": {"generosity_prob_home": "0.52", "generosity_prob_away": "0.18"}}},
+        {"price": 4.2, "metadata": {"name": "2", "extra": {"generosity_prob_home": "0.52", "generosity_prob_away": "0.18"}}}
+      ]
+    },
+    {
+      "name": "Total de Gols",
+      "id": 200734,
+      "odds": [
+        {"price": 1.9, "metadata": {"name": "Mais de 2.5", "special_bet_value": "2.5"}},
+        {"price": 1.85, "metadata": {"name": "Menos de 2.5", "special_bet_value": "2.5"}}
+      ]
+    },
+    {
+      "name": "Total de Escanteios",
+      "id": 704,
+      "odds": [
+        {"price": 1.95, "metadata": {"name": "Mais de 8.5", "special_bet_value": "8.5"}},
+        {"price": 1.75, "metadata": {"name": "Menos de 8.5", "special_bet_value": "8.5"}}
+      ]
+    },
+    {
+      "name": "Ambas as Equipes Marcam & Mais de 3.5 Gols",
+      "odds": [
+        {"price": 4.0, "metadata": {"name": "Sim"}},
+        {"price": 1.2, "metadata": {"name": "Não"}}
+      ]
+    }
+  ]
+}

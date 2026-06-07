@@ -3,6 +3,7 @@ from __future__ import annotations
 MEDALLION_TABLES: dict[str, str] = {
     "bronze": "bronze_articles",
     "bronze_sofascore": "bronze_sofascore_events",
+    "bronze_superbet": "bronze_superbet_snapshots",
     "silver": "silver_articles",
     "silver_sofascore": "silver_sofascore_match_stats",
     "silver_sofascore_enrich": "silver_sofascore_match_enrich",
@@ -20,6 +21,7 @@ LAYER_ALIASES: dict[str, str] = {
 SYNC_LAYER_ORDER: list[str] = [
     "bronze",
     "bronze_sofascore",
+    "bronze_superbet",
     "silver",
     "silver_sofascore",
     "silver_sofascore_enrich",
@@ -37,6 +39,7 @@ LEGACY_BQ_TABLES: dict[str, str] = {
 GCS_LAYER_PREFIX: dict[str, str] = {
     "bronze": "lake/bronze/articles",
     "bronze_sofascore": "lake/bronze/sofascore",
+    "bronze_superbet": "lake/bronze/superbet",
     "silver": "lake/silver/articles",
     "silver_sofascore": "lake/silver/sofascore",
     "silver_sofascore_enrich": "lake/silver/sofascore_enrich",

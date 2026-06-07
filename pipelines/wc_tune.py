@@ -276,8 +276,9 @@ def run_tune(
         base = WcHyperParams()
         structural_grid = list(
             itertools.product(
+                [20.0, 24.0, 28.0, 32.0],
                 [25.0, 30.0, 35.0],
-                [0.03, 0.05, 0.07],
+                [0.03, 0.04, 0.05],
                 [0.7, 0.85, 1.0],
             )
         )
@@ -286,9 +287,10 @@ def run_tune(
         best_hp: WcHyperParams | None = None
         best_metrics: dict | None = None
         print(f"Fase 1: {len(structural_grid)} combinações estruturais...")
-        for i, (elo_adv, home_neu, c) in enumerate(structural_grid):
+        for i, (elo_k, elo_adv, home_neu, c) in enumerate(structural_grid):
             hp = replace(
                 base,
+                elo_k=elo_k,
                 elo_home_adv=elo_adv,
                 home_adv_goals_neutral=home_neu,
                 logistic_c=c,
@@ -300,7 +302,7 @@ def run_tune(
                 best_metrics = metrics
             print(
                 f"  [{i + 1}/{len(structural_grid)}] brier={metrics['brier']:.4f} "
-                f"elo={elo_adv} home={home_neu} C={c}"
+                f"K={elo_k} elo={elo_adv} home={home_neu} C={c}"
             )
         assert best_hp is not None and best_metrics is not None
         print("Fase 2: KXL + piso de empate (rápido)...")

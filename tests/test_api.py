@@ -209,6 +209,50 @@ def test_worldcup_corners_predict_endpoint(monkeypatch):
     assert data["line_probs"]["over_9.5"] == 0.52
 
 
+def test_worldcup_inplay_endpoint(monkeypatch):
+    monkeypatch.setattr("config.settings.api_key", None)
+
+    from models.wc_inplay import simulate_inplay
+
+    class FakePredictor:
+        fixtures = []
+        dixon_coles = type("DC", (), {"rho": -0.1})()
+        _dc_metrics = {"rho": -0.1}
+
+    def fake_inplay(_predictor, **kwargs):
+        return simulate_inplay(
+            home_team=kwargs["home_team"],
+            away_team=kwargs["away_team"],
+            home_score=kwargs["home_score"],
+            away_score=kwargs["away_score"],
+            minute=kwargs["minute"],
+            lambda_full_home=2.5,
+            lambda_full_away=1.8,
+            n_simulations=1000,
+        )
+
+    monkeypatch.setattr("models.wc_inplay.inplay_from_predictor", fake_inplay)
+    monkeypatch.setattr("api.main._get_wc_predictor", lambda: FakePredictor())
+
+    response = client.post(
+        "/worldcup/inplay",
+        json={
+            "home_team": "Brasil",
+            "away_team": "Egito",
+            "home_score": 1,
+            "away_score": 1,
+            "minute": 17,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current_score"] == "1x1"
+    assert data["minute"] == 17
+    assert 0 <= data["prob_final_draw"] <= 1
+    assert "final_line_probs" in data
+    assert data["n_simulations"] == 1000
+
+
 def test_worldcup_sofascore_statistics_endpoint(monkeypatch):
     from ingest.sofascore.stats_ingest import MatchStatsIngestResult
 

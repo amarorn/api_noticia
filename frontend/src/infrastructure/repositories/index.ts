@@ -10,6 +10,7 @@ import {
   mapSofascoreResolvedEvent,
   mapValueBets,
   mapWcCornersPrediction,
+  mapWcInPlayPrediction,
   mapWcPrediction,
   mapWcRound,
   mapWcSchedule,
@@ -17,6 +18,7 @@ import {
   mapWcSquadsIndex,
   mapWcGroupStandings,
   mapWcFriendlies,
+  mapSuperbetLiveFeed,
   mapWcSimulation,
 } from "../mappers";
 
@@ -81,6 +83,37 @@ export class WcApiRepository implements IWcRepository {
     return mapWcCornersPrediction(raw);
   }
 
+  async predictInPlay(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: number;
+    awayScore: number;
+    minute: number;
+    phase?: string;
+    matchMinutes?: number;
+    superbetEventId?: number;
+  }) {
+    const raw = await apiFetch<Parameters<typeof mapWcInPlayPrediction>[0]>(
+      "/worldcup/inplay",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          home_team: dto.homeTeam,
+          away_team: dto.awayTeam,
+          home_score: dto.homeScore,
+          away_score: dto.awayScore,
+          minute: dto.minute,
+          phase: dto.phase ?? "group",
+          ...(dto.matchMinutes != null ? { match_minutes: dto.matchMinutes } : {}),
+          ...(dto.superbetEventId != null
+            ? { superbet_event_id: dto.superbetEventId, merge_superbet_odds: true }
+            : {}),
+        }),
+      },
+    );
+    return mapWcInPlayPrediction(raw);
+  }
+
   async resolveSofascoreEvent(dto: {
     homeTeam: string;
     awayTeam: string;
@@ -135,6 +168,22 @@ export class WcApiRepository implements IWcRepository {
       { timeoutMs: API_SYNC_TIMEOUT_MS },
     );
     return mapWcFriendlies(raw);
+  }
+
+  async getSuperbetLive(dto?: { sportId?: number; allSports?: boolean }) {
+    const params = new URLSearchParams();
+    if (dto?.sportId != null) {
+      params.set("sport_id", String(dto.sportId));
+    }
+    if (dto?.allSports) {
+      params.set("all_sports", "true");
+    }
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapSuperbetLiveFeed>[0]>(
+      `/worldcup/superbet/live${qs}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapSuperbetLiveFeed(raw);
   }
 
   async simulateMatch(dto: {
