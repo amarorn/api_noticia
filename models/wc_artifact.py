@@ -13,6 +13,8 @@ from pathlib import Path
 
 import structlog
 
+import pandas as pd
+
 from config import settings
 from models.wc_predictor import WcPredictor, train_wc_predictor
 from pipelines.wc_fifa_rankings import fifa_rankings_fingerprint
@@ -169,6 +171,9 @@ def load_artifact() -> WcPredictor | None:
     fixtures = load_wc_fixtures()
     if fixtures.empty:
         return None
+    # Normalizar match_date para evitar TypeError com tipos mistos (str vs Timestamp)
+    if "match_date" in fixtures.columns:
+        fixtures["match_date"] = pd.to_datetime(fixtures["match_date"], errors="coerce")
 
     predictor = WcPredictor.__new__(WcPredictor)
     predictor.fixtures = fixtures

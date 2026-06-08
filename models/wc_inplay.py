@@ -10,6 +10,58 @@ from config import settings
 from models.wc_monte_carlo import _sample_poisson_bivariate
 
 
+# ---------------------------------------------------------------------------
+# Bayesian update de λ com gols observados (P0.1)
+# ---------------------------------------------------------------------------
+# Conjugada Gamma-Poisson: λ ~ Gamma(α, β)
+# Prior: α = λ_prior × prior_weight, β = prior_weight
+# Evidência: goals observados em t minutos (fração do jogo)
+# Posterior: α_post = α + goals, β_post = β + t_elapsed
+# E[λ_full | goals] = α_post / β_post
+#
+# prior_weight controla quanto confiamos no modelo pré-jogo vs evidência:
+#   - prior_weight alto (ex: 5) → modelo pré-jogo domina
+#   - prior_weight baixo (ex: 2) → evidência ao vivo domina rápido
+# ---------------------------------------------------------------------------
+
+_BAYESIAN_PRIOR_WEIGHT = 3.0  # Moderado: 3 "pseudo-jogos" de prior
+
+
+def bayesian_lambda_update(
+    lambda_prior: float,
+    goals_observed: int,
+    minutes_elapsed: int,
+    match_minutes: int = 90,
+    prior_weight: float = _BAYESIAN_PRIOR_WEIGHT,
+) -> float:
+    """Atualiza λ_full usando posterior Gamma-Poisson.
+
+    Retorna a expectativa posterior de λ por jogo completo (90 min).
+    Se minutos = 0, retorna o prior sem alteração.
+    """
+    if minutes_elapsed <= 0 or match_minutes <= 0:
+        return lambda_prior
+
+    # Fração do jogo decorrida (normalizada para 1 jogo)
+    t_elapsed = minutes_elapsed / match_minutes
+
+    # Parâmetros Gamma prior
+    alpha_prior = lambda_prior * prior_weight
+    beta_prior = prior_weight
+
+    # Posterior
+    alpha_post = alpha_prior + goals_observed
+    beta_post = beta_prior + t_elapsed
+
+    # E[λ_full] = E[λ_por_jogo] = α_post / β_post
+    lambda_posterior = alpha_post / beta_post
+
+    # Limitar para não explodir (máx 2.5× o prior, mín 0.3× o prior)
+    lower = lambda_prior * 0.3
+    upper = lambda_prior * 2.5
+    return float(np.clip(lambda_posterior, lower, upper))
+
+
 @dataclass
 class InPlayResult:
     home_team: str
@@ -99,6 +151,62 @@ def _line_probs_from_totals(totals: np.ndarray, lines: list[float]) -> dict[str,
         out[key_over] = float(np.sum(totals > line) / n)
         out[key_under] = float(np.sum(totals <= line) / n)
     return out
+
+
+def _apply_guaranteed_lines(
+    line_probs: dict[str, float], current_total: int
+) -> dict[str, float]:
+    """P0.2: override determinístico — se o placar atual já bateu a linha,
+    a prob over é 1.0 e under é 0.0 (certeza matemática)."""
+    result = dict(line_probs)
+    for key in list(result.keys()):
+        if not key.startswith("over_"):
+            continue
+        # Extrai a linha: over_2_5 → 2.5
+        line_str = key.replace("over_", "").replace("_", ".")
+        try:
+            line_val = float(line_str)
+        except ValueError:
+            continue
+        under_key = key.replace("over_", "under_")
+        if current_total > line_val:
+            result[key] = 1.0
+            if under_key in result:
+                result[under_key] = 0.0
+    return result
+
+
+def _apply_team_guaranteed_lines(
+    team_lines: dict[str, float],
+    home_score: int,
+    away_score: int,
+) -> dict[str, float]:
+    """P0.2: override determinístico para linhas por time (formato flat: home_over_0_5, away_over_1_5, etc.)."""
+    result = dict(team_lines)
+    for key in list(result.keys()):
+        if key.startswith("home_over_"):
+            line_str = key.replace("home_over_", "").replace("_", ".")
+            try:
+                line_val = float(line_str)
+            except ValueError:
+                continue
+            under_key = key.replace("_over_", "_under_")
+            if home_score > line_val:
+                result[key] = 1.0
+                if under_key in result:
+                    result[under_key] = 0.0
+        elif key.startswith("away_over_"):
+            line_str = key.replace("away_over_", "").replace("_", ".")
+            try:
+                line_val = float(line_str)
+            except ValueError:
+                continue
+            under_key = key.replace("_over_", "_under_")
+            if away_score > line_val:
+                result[key] = 1.0
+                if under_key in result:
+                    result[under_key] = 0.0
+    return result
 
 
 def _outcome(h: np.ndarray, a: np.ndarray) -> np.ndarray:
@@ -204,12 +312,57 @@ def simulate_inplay(
     rho: float = 0.0,
     n_simulations: int | None = None,
     random_seed: int = 42,
+    bayesian_update: bool = True,
+    momentum_events: list[dict] | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
     remaining_fraction = max(0.0, (match_minutes - minute) / match_minutes)
     n = n_simulations or settings.wc_mc_simulations
     rng = np.random.default_rng(random_seed)
+
+    # --- P0.1: Bayesian update de λ com gols observados ---
+    # Ajusta λ_full com base nos gols reais marcados até agora.
+    # Efeito: se um time marcou mais do que o esperado, λ sobe;
+    # se marcou menos, λ desce (em direção ao prior moderado).
+    if bayesian_update and minute > 0:
+        lambda_full_home = bayesian_lambda_update(
+            lambda_prior=lambda_full_home,
+            goals_observed=home_score,
+            minutes_elapsed=minute,
+            match_minutes=match_minutes,
+        )
+        lambda_full_away = bayesian_lambda_update(
+            lambda_prior=lambda_full_away,
+            goals_observed=away_score,
+            minutes_elapsed=minute,
+            match_minutes=match_minutes,
+        )
+
+    # --- P1: Momentum por placar + minuto + eventos ---
+    # Ajusta λ com base no contexto tático (quem lidera, fase do jogo, cartões, subs).
+    momentum_result = None
+    if minute > 0:
+        from models.wc_live_momentum import MomentumContext, GameEvent, adjust_lambdas
+
+        events = []
+        for ev in (momentum_events or []):
+            events.append(GameEvent(
+                event_type=ev.get("event_type", "unknown"),
+                minute=ev.get("minute", 0),
+                team=ev.get("team", "home"),
+                detail=ev.get("detail", ""),
+            ))
+        ctx = MomentumContext(
+            home_score=home_score,
+            away_score=away_score,
+            minute=minute,
+            match_minutes=match_minutes,
+            events=events,
+        )
+        lambda_full_home, lambda_full_away, momentum_result = adjust_lambdas(
+            lambda_full_home, lambda_full_away, ctx
+        )
 
     lam_rem_1h_h, lam_rem_1h_a, lam_2h_h, lam_2h_a, ht_fixed_h, ht_fixed_a = _half_lambdas(
         minute=minute,
@@ -290,6 +443,15 @@ def simulate_inplay(
         a_2h=a_2h,
         n=n,
     )
+
+    # --- P0.2: Override determinístico de linhas já garantidas ---
+    current_total = home_score + away_score
+    final_lp = _line_probs_from_totals(total_final, [1.5, 2.5, 3.5, 4.5])
+    final_lp = _apply_guaranteed_lines(final_lp, current_total)
+
+    team_lines = _team_final_lines(final_h, final_a)
+    team_lines = _apply_team_guaranteed_lines(team_lines, home_score, away_score)
+
     return InPlayResult(
         home_team=home_team,
         away_team=away_team,
@@ -312,11 +474,11 @@ def simulate_inplay(
         prob_no_more_goals=no_more / n,
         prob_next_goal_home=p_next_home,
         prob_next_goal_away=p_next_away,
-        final_line_probs=_line_probs_from_totals(total_final, [1.5, 2.5, 3.5, 4.5]),
+        final_line_probs=final_lp,
         remainder_line_probs=_line_probs_from_totals(rem_total, [0.5, 1.5, 2.5]),
         ht_line_probs=_line_probs_from_totals(ht_total, [0.5, 1.5, 2.5]),
         second_half_line_probs=_line_probs_from_totals(sh_total, [0.5, 1.5, 2.5]),
-        team_final_line_probs=_team_final_lines(final_h, final_a),
+        team_final_line_probs=team_lines,
         top_final_scores=top_final,
         top_ht_ft=_top_ht_ft(ht_h, ht_a, final_h, final_a, n),
         combo_markets=combo,

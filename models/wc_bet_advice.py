@@ -170,21 +170,54 @@ def advise_cashout(
     )
 
 
+def _is_comeback_unrealistic(
+    outcome: str,
+    home_score: int,
+    away_score: int,
+    *,
+    deficit_threshold: int = 3,
+) -> bool:
+    """Filtro de sanidade: viradas de 3+ gols de déficit são irrealistas.
+
+    O modelo Poisson superestima probabilidades de viradas extremas porque
+    distribui massa residual em cenários praticamente impossíveis.
+    Retorna True se o resultado H2H requer virada irrealista.
+    """
+    deficit = home_score - away_score  # positivo = casa lidera
+    if outcome == "2" and deficit >= deficit_threshold:
+        # Fora precisa virar 3+ gols — irrealista
+        return True
+    if outcome == "1" and -deficit >= deficit_threshold:
+        # Casa precisa virar 3+ gols — irrealista
+        return True
+    return False
+
+
 def _aporte_candidates(
     inplay: dict[str, Any],
     snapshot: SuperbetEventSnapshot | None,
     *,
     home_team: str = "Casa",
     away_team: str = "Fora",
+    home_score: int | None = None,
+    away_score: int | None = None,
 ) -> list[tuple[str, str, str, float, float]]:
     """market, outcome, label, model_prob, market_odd"""
     candidates: list[tuple[str, str, str, float, float]] = []
+
+    # Extrair placar do inplay se não passado explicitamente
+    if home_score is None or away_score is None:
+        score_str = inplay.get("current_score", "0x0")
+        parts = str(score_str).split("x")
+        home_score = int(parts[0]) if len(parts) == 2 else 0
+        away_score = int(parts[1]) if len(parts) == 2 else 0
+
     specs: list[tuple[str, str, str, Callable[[], float | None]]] = [
         ("h2h", "1", f"{home_team} vence", lambda: inplay.get("prob_final_home")),
         ("h2h", "X", "Empate", lambda: inplay.get("prob_final_draw")),
         ("h2h", "2", f"{away_team} vence", lambda: inplay.get("prob_final_away")),
-        ("over_2_5", "yes", "Over 2.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_2_5")),
-        ("over_3_5", "yes", "Over 3.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_3_5")),
+        ("over_2_5", "yes", "Mais de 2.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_2_5")),
+        ("over_3_5", "yes", "Mais de 3.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_3_5")),
         ("btts", "yes", "Ambos marcam", lambda: inplay.get("btts_final")),
         ("next_goal", "home", f"Próximo gol {home_team}", lambda: inplay.get("prob_next_goal_home")),
         ("next_goal", "away", f"Próximo gol {away_team}", lambda: inplay.get("prob_next_goal_away")),
@@ -192,6 +225,11 @@ def _aporte_candidates(
     for market, outcome, label, prob_fn in specs:
         prob = prob_fn()
         if prob is None or prob <= 0:
+            continue
+        # Filtro de sanidade: não recomendar viradas de 3+ gols
+        if market == "h2h" and _is_comeback_unrealistic(
+            outcome, home_score, away_score
+        ):
             continue
         odd = _market_odd(snapshot, market, outcome)
         if odd is None or odd <= 1.0:

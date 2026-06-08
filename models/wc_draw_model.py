@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 from pipelines.wc_group_pressure import GroupPressure
 from pipelines.wc_hyperparams import get_wc_hyperparams
-from pipelines.wc_stats import WcMatchFeatures
+from pipelines.wc_stats import WcMatchFeatures, row_group_name
 
 
 DRAW_FEATURE_NAMES = [
@@ -168,7 +168,7 @@ def build_draw_training_rows(
 
     for _, row in train_df.iterrows():
         before = row["match_date"]
-        gcol = row.get("group_name") or row.get("group")
+        gcol = row_group_name(row)
         feats = build_match_features(
             fixtures_df,
             row["home_team"],

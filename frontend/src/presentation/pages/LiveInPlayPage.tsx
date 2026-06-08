@@ -234,9 +234,30 @@ export function LiveInPlayPage() {
                   <span className="text-slate-300">{formatOddsLine(data.h2hOdds)}</span>
                 </p>
                 <p>{data.rawMarketCount} mercados</p>
-                <p className="mt-0.5">
-                  Captura {formatCapturedAt(data.capturedAt)}
-                  {data.isLive ? ` · refresh ${POLL_MS / 1000}s` : ""}
+                <p className="mt-0.5 flex items-center justify-end gap-2">
+                  <span>
+                    Captura {formatCapturedAt(data.capturedAt)}
+                    {data.isLive ? ` · refresh ${POLL_MS / 1000}s` : ""}
+                  </span>
+                  <button
+                    onClick={() => adviceQuery.refetch()}
+                    disabled={adviceQuery.isFetching}
+                    title="Atualizar agora"
+                    className="rounded p-0.5 text-slate-500 transition hover:text-slate-300 disabled:opacity-40"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className={`h-3.5 w-3.5 ${adviceQuery.isFetching ? "animate-spin" : ""}`}
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.46-.33Zm-7.66-8.848A5.5 5.5 0 0 1 18.5 10a.75.75 0 0 0 1.5 0 7 7 0 0 0-11.712-5.138l-.31.31V2.75a.75.75 0 0 0-1.5 0v4.243c0 .414.336.75.75.75h4.243a.75.75 0 0 0 0-1.5h-2.43l.31-.31Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
                 </p>
               </div>
             </div>

@@ -63,10 +63,31 @@ interface ActionState {
   subline: string;
   stakeHint?: string;
   showWatchList: boolean;
+  directionBadge?: { label: string; colorClass: string };
 }
 
 function evFromProb(prob: number, odd: number): number {
   return prob * odd - 1;
+}
+
+/** Resolve badge de direção para o apostador saber exatamente o que fazer. */
+function resolveDirectionBadge(
+  market: string,
+  outcome: string,
+): { label: string; colorClass: string } | undefined {
+  if (market.startsWith("over_")) {
+    return { label: "MAIS GOLS", colorClass: "bg-neon-green/20 text-neon-green border-neon-green/40" };
+  }
+  if (market.startsWith("under_")) {
+    return { label: "MENOS GOLS", colorClass: "bg-sky-500/20 text-sky-300 border-sky-500/40" };
+  }
+  if (market === "btts" && outcome === "yes") {
+    return { label: "SIM — AMBOS MARCAM", colorClass: "bg-neon-green/20 text-neon-green border-neon-green/40" };
+  }
+  if (market === "btts" && outcome === "no") {
+    return { label: "NÃO — ALGUM NÃO MARCA", colorClass: "bg-amber-500/20 text-amber-300 border-amber-500/40" };
+  }
+  return undefined;
 }
 
 function buildFallbackWatchList(data: SuperbetLiveAdvice, threshold: number): WatchItem[] {
@@ -169,12 +190,13 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
         : undefined;
     return {
       tone: "bet",
-      headline: `${prefix}: ${top.label} @ ${top.marketOdd.toFixed(2)}`,
+      headline: `${prefix}: ${top.label} — odd ${top.marketOdd.toFixed(2)}`,
       subline: `EV +${(top.expectedValue * 100).toFixed(1)}%${
         avoid.length > 0 ? ` · Evite: ${avoid.join(", ")}` : ""
       }`,
       stakeHint,
       showWatchList: false,
+      directionBadge: resolveDirectionBadge(top.market, top.outcome),
     };
   }
 
@@ -185,12 +207,13 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
         : undefined;
     return {
       tone: "bet-light",
-      headline: `Apostar (leve): ${top.label} @ ${top.marketOdd.toFixed(2)}`,
+      headline: `Apostar (leve): ${top.label} — odd ${top.marketOdd.toFixed(2)}`,
       subline: `EV +${(top.expectedValue * 100).toFixed(1)}% (abaixo do ideal)${
         avoid.length > 0 ? ` · Evite: ${avoid.join(", ")}` : ""
       }`,
       stakeHint,
       showWatchList: false,
+      directionBadge: resolveDirectionBadge(top.market, top.outcome),
     };
   }
 
@@ -242,6 +265,13 @@ export function LiveActionNowPanel({ data, trackBet }: LiveActionNowPanelProps) 
           <p className={`mt-1 text-xl font-bold leading-tight ${cfg.accent}`}>
             {action.headline}
           </p>
+          {action.directionBadge && (
+            <span
+              className={`mt-2 inline-block rounded-lg border px-3 py-1.5 text-sm font-extrabold tracking-wide ${action.directionBadge.colorClass}`}
+            >
+              {action.directionBadge.label}
+            </span>
+          )}
           <p className="mt-1.5 text-sm text-slate-300">{action.subline}</p>
 
           {/* Stake em destaque */}

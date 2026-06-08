@@ -17,6 +17,7 @@ from pipelines.wc_stats import (
     build_match_features,
     features_to_vector,
     precompute_elo_timeline,
+    row_group_name,
 )
 from schemas.models import BolaoLabel
 
@@ -78,7 +79,7 @@ class WcLogisticModel:
 
             for index, (_, row) in enumerate(train_df.iterrows(), start=1):
                 before = row["match_date"]
-                gcol = row.get("group_name") or row.get("group")
+                gcol = row_group_name(row)
                 feats = build_match_features(
                     df,
                     row["home_team"],
@@ -134,7 +135,7 @@ class WcLogisticModel:
                     is_neutral=bool(row.get("is_neutral", True)),
                     before_date=row["match_date"],
                     season=int(row["season"]),
-                    group_name=row.get("group_name") or row.get("group"),
+                    group_name=row_group_name(row),
                 )
                 if pred.prediction == row["label"]:
                     correct += 1

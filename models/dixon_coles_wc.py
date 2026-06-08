@@ -13,7 +13,12 @@ from models.poisson_wc import (
 )
 from pipelines.wc_holdout import wc_holdout_train_df
 from pipelines.wc_hyperparams import get_wc_hyperparams
-from pipelines.wc_stats import WcMatchFeatures, build_match_features, precompute_elo_timeline
+from pipelines.wc_stats import (
+    WcMatchFeatures,
+    build_match_features,
+    precompute_elo_timeline,
+    row_group_name,
+)
 
 
 def _normalized_score_prob(
@@ -75,7 +80,7 @@ class DixonColesWcModel:
             if history.empty:
                 history = fixtures_df
 
-            gcol = row.get("group_name") or row.get("group")
+            gcol = row_group_name(row)
             features = build_match_features(
                 fixtures_df,
                 row["home_team"],

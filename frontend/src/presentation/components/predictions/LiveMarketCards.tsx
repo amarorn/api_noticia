@@ -99,7 +99,7 @@ function buildFallbackScan(data: SuperbetLiveAdvice): MarketScanRow[] {
   push(
     "over_2_5",
     "yes",
-    "Over 2.5 gols",
+    "Mais de 2.5 gols",
     s.over25,
     data.aportes.find((a) => a.market === "over_2_5")?.marketOdd,
   );
@@ -177,6 +177,18 @@ const DIRECTION_CONFIG: Record<
     bgClass: "bg-amber-500/15 border-amber-500/30",
     textClass: "text-amber-300",
   },
+  totals_over: {
+    label: "MAIS",
+    sub: "Apostar que sairão MAIS gols que a linha",
+    bgClass: "bg-neon-green/15 border-neon-green/30",
+    textClass: "text-neon-green",
+  },
+  totals_under: {
+    label: "MENOS",
+    sub: "Apostar que sairão MENOS gols que a linha",
+    bgClass: "bg-sky-500/15 border-sky-500/25",
+    textClass: "text-sky-300",
+  },
   next_goal_home: {
     label: "GOL DA CASA",
     sub: "Próximo gol marcado pelo time da casa",
@@ -200,11 +212,20 @@ const DIRECTION_CONFIG: Record<
 function DirectionBadge({
   outcome,
   groupId,
+  market,
 }: {
   outcome: string;
   groupId: string;
+  market?: string;
 }) {
-  const key = `${groupId}_${outcome}`;
+  let key: string;
+  if (groupId === "totals") {
+    // Market é tipo "over_2_5" ou "under_2_5"
+    const direction = market?.startsWith("under_") ? "under" : "over";
+    key = `totals_${direction}`;
+  } else {
+    key = `${groupId}_${outcome}`;
+  }
   const cfg = DIRECTION_CONFIG[key];
   if (!cfg) return null;
   return (
@@ -246,9 +267,9 @@ function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: M
 
       {best ? (
         <>
-          {/* Badge de direção para BTTS e próximo gol */}
-          {(group.id === "btts" || group.id === "next_goal") && (
-            <DirectionBadge outcome={best.outcome} groupId={group.id} />
+          {/* Badge de direção para totais, BTTS e próximo gol */}
+          {(group.id === "totals" || group.id === "btts" || group.id === "next_goal") && (
+            <DirectionBadge outcome={best.outcome} groupId={group.id} market={best.market} />
           )}
           <p className="truncate text-sm font-medium text-slate-200" title={best.label}>
             {best.label}

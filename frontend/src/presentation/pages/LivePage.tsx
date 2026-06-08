@@ -11,7 +11,7 @@ import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconChevronRight } from "@/presentation/components/ui/Icons";
 
-type SportFilter = "football" | "all";
+type SportFilter = "football" | "esport_fifa" | "all";
 
 function formatOdds(odds: Record<string, number>): string | null {
   const parts: string[] = [];
@@ -90,14 +90,14 @@ function isNationalTeam(name: string): boolean {
 }
 
 export function LivePage() {
-  const [sportFilter, setSportFilter] = useState<SportFilter>("football");
+  const [sportFilter, setSportFilter] = useState<SportFilter>("esport_fifa");
   const [nationalOnly, setNationalOnly] = useState(false);
 
   const liveQuery = useQuery({
     queryKey: ["superbet-live", sportFilter],
     queryFn: () =>
       getSuperbetLiveUseCase.execute({
-        sportId: sportFilter === "football" ? 5 : undefined,
+        sportId: sportFilter === "football" ? 5 : sportFilter === "esport_fifa" ? 75 : undefined,
         allSports: sportFilter === "all",
       }),
     staleTime: 15_000,
@@ -125,6 +125,11 @@ export function LivePage() {
             active={sportFilter === "football"}
             onClick={() => setSportFilter("football")}
             label="Futebol"
+          />
+          <FilterChip
+            active={sportFilter === "esport_fifa"}
+            onClick={() => setSportFilter("esport_fifa")}
+            label="E-Sport FIFA"
           />
           <FilterChip
             active={sportFilter === "all"}

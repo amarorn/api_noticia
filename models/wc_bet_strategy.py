@@ -36,6 +36,24 @@ def _tier(ev: float, threshold: float) -> str:
     return "abaixo_limiar"
 
 
+def _time_decay_confidence(minute: int) -> float:
+    """P1.2: Reduz confiança na reta final — exige edge maior para apostar.
+
+    Lógica: no final do jogo a variância é altíssima (qualquer evento decide).
+    Aplicamos um multiplicador < 1.0 que, ao dividir o threshold, o AUMENTA.
+    Exemplo: threshold 4%, minuto 82 → effective = 4% / 0.65 = 6.15%
+    """
+    if minute >= 85:
+        return 0.55  # Últimos 5 min: muito conservador
+    if minute >= 80:
+        return 0.65  # Últimos 10 min: conservador
+    if minute >= 75:
+        return 0.80  # Últimos 15 min: cauteloso
+    if minute >= 70:
+        return 0.90  # Após 70': leve cautela
+    return 1.0  # Antes de 70': confiança plena
+
+
 def _posture(
     *,
     cashout_action: str | None,
@@ -184,11 +202,19 @@ def build_bet_strategy_report(
         }
 
     opportunities: list[dict[str, Any]] = []
+    # P1.2: threshold efetivo aumenta na reta final (time decay de confiança)
+    decay = _time_decay_confidence(minute)
+    effective_threshold = threshold / decay if decay > 0 else threshold
     for rank, a in enumerate(aportes, start=1):
-        tier = _tier(a.expected_value, threshold)
+        tier = _tier(a.expected_value, effective_threshold)
         stake_pct = a.suggested_stake_pct
         if tier == "leve":
             stake_pct = round(min(stake_pct, 1.5), 2)
+        # Na reta final, reduzir stakes adicionalmente
+        if minute >= 80:
+            stake_pct = round(stake_pct * 0.6, 2)
+        elif minute >= 75:
+            stake_pct = round(stake_pct * 0.8, 2)
         opportunities.append({
             "rank": rank,
             "market": a.market,
@@ -282,6 +308,8 @@ def build_bet_strategy_report(
         "opportunity_count": len(opportunities),
         "strong_opportunity_count": strong_ops,
         "min_edge_threshold": round(threshold, 4),
+        "effective_threshold": round(effective_threshold, 4),
+        "time_decay_confidence": round(decay, 2),
         "wait_reason": wait_reason,
         "watch_list": watch_list,
         "market_scan": all_edges,

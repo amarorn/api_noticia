@@ -55,6 +55,7 @@ class SuperbetClient:
         *,
         sport_id: int | None = 5,
     ) -> list[SuperbetLiveEventSummary]:
+        """Busca lista de eventos ao vivo via SSE streaming (lê primeira mensagem e fecha)."""
         url = f"{self.base_url}/v3/subscription/{self.locale}/live"
         headers = {
             "Accept": "application/json",
@@ -62,9 +63,11 @@ class SuperbetClient:
         }
         try:
             with httpx.Client(timeout=self.timeout_sec, follow_redirects=True) as client:
-                response = client.get(url, headers=headers)
-                response.raise_for_status()
-                raw_events = _parse_sse_array_payload(response.text)
+                with client.stream("GET", url, headers=headers) as response:
+                    response.raise_for_status()
+                    # SSE: lê apenas a primeira linha 'data:' (snapshot completo)
+                    text = _read_first_sse_data(response)
+                raw_events = _parse_sse_array_payload(text)
         except httpx.HTTPError as exc:
             raise SuperbetClientError(f"Falha ao buscar jogos ao vivo Superbet: {exc}") from exc
 
@@ -87,6 +90,42 @@ class SuperbetClient:
             ),
         )
         return summaries
+
+
+def _read_first_sse_data(response: httpx.Response) -> str:
+    """Lê o stream SSE até obter a primeira linha 'data:' com JSON válido e completo.
+
+    Endpoints SSE da Superbet enviam um snapshot completo na primeira mensagem e depois mantêm
+    a conexão aberta para incrementos. Precisamos apenas do snapshot inicial.
+    O JSON pode chegar fragmentado em múltiplos chunks, então acumulamos até parsear com sucesso.
+    """
+    buffer = ""
+    for chunk in response.iter_text():
+        buffer += chunk
+        # Procura o prefixo 'data:' e tenta parsear o conteúdo da primeira linha
+        idx = buffer.find("data:")
+        if idx == -1:
+            continue
+        after_prefix = buffer[idx + 5:]
+        # Pega só até a próxima newline (se houver), para não misturar mensagens SSE
+        newline_pos = after_prefix.find("\n")
+        if newline_pos != -1:
+            raw = after_prefix[:newline_pos].strip()
+        else:
+            raw = after_prefix.strip()
+        if not raw or raw == "[DONE]":
+            continue
+        try:
+            json.loads(raw)
+            return buffer
+        except json.JSONDecodeError:
+            # Se já temos uma newline após data: e ainda falha, é erro de formato
+            # Se não temos newline, o JSON pode estar incompleto (chunk parcial)
+            if newline_pos != -1:
+                # Linha completa mas JSON inválido — tentar regex fallback
+                return buffer
+            continue
+    return buffer
 
 
 def _parse_sse_array_payload(text: str) -> list[dict]:
