@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { getSuperbetLiveAdviceUseCase } from "@/application/container";
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
+import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
@@ -10,15 +11,14 @@ import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconArrowLeft, IconChevronRight } from "@/presentation/components/ui/Icons";
 import { BetStrategyPanel } from "@/presentation/components/predictions/BetStrategyPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
-import { LiveMarketsGuidePanel } from "@/presentation/components/predictions/LiveMarketsGuidePanel";
+import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
+import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
 import {
   LiveOpenBetMonitor,
   createRegisteredBetId,
   type RegisteredBetEntry,
 } from "@/presentation/components/predictions/LiveOpenBetMonitor";
 import { LivePlainGuide } from "@/presentation/components/predictions/LivePlainGuide";
-import { LiveStrategyDashboard } from "@/presentation/components/predictions/LiveStrategyDashboard";
-import { formatPercent } from "@/presentation/theme";
 
 const POLL_MS = 25_000;
 const MAX_OPEN_BETS = 2;
@@ -62,22 +62,6 @@ function formatCapturedAt(iso: string | null): string {
   }
 }
 
-function teamLabel(name: string, maxLen = 18): string {
-  const trimmed = name.trim();
-  if (trimmed.length <= maxLen) return trimmed;
-  return `${trimmed.slice(0, maxLen - 1)}…`;
-}
-
-function h2hOutcomeLabel(
-  key: "1" | "X" | "2",
-  homeTeam: string,
-  awayTeam: string,
-): string {
-  if (key === "1") return teamLabel(homeTeam);
-  if (key === "2") return teamLabel(awayTeam);
-  return "Empate";
-}
-
 function formatOddsLine(odds: Record<string, number>): string {
   const parts: string[] = [];
   if (odds["1"]) parts.push(`1 ${odds["1"].toFixed(2)}`);
@@ -98,6 +82,7 @@ export function LiveInPlayPage() {
   const [trackBet, setTrackBet] = useState(false);
   const [betDraft, setBetDraft] = useState<BetDraft>(DEFAULT_BET_DRAFT);
   const [formMode, setFormMode] = useState<"add" | string | null>(null);
+  const [betSectionOpen, setBetSectionOpen] = useState(false);
 
   const showBetForm = trackBet && formMode != null;
   const canAddBet = trackBet && registeredBets.length < MAX_OPEN_BETS && formMode === null;
@@ -180,7 +165,8 @@ export function LiveInPlayPage() {
   }
 
   return (
-    <PageTransition className="space-y-5">
+    <PageTransition className="space-y-4">
+      {/* ── Cabeçalho de navegação ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/ao-vivo"
@@ -215,30 +201,40 @@ export function LiveInPlayPage() {
         />
       ) : data ? (
         <>
-          <section className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/8 to-transparent p-5">
+          {/* ── 1. MATCH HEADER ── */}
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <TeamFlag team={data.homeTeam} size={36} />
-                <div className="min-w-0 text-center">
-                  <p className="truncate font-semibold text-white">{data.homeTeam}</p>
+                <div className="min-w-0 text-left">
+                  <p className="truncate text-sm font-semibold text-white">{data.homeTeam}</p>
                 </div>
                 <div className="px-2 text-center">
                   <p className="font-mono text-2xl font-bold text-white">
                     {data.currentScore?.replace("x", " × ") ?? "0 × 0"}
                   </p>
-                  <p className="mt-1 text-xs font-semibold text-amber-300">
-                    {data.minute}&apos;{data.periodLabel ? ` · ${data.periodLabel}` : ""}
+                  <p className="mt-0.5 flex items-center justify-center gap-1.5 text-xs font-semibold">
+                    {data.isLive && !data.isFinished && (
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+                    )}
+                    <span className="text-amber-300">
+                      {data.minute}&apos;
+                      {data.periodLabel ? ` · ${data.periodLabel}` : ""}
+                    </span>
                   </p>
                 </div>
-                <div className="min-w-0 text-center">
-                  <p className="truncate font-semibold text-white">{data.awayTeam}</p>
+                <div className="min-w-0 text-right">
+                  <p className="truncate text-sm font-semibold text-white">{data.awayTeam}</p>
                 </div>
                 <TeamFlag team={data.awayTeam} size={36} />
               </div>
-              <div className="text-right text-xs text-slate-400">
-                <p>Odds mercado: {formatOddsLine(data.h2hOdds)}</p>
+              <div className="text-right text-[11px] text-slate-500">
+                <p>
+                  Odds:{" "}
+                  <span className="text-slate-300">{formatOddsLine(data.h2hOdds)}</span>
+                </p>
                 <p>{data.rawMarketCount} mercados</p>
-                <p className="mt-1">
+                <p className="mt-0.5">
                   Captura {formatCapturedAt(data.capturedAt)}
                   {data.isLive ? ` · refresh ${POLL_MS / 1000}s` : ""}
                 </p>
@@ -249,426 +245,307 @@ export function LiveInPlayPage() {
             )}
           </section>
 
+          {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
 
+          {/* ── 3. COLUNA DUPLA: Mercados | Modelo + Casa ── */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
+            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+              <LiveMarketCards data={data} />
+            </section>
+            <LiveModelPanel data={data} />
+          </div>
+
+          {/* ── 4. GUIA RÁPIDO (colapsável) ── */}
           <LivePlainGuide data={data} trackBet={betAnalysisActive} />
 
-          <LiveStrategyDashboard data={data} />
+          {/* ── 5. ESTRATÉGIA ── */}
+          <BetStrategyPanel strategy={data.strategy} />
 
-          <LiveMarketsGuidePanel data={data} />
-
-          <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          {/* ── 6. MINHA APOSTA / CASHOUT (colapsável) ── */}
+          <section className="rounded-2xl border border-white/8 bg-white/[0.02]">
+            <button
+              type="button"
+              onClick={() => setBetSectionOpen((v) => !v)}
+              className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+              aria-expanded={betSectionOpen}
+            >
               <div>
-                <h2 className="text-sm font-semibold text-white">Sua aposta (cash-out)</h2>
-                <p className="text-xs text-slate-500">
-                  Cadastre até {MAX_OPEN_BETS} bilhetes (ex.: Empate + Jordânia). Monitore cash-out
-                  a cada {POLL_MS / 1000}s.
+                <h2 className="text-sm font-semibold text-white">
+                  Minha aposta — monitorar cash-out
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {registeredBets.length > 0
+                    ? `${registeredBets.length} bilhete${registeredBets.length > 1 ? "s" : ""} cadastrado${registeredBets.length > 1 ? "s" : ""} · atualiza a cada ${POLL_MS / 1000}s`
+                    : `Cadastre até ${MAX_OPEN_BETS} bilhetes e monitore o ponto ideal de cash-out`}
                 </p>
               </div>
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="flex flex-col gap-1 text-xs text-slate-400">
-                  <span>Minha banca (R$)</span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      type="number"
-                      min={100}
-                      value={bankrollDraft}
-                      onChange={(e) => setBankrollDraft(Number(e.target.value))}
-                      className="w-28 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
-                    />
-                    <button
-                      type="button"
-                      disabled={!bankrollDirty}
-                      onClick={() => setAppliedBankroll(bankrollDraft)}
-                      className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:border-neon-green/30 hover:text-white disabled:cursor-default disabled:opacity-40"
-                    >
-                      Aplicar banca
-                    </button>
-                  </div>
-                  <span className="text-[10px] text-slate-600">
-                    Digitar não recarrega a página — clique Aplicar para recalcular aportes
+              <div className="flex items-center gap-2">
+                {registeredBets.length > 0 && (
+                  <span className="rounded-full bg-neon-green/15 px-2 py-0.5 text-[11px] font-semibold text-neon-green">
+                    {registeredBets.length} ativo{registeredBets.length > 1 ? "s" : ""}
                   </span>
-                </div>
-                <label className="flex items-center gap-2 pb-2 text-xs text-slate-400">
-                  <input
-                    type="checkbox"
-                    checked={trackBet}
-                    onChange={(e) => {
-                      const on = e.target.checked;
-                      setTrackBet(on);
-                      if (!on) {
-                        setRegisteredBets([]);
-                        setFormMode(null);
-                      } else if (registeredBets.length === 0) {
-                        setBetDraft(DEFAULT_BET_DRAFT);
-                        setFormMode("add");
-                      }
-                    }}
-                    className="rounded border-white/20"
-                  />
-                  Tenho aposta aberta
-                </label>
-              </div>
-            </div>
-
-            {trackBet && registeredBets.length > 0 && (
-              <div className="mb-4 space-y-6">
-                {registeredBets.map((bet, index) =>
-                  formMode === bet.id ? null : (
-                    <LiveOpenBetMonitor
-                      key={bet.id}
-                      data={data}
-                      bet={bet}
-                      cashout={betAdviceQueries[index]?.data?.cashout ?? null}
-                      betIndex={index + 1}
-                      totalBets={registeredBets.length}
-                      isFetching={betAdviceQueries[index]?.isFetching ?? false}
-                      pollSeconds={POLL_MS / 1000}
-                      onEdit={() => {
-                        setBetDraft(betToDraft(bet));
-                        setFormMode(bet.id);
-                      }}
-                      onRemove={() => {
-                        setRegisteredBets((prev) => {
-                          const next = prev.filter((b) => b.id !== bet.id);
-                          if (next.length === 0) {
-                            setTrackBet(false);
-                            setFormMode(null);
-                          } else if (formMode === bet.id) {
-                            setFormMode(null);
-                          }
-                          return next;
-                        });
-                      }}
-                      onAutoMonitorChange={(on) => {
-                        setRegisteredBets((prev) =>
-                          prev.map((b) => (b.id === bet.id ? { ...b, autoMonitor: on } : b)),
-                        );
-                      }}
-                    />
-                  ),
                 )}
+                <span
+                  className={`shrink-0 text-slate-500 transition-transform duration-200 ${betSectionOpen ? "rotate-180" : ""}`}
+                  aria-hidden="true"
+                >
+                  ▾
+                </span>
               </div>
-            )}
+            </button>
 
-            {canAddBet && (
-              <button
-                type="button"
-                onClick={() => {
-                  setBetDraft(DEFAULT_BET_DRAFT);
-                  setFormMode("add");
-                }}
-                className="mb-4 rounded-lg border border-white/15 px-4 py-2 text-sm text-slate-300 transition-colors hover:border-neon-green/30 hover:text-white"
-              >
-                + Adicionar outra aposta ({registeredBets.length}/{MAX_OPEN_BETS})
-              </button>
-            )}
-
-            {showBetForm && (
-              <>
-                <p className="mb-3 text-xs text-slate-500">
-                  {formMode === "add"
-                    ? `Nova aposta (${registeredBets.length + 1} de ${MAX_OPEN_BETS})`
-                    : "Editar aposta"}
-                </p>
-                <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <label className="flex flex-col gap-1 text-xs text-slate-400">
-                    Mercado
-                    <select
-                      value={betDraft.market}
-                      onChange={(e) =>
-                        setBetDraft((d) => ({ ...d, market: e.target.value }))
-                      }
-                      className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white"
-                    >
-                      <option value="h2h">1X2</option>
-                      <option value="over_2_5">Over 2.5</option>
-                      <option value="btts">Ambos marcam</option>
-                      <option value="next_goal">Próximo gol</option>
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-slate-400">
-                    Palpite
-                    <select
-                      value={betDraft.outcome}
-                      onChange={(e) =>
-                        setBetDraft((d) => ({ ...d, outcome: e.target.value }))
-                      }
-                      className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white"
-                    >
-                      <option value="1">{data.homeTeam}</option>
-                      <option value="X">Empate</option>
-                      <option value="2">{data.awayTeam}</option>
-                      <option value="yes">Sim</option>
-                      <option value="home">Gol {data.homeTeam}</option>
-                      <option value="away">Gol {data.awayTeam}</option>
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-slate-400">
-                    Stake (R$)
+            {betSectionOpen && (
+              <div className="border-t border-white/8 px-5 pb-5 pt-4">
+                <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                  <div className="flex flex-col gap-1 text-xs text-slate-400">
+                    <span>Minha banca (R$)</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="number"
+                        min={100}
+                        value={bankrollDraft}
+                        onChange={(e) => setBankrollDraft(Number(e.target.value))}
+                        className="w-28 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
+                      />
+                      <button
+                        type="button"
+                        disabled={!bankrollDirty}
+                        onClick={() => setAppliedBankroll(bankrollDraft)}
+                        className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:border-neon-green/30 hover:text-white disabled:cursor-default disabled:opacity-40"
+                      >
+                        Aplicar banca
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-slate-600">
+                      Digitar não recarrega — clique Aplicar para recalcular aportes
+                    </span>
+                  </div>
+                  <label className="flex items-center gap-2 pb-2 text-xs text-slate-400">
                     <input
-                      type="number"
-                      min={1}
-                      value={betDraft.stake}
-                      onChange={(e) =>
-                        setBetDraft((d) => ({ ...d, stake: Number(e.target.value) }))
-                      }
-                      className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
+                      type="checkbox"
+                      checked={trackBet}
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        setTrackBet(on);
+                        if (!on) {
+                          setRegisteredBets([]);
+                          setFormMode(null);
+                        } else if (registeredBets.length === 0) {
+                          setBetDraft(DEFAULT_BET_DRAFT);
+                          setFormMode("add");
+                        }
+                      }}
+                      className="rounded border-white/20"
                     />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-slate-400">
-                    Odd entrada
-                    <input
-                      type="number"
-                      min={1.01}
-                      step={0.01}
-                      value={betDraft.oddsPlaced}
-                      onChange={(e) =>
-                        setBetDraft((d) => ({ ...d, oddsPlaced: Number(e.target.value) }))
-                      }
-                      className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
-                    />
+                    Tenho aposta aberta
                   </label>
                 </div>
-                <label className="mb-3 flex max-w-xs flex-col gap-1 text-xs text-slate-400">
-                  Cash-out oferecido na Superbet (R$) — opcional
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="ex.: 4,31"
-                    value={betDraft.offeredCashout ?? ""}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      setBetDraft((d) => ({
-                        ...d,
-                        offeredCashout: raw === "" ? null : Number(raw),
-                      }));
-                    }}
-                    className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
-                  />
-                </label>
-                <div className="mb-4 flex flex-wrap items-center gap-3">
+
+                {trackBet && registeredBets.length > 0 && (
+                  <div className="mb-4 space-y-6">
+                    {registeredBets.map((bet, index) =>
+                      formMode === bet.id ? null : (
+                        <LiveOpenBetMonitor
+                          key={bet.id}
+                          data={data}
+                          bet={bet}
+                          cashout={
+                            (betAdviceQueries[index]?.data as SuperbetLiveAdvice | undefined)
+                              ?.cashout ?? null
+                          }
+                          betIndex={index + 1}
+                          totalBets={registeredBets.length}
+                          isFetching={betAdviceQueries[index]?.isFetching ?? false}
+                          pollSeconds={POLL_MS / 1000}
+                          onEdit={() => {
+                            setBetDraft(betToDraft(bet));
+                            setFormMode(bet.id);
+                          }}
+                          onRemove={() => {
+                            setRegisteredBets((prev) => {
+                              const next = prev.filter((b) => b.id !== bet.id);
+                              if (next.length === 0) {
+                                setTrackBet(false);
+                                setFormMode(null);
+                              } else if (formMode === bet.id) {
+                                setFormMode(null);
+                              }
+                              return next;
+                            });
+                          }}
+                          onAutoMonitorChange={(on) => {
+                            setRegisteredBets((prev) =>
+                              prev.map((b) =>
+                                b.id === bet.id ? { ...b, autoMonitor: on } : b,
+                              ),
+                            );
+                          }}
+                        />
+                      ),
+                    )}
+                  </div>
+                )}
+
+                {canAddBet && (
                   <button
                     type="button"
                     onClick={() => {
-                      if (formMode === "add") {
-                        setRegisteredBets((prev) =>
-                          [
-                            ...prev,
-                            {
-                              ...betDraft,
-                              id: createRegisteredBetId(),
-                              autoMonitor: true,
-                            },
-                          ].slice(0, MAX_OPEN_BETS),
-                        );
-                      } else if (typeof formMode === "string") {
-                        setRegisteredBets((prev) =>
-                          prev.map((b) =>
-                            b.id === formMode
-                              ? {
-                                  ...b,
-                                  market: betDraft.market,
-                                  outcome: betDraft.outcome,
-                                  stake: betDraft.stake,
-                                  oddsPlaced: betDraft.oddsPlaced,
-                                  offeredCashout: betDraft.offeredCashout,
-                                }
-                              : b,
-                          ),
-                        );
-                      }
-                      setFormMode(null);
+                      setBetDraft(DEFAULT_BET_DRAFT);
+                      setFormMode("add");
                     }}
-                    className="rounded-lg border border-neon-green/40 bg-neon-green/15 px-4 py-2 text-sm font-semibold text-neon-green transition-colors hover:bg-neon-green/25"
+                    className="mb-4 rounded-lg border border-white/15 px-4 py-2 text-sm text-slate-300 transition-colors hover:border-neon-green/30 hover:text-white"
                   >
-                    {formMode === "add" ? "Cadastrar e monitorar" : "Salvar alterações"}
+                    + Adicionar outra aposta ({registeredBets.length}/{MAX_OPEN_BETS})
                   </button>
-                  {registeredBets.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setFormMode(null)}
-                      className="rounded-lg border border-white/15 px-4 py-2 text-sm text-slate-400 hover:text-white"
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                  <span className="text-xs text-slate-500">
-                    A página não recarrega ao digitar nos campos
-                  </span>
-                </div>
-              </>
-            )}
+                )}
 
-            {trackBet && registeredBets.length === 0 && formMode === null && (
-              <p className="text-sm text-slate-500">
-                Marque a opção acima ou clique em adicionar para cadastrar até {MAX_OPEN_BETS}{" "}
-                bilhetes do mesmo jogo.
-              </p>
-            )}
-          </section>
-
-          <section className="rounded-2xl border border-violet-500/15 bg-violet-500/[0.04] p-5">
-            <h2 className="mb-1 text-sm font-semibold text-white">Posição da casa</h2>
-            <p className="mb-4 text-xs text-slate-500">
-              Onde a Superbet precifica vs nosso modelo — edge negativo favorece a casa
-            </p>
-
-            {data.h2hOverround != null && (
-              <p className="mb-3 text-xs text-slate-400">
-                Margem 1X2 (overround):{" "}
-                <span className="font-mono font-semibold text-violet-300">
-                  {(data.h2hOverround * 100).toFixed(1)}%
-                </span>
-              </p>
-            )}
-
-            <div className="mb-4 grid gap-2 sm:grid-cols-3">
-              {(["1", "X", "2"] as const).map((key) => {
-                const implied = data.h2hImplied[key];
-                const odd = data.h2hOdds[key];
-                const bench = data.marketBenchmark?.h2h?.[key];
-                if (implied == null && odd == null) return null;
-                const edgePp = bench ? bench.edge * 100 : null;
-                const edgeColor =
-                  edgePp == null
-                    ? "text-slate-400"
-                    : edgePp > 2
-                      ? "text-neon-green"
-                      : edgePp < -2
-                        ? "text-red-400"
-                        : "text-slate-300";
-                const label = h2hOutcomeLabel(key, data.homeTeam, data.awayTeam);
-                const fullLabel =
-                  key === "1" ? data.homeTeam : key === "2" ? data.awayTeam : "Empate";
-                return (
-                  <div
-                    key={key}
-                    className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3"
-                  >
-                    <p
-                      className="truncate text-[10px] uppercase tracking-wider text-slate-500"
-                      title={fullLabel}
-                    >
-                      {label}
+                {showBetForm && (
+                  <>
+                    <p className="mb-3 text-xs text-slate-500">
+                      {formMode === "add"
+                        ? `Nova aposta (${registeredBets.length + 1} de ${MAX_OPEN_BETS})`
+                        : "Editar aposta"}
                     </p>
-                    {odd != null && (
-                      <p className="font-mono text-sm text-white">
-                        {odd.toFixed(2)}
-                        {implied != null && (
-                          <span className="ml-2 text-xs text-slate-400">
-                            ({formatPercent(implied)})
-                          </span>
-                        )}
-                      </p>
-                    )}
-                    {bench && (
-                      <p className={`mt-1 text-xs ${edgeColor}`}>
-                        Modelo {formatPercent(bench.model)} · edge{" "}
-                        {edgePp != null ? `${edgePp > 0 ? "+" : ""}${edgePp.toFixed(1)} pp` : "—"}
-                      </p>
-                    )}
-                    {edgePp != null && edgePp < -2 && (
-                      <p className="mt-1 text-[10px] text-red-400/80">
-                        {fullLabel} — mercado otimista
-                      </p>
-                    )}
-                    {edgePp != null && edgePp > 2 && (
-                      <p className="mt-1 text-[10px] text-neon-green/80">Valor p/ apostador</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {data.marketBenchmark?.totals &&
-              Object.keys(data.marketBenchmark.totals).length > 0 && (
-                <div className="mb-4">
-                  <p className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">
-                    Totais de gols
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(data.marketBenchmark.totals).map(([line, row]) => {
-                      const edgePp = row.edgeOver * 100;
-                      return (
-                        <span
-                          key={line}
-                          className="rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-1.5 text-xs text-slate-300"
+                    <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <label className="flex flex-col gap-1 text-xs text-slate-400">
+                        Mercado
+                        <select
+                          value={betDraft.market}
+                          onChange={(e) =>
+                            setBetDraft((d) => ({ ...d, market: e.target.value }))
+                          }
+                          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white"
                         >
-                          Over {line}: casa {formatPercent(row.marketOver)} · modelo{" "}
-                          {formatPercent(row.modelOver)} ·{" "}
-                          <span className={edgePp > 0 ? "text-neon-green" : "text-red-400"}>
-                            {edgePp > 0 ? "+" : ""}
-                            {edgePp.toFixed(1)} pp
-                          </span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                          <option value="h2h">1X2</option>
+                          <option value="over_2_5">Over 2.5</option>
+                          <option value="btts">Ambos marcam</option>
+                          <option value="next_goal">Próximo gol</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-slate-400">
+                        Palpite
+                        <select
+                          value={betDraft.outcome}
+                          onChange={(e) =>
+                            setBetDraft((d) => ({ ...d, outcome: e.target.value }))
+                          }
+                          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white"
+                        >
+                          <option value="1">{data.homeTeam}</option>
+                          <option value="X">Empate</option>
+                          <option value="2">{data.awayTeam}</option>
+                          <option value="yes">Sim</option>
+                          <option value="home">Gol {data.homeTeam}</option>
+                          <option value="away">Gol {data.awayTeam}</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-slate-400">
+                        Stake (R$)
+                        <input
+                          type="number"
+                          min={1}
+                          value={betDraft.stake}
+                          onChange={(e) =>
+                            setBetDraft((d) => ({ ...d, stake: Number(e.target.value) }))
+                          }
+                          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-slate-400">
+                        Odd entrada
+                        <input
+                          type="number"
+                          min={1.01}
+                          step={0.01}
+                          value={betDraft.oddsPlaced}
+                          onChange={(e) =>
+                            setBetDraft((d) => ({ ...d, oddsPlaced: Number(e.target.value) }))
+                          }
+                          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
+                        />
+                      </label>
+                    </div>
+                    <label className="mb-3 flex max-w-xs flex-col gap-1 text-xs text-slate-400">
+                      Cash-out oferecido na Superbet (R$) — opcional
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        placeholder="ex.: 4,31"
+                        value={betDraft.offeredCashout ?? ""}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          setBetDraft((d) => ({
+                            ...d,
+                            offeredCashout: raw === "" ? null : Number(raw),
+                          }));
+                        }}
+                        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
+                      />
+                    </label>
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (formMode === "add") {
+                            setRegisteredBets((prev) =>
+                              [
+                                ...prev,
+                                {
+                                  ...betDraft,
+                                  id: createRegisteredBetId(),
+                                  autoMonitor: true,
+                                },
+                              ].slice(0, MAX_OPEN_BETS),
+                            );
+                          } else if (typeof formMode === "string") {
+                            setRegisteredBets((prev) =>
+                              prev.map((b) =>
+                                b.id === formMode
+                                  ? {
+                                      ...b,
+                                      market: betDraft.market,
+                                      outcome: betDraft.outcome,
+                                      stake: betDraft.stake,
+                                      oddsPlaced: betDraft.oddsPlaced,
+                                      offeredCashout: betDraft.offeredCashout,
+                                    }
+                                  : b,
+                              ),
+                            );
+                          }
+                          setFormMode(null);
+                        }}
+                        className="rounded-lg border border-neon-green/40 bg-neon-green/15 px-4 py-2 text-sm font-semibold text-neon-green transition-colors hover:bg-neon-green/25"
+                      >
+                        {formMode === "add" ? "Cadastrar e monitorar" : "Salvar alterações"}
+                      </button>
+                      {registeredBets.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setFormMode(null)}
+                          className="rounded-lg border border-white/15 px-4 py-2 text-sm text-slate-400 hover:text-white"
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                      <span className="text-xs text-slate-500">
+                        A página não recarrega ao digitar nos campos
+                      </span>
+                    </div>
+                  </>
+                )}
 
-            {Object.keys(data.generosityProbs).length > 0 && (
-              <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-xs text-slate-400">
-                Generosity Superbet:{" "}
-                {data.generosityProbs.home != null && (
-                  <span>
-                    {data.homeTeam} {formatPercent(data.generosityProbs.home)}
-                  </span>
+                {trackBet && registeredBets.length === 0 && formMode === null && (
+                  <p className="text-sm text-slate-500">
+                    Marque a opção acima ou clique em adicionar para cadastrar até{" "}
+                    {MAX_OPEN_BETS} bilhetes do mesmo jogo.
+                  </p>
                 )}
-                {data.generosityProbs.away != null && (
-                  <span className="ml-2">
-                    {data.awayTeam} {formatPercent(data.generosityProbs.away)}
-                  </span>
-                )}
-                <span className="ml-2 text-slate-500">(metadado interno da odd)</span>
               </div>
             )}
           </section>
-
-          <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
-            <h2 className="mb-1 text-sm font-semibold text-white">Modelo in-play</h2>
-            <p className="mb-4 text-xs text-slate-500">
-              Probabilidades condicionadas ao placar e minuto atual
-            </p>
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-              <Stat
-                label={teamLabel(data.homeTeam)}
-                title={data.homeTeam}
-                value={formatPercent(data.inplaySummary.probFinalHome)}
-              />
-              <Stat label="Empate" value={formatPercent(data.inplaySummary.probFinalDraw)} />
-              <Stat
-                label={teamLabel(data.awayTeam)}
-                title={data.awayTeam}
-                value={formatPercent(data.inplaySummary.probFinalAway)}
-              />
-              {data.inplaySummary.over25 != null && (
-                <Stat label="Over 2.5" value={formatPercent(data.inplaySummary.over25)} />
-              )}
-              {data.inplaySummary.btts != null && (
-                <Stat label="BTTS" value={formatPercent(data.inplaySummary.btts)} />
-              )}
-              {data.inplaySummary.probNextGoalHome != null && (
-                <Stat
-                  label={`Gol ${teamLabel(data.homeTeam, 12)}`}
-                  title={`Próximo gol ${data.homeTeam}`}
-                  value={formatPercent(data.inplaySummary.probNextGoalHome)}
-                />
-              )}
-              {data.inplaySummary.probNextGoalAway != null && (
-                <Stat
-                  label={`Gol ${teamLabel(data.awayTeam, 12)}`}
-                  title={`Próximo gol ${data.awayTeam}`}
-                  value={formatPercent(data.inplaySummary.probNextGoalAway)}
-                />
-              )}
-            </div>
-          </section>
-
-          <BetStrategyPanel strategy={data.strategy} />
 
           {matchLink && (
             <div className="flex justify-end">
@@ -690,19 +567,5 @@ export function LiveInPlayPage() {
         </p>
       )}
     </PageTransition>
-  );
-}
-
-function Stat({ label, value, title }: { label: string; value: string; title?: string }) {
-  return (
-    <div className="rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2">
-      <p
-        className="truncate text-[10px] uppercase tracking-wider text-slate-500"
-        title={title ?? label}
-      >
-        {label}
-      </p>
-      <p className="font-mono text-sm font-semibold text-white">{value}</p>
-    </div>
   );
 }

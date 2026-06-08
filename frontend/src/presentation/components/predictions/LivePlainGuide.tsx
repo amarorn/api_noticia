@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { formatPercent } from "@/presentation/theme";
 
@@ -152,27 +152,52 @@ const TONE_CLASS: Record<string, string> = {
 };
 
 export function LivePlainGuide({ data, trackBet }: LivePlainGuideProps) {
+  const [open, setOpen] = useState(false);
   const blocks = useMemo(() => buildGuide(data, trackBet), [data, trackBet]);
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent p-5">
-      <h2 className="text-sm font-semibold text-white">Guia rápido — leia em 30 segundos</h2>
-      <p className="mt-1 text-xs text-slate-500">
-        Resumo em português claro. Detalhes técnicos ficam nas seções abaixo.
-      </p>
-      <dl className="mt-4 space-y-3">
-        {blocks.map((block) => (
-          <div
-            key={block.label}
-            className={`rounded-xl border px-4 py-3 ${TONE_CLASS[block.tone ?? "neutral"]}`}
-          >
-            <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              {block.label}
-            </dt>
-            <dd className="mt-1.5 text-sm leading-relaxed text-slate-200">{block.text}</dd>
-          </div>
-        ))}
-      </dl>
+    <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent">
+      {/* Cabeçalho colapsável */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+        aria-expanded={open}
+      >
+        <div>
+          <h2 className="text-sm font-semibold text-white">
+            Guia rápido — leia em 30 segundos
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Resumo em português claro. Clique para {open ? "fechar" : "expandir"}.
+          </p>
+        </div>
+        <span
+          className={`shrink-0 text-slate-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        >
+          ▾
+        </span>
+      </button>
+
+      {/* Conteúdo expandido */}
+      {open && (
+        <div className="border-t border-white/8 px-5 pb-5 pt-4">
+          <dl className="space-y-3">
+            {blocks.map((block) => (
+              <div
+                key={block.label}
+                className={`rounded-xl border px-4 py-3 ${TONE_CLASS[block.tone ?? "neutral"]}`}
+              >
+                <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  {block.label}
+                </dt>
+                <dd className="mt-1.5 text-sm leading-relaxed text-slate-200">{block.text}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
     </section>
   );
 }

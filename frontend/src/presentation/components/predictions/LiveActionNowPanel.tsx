@@ -7,12 +7,46 @@ const ACTION_LABELS: Record<string, string> = {
   aguardar: "Aguardar — reavaliar em 3–5 min",
 };
 
-const TONE_STYLES: Record<string, string> = {
-  protect: "border-red-500/40 bg-red-500/12",
-  bet: "border-neon-green/40 bg-neon-green/12",
-  "bet-light": "border-emerald-500/35 bg-emerald-500/10",
-  wait: "border-amber-500/35 bg-amber-500/10",
-  finished: "border-white/15 bg-white/5",
+type Tone = "protect" | "bet" | "bet-light" | "wait" | "finished";
+
+const TONE_CONFIG: Record<
+  Tone,
+  { wrapper: string; accent: string; icon: string; labelColor: string }
+> = {
+  bet: {
+    wrapper:
+      "border-2 border-neon-green/60 bg-gradient-to-br from-neon-green/10 to-neon-green/[0.04] shadow-[0_0_32px_rgba(0,255,136,0.10)]",
+    accent: "text-neon-green",
+    icon: "●",
+    labelColor: "text-neon-green/70",
+  },
+  "bet-light": {
+    wrapper:
+      "border-2 border-emerald-400/50 bg-gradient-to-br from-emerald-500/8 to-transparent",
+    accent: "text-emerald-300",
+    icon: "◑",
+    labelColor: "text-emerald-400/70",
+  },
+  wait: {
+    wrapper:
+      "border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/8 to-transparent",
+    accent: "text-amber-300",
+    icon: "◐",
+    labelColor: "text-amber-400/70",
+  },
+  protect: {
+    wrapper:
+      "border-2 border-red-500/50 bg-gradient-to-br from-red-500/10 to-transparent",
+    accent: "text-red-300",
+    icon: "▲",
+    labelColor: "text-red-400/70",
+  },
+  finished: {
+    wrapper: "border border-white/12 bg-white/[0.03]",
+    accent: "text-slate-300",
+    icon: "■",
+    labelColor: "text-slate-500",
+  },
 };
 
 interface WatchItem {
@@ -23,10 +57,11 @@ interface WatchItem {
   meetsThreshold: boolean;
 }
 
-interface ActionNow {
-  tone: keyof typeof TONE_STYLES;
+interface ActionState {
+  tone: Tone;
   headline: string;
   subline: string;
+  stakeHint?: string;
   showWatchList: boolean;
 }
 
@@ -73,7 +108,7 @@ function resolveWatchList(data: SuperbetLiveAdvice, threshold: number): WatchIte
   return buildFallbackWatchList(data, threshold);
 }
 
-function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionNow {
+function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionState {
   if (data.isFinished) {
     return {
       tone: "finished",
@@ -104,8 +139,9 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionNow 
   }
 
   const strategy = data.strategy;
-  const top = strategy?.opportunities.find((o) => o.tier === "forte" || o.tier === "moderada")
-    ?? strategy?.opportunities[0];
+  const top =
+    strategy?.opportunities.find((o) => o.tier === "forte" || o.tier === "moderada") ??
+    strategy?.opportunities[0];
 
   const avoid = (strategy?.shields ?? [])
     .filter((s) => s.action === "evitar")
@@ -126,24 +162,34 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionNow 
   }
 
   if (top && (top.tier === "forte" || top.tier === "moderada")) {
-    const prefix = top.tier === "forte" ? "Aporte" : "Aporte moderado";
+    const prefix = top.tier === "forte" ? "Apostar" : "Apostar (moderado)";
+    const stakeHint =
+      top.suggestedStakeValue > 0
+        ? `R$ ${top.suggestedStakeValue.toFixed(0)} · ${top.suggestedStakePct}% da banca`
+        : undefined;
     return {
       tone: "bet",
-      headline: `${prefix}: ${top.label} @ ${top.marketOdd.toFixed(2)} — R$ ${top.suggestedStakeValue.toFixed(0)}`,
-      subline: `EV +${(top.expectedValue * 100).toFixed(1)}% · stake ${top.suggestedStakePct}% da banca${
+      headline: `${prefix}: ${top.label} @ ${top.marketOdd.toFixed(2)}`,
+      subline: `EV +${(top.expectedValue * 100).toFixed(1)}%${
         avoid.length > 0 ? ` · Evite: ${avoid.join(", ")}` : ""
       }`,
+      stakeHint,
       showWatchList: false,
     };
   }
 
   if (top?.tier === "leve") {
+    const stakeHint =
+      top.suggestedStakeValue > 0
+        ? `R$ ${top.suggestedStakeValue.toFixed(0)} · máx. ${top.suggestedStakePct}% da banca`
+        : undefined;
     return {
       tone: "bet-light",
-      headline: `Aporte leve: ${top.label} @ ${top.marketOdd.toFixed(2)} — R$ ${top.suggestedStakeValue.toFixed(0)}`,
-      subline: `EV +${(top.expectedValue * 100).toFixed(1)}% (abaixo do ideal) · stake máx. ${top.suggestedStakePct}%${
+      headline: `Apostar (leve): ${top.label} @ ${top.marketOdd.toFixed(2)}`,
+      subline: `EV +${(top.expectedValue * 100).toFixed(1)}% (abaixo do ideal)${
         avoid.length > 0 ? ` · Evite: ${avoid.join(", ")}` : ""
       }`,
+      stakeHint,
       showWatchList: false,
     };
   }
@@ -169,55 +215,84 @@ interface LiveActionNowPanelProps {
 
 export function LiveActionNowPanel({ data, trackBet }: LiveActionNowPanelProps) {
   const action = buildActionNow(data, trackBet);
-  const toneStyle = TONE_STYLES[action.tone] ?? TONE_STYLES.wait;
+  const cfg = TONE_CONFIG[action.tone];
   const threshold = data.strategy?.minEdgeThreshold ?? 0.04;
   const watchList = action.showWatchList ? resolveWatchList(data, threshold) : [];
 
   return (
     <section
-      className={`rounded-2xl border p-4 ${toneStyle}`}
+      className={`rounded-2xl p-5 ${cfg.wrapper}`}
       aria-live="polite"
       aria-label="O que fazer agora"
     >
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-        O que fazer agora
-      </p>
-      <p className="mt-1 text-base font-semibold text-white">{action.headline}</p>
-      <p className="mt-1.5 text-sm text-slate-300">{action.subline}</p>
+      <div className="flex items-start gap-4">
+        {/* Ícone de sinal */}
+        <div
+          className={`mt-0.5 shrink-0 text-3xl leading-none ${cfg.accent}`}
+          aria-hidden="true"
+        >
+          {cfg.icon}
+        </div>
 
-      {action.showWatchList && watchList.length > 0 && (
-        <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            Monitorar (ainda não apostar)
+        {/* Conteúdo principal */}
+        <div className="min-w-0 flex-1">
+          <p className={`text-[10px] font-bold uppercase tracking-widest ${cfg.labelColor}`}>
+            O que fazer agora
           </p>
-          <ul className="space-y-1.5">
+          <p className={`mt-1 text-xl font-bold leading-tight ${cfg.accent}`}>
+            {action.headline}
+          </p>
+          <p className="mt-1.5 text-sm text-slate-300">{action.subline}</p>
+
+          {/* Stake em destaque */}
+          {action.stakeHint && (
+            <div
+              className={`mt-3 inline-flex items-center gap-2 rounded-xl border px-3 py-2 ${
+                action.tone === "bet"
+                  ? "border-neon-green/30 bg-neon-green/10"
+                  : "border-emerald-400/25 bg-emerald-500/8"
+              }`}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Stake
+              </span>
+              <span className={`font-mono text-sm font-bold ${cfg.accent}`}>
+                {action.stakeHint}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Watch list — pills horizontais */}
+      {action.showWatchList && watchList.length > 0 && (
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            No radar (não apostar agora — monitorar)
+          </p>
+          <div className="flex flex-wrap gap-2">
             {watchList.map((item) => {
               const evPct = item.expectedValue * 100;
               const gap = threshold * 100 - evPct;
-              const status = item.meetsThreshold
-                ? "No limiar"
-                : evPct < 0
-                  ? "Sem valor"
-                  : `Faltam +${gap.toFixed(1)} pp`;
-
               return (
-                <li
+                <span
                   key={item.key}
-                  className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs"
                 >
                   <span className="text-slate-300">
                     {item.label} @ {item.marketOdd.toFixed(2)}
                   </span>
-                  <span>
+                  <span className="text-slate-500">
                     EV {evPct >= 0 ? "+" : ""}
-                    {evPct.toFixed(1)}% · {status}
+                    {evPct.toFixed(1)}%
+                    {evPct < threshold * 100 && gap > 0 && ` · faltam +${gap.toFixed(1)} pp`}
                   </span>
-                </li>
+                </span>
               );
             })}
-          </ul>
-          <p className="text-[11px] text-slate-500">
-            Limiar in-play: EV +{(threshold * 100).toFixed(0)}%. Próximo refresh em ~25s ou após gol.
+          </div>
+          <p className="mt-2 text-[11px] text-slate-600">
+            Limiar in-play: EV +{(threshold * 100).toFixed(0)}% · próximo refresh ~25s
           </p>
         </div>
       )}
