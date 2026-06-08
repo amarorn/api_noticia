@@ -976,6 +976,200 @@ interface ApiSuperbetLiveFeed {
   captured_at: string;
 }
 
+interface ApiSuperbetLiveAdvice {
+  home_team: string;
+  away_team: string;
+  minute: number;
+  current_score: string | null;
+  period_label: string | null;
+  status: string | null;
+  is_finished: boolean;
+  is_live: boolean;
+  superbet_event_id: number;
+  betradar_id: string | null;
+  captured_at: string | null;
+  raw_market_count: number;
+  h2h_odds: Record<string, number>;
+  h2h_implied: Record<string, number>;
+  h2h_overround?: number | null;
+  generosity_probs?: Record<string, number>;
+  market_benchmark?: {
+    h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
+    totals?: Record<string, { market_over: number; model_over: number; edge_over: number }>;
+  } | null;
+  strategy?: Record<string, unknown> | null;
+  cashout: Record<string, unknown> | null;
+  aportes: Array<Record<string, unknown>>;
+  inplay_summary: Record<string, number>;
+  btts_odds?: Record<string, number>;
+  next_goal_odds?: Record<string, number>;
+  analysis_coverage?: {
+    h2h?: boolean;
+    totals?: boolean;
+    btts?: boolean;
+    next_goal?: boolean;
+    combos?: string[];
+  } | null;
+}
+
+function mapBetStrategy(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const opps = (raw.opportunities as Array<Record<string, unknown>>) ?? [];
+  const shields = (raw.shields as Array<Record<string, unknown>>) ?? [];
+  const cash = raw.cashout as Record<string, unknown> | null;
+  return {
+    posture: String(raw.posture ?? "neutro"),
+    maxNewExposurePct: Number(raw.max_new_exposure_pct ?? 0),
+    maxNewExposureValue: Number(raw.max_new_exposure_value ?? 0),
+    opportunityCount: Number(raw.opportunity_count ?? 0),
+    strongOpportunityCount: Number(raw.strong_opportunity_count ?? 0),
+    minEdgeThreshold: Number(raw.min_edge_threshold ?? 0),
+    waitReason: String(raw.wait_reason ?? ""),
+    watchList: ((raw.watch_list as Array<Record<string, unknown>>) ?? []).map((w) => ({
+      market: String(w.market),
+      outcome: String(w.outcome),
+      label: String(w.label),
+      modelProb: Number(w.model_prob),
+      marketOdd: Number(w.market_odd),
+      expectedValue: Number(w.expected_value),
+      edgePp: Number(w.edge_pp),
+      meetsThreshold: Boolean(w.meets_threshold),
+    })),
+    marketScan: ((raw.market_scan as Array<Record<string, unknown>>) ?? []).map((row) => ({
+      market: String(row.market),
+      outcome: String(row.outcome),
+      label: String(row.label),
+      modelProb: Number(row.model_prob),
+      marketOdd: Number(row.market_odd),
+      impliedProb: Number(row.implied_prob),
+      expectedValue: Number(row.expected_value),
+      edgePp: Number(row.edge_pp),
+      suggestedStakePct: Number(row.suggested_stake_pct),
+      suggestedStakeValue: Number(row.suggested_stake_value),
+      meetsThreshold: Boolean(row.meets_threshold),
+    })),
+    opportunities: opps.map((op) => ({
+      rank: Number(op.rank),
+      market: String(op.market),
+      outcome: String(op.outcome),
+      label: String(op.label),
+      tier: String(op.tier),
+      modelProb: Number(op.model_prob),
+      marketOdd: Number(op.market_odd),
+      expectedValue: Number(op.expected_value),
+      edgePp: Number(op.edge_pp),
+      suggestedStakePct: Number(op.suggested_stake_pct),
+      suggestedStakeValue: Number(op.suggested_stake_value),
+      action: String(op.action),
+    })),
+    shields: shields.map((s) => ({
+      action: String(s.action),
+      priority: String(s.priority),
+      title: String(s.title),
+      reason: String(s.reason),
+      market: s.market != null ? String(s.market) : undefined,
+      outcome: s.outcome != null ? String(s.outcome) : undefined,
+      odd: s.odd != null ? Number(s.odd) : undefined,
+      expectedValue: s.expected_value != null ? Number(s.expected_value) : undefined,
+    })),
+    rules: ((raw.rules as string[]) ?? []).map(String),
+    cashout: cash
+      ? {
+          action: String(cash.action),
+          confidence: Number(cash.confidence),
+          reason: String(cash.reason),
+        }
+      : null,
+  };
+}
+
+export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
+  const cash = raw.cashout;
+  const summary = raw.inplay_summary ?? {};
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    minute: raw.minute,
+    currentScore: raw.current_score,
+    periodLabel: raw.period_label,
+    status: raw.status,
+    isFinished: raw.is_finished,
+    isLive: raw.is_live,
+    superbetEventId: raw.superbet_event_id,
+    betradarId: raw.betradar_id,
+    capturedAt: raw.captured_at,
+    rawMarketCount: raw.raw_market_count,
+    h2hOdds: raw.h2h_odds ?? {},
+    h2hImplied: raw.h2h_implied ?? {},
+    h2hOverround: raw.h2h_overround ?? null,
+    generosityProbs: raw.generosity_probs ?? {},
+    marketBenchmark: raw.market_benchmark
+      ? {
+          h2h: raw.market_benchmark.h2h,
+          totals: raw.market_benchmark.totals
+            ? Object.fromEntries(
+                Object.entries(raw.market_benchmark.totals).map(([k, v]) => [
+                  k,
+                  {
+                    marketOver: v.market_over,
+                    modelOver: v.model_over,
+                    edgeOver: v.edge_over,
+                  },
+                ]),
+              )
+            : undefined,
+        }
+      : null,
+    strategy: mapBetStrategy(raw.strategy as Record<string, unknown> | null),
+    cashout: cash
+      ? {
+          action: String(cash.action),
+          confidence: Number(cash.confidence),
+          reason: String(cash.reason),
+          currentModelProb: Number(cash.current_model_prob),
+          placedImpliedProb:
+            cash.placed_implied_prob != null ? Number(cash.placed_implied_prob) : undefined,
+          remainingEv: Number(cash.remaining_ev),
+          estimatedFairCashout: Number(cash.estimated_fair_cashout),
+          potentialReturn: Number(cash.potential_return),
+        }
+      : null,
+    aportes: (raw.aportes ?? []).map((a) => ({
+      label: String(a.label),
+      market: String(a.market),
+      outcome: String(a.outcome),
+      modelProb: Number(a.model_prob),
+      marketOdd: Number(a.market_odd),
+      expectedValue: Number(a.expected_value),
+      edgePp: Number(a.edge_pp),
+      suggestedStakePct: Number(a.suggested_stake_pct),
+      suggestedStakeValue: Number(a.suggested_stake_value),
+      action: String(a.action),
+    })),
+    inplaySummary: {
+      probFinalHome: Number(summary.prob_final_home ?? 0),
+      probFinalDraw: Number(summary.prob_final_draw ?? 0),
+      probFinalAway: Number(summary.prob_final_away ?? 0),
+      over25: summary.over_2_5,
+      btts: summary.btts,
+      probNextGoalHome: summary.prob_next_goal_home,
+      probNextGoalAway: summary.prob_next_goal_away,
+      probNoMoreGoals: summary.prob_no_more_goals,
+    },
+    bttsOdds: raw.btts_odds ?? {},
+    nextGoalOdds: raw.next_goal_odds ?? {},
+    analysisCoverage: raw.analysis_coverage
+      ? {
+          h2h: Boolean(raw.analysis_coverage.h2h),
+          totals: Boolean(raw.analysis_coverage.totals),
+          btts: Boolean(raw.analysis_coverage.btts),
+          nextGoal: Boolean(raw.analysis_coverage.next_goal),
+          combos: ((raw.analysis_coverage.combos as string[]) ?? []).map(String),
+        }
+      : null,
+  };
+}
+
 export function mapSuperbetLiveFeed(raw: ApiSuperbetLiveFeed) {
   return {
     count: raw.count,

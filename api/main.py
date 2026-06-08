@@ -402,6 +402,25 @@ class WcBetAdviceResponse(BaseModel):
     superbet_event_id: int
 
 
+class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
+    period_label: str | None = None
+    status: str | None = None
+    is_finished: bool = False
+    is_live: bool = True
+    h2h_odds: dict[str, float] = Field(default_factory=dict)
+    h2h_implied: dict[str, float] = Field(default_factory=dict)
+    h2h_overround: float | None = None
+    generosity_probs: dict[str, float] = Field(default_factory=dict)
+    market_benchmark: dict | None = None
+    strategy: dict | None = None
+    captured_at: str | None = None
+    betradar_id: str | None = None
+    raw_market_count: int = 0
+    btts_odds: dict[str, float] = Field(default_factory=dict)
+    next_goal_odds: dict[str, float] = Field(default_factory=dict)
+    analysis_coverage: dict[str, bool | list[str]] | None = None
+
+
 class WcSuperbetLiveEventResponse(BaseModel):
     event_id: int
     home_team: str
@@ -970,6 +989,7 @@ def root():
             "/worldcup/predict",
             "/worldcup/inplay",
             "/worldcup/superbet/live",
+            "/worldcup/superbet/live/{event_id}/advice",
             "/worldcup/superbet/events/{event_id}",
             "/worldcup/bet/advice",
             "/worldcup/round",
@@ -1414,6 +1434,49 @@ def worldcup_superbet_live(
     )
 
 
+@app.get("/worldcup/superbet/live/{event_id}/advice", response_model=WcSuperbetLiveAdviceResponse)
+def worldcup_superbet_live_advice(
+    event_id: int,
+    phase: str = Query("friendly", description="Fase do modelo (friendly para amistosos)"),
+    bankroll: float = Query(1000, gt=0),
+    market: str | None = Query(None, description="Mercado da aposta ativa (h2h, over_2_5, btts, next_goal)"),
+    outcome: str | None = Query(None, description="Palpite da aposta (1, X, 2, yes, home, away)"),
+    stake: float | None = Query(None, gt=0),
+    odds_placed: float | None = Query(None, gt=1),
+):
+    """Captura evento Superbet ao vivo, roda modelo e retorna cash-out / aportes."""
+    from ingest.superbet.advice import run_live_advice
+    from ingest.superbet.client import SuperbetClientError
+    from models.wc_bet_advice import UserBetInput
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    user_bet = None
+    if market and outcome and stake is not None and odds_placed is not None:
+        user_bet = UserBetInput(
+            market=market,
+            outcome=outcome,
+            stake=stake,
+            odds_placed=odds_placed,
+        )
+
+    try:
+        payload = run_live_advice(
+            event_id,
+            predictor,
+            phase=phase,
+            bankroll=bankroll,
+            user_bet=user_bet,
+        )
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return WcSuperbetLiveAdviceResponse(**payload)
+
+
 @app.get("/worldcup/superbet/events/{event_id}", response_model=WcSuperbetEventResponse)
 def worldcup_superbet_event(
     event_id: int,
@@ -1443,46 +1506,15 @@ def worldcup_superbet_event(
 @app.post("/worldcup/bet/advice", response_model=WcBetAdviceResponse)
 def worldcup_bet_advice(req: WcBetAdviceRequest):
     """Captura jogo ao vivo (Superbet), roda modelo e recomenda cash-out / aporte."""
-    from ingest.superbet.client import SuperbetClient, SuperbetClientError
-    from ingest.superbet.store import save_event_snapshot
-    from models.wc_bet_advice import UserBetInput, build_bet_advice_report
-    from models.wc_inplay import inplay_from_predictor
+    from ingest.superbet.advice import run_live_advice
+    from ingest.superbet.client import SuperbetClientError
+    from models.wc_bet_advice import UserBetInput
 
     try:
         predictor = _get_wc_predictor()
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
-    try:
-        snapshot = SuperbetClient().fetch_event(req.superbet_event_id)
-    except SuperbetClientError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    save_event_snapshot(snapshot)
-    home = normalize_national_team(req.home_team)
-    away = normalize_national_team(req.away_team)
-
-    if snapshot.inplay:
-        ip = snapshot.inplay
-        home_score, away_score, minute = ip.home_score, ip.away_score, ip.minute
-        ht_h, ht_a = ip.ht_home_score, ip.ht_away_score
-    else:
-        home_score = away_score = minute = 0
-        ht_h = ht_a = None
-
-    result = inplay_from_predictor(
-        predictor,
-        home_team=home,
-        away_team=away,
-        home_score=home_score,
-        away_score=away_score,
-        minute=minute,
-        phase=req.phase,
-        is_neutral=True,
-        ht_home_score=ht_h,
-        ht_away_score=ht_a,
-    )
-    inplay_dict = result.to_dict()
     user_bet = None
     if req.user_bet is not None:
         user_bet = UserBetInput(
@@ -1492,29 +1524,25 @@ def worldcup_bet_advice(req: WcBetAdviceRequest):
             odds_placed=req.user_bet.odds_placed,
         )
 
-    report = build_bet_advice_report(
-        home_team=home,
-        away_team=away,
-        inplay=inplay_dict,
-        snapshot=snapshot,
-        user_bet=user_bet,
-        minute=minute,
-        bankroll=req.bankroll,
-    )
+    try:
+        payload = run_live_advice(
+            req.superbet_event_id,
+            predictor,
+            phase=req.phase,
+            bankroll=req.bankroll,
+            user_bet=user_bet,
+        )
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
     return WcBetAdviceResponse(
-        home_team=home,
-        away_team=away,
-        minute=minute,
-        current_score=inplay_dict.get("current_score"),
-        cashout=report.get("cashout"),
-        aportes=report.get("aportes", []),
-        inplay_summary={
-            "prob_final_home": inplay_dict.get("prob_final_home"),
-            "prob_final_draw": inplay_dict.get("prob_final_draw"),
-            "prob_final_away": inplay_dict.get("prob_final_away"),
-            "over_2_5": inplay_dict.get("final_line_probs", {}).get("over_2_5"),
-            "btts": inplay_dict.get("btts_final"),
-        },
+        home_team=payload["home_team"],
+        away_team=payload["away_team"],
+        minute=payload["minute"],
+        current_score=payload.get("current_score"),
+        cashout=payload.get("cashout"),
+        aportes=payload.get("aportes", []),
+        inplay_summary=payload.get("inplay_summary", {}),
         superbet_event_id=req.superbet_event_id,
     )
 

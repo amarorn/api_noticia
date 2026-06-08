@@ -28,16 +28,8 @@ function minuteLabel(event: SuperbetLiveEvent): string {
   return event.minute > 0 ? `${event.minute}'` : "Ao vivo";
 }
 
-function buildMatchLink(event: SuperbetLiveEvent): string {
-  const params = new URLSearchParams({
-    source: "friendly",
-    phase: "friendly",
-    superbet: String(event.eventId),
-    liveHome: String(event.homeScore),
-    liveAway: String(event.awayScore),
-    minute: String(event.minute),
-  });
-  return `/match/${encodeURIComponent(event.homeTeam)}/${encodeURIComponent(event.awayTeam)}?${params}`;
+function buildInPlayLink(event: SuperbetLiveEvent): string {
+  return `/ao-vivo/${event.eventId}`;
 }
 
 function isNationalTeam(name: string): boolean {
@@ -213,8 +205,8 @@ export function LivePage() {
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <Link
-                          to={buildMatchLink(event)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 opacity-0 transition-all group-hover:opacity-100 hover:border-amber-400/40"
+                          to={buildInPlayLink(event)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 hover:border-amber-400/40"
                         >
                           Abrir in-play
                           <IconChevronRight className="h-3 w-3" />

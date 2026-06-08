@@ -138,6 +138,22 @@ export class GetSuperbetLiveUseCase {
   }
 }
 
+export class GetSuperbetLiveAdviceUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    eventId: number;
+    phase?: string;
+    bankroll?: number;
+    market?: string;
+    outcome?: string;
+    stake?: number;
+    oddsPlaced?: number;
+  }) {
+    return this.repository.getSuperbetLiveAdvice(dto);
+  }
+}
+
 export class SimulateWcMatchUseCase {
   constructor(private readonly repository: IWcRepository) {}
 

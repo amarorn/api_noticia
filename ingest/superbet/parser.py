@@ -90,6 +90,8 @@ class SuperbetEventSnapshot:
     corners: dict[str, dict[str, float]]
     corners_implied: dict[str, dict[str, float]]
     combo_markets: dict[str, dict[str, float]]
+    btts_odds: dict[str, float]
+    next_goal_odds: dict[str, float]
     generosity_probs: dict[str, float]
     raw_market_count: int
     captured_at: str
@@ -124,6 +126,8 @@ class SuperbetEventSnapshot:
             "corners": self.corners,
             "corners_implied": self.corners_implied,
             "combo_markets": self.combo_markets,
+            "btts_odds": self.btts_odds,
+            "next_goal_odds": self.next_goal_odds,
             "generosity_probs": self.generosity_probs,
             "raw_market_count": self.raw_market_count,
             "captured_at": self.captured_at,
@@ -177,6 +181,70 @@ def _find_market(markets: list[dict], name: str) -> dict | None:
         if market.get("name") == name:
             return market
     return None
+
+
+def _extract_yes_no_odds(market: dict | None) -> dict[str, float]:
+    if not market:
+        return {}
+    prices: dict[str, float] = {}
+    for odd in market.get("odds") or []:
+        if not isinstance(odd, dict):
+            continue
+        price = odd.get("price")
+        if not isinstance(price, (int, float)) or price <= 1.0:
+            continue
+        name = str((odd.get("metadata") or {}).get("name") or "").lower()
+        if name in {"sim", "yes"}:
+            prices["yes"] = float(price)
+        elif name in {"não", "nao", "no"}:
+            prices["no"] = float(price)
+    return prices
+
+
+def _team_side(label: str, home_team: str, away_team: str) -> str | None:
+    text = label.lower()
+    home = home_team.lower()
+    away = away_team.lower()
+    if home and home in text:
+        return "home"
+    if away and away in text:
+        return "away"
+    if text in {"1", "casa", "home"}:
+        return "home"
+    if text in {"2", "fora", "away", "visitante"}:
+        return "away"
+    if text in {"nenhum", "sem gol", "no goal", "none"}:
+        return "none"
+    return None
+
+
+def _extract_next_goal_odds(markets: list[dict], home_team: str, away_team: str) -> dict[str, float]:
+    for market_name in (
+        "Próximo Gol",
+        "2º Gol",
+        "3º Gol",
+        "4º Gol",
+        "5º Gol",
+        "Próximo gol",
+    ):
+        market = _find_market(markets, market_name)
+        if not market:
+            continue
+        out: dict[str, float] = {}
+        for odd in market.get("odds") or []:
+            if not isinstance(odd, dict):
+                continue
+            price = odd.get("price")
+            if not isinstance(price, (int, float)) or price <= 1.0:
+                continue
+            md = odd.get("metadata") or {}
+            label = str(md.get("name") or md.get("info") or "")
+            side = _team_side(label, home_team, away_team)
+            if side and side not in out:
+                out[side] = float(price)
+        if out:
+            return out
+    return {}
 
 
 def _extract_line_odds(market: dict) -> dict[str, dict[str, float]]:
@@ -325,8 +393,11 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
 
     combo_markets: dict[str, dict[str, float]] = {}
     combo_specs = {
+        "btts_and_over_2_5": "Ambas as Equipes Marcam & Mais de 2.5 Gols",
         "btts_and_over_3_5": "Ambas as Equipes Marcam & Mais de 3.5 Gols",
         "ft_and_btts": "Resultado Final & Ambas as Equipes Marcam",
+        "ft_and_total_1_5": "Resultado Final & Total de Gols (1.5)",
+        "ft_and_total_2_5": "Resultado Final & Total de Gols (2.5)",
         "ft_and_total_3_5": "Resultado Final & Total de Gols (3.5)",
     }
     for key, market_name in combo_specs.items():
@@ -345,6 +416,8 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
 
     totals_implied = {line: _implied_from_prices(prices) for line, prices in totals.items()}
     corners_implied = {line: _implied_from_prices(prices) for line, prices in corners.items()}
+    btts_odds = _extract_yes_no_odds(_find_market(markets, "Ambas as Equipes Marcam"))
+    next_goal_odds = _extract_next_goal_odds(markets, home_team, away_team)
 
     return SuperbetEventSnapshot(
         event_id=int(ev.get("event_id") or fixture.get("event_id") or 0),
@@ -362,6 +435,8 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         corners=corners,
         corners_implied=corners_implied,
         combo_markets=combo_markets,
+        btts_odds=btts_odds,
+        next_goal_odds=next_goal_odds,
         generosity_probs=generosity,
         raw_market_count=len(markets),
         captured_at=datetime.now(timezone.utc).isoformat(),

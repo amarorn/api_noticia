@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from ingest.superbet.benchmark import market_benchmark
+from ingest.superbet.benchmark import h2h_overround, market_benchmark
 from ingest.superbet.parser import parse_superbet_event
 from ingest.superbet.store import merge_snapshot_into_odds_file
 from pipelines.wc_market_features import load_match_odds_index, match_implied_probs
@@ -36,6 +36,12 @@ def test_merge_superbet_odds_updates_market_features(tmp_path, monkeypatch):
     load_match_odds_index.cache_clear()
     probs = match_implied_probs("Brasil", "Egito")
     assert probs["1"] > probs["2"]
+
+
+def test_h2h_overround():
+    margin = h2h_overround({"1": 1.85, "X": 3.4, "2": 4.2})
+    assert margin is not None
+    assert 0.02 < margin < 0.15
 
 
 def test_market_benchmark_edges():

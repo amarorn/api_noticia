@@ -19,6 +19,7 @@ import {
   mapWcGroupStandings,
   mapWcFriendlies,
   mapSuperbetLiveFeed,
+  mapSuperbetLiveAdvice,
   mapWcSimulation,
 } from "../mappers";
 
@@ -184,6 +185,30 @@ export class WcApiRepository implements IWcRepository {
       { timeoutMs: API_SYNC_TIMEOUT_MS },
     );
     return mapSuperbetLiveFeed(raw);
+  }
+
+  async getSuperbetLiveAdvice(dto: {
+    eventId: number;
+    phase?: string;
+    bankroll?: number;
+    market?: string;
+    outcome?: string;
+    stake?: number;
+    oddsPlaced?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (dto.phase) params.set("phase", dto.phase);
+    if (dto.bankroll != null) params.set("bankroll", String(dto.bankroll));
+    if (dto.market) params.set("market", dto.market);
+    if (dto.outcome) params.set("outcome", dto.outcome);
+    if (dto.stake != null) params.set("stake", String(dto.stake));
+    if (dto.oddsPlaced != null) params.set("odds_placed", String(dto.oddsPlaced));
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapSuperbetLiveAdvice>[0]>(
+      `/worldcup/superbet/live/${dto.eventId}/advice${qs}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapSuperbetLiveAdvice(raw);
   }
 
   async simulateMatch(dto: {

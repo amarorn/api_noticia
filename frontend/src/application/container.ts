@@ -23,6 +23,7 @@ import {
   GetWcTeamsUseCase,
   GetWcFriendliesUseCase,
   GetSuperbetLiveUseCase,
+  GetSuperbetLiveAdviceUseCase,
   PredictWcCornersUseCase,
   PredictWcInPlayUseCase,
   PredictWcMatchUseCase,
@@ -49,6 +50,7 @@ export const resolveSofascoreEventUseCase = new ResolveSofascoreEventUseCase(wcR
 export const getWcTeamsUseCase = new GetWcTeamsUseCase(wcRepository);
 export const getWcFriendliesUseCase = new GetWcFriendliesUseCase(wcRepository);
 export const getSuperbetLiveUseCase = new GetSuperbetLiveUseCase(wcRepository);
+export const getSuperbetLiveAdviceUseCase = new GetSuperbetLiveAdviceUseCase(wcRepository);
 export const simulateWcMatchUseCase = new SimulateWcMatchUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(

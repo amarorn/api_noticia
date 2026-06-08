@@ -397,6 +397,128 @@ export interface SuperbetLiveFeed {
   capturedAt: string;
 }
 
+export interface SuperbetLiveAdvice {
+  homeTeam: string;
+  awayTeam: string;
+  minute: number;
+  currentScore: string | null;
+  periodLabel: string | null;
+  status: string | null;
+  isFinished: boolean;
+  isLive: boolean;
+  superbetEventId: number;
+  betradarId: string | null;
+  capturedAt: string | null;
+  rawMarketCount: number;
+  h2hOdds: Record<string, number>;
+  h2hImplied: Record<string, number>;
+  h2hOverround: number | null;
+  generosityProbs: Record<string, number>;
+  marketBenchmark: {
+    h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
+    totals?: Record<string, { marketOver: number; modelOver: number; edgeOver: number }>;
+  } | null;
+  strategy: {
+    posture: string;
+    maxNewExposurePct: number;
+    maxNewExposureValue: number;
+    opportunityCount: number;
+    strongOpportunityCount: number;
+    minEdgeThreshold: number;
+    waitReason: string;
+    watchList: Array<{
+      market: string;
+      outcome: string;
+      label: string;
+      modelProb: number;
+      marketOdd: number;
+      expectedValue: number;
+      edgePp: number;
+      meetsThreshold: boolean;
+    }>;
+    marketScan: Array<{
+      market: string;
+      outcome: string;
+      label: string;
+      modelProb: number;
+      marketOdd: number;
+      impliedProb: number;
+      expectedValue: number;
+      edgePp: number;
+      suggestedStakePct: number;
+      suggestedStakeValue: number;
+      meetsThreshold: boolean;
+    }>;
+    opportunities: Array<{
+      rank: number;
+      market: string;
+      outcome: string;
+      label: string;
+      tier: string;
+      modelProb: number;
+      marketOdd: number;
+      expectedValue: number;
+      edgePp: number;
+      suggestedStakePct: number;
+      suggestedStakeValue: number;
+      action: string;
+    }>;
+    shields: Array<{
+      action: string;
+      priority: string;
+      title: string;
+      reason: string;
+      market?: string;
+      outcome?: string;
+      odd?: number;
+      expectedValue?: number;
+    }>;
+    rules: string[];
+    cashout: { action: string; confidence: number; reason: string } | null;
+  } | null;
+  cashout: {
+    action: string;
+    confidence: number;
+    reason: string;
+    currentModelProb: number;
+    placedImpliedProb?: number;
+    remainingEv: number;
+    estimatedFairCashout: number;
+    potentialReturn: number;
+  } | null;
+  aportes: Array<{
+    label: string;
+    market: string;
+    outcome: string;
+    modelProb: number;
+    marketOdd: number;
+    expectedValue: number;
+    edgePp: number;
+    suggestedStakePct: number;
+    suggestedStakeValue: number;
+    action: string;
+  }>;
+  bttsOdds: Record<string, number>;
+  nextGoalOdds: Record<string, number>;
+  analysisCoverage: {
+    h2h: boolean;
+    totals: boolean;
+    btts: boolean;
+    nextGoal: boolean;
+    combos: string[];
+  } | null;
+  inplaySummary: {
+    probFinalHome: number;
+    probFinalDraw: number;
+    probFinalAway: number;
+    over25?: number;
+    btts?: number;
+    probNextGoalHome?: number;
+    probNextGoalAway?: number;
+    probNoMoreGoals?: number;
+  };
+}
+
 export interface WcSquadPlayer {
   name: string;
   club: string | null;

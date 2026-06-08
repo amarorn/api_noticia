@@ -13,6 +13,7 @@ import { WcGroupsPage } from "@/presentation/pages/WcGroupsPage";
 import { SchedulePage } from "@/presentation/pages/SchedulePage";
 import { FriendliesPage } from "@/presentation/pages/FriendliesPage";
 import { LivePage } from "@/presentation/pages/LivePage";
+import { LiveInPlayPage } from "@/presentation/pages/LiveInPlayPage";
 import { AlbumPage } from "@/presentation/pages/AlbumPage";
 import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
 
@@ -42,6 +43,7 @@ export function App() {
               <Route path="jogos" element={<SchedulePage />} />
               <Route path="amistosos" element={<FriendliesPage />} />
               <Route path="ao-vivo" element={<LivePage />} />
+              <Route path="ao-vivo/:eventId" element={<LiveInPlayPage />} />
               <Route path="convocacoes" element={<SquadsPage />} />
               <Route path="grupos" element={<WcGroupsPage />} />
               <Route path="album/:teamSlug" element={<TeamAlbumPage />} />

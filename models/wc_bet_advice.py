@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from config import settings
-from models.economics import coase_effective_min_edge
+from models.economics import coase_effective_min_edge, live_effective_min_edge
 from models.ev_value import evaluate_outcome
 from ingest.superbet.parser import SuperbetEventSnapshot
 
@@ -72,6 +72,12 @@ def _prob_from_inplay(inplay: dict[str, Any], market: str, outcome: str) -> floa
     return None
 
 
+def _effective_min_edge(*, min_edge: float | None, live: bool) -> float:
+    if live:
+        return live_effective_min_edge(min_edge)
+    return coase_effective_min_edge(min_edge or settings.ev_min_edge)
+
+
 def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: str) -> float | None:
     if snapshot is None:
         return None
@@ -87,6 +93,11 @@ def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: st
                 return price
             if outcome in {"no", "não", "nao"} and "menos" in name.lower():
                 return price
+    if market == "btts":
+        key = "yes" if outcome.lower() in {"yes", "sim"} else "no"
+        return (snapshot.btts_odds or {}).get(key)
+    if market == "next_goal":
+        return (snapshot.next_goal_odds or {}).get(outcome.lower())
     return None
 
 
@@ -162,18 +173,21 @@ def advise_cashout(
 def _aporte_candidates(
     inplay: dict[str, Any],
     snapshot: SuperbetEventSnapshot | None,
+    *,
+    home_team: str = "Casa",
+    away_team: str = "Fora",
 ) -> list[tuple[str, str, str, float, float]]:
     """market, outcome, label, model_prob, market_odd"""
     candidates: list[tuple[str, str, str, float, float]] = []
     specs: list[tuple[str, str, str, Callable[[], float | None]]] = [
-        ("h2h", "1", "Casa vence", lambda: inplay.get("prob_final_home")),
+        ("h2h", "1", f"{home_team} vence", lambda: inplay.get("prob_final_home")),
         ("h2h", "X", "Empate", lambda: inplay.get("prob_final_draw")),
-        ("h2h", "2", "Fora vence", lambda: inplay.get("prob_final_away")),
+        ("h2h", "2", f"{away_team} vence", lambda: inplay.get("prob_final_away")),
         ("over_2_5", "yes", "Over 2.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_2_5")),
         ("over_3_5", "yes", "Over 3.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_3_5")),
         ("btts", "yes", "Ambos marcam", lambda: inplay.get("btts_final")),
-        ("next_goal", "home", "Próximo gol casa", lambda: inplay.get("prob_next_goal_home")),
-        ("next_goal", "away", "Próximo gol fora", lambda: inplay.get("prob_next_goal_away")),
+        ("next_goal", "home", f"Próximo gol {home_team}", lambda: inplay.get("prob_next_goal_home")),
+        ("next_goal", "away", f"Próximo gol {away_team}", lambda: inplay.get("prob_next_goal_away")),
     ]
     for market, outcome, label, prob_fn in specs:
         prob = prob_fn()
@@ -186,6 +200,46 @@ def _aporte_candidates(
     return candidates
 
 
+def scan_all_market_edges(
+    inplay: dict[str, Any],
+    snapshot: SuperbetEventSnapshot | None,
+    *,
+    bankroll: float | None = None,
+    min_edge: float | None = None,
+    live: bool = False,
+    home_team: str = "Casa",
+    away_team: str = "Fora",
+) -> tuple[list[dict[str, Any]], float]:
+    """Todos os mercados mapeados com EV, ordenados do maior para o menor."""
+    threshold = _effective_min_edge(min_edge=min_edge, live=live)
+    bankroll = bankroll or 1000.0
+    rows: list[dict[str, Any]] = []
+
+    for market, outcome, label, prob, odd in _aporte_candidates(
+        inplay, snapshot, home_team=home_team, away_team=away_team,
+    ):
+        ev = evaluate_outcome(outcome, prob, odd)
+        edge_pp = (prob - ev.implied_prob) * 100
+        kelly_q = ev.kelly_quarter
+        suggested_pct = round(min(5.0, kelly_q * 100), 2)
+        rows.append({
+            "market": market,
+            "outcome": outcome,
+            "label": label,
+            "model_prob": round(prob, 4),
+            "market_odd": round(odd, 3),
+            "implied_prob": round(ev.implied_prob, 4),
+            "expected_value": round(ev.expected_value, 4),
+            "edge_pp": round(edge_pp, 2),
+            "suggested_stake_pct": suggested_pct,
+            "suggested_stake_value": round(bankroll * suggested_pct / 100, 2),
+            "meets_threshold": ev.expected_value >= threshold,
+        })
+
+    rows.sort(key=lambda x: x["expected_value"], reverse=True)
+    return rows, threshold
+
+
 def advise_aportes(
     inplay: dict[str, Any],
     snapshot: SuperbetEventSnapshot | None,
@@ -193,12 +247,17 @@ def advise_aportes(
     bankroll: float | None = None,
     min_edge: float | None = None,
     max_recommendations: int = 5,
+    live: bool = False,
+    home_team: str = "Casa",
+    away_team: str = "Fora",
 ) -> list[AporteAdvice]:
-    threshold = coase_effective_min_edge(min_edge or settings.ev_min_edge)
+    threshold = _effective_min_edge(min_edge=min_edge, live=live)
     bankroll = bankroll or 1000.0
     out: list[AporteAdvice] = []
 
-    for market, outcome, label, prob, odd in _aporte_candidates(inplay, snapshot):
+    for market, outcome, label, prob, odd in _aporte_candidates(
+        inplay, snapshot, home_team=home_team, away_team=away_team,
+    ):
         ev = evaluate_outcome(outcome, prob, odd)
         edge_pp = (prob - ev.implied_prob) * 100
         if ev.expected_value < threshold:
@@ -239,7 +298,9 @@ def build_bet_advice_report(
     cashout = None
     if user_bet is not None:
         cashout = advise_cashout(user_bet, inplay, minute=minute)
-    aportes = advise_aportes(inplay, snapshot, bankroll=bankroll)
+    aportes = advise_aportes(
+        inplay, snapshot, bankroll=bankroll, live=True, home_team=home_team, away_team=away_team,
+    )
     return {
         "home_team": home_team,
         "away_team": away_team,

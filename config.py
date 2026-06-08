@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     lgn_min_samples: int = 30
     lgn_bootstrap_samples: int = 2000
     ev_min_edge: float = 0.03
+    live_ev_min_edge: float = 0.04
     coase_bookmaker_margin: float = 0.05
     coase_transaction_cost: float = 0.0
     dixit_sigma: float = 2.0
