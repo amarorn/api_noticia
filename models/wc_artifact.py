@@ -119,6 +119,7 @@ def save_artifact(predictor: WcPredictor) -> dict:
         "_metrics": predictor._metrics,
         "_dc_metrics": predictor._dc_metrics,
         "_draw_metrics": predictor._draw_metrics,
+        "calibrator": getattr(predictor, "calibrator", None),
     }
     _bundle_path().write_bytes(pickle.dumps(bundle, protocol=pickle.HIGHEST_PROTOCOL))
 
@@ -165,15 +166,12 @@ def load_artifact() -> WcPredictor | None:
             "wc_artifact_stale_hyperparams",
             hint="Execute train-wc --force para alinhar pesos ao hyperparams.json",
         )
-    from ingest.fixtures.world_cup import load_wc_fixtures
+    from ingest.fixtures.world_cup import load_wc_fixtures, normalize_fixtures_df
 
     bundle = pickle.loads(_bundle_path().read_bytes())
-    fixtures = load_wc_fixtures()
+    fixtures = normalize_fixtures_df(load_wc_fixtures())
     if fixtures.empty:
         return None
-    # Normalizar match_date para evitar TypeError com tipos mistos (str vs Timestamp)
-    if "match_date" in fixtures.columns:
-        fixtures["match_date"] = pd.to_datetime(fixtures["match_date"], errors="coerce")
 
     predictor = WcPredictor.__new__(WcPredictor)
     predictor.fixtures = fixtures
@@ -185,6 +183,7 @@ def load_artifact() -> WcPredictor | None:
     predictor.collab_metrics = predictor.collaborative.metrics
     predictor.draw_model = bundle["draw_model"]
     predictor._draw_metrics = bundle["_draw_metrics"]
+    predictor.calibrator = bundle.get("calibrator")
     return predictor
 
 

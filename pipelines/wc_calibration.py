@@ -1,4 +1,7 @@
-"""Estudo LGN: calibração + bootstrap na temporada de validação (Copa)."""
+"""Estudo LGN: calibração + bootstrap na temporada de validação (Copa).
+
+Inclui avaliação ECE pré/pós do calibrador Platt (Fase 0.1).
+"""
 
 from __future__ import annotations
 
@@ -17,6 +20,7 @@ from models.economics import (
     ces_blend_probabilities,
     lgn_min_sample_warning,
 )
+from models.wc_calibrator import WcCalibrator, compute_ece
 from models.wc_collaborative import CollaborativeWcModel
 from pipelines.wc_benchmark import LABELS, _build_eval_rows
 
@@ -55,6 +59,37 @@ def run_calibration_study(validation_season: int | None = None) -> dict:
 
     acc_ci_e = bootstrap_accuracy_ci(y_true, y_pred_e)
     cal_bins_e = calibration_by_predicted_class(y_true, y_pred_e, conf_e)
+
+    # --- Fase 0.1: ECE pré/pós com calibrador Platt ---
+    probs_ensemble_raw = np.array([
+        [
+            pw * r.probs_poisson[0] + lw * (r.probs_logistic[0] if r.probs_logistic else 0),
+            pw * r.probs_poisson[1] + lw * (r.probs_logistic[1] if r.probs_logistic else 0),
+            pw * r.probs_poisson[2] + lw * (r.probs_logistic[2] if r.probs_logistic else 0),
+        ]
+        for r in rows
+    ])
+    # Normalizar por linha
+    row_sums = probs_ensemble_raw.sum(axis=1, keepdims=True)
+    row_sums = np.maximum(row_sums, 1e-9)
+    probs_ensemble_raw = probs_ensemble_raw / row_sums
+    y_true_arr = np.array(y_true)
+
+    ece_before = compute_ece(probs_ensemble_raw, y_true_arr)
+    calibrator = WcCalibrator()
+    cal_metrics = calibrator.fit(probs_ensemble_raw, y_true_arr)
+    probs_calibrated = calibrator.calibrate(probs_ensemble_raw)
+    ece_after = compute_ece(probs_calibrated, y_true_arr)
+
+    platt_section = {
+        "method": cal_metrics.method,
+        "n_samples": cal_metrics.n_samples,
+        "ece_before": round(ece_before, 6),
+        "ece_after": round(ece_after, 6),
+        "ece_reduction_pct": round((1 - ece_after / max(ece_before, 1e-9)) * 100, 1),
+        "brier_before": cal_metrics.brier_before,
+        "brier_after": cal_metrics.brier_after,
+    }
 
     def _chart_points(bins: list[dict]) -> list[dict]:
         return [
@@ -95,6 +130,7 @@ def run_calibration_study(validation_season: int | None = None) -> dict:
             "logistic_weight": collab.logistic_weight,
             "dixit_sigma": settings.dixit_sigma,
         },
+        "platt_calibration": platt_section,
     }
 
 
@@ -125,6 +161,12 @@ def main() -> None:
     print(
         f"Ensemble (Dixit): acc={eh['accuracy']:.3f} brier={eh['brier']:.4f} "
         f"w_poisson={eh['poisson_weight']:.2f}"
+    )
+    pc = report["platt_calibration"]
+    print(
+        f"Platt calibração: ECE {pc['ece_before']:.4f} → {pc['ece_after']:.4f} "
+        f"({pc['ece_reduction_pct']:+.1f}%) | "
+        f"Brier {pc['brier_before']:.4f} → {pc['brier_after']:.4f}"
     )
 
 

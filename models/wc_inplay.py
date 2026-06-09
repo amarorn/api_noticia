@@ -8,6 +8,7 @@ import numpy as np
 
 from config import settings
 from models.wc_monte_carlo import _sample_poisson_bivariate
+from pipelines.wc_intensity_profile import compute_half_lambdas_nhpp
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +96,7 @@ class InPlayResult:
     combo_markets: dict[str, float]
     btts_final: float
     n_simulations: int
+    features: Any = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -257,8 +259,6 @@ def _combo_markets(
     sh_total = h_2h + a_2h
     match_total = final_h + final_a
     btts = (final_h > 0) & (final_a > 0)
-    ht_out = _outcome(ht_h, ht_a)
-    ft_out = _outcome(final_h, final_a)
     def rate(mask: np.ndarray) -> float:
         return float(np.sum(mask) / n)
 
@@ -314,6 +314,9 @@ def simulate_inplay(
     random_seed: int = 42,
     bayesian_update: bool = True,
     momentum_events: list[dict] | None = None,
+    home_corners: int = 0,
+    away_corners: int = 0,
+    market_probs: tuple[float, float, float] | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
@@ -339,11 +342,42 @@ def simulate_inplay(
             match_minutes=match_minutes,
         )
 
+    # --- P1c: Market shrinkage (mistura λ modelo com λ implícito do mercado) ---
+    if market_probs is not None:
+        from models.wc_market_shrinkage import shrink_lambda
+
+        mp_h, mp_d, mp_a = market_probs
+        if mp_h > 0 and mp_d > 0 and mp_a > 0:
+            shrink = shrink_lambda(
+                lambda_model_home=lambda_full_home,
+                lambda_model_away=lambda_full_away,
+                market_prob_home=mp_h,
+                market_prob_draw=mp_d,
+                market_prob_away=mp_a,
+                minute=minute,
+                match_minutes=match_minutes,
+            )
+            lambda_full_home = shrink.lambda_shrunk_home
+            lambda_full_away = shrink.lambda_shrunk_away
+
+    # Computar λ_remaining ANTES do momentum (Fase 1a: momentum só age em λ_remaining)
+    # Fase 1b: Usar perfil NHPP em vez de intensidade constante
+    lam_rem_1h_h, lam_2h_h = compute_half_lambdas_nhpp(
+        lambda_full_home, minute, match_minutes
+    )
+    lam_rem_1h_a, lam_2h_a = compute_half_lambdas_nhpp(
+        lambda_full_away, minute, match_minutes
+    )
+    lam_h = lam_rem_1h_h + lam_2h_h
+    lam_a = lam_rem_1h_a + lam_2h_a
+
     # --- P1: Momentum por placar + minuto + eventos ---
-    # Ajusta λ com base no contexto tático (quem lidera, fase do jogo, cartões, subs).
+    # Fase 1a: Momentum aplicado sobre λ_remaining (não λ_full).
+    # Isso evita que o momentum contamine a estimativa Bayesian do jogo inteiro;
+    # ele apenas modula a intensidade do que resta.
     momentum_result = None
     if minute > 0:
-        from models.wc_live_momentum import MomentumContext, GameEvent, adjust_lambdas
+        from models.wc_live_momentum import MomentumContext, GameEvent, compute_momentum
 
         events = []
         for ev in (momentum_events or []):
@@ -359,21 +393,22 @@ def simulate_inplay(
             minute=minute,
             match_minutes=match_minutes,
             events=events,
+            home_corners=home_corners,
+            away_corners=away_corners,
         )
-        lambda_full_home, lambda_full_away, momentum_result = adjust_lambdas(
-            lambda_full_home, lambda_full_away, ctx
-        )
-
-    lam_rem_1h_h, lam_rem_1h_a, lam_2h_h, lam_2h_a, ht_fixed_h, ht_fixed_a = _half_lambdas(
-        minute=minute,
-        match_minutes=match_minutes,
-        lambda_full_home=lambda_full_home,
-        lambda_full_away=lambda_full_away,
-        ht_home_score=ht_home_score,
-        ht_away_score=ht_away_score,
-    )
-    lam_h = lam_rem_1h_h + lam_2h_h
-    lam_a = lam_rem_1h_a + lam_2h_a
+        momentum_result = compute_momentum(ctx)
+        # Aplicar fatores do momentum apenas sobre λ_remaining
+        lam_h *= momentum_result.home_factor
+        lam_a *= momentum_result.away_factor
+        # Redistribuir proporcionalmente entre 1H restante e 2H
+        if lam_rem_1h_h + lam_2h_h > 0:
+            ratio_1h_h = lam_rem_1h_h / (lam_rem_1h_h + lam_2h_h)
+            lam_rem_1h_h = lam_h * ratio_1h_h
+            lam_2h_h = lam_h * (1 - ratio_1h_h)
+        if lam_rem_1h_a + lam_2h_a > 0:
+            ratio_1h_a = lam_rem_1h_a / (lam_rem_1h_a + lam_2h_a)
+            lam_rem_1h_a = lam_a * ratio_1h_a
+            lam_2h_a = lam_a * (1 - ratio_1h_a)
 
     h_1h_add, a_1h_add = _sample_poisson_bivariate(lam_rem_1h_h, lam_rem_1h_a, rho, n, rng)
     h_2h_add, a_2h_add = _sample_poisson_bivariate(lam_2h_h, lam_2h_a, rho, n, rng)
@@ -501,6 +536,9 @@ def inplay_from_predictor(
     ht_home_score: int | None = None,
     ht_away_score: int | None = None,
     n_simulations: int | None = None,
+    momentum_events: list[dict] | None = None,
+    home_corners: int = 0,
+    away_corners: int = 0,
 ) -> InPlayResult:
     from datetime import datetime, timezone
 
@@ -528,7 +566,7 @@ def inplay_from_predictor(
         rho=rho,
     )
     seed = hash((home_team, away_team, home_score, away_score, minute)) % (2**32)
-    return simulate_inplay(
+    result = simulate_inplay(
         home_team=home_team,
         away_team=away_team,
         home_score=home_score,
@@ -542,4 +580,9 @@ def inplay_from_predictor(
         rho=float(rho or 0.0),
         n_simulations=n_simulations,
         random_seed=seed,
+        momentum_events=momentum_events,
+        home_corners=home_corners,
+        away_corners=away_corners,
     )
+    result.features = features
+    return result
