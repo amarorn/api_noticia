@@ -590,3 +590,193 @@ def inplay_from_predictor(
     )
     result.features = features
     return result
+
+
+# ---------------------------------------------------------------------------
+# Fase 3.6: Ensemble integrando Poisson + Hawkes + GBM + Market
+# ---------------------------------------------------------------------------
+
+
+def simulate_inplay_ensemble(
+    *,
+    home_team: str,
+    away_team: str,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    lambda_full_home: float,
+    lambda_full_away: float,
+    match_minutes: int = 90,
+    ht_home_score: int | None = None,
+    ht_away_score: int | None = None,
+    rho: float = 0.0,
+    n_simulations: int | None = None,
+    random_seed: int = 42,
+    bayesian_update: bool = True,
+    momentum_events: list[dict] | None = None,
+    home_corners: int = 0,
+    away_corners: int = 0,
+    market_probs: tuple[float, float, float] | None = None,
+) -> InPlayResult:
+    """simulate_inplay com blend do ensemble (Hawkes + GBM + Market).
+
+    Chama simulate_inplay padrão (Poisson MC) e opcionalmente enriquece as
+    probabilidades 1X2 com o ensemble dinâmico da Fase 3.
+
+    Feature flags (config.py):
+    - inplay_use_ensemble: habilita/desabilita o ensemble
+    - inplay_ensemble_hawkes: inclui componente Hawkes
+    - inplay_ensemble_gbm: inclui componente GBM
+    """
+    # Resultado base (Poisson Monte Carlo)
+    result = simulate_inplay(
+        home_team=home_team,
+        away_team=away_team,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        lambda_full_home=lambda_full_home,
+        lambda_full_away=lambda_full_away,
+        match_minutes=match_minutes,
+        ht_home_score=ht_home_score,
+        ht_away_score=ht_away_score,
+        rho=rho,
+        n_simulations=n_simulations,
+        random_seed=random_seed,
+        bayesian_update=bayesian_update,
+        momentum_events=momentum_events,
+        home_corners=home_corners,
+        away_corners=away_corners,
+        market_probs=market_probs,
+    )
+
+    if not settings.inplay_use_ensemble or minute <= 0:
+        return result
+
+    # Ensemble blend
+    from models.wc_inplay_ensemble import EnsembleInput, blend_ensemble
+
+    poisson_probs = {
+        "1": result.prob_final_home,
+        "X": result.prob_final_draw,
+        "2": result.prob_final_away,
+    }
+
+    # Hawkes (se habilitado e dados disponíveis)
+    hawkes_probs = None
+    hawkes_available = settings.inplay_ensemble_hawkes
+    if hawkes_available:
+        try:
+            from models.wc_hawkes import (
+                HawkesGoalEvent,
+                hawkes_probs_from_simulation,
+                simulate_hawkes_batch,
+            )
+            from pipelines.wc_inplay_hawkes_fit import load_hawkes_params
+
+            hawkes_params = load_hawkes_params()
+            # Reconstruir gols passados
+            past_goals = []
+            for ev in (momentum_events or []):
+                if ev.get("event_type") == "goal":
+                    past_goals.append(HawkesGoalEvent(
+                        minute=float(ev.get("minute", 0)),
+                        team=ev.get("team", "home"),
+                    ))
+            # Se não temos eventos detalhados, reconstruir de forma simples
+            if not past_goals:
+                step = max(minute / (home_score + away_score + 1), 1.0)
+                for i in range(home_score):
+                    past_goals.append(HawkesGoalEvent(minute=step * (i + 1), team="home"))
+                for i in range(away_score):
+                    past_goals.append(HawkesGoalEvent(
+                        minute=step * (home_score + i + 1), team="away"
+                    ))
+
+            mu_h = result.lambda_remaining_home / max(match_minutes - minute, 1)
+            mu_a = result.lambda_remaining_away / max(match_minutes - minute, 1)
+            sim = simulate_hawkes_batch(
+                t_now=float(minute),
+                t_end=float(match_minutes),
+                mu_home=mu_h,
+                mu_away=mu_a,
+                params=hawkes_params,
+                past_goals=past_goals,
+                n_simulations=min(n_simulations or 2000, 2000),
+                seed=random_seed + 1,
+            )
+            hawkes_probs = hawkes_probs_from_simulation(sim, home_score, away_score)
+        except Exception:
+            hawkes_available = False
+
+    # GBM (se habilitado e modelo treinado)
+    gbm_probs = None
+    gbm_available = settings.inplay_ensemble_gbm
+    if gbm_available:
+        try:
+            from models.wc_inplay_ensemble import gbm_probs_to_1x2
+            from models.wc_inplay_gbm import InPlayGBMModel
+
+            gbm_model = InPlayGBMModel.load()
+            if gbm_model.is_fitted:
+                features_dict = {
+                    "minute_norm": minute / match_minutes,
+                    "home_score_partial": float(home_score),
+                    "away_score_partial": float(away_score),
+                    "goal_diff": float(home_score - away_score),
+                    "remaining_fraction": result.remaining_fraction,
+                    "home_lambda_remaining": result.lambda_remaining_home,
+                    "away_lambda_remaining": result.lambda_remaining_away,
+                    "home_red_cards": 0.0,
+                    "away_red_cards": 0.0,
+                    "home_corners": float(home_corners),
+                    "away_corners": float(away_corners),
+                    "hawkes_intensity_home": 0.0,
+                    "hawkes_intensity_away": 0.0,
+                    "momentum_home_factor": 1.0,
+                    "momentum_away_factor": 1.0,
+                }
+                gbm_pred = gbm_model.predict_single(features_dict)
+                gbm_probs = gbm_probs_to_1x2(
+                    gbm_pred.prob_no_goal,
+                    gbm_pred.prob_goal_home,
+                    gbm_pred.prob_goal_away,
+                    home_score,
+                    away_score,
+                )
+            else:
+                gbm_available = False
+        except Exception:
+            gbm_available = False
+
+    # Market probs (se disponível)
+    market_dict = None
+    market_available = market_probs is not None
+    if market_available and market_probs is not None:
+        mp_h, mp_d, mp_a = market_probs
+        total_mp = mp_h + mp_d + mp_a
+        if total_mp > 0:
+            market_dict = {"1": mp_h / total_mp, "X": mp_d / total_mp, "2": mp_a / total_mp}
+        else:
+            market_available = False
+
+    # Blend
+    ensemble_input = EnsembleInput(
+        minute=float(minute),
+        poisson_probs=poisson_probs,
+        hawkes_probs=hawkes_probs,
+        gbm_probs=gbm_probs,
+        market_probs=market_dict,
+        poisson_available=True,
+        hawkes_available=hawkes_available and hawkes_probs is not None,
+        gbm_available=gbm_available and gbm_probs is not None,
+        market_available=market_available and market_dict is not None,
+    )
+    ensemble_result = blend_ensemble(ensemble_input)
+
+    # Atualizar probabilidades no resultado
+    result.prob_final_home = ensemble_result.probs["1"]
+    result.prob_final_draw = ensemble_result.probs["X"]
+    result.prob_final_away = ensemble_result.probs["2"]
+
+    return result

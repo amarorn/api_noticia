@@ -73,6 +73,9 @@ class Settings(BaseSettings):
     wc_draw_prob_floor: float = 0.18
     wc_mc_simulations: int = 5000
     inplay_use_calibrated_coefficients: bool = True
+    inplay_use_ensemble: bool = True
+    inplay_ensemble_hawkes: bool = True
+    inplay_ensemble_gbm: bool = True
     lgn_min_samples: int = 30
     lgn_bootstrap_samples: int = 2000
     ev_min_edge: float = 0.03
