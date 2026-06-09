@@ -3,13 +3,14 @@ import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { formatPercent } from "@/presentation/theme";
 
 // ── Gauge semicircular de EV ──────────────────────────────────────────────
+// Geometria: semicírculo de (4,16) até (32,16), raio=14, centro=(18,16), topo=(18,2)
 function EvGauge({ ev }: { ev: number }) {
   const MAX_EV = 0.20;
   const clamped = Math.max(-MAX_EV, Math.min(MAX_EV, ev));
   const ratio = (clamped + MAX_EV) / (2 * MAX_EV); // 0..1
 
-  // Semicírculo: ângulo vai de π (esquerda) até 0 (direita), passando pelo topo
-  const cx = 22, cy = 22, r = 15;
+  // ângulo: π (esquerda/negativo) → 0 (direita/positivo)
+  const cx = 18, cy = 16, r = 14;
   const angleRad = Math.PI - ratio * Math.PI;
   const nx = cx + r * Math.cos(angleRad);
   const ny = cy - r * Math.sin(angleRad);
@@ -17,56 +18,52 @@ function EvGauge({ ev }: { ev: number }) {
   const isPositive = ev > 0.01;
   const isNegative = ev < -0.01;
   const strokeColor = isPositive ? "#00ff88" : isNegative ? "#f87171" : "#94a3b8";
-  const textClass = isPositive
-    ? "text-neon-green"
-    : isNegative
-      ? "text-red-400"
-      : "text-slate-400";
-  const evText = `${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(0)}%`;
 
   return (
-    <div className="flex shrink-0 flex-col items-center">
-      <svg width="44" height="24" viewBox="0 0 44 24" aria-hidden="true">
-        {/* Arco de fundo */}
-        <path
-          d="M 7 22 A 15 15 0 0 0 37 22"
-          fill="none"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        {/* Zonas de cor suave */}
-        <path
-          d="M 7 22 A 15 15 0 0 0 22 7"
-          fill="none"
-          stroke="rgba(248,113,113,0.18)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 22 7 A 15 15 0 0 0 37 22"
-          fill="none"
-          stroke="rgba(0,255,136,0.18)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        {/* Ponteiro */}
-        <line
-          x1={cx}
-          y1={cy}
-          x2={nx}
-          y2={ny}
-          stroke={strokeColor}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        {/* Ponto central */}
-        <circle cx={cx} cy={cy} r="1.5" fill={strokeColor} />
-      </svg>
-      <span className={`-mt-0.5 font-mono text-[10px] font-bold leading-tight ${textClass}`}>
-        EV {evText}
-      </span>
-    </div>
+    <svg
+      width="36"
+      height="18"
+      viewBox="0 0 36 18"
+      aria-label={`EV ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(0)}%`}
+      className="shrink-0"
+    >
+      {/* Arco de fundo: de (4,16) até (32,16) passando pelo topo (18,2), CCW */}
+      <path
+        d="M 4 16 A 14 14 0 0 0 32 16"
+        fill="none"
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      {/* Zona vermelha: metade esquerda (4,16)→(18,2) */}
+      <path
+        d="M 4 16 A 14 14 0 0 0 18 2"
+        fill="none"
+        stroke="rgba(248,113,113,0.22)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      {/* Zona verde: metade direita (18,2)→(32,16) */}
+      <path
+        d="M 18 2 A 14 14 0 0 0 32 16"
+        fill="none"
+        stroke="rgba(0,255,136,0.22)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      {/* Ponteiro */}
+      <line
+        x1={cx}
+        y1={cy}
+        x2={nx}
+        y2={ny}
+        stroke={strokeColor}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Ponto central */}
+      <circle cx={cx} cy={cy} r="1.5" fill={strokeColor} />
+    </svg>
   );
 }
 
@@ -342,36 +339,33 @@ function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: M
           <p className="truncate text-sm font-medium text-slate-200" title={best.label}>
             {best.label}
           </p>
-          <div className="mt-1.5 flex items-baseline gap-3">
+          {/* Linha: odd · gauge (indicador visual) · modelo % */}
+          <div className="mt-1.5 flex items-center gap-2">
             <span className="font-mono text-lg font-bold text-white">
               {best.marketOdd.toFixed(2)}
             </span>
+            <EvGauge ev={best.expectedValue} />
             <span className="text-xs text-slate-400">
               Modelo {formatPercent(best.modelProb)}
             </span>
           </div>
-          {/* Gauge de EV + detalhe */}
-          <div className="mt-2 flex items-start gap-3">
-            <EvGauge ev={best.expectedValue} />
-            <div className="min-w-0">
-              <p
-                className={`text-xs ${
-                  verdict === "apostar"
-                    ? "text-neon-green"
-                    : verdict === "quase"
-                      ? "text-amber-300"
-                      : "text-slate-500"
-                }`}
-              >
-                {detail}
-              </p>
-              {stakeHint && (
-                <p className="mt-1.5 rounded-lg bg-neon-green/10 px-2.5 py-1.5 text-xs font-semibold text-neon-green">
-                  Stake sugerido: {stakeHint}
-                </p>
-              )}
-            </div>
-          </div>
+          {/* Detalhe EV e stake em largura total */}
+          <p
+            className={`mt-1.5 text-xs ${
+              verdict === "apostar"
+                ? "text-neon-green"
+                : verdict === "quase"
+                  ? "text-amber-300"
+                  : "text-slate-500"
+            }`}
+          >
+            {detail}
+          </p>
+          {stakeHint && (
+            <p className="mt-1.5 rounded-lg bg-neon-green/10 px-2.5 py-1.5 text-xs font-semibold text-neon-green">
+              Stake sugerido: {stakeHint}
+            </p>
+          )}
           {alternatives.length > 0 && (
             <p className="mt-2 text-[10px] text-slate-600">
               Alternativas:{" "}
