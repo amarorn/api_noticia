@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     wc_rho_step: float = 0.005
     wc_draw_prob_floor: float = 0.18
     wc_mc_simulations: int = 5000
+    inplay_use_calibrated_coefficients: bool = True
     lgn_min_samples: int = 30
     lgn_bootstrap_samples: int = 2000
     ev_min_edge: float = 0.03

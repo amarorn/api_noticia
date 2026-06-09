@@ -377,7 +377,11 @@ def simulate_inplay(
     # ele apenas modula a intensidade do que resta.
     momentum_result = None
     if minute > 0:
-        from models.wc_live_momentum import MomentumContext, GameEvent, compute_momentum
+        from models.wc_live_momentum import (
+            MomentumContext,
+            GameEvent,
+            compute_momentum_calibrated,
+        )
 
         events = []
         for ev in (momentum_events or []):
@@ -396,7 +400,7 @@ def simulate_inplay(
             home_corners=home_corners,
             away_corners=away_corners,
         )
-        momentum_result = compute_momentum(ctx)
+        momentum_result = compute_momentum_calibrated(ctx)
         # Aplicar fatores do momentum apenas sobre λ_remaining
         lam_h *= momentum_result.home_factor
         lam_a *= momentum_result.away_factor

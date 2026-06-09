@@ -6,12 +6,19 @@ O momentum captura efeitos que o λ pré-jogo (ou Bayesian) não enxerga:
 - Cartão vermelho → time afetado perde capacidade ofensiva/defensiva
 - Substituição ofensiva → time busca gol → λ sobe
 
+Fase 2: suporta coeficientes calibrados via MLE (InPlayCoefficients).
+Se disponíveis, substitui as constantes manuais por β's estimados.
+
 Referência: docs/analise-inplay-backend.md § 4.1
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
+
+import numpy as np
+
+from models.wc_inplay_coefficients import InPlayCoefficients, load_inplay_coefficients
 
 
 # --- Constantes de ajuste (tunable via config futuro) ---
@@ -51,6 +58,8 @@ class MomentumContext:
     minute: int
     match_minutes: int = 90
     events: list[GameEvent] = field(default_factory=list)
+    home_corners: int = 0
+    away_corners: int = 0
 
 
 @dataclass
@@ -169,7 +178,26 @@ def compute_momentum(ctx: MomentumContext) -> MomentumResult:
         away_factor += boost
         reasons.append(f"Fora fez {away_off_subs} sub(s) ofensiva(s): +{boost*100:.0f}%")
 
-    # --- Clamp: limitar fatores em faixa segura ---
+    # --- 5. Pressão via escanteios (proxy de ataque real ao vivo) ---
+    total_corners = ctx.home_corners + ctx.away_corners
+    if total_corners >= 2:
+        # Proporção de escanteios como medida de pressão ofensiva
+        # Dominância de 75% nos escanteios = +3% no λ
+        home_share = ctx.home_corners / total_corners
+        away_share = ctx.away_corners / total_corners
+        # Converte share em ajuste: 0.5 = 0%, 0.75 = +3%, 1.0 = +6%
+        corner_boost_home = (home_share - 0.5) * 0.12
+        corner_boost_away = (away_share - 0.5) * 0.12
+        # Limitar impacto
+        corner_boost_home = max(-0.06, min(corner_boost_home, 0.06))
+        corner_boost_away = max(-0.06, min(corner_boost_away, 0.06))
+        home_factor += corner_boost_home
+        away_factor += corner_boost_away
+        if abs(corner_boost_home) >= 0.01:
+            reasons.append(
+                f"Escanteios: casa {ctx.home_corners}×{ctx.away_corners} fora → "
+                f"ataque casa {corner_boost_home:+.0%}, ataque fora {corner_boost_away:+.0%}"
+            )
     home_factor = max(0.50, min(home_factor, 1.80))
     away_factor = max(0.50, min(away_factor, 1.80))
 
@@ -195,6 +223,95 @@ def adjust_lambdas(
         lambda_home * result.home_factor,
         lambda_away * result.away_factor,
         result,
+    )
+
+
+# --- Cache global de coeficientes calibrados ---
+_cached_coefficients: InPlayCoefficients | None = None
+_coefficients_loaded: bool = False
+
+
+def _get_calibrated_coefficients() -> InPlayCoefficients | None:
+    """Carrega coeficientes calibrados (com cache em memória)."""
+    global _cached_coefficients, _coefficients_loaded
+    if not _coefficients_loaded:
+        _cached_coefficients = load_inplay_coefficients()
+        _coefficients_loaded = True
+    return _cached_coefficients
+
+
+def compute_momentum_calibrated(ctx: MomentumContext) -> MomentumResult:
+    """Versão calibrada do momentum usando β's do MLE (Fase 2).
+
+    Se coeficientes calibrados estiverem disponíveis E a feature flag
+    `inplay_use_calibrated_coefficients` estiver ativa, usa o modelo log-linear:
+        factor = exp(X @ β)
+
+    Se não disponíveis ou flag desligada, cai no compute_momentum() default.
+    """
+    from config import settings
+
+    if not settings.inplay_use_calibrated_coefficients:
+        return compute_momentum(ctx)
+
+    coefs = _get_calibrated_coefficients()
+    if coefs is None or not coefs.momentum_betas:
+        return compute_momentum(ctx)
+
+    # Construir vetor de features (mesma ordem de MOMENTUM_FEATURES no tune)
+    goal_diff = ctx.home_score - ctx.away_score
+    late_game_val = max(0, ctx.minute - 75) / 15.0
+    total_corners = ctx.home_corners + ctx.away_corners
+    corner_share = (ctx.home_corners / total_corners - 0.5) if total_corners > 0 else 0.0
+
+    home_reds = sum(1 for e in ctx.events if e.event_type == "red_card" and e.team == "home")
+    away_reds = sum(1 for e in ctx.events if e.event_type == "red_card" and e.team == "away")
+
+    features = {
+        "intercept": 1.0,
+        "goal_diff": float(goal_diff),
+        "goal_diff_squared": float(goal_diff ** 2),
+        "late_game": late_game_val,
+        "home_red_cards": float(home_reds),
+        "away_red_cards": float(away_reds),
+        "corner_share": corner_share,
+        "goal_diff_x_late": float(goal_diff) * late_game_val,
+    }
+
+    # Calcular log(factor) = Σ β_i × x_i
+    log_factor = 0.0
+    for beta in coefs.momentum_betas:
+        x_val = features.get(beta.name, 0.0)
+        log_factor += beta.value * x_val
+
+    # factor = exp(log_factor), com clamp para segurança
+    factor = float(np.clip(np.exp(log_factor), 0.50, 1.80))
+
+    # Para home vs away: invertemos o sinal do goal_diff para o away
+    features_away = features.copy()
+    features_away["goal_diff"] = -float(goal_diff)
+    features_away["goal_diff_squared"] = float(goal_diff ** 2)
+    features_away["goal_diff_x_late"] = -float(goal_diff) * late_game_val
+    features_away["home_red_cards"] = float(away_reds)
+    features_away["away_red_cards"] = float(home_reds)
+    features_away["corner_share"] = -corner_share
+
+    log_factor_away = 0.0
+    for beta in coefs.momentum_betas:
+        x_val = features_away.get(beta.name, 0.0)
+        log_factor_away += beta.value * x_val
+
+    factor_away = float(np.clip(np.exp(log_factor_away), 0.50, 1.80))
+
+    reasons = [
+        f"Momentum calibrado (MLE): home_factor={factor:.3f}, away_factor={factor_away:.3f}",
+        f"  goal_diff={goal_diff}, late_game={late_game_val:.2f}, reds=({home_reds}/{away_reds})",
+    ]
+
+    return MomentumResult(
+        home_factor=round(factor, 4),
+        away_factor=round(factor_away, 4),
+        reasons=reasons,
     )
 
 
