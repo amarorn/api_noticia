@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { getSuperbetLiveAdviceUseCase } from "@/application/container";
+import { getSuperbetLiveAdviceUseCase, getUserOpenBetsUseCase } from "@/application/container";
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
@@ -19,6 +19,7 @@ import {
   type RegisteredBetEntry,
 } from "@/presentation/components/predictions/LiveOpenBetMonitor";
 import { LivePlainGuide } from "@/presentation/components/predictions/LivePlainGuide";
+import { LiveScoreHeatmap } from "@/presentation/components/predictions/LiveScoreHeatmap";
 
 const POLL_MS = 25_000;
 const MAX_OPEN_BETS = 2;
@@ -84,10 +85,10 @@ export function LiveInPlayPage() {
   const [formMode, setFormMode] = useState<"add" | string | null>(null);
   const [betSectionOpen, setBetSectionOpen] = useState(false);
 
-  const showBetForm = trackBet && formMode != null;
-  const canAddBet = trackBet && registeredBets.length < MAX_OPEN_BETS && formMode === null;
-  const betAnalysisActive =
-    trackBet && registeredBets.some((b) => b.autoMonitor && formMode !== b.id);
+  const openBetsQuery = useQuery({
+    queryKey: ["user-open-bets"],
+    queryFn: () => getUserOpenBetsUseCase.execute(),
+  });
 
   const adviceQuery = useQuery({
     queryKey: ["superbet-live-advice", eventId, appliedBankroll],
@@ -103,8 +104,40 @@ export function LiveInPlayPage() {
       query.state.data?.isFinished ? false : POLL_MS,
   });
 
+  const data = adviceQuery.data;
+  const isLoading = adviceQuery.isLoading && !data;
+
+  const apiBets: RegisteredBetEntry[] = useMemo(() => {
+    if (!openBetsQuery.data?.bets) return [];
+    return openBetsQuery.data.bets
+      .filter(
+        (b) =>
+          b.superbetEventId === eventId ||
+          (b.homeTeam === data?.homeTeam && b.awayTeam === data?.awayTeam),
+      )
+      .map((b) => ({
+        id: b.id,
+        market: b.picks[0]?.market ?? "h2h",
+        outcome: b.picks[0]?.outcome ?? "X",
+        stake: b.stake,
+        oddsPlaced: b.oddsPlaced,
+        potentialReturn: b.potentialReturn,
+        ticketCode: b.ticketCode,
+        cashoutValue: b.cashoutValue,
+        autoMonitor: true,
+        offeredCashout: b.cashoutValue,
+      }));
+  }, [openBetsQuery.data, eventId, data?.homeTeam, data?.awayTeam]);
+
+  const displayBets = apiBets.length > 0 ? apiBets : registeredBets;
+
+  const showBetForm = trackBet && formMode != null;
+  const canAddBet = trackBet && displayBets.length < MAX_OPEN_BETS && formMode === null;
+  const betAnalysisActive =
+    trackBet && displayBets.some((b) => b.autoMonitor && formMode !== b.id);
+
   const betAdviceQueries = useQueries({
-    queries: registeredBets.map((bet) => ({
+    queries: displayBets.map((bet) => ({
       queryKey: [
         "superbet-live-bet",
         eventId,
@@ -136,9 +169,6 @@ export function LiveInPlayPage() {
         query.state.data?.isFinished ? false : POLL_MS,
     })),
   });
-
-  const data = adviceQuery.data;
-  const isLoading = adviceQuery.isLoading && !data;
 
   const matchLink = useMemo(() => {
     if (!data) return null;
@@ -264,6 +294,60 @@ export function LiveInPlayPage() {
             {data.isFinished && (
               <p className="mt-3 text-sm text-slate-400">Jogo encerrado — polling pausado.</p>
             )}
+
+            {/* ── Barras de probabilidade 1X2 ── */}
+            {(data.inplaySummary.probFinalHome > 0 || data.inplaySummary.probFinalAway > 0) && (
+              <div className="mt-3">
+                <div className="flex overflow-hidden rounded-xl" style={{ height: "28px" }}>
+                  {[
+                    {
+                      key: "1",
+                      label: data.homeTeam,
+                      prob: data.inplaySummary.probFinalHome,
+                      bg: "rgba(0,255,136,0.18)",
+                      text: "#00ff88",
+                    },
+                    {
+                      key: "X",
+                      label: "Empate",
+                      prob: data.inplaySummary.probFinalDraw,
+                      bg: "rgba(251,191,36,0.18)",
+                      text: "#fbbf24",
+                    },
+                    {
+                      key: "2",
+                      label: data.awayTeam,
+                      prob: data.inplaySummary.probFinalAway,
+                      bg: "rgba(56,189,248,0.18)",
+                      text: "#38bdf8",
+                    },
+                  ].map(({ key, label, prob, bg, text }) => {
+                    const pct = prob * 100;
+                    if (pct < 1) return null;
+                    return (
+                      <div
+                        key={key}
+                        style={{ width: `${pct.toFixed(1)}%`, backgroundColor: bg, minWidth: "36px" }}
+                        className="relative flex items-center justify-center transition-all duration-500"
+                        title={`${label}: ${pct.toFixed(0)}%`}
+                      >
+                        <span
+                          className="font-mono text-[10px] font-bold"
+                          style={{ color: text }}
+                        >
+                          {pct.toFixed(0)}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-1 flex justify-between px-0.5 text-[9px] text-slate-600">
+                  <span className="max-w-[35%] truncate text-left">{data.homeTeam}</span>
+                  <span>Empate</span>
+                  <span className="max-w-[35%] truncate text-right">{data.awayTeam}</span>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* ── 2. HERO CTA ── */}
@@ -276,6 +360,9 @@ export function LiveInPlayPage() {
             </section>
             <LiveModelPanel data={data} />
           </div>
+
+          {/* ── 3b. HEATMAP DE PLACARES ── */}
+          <LiveScoreHeatmap data={data} />
 
           {/* ── 4. GUIA RÁPIDO (colapsável) ── */}
           <LivePlainGuide data={data} trackBet={betAnalysisActive} />
@@ -296,15 +383,15 @@ export function LiveInPlayPage() {
                   Minha aposta — monitorar cash-out
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {registeredBets.length > 0
-                    ? `${registeredBets.length} bilhete${registeredBets.length > 1 ? "s" : ""} cadastrado${registeredBets.length > 1 ? "s" : ""} · atualiza a cada ${POLL_MS / 1000}s`
+                  {displayBets.length > 0
+                    ? `${displayBets.length} bilhete${displayBets.length > 1 ? "s" : ""} cadastrado${displayBets.length > 1 ? "s" : ""} · atualiza a cada ${POLL_MS / 1000}s`
                     : `Cadastre até ${MAX_OPEN_BETS} bilhetes e monitore o ponto ideal de cash-out`}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {registeredBets.length > 0 && (
+                {displayBets.length > 0 && (
                   <span className="rounded-full bg-neon-green/15 px-2 py-0.5 text-[11px] font-semibold text-neon-green">
-                    {registeredBets.length} ativo{registeredBets.length > 1 ? "s" : ""}
+                    {displayBets.length} ativo{displayBets.length > 1 ? "s" : ""}
                   </span>
                 )}
                 <span
@@ -352,7 +439,7 @@ export function LiveInPlayPage() {
                         if (!on) {
                           setRegisteredBets([]);
                           setFormMode(null);
-                        } else if (registeredBets.length === 0) {
+                        } else if (displayBets.length === 0) {
                           setBetDraft(DEFAULT_BET_DRAFT);
                           setFormMode("add");
                         }
@@ -363,9 +450,9 @@ export function LiveInPlayPage() {
                   </label>
                 </div>
 
-                {trackBet && registeredBets.length > 0 && (
+                {trackBet && displayBets.length > 0 && (
                   <div className="mb-4 space-y-6">
-                    {registeredBets.map((bet, index) =>
+                    {displayBets.map((bet, index) =>
                       formMode === bet.id ? null : (
                         <LiveOpenBetMonitor
                           key={bet.id}
@@ -376,7 +463,7 @@ export function LiveInPlayPage() {
                               ?.cashout ?? null
                           }
                           betIndex={index + 1}
-                          totalBets={registeredBets.length}
+                          totalBets={displayBets.length}
                           isFetching={betAdviceQueries[index]?.isFetching ?? false}
                           pollSeconds={POLL_MS / 1000}
                           onEdit={() => {
@@ -385,6 +472,7 @@ export function LiveInPlayPage() {
                           }}
                           onRemove={() => {
                             setRegisteredBets((prev) => {
+                              if (apiBets.some((b) => b.id === bet.id)) return prev; // read-only API bets
                               const next = prev.filter((b) => b.id !== bet.id);
                               if (next.length === 0) {
                                 setTrackBet(false);
@@ -417,7 +505,7 @@ export function LiveInPlayPage() {
                     }}
                     className="mb-4 rounded-lg border border-white/15 px-4 py-2 text-sm text-slate-300 transition-colors hover:border-neon-green/30 hover:text-white"
                   >
-                    + Adicionar outra aposta ({registeredBets.length}/{MAX_OPEN_BETS})
+                    + Adicionar outra aposta ({displayBets.length}/{MAX_OPEN_BETS})
                   </button>
                 )}
 
@@ -425,7 +513,7 @@ export function LiveInPlayPage() {
                   <>
                     <p className="mb-3 text-xs text-slate-500">
                       {formMode === "add"
-                        ? `Nova aposta (${registeredBets.length + 1} de ${MAX_OPEN_BETS})`
+                        ? `Nova aposta (${displayBets.length + 1} de ${MAX_OPEN_BETS})`
                         : "Editar aposta"}
                     </p>
                     <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -542,7 +630,7 @@ export function LiveInPlayPage() {
                       >
                         {formMode === "add" ? "Cadastrar e monitorar" : "Salvar alterações"}
                       </button>
-                      {registeredBets.length > 0 && (
+                      {(displayBets.length > 0 || apiBets.length === 0) && (
                         <button
                           type="button"
                           onClick={() => setFormMode(null)}
@@ -558,7 +646,7 @@ export function LiveInPlayPage() {
                   </>
                 )}
 
-                {trackBet && registeredBets.length === 0 && formMode === null && (
+                {trackBet && displayBets.length === 0 && formMode === null && (
                   <p className="text-sm text-slate-500">
                     Marque a opção acima ou clique em adicionar para cadastrar até{" "}
                     {MAX_OPEN_BETS} bilhetes do mesmo jogo.

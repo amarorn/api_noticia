@@ -1,13 +1,22 @@
 """Recomendações de cash-out e aporte com base no modelo in-play vs mercado."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from config import settings
 from models.economics import coase_effective_min_edge, live_effective_min_edge
 from models.ev_value import evaluate_outcome
+from models.wc_trend_confidence import assess_prediction_confidence
 from ingest.superbet.parser import SuperbetEventSnapshot
+
+
+@dataclass
+class PickInputData:
+    """Um palpite individual dentro de uma simples ou múltipla."""
+    market: str
+    outcome: str
+    target_value: str | None = None
 
 
 @dataclass
@@ -16,6 +25,8 @@ class UserBetInput:
     outcome: str
     stake: float
     odds_placed: float
+    picks: list[PickInputData] = field(default_factory=list)
+    target_value: str | None = None
 
 
 @dataclass
@@ -76,6 +87,17 @@ def _effective_min_edge(*, min_edge: float | None, live: bool) -> float:
     if live:
         return live_effective_min_edge(min_edge)
     return coase_effective_min_edge(min_edge or settings.ev_min_edge)
+
+
+def _house_prob(snapshot: SuperbetEventSnapshot | None, market: str, outcome: str) -> float | None:
+    """Retorna a generosity_prob (prob real da casa sem margem) se disponível."""
+    if snapshot is None or market != "h2h":
+        return None
+    mapping = {"1": "home", "2": "away"}
+    key = mapping.get(outcome)
+    if key is None:
+        return None
+    return snapshot.generosity_probs.get(key)
 
 
 def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: str) -> float | None:
@@ -256,7 +278,8 @@ def scan_all_market_edges(
     for market, outcome, label, prob, odd in _aporte_candidates(
         inplay, snapshot, home_team=home_team, away_team=away_team,
     ):
-        ev = evaluate_outcome(outcome, prob, odd)
+        hp = _house_prob(snapshot, market, outcome)
+        ev = evaluate_outcome(outcome, prob, odd, house_prob=hp)
         edge_pp = (prob - ev.implied_prob) * 100
         kelly_q = ev.kelly_quarter
         suggested_pct = round(min(5.0, kelly_q * 100), 2)
@@ -278,6 +301,29 @@ def scan_all_market_edges(
     return rows, threshold
 
 
+def _is_suspicious_odd(
+    prob: float,
+    odd: float,
+    *,
+    house_prob: float | None = None,
+    max_fair_odd_multiplier: float = 3.0,
+) -> bool:
+    """Detecta odds suspeitas que provavelmente estão desatualizadas.
+
+    Se `house_prob` estiver disponível (prob real da casa sem margem), compara
+    a odd vs odd justa da casa em vez da justa do modelo — é muito mais preciso
+    para detectar odds obsoletas (ex: mercado já fechou e sobra uma odd alta)
+    porque a casa já removeu a margem e calculou probabilidades.
+    """
+    if prob <= 0:
+        return True
+    if house_prob is not None and house_prob > 0:
+        fair_odd = 1.0 / house_prob
+    else:
+        fair_odd = 1.0 / prob
+    return odd > fair_odd * max_fair_odd_multiplier
+
+
 def advise_aportes(
     inplay: dict[str, Any],
     snapshot: SuperbetEventSnapshot | None,
@@ -288,6 +334,7 @@ def advise_aportes(
     live: bool = False,
     home_team: str = "Casa",
     away_team: str = "Fora",
+    allow_h2h: bool = True,
 ) -> list[AporteAdvice]:
     threshold = _effective_min_edge(min_edge=min_edge, live=live)
     bankroll = bankroll or 1000.0
@@ -296,7 +343,14 @@ def advise_aportes(
     for market, outcome, label, prob, odd in _aporte_candidates(
         inplay, snapshot, home_team=home_team, away_team=away_team,
     ):
-        ev = evaluate_outcome(outcome, prob, odd)
+        # Filtro de confiança: sem dados suficientes, não recomendar H2H
+        if market == "h2h" and not allow_h2h:
+            continue
+        # Filtro de sanidade: odds suspeitas (provavelmente desatualizadas)
+        hp = _house_prob(snapshot, market, outcome)
+        if _is_suspicious_odd(prob, odd, house_prob=hp):
+            continue
+        ev = evaluate_outcome(outcome, prob, odd, house_prob=hp)
         edge_pp = (prob - ev.implied_prob) * 100
         if ev.expected_value < threshold:
             continue
@@ -332,18 +386,48 @@ def build_bet_advice_report(
     user_bet: UserBetInput | None,
     minute: int = 0,
     bankroll: float | None = None,
+    features: Any = None,
 ) -> dict[str, Any]:
     cashout = None
     if user_bet is not None:
         cashout = advise_cashout(user_bet, inplay, minute=minute)
+
+    # Calcular confiança da previsão
+    score_parts = str(inplay.get("current_score", "0x0")).split("x")
+    home_score = int(score_parts[0]) if len(score_parts) == 2 else 0
+    away_score = int(score_parts[1]) if len(score_parts) == 2 else 0
+    confidence = assess_prediction_confidence(
+        features,
+        home_team=home_team,
+        away_team=away_team,
+        minute=minute,
+        home_score=home_score,
+        away_score=away_score,
+    )
+
+    # Se confiança for baixa, não recomendar apostas H2H
+    min_confidence_for_h2h = 0.3
+    allow_h2h = confidence.score >= min_confidence_for_h2h
+
     aportes = advise_aportes(
-        inplay, snapshot, bankroll=bankroll, live=True, home_team=home_team, away_team=away_team,
+        inplay,
+        snapshot,
+        bankroll=bankroll,
+        live=True,
+        home_team=home_team,
+        away_team=away_team,
+        allow_h2h=allow_h2h,
     )
     return {
         "home_team": home_team,
         "away_team": away_team,
         "minute": minute,
         "current_score": inplay.get("current_score"),
+        "confidence": {
+            "score": confidence.score,
+            "label": confidence.label,
+            "reason": confidence.reason,
+        },
         "cashout": None if cashout is None else {
             "action": cashout.action,
             "confidence": cashout.confidence,

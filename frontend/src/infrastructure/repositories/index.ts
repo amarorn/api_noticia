@@ -21,6 +21,7 @@ import {
   mapSuperbetLiveFeed,
   mapSuperbetLiveAdvice,
   mapWcSimulation,
+  mapUserOpenBets,
 } from "../mappers";
 
 export class WcApiRepository implements IWcRepository {
@@ -232,6 +233,13 @@ export class WcApiRepository implements IWcRepository {
       }),
     });
     return mapWcSimulation(raw);
+  }
+
+  async getUserOpenBets() {
+    const raw = await apiFetch<Parameters<typeof mapUserOpenBets>[0]>("/user/open-bets", {
+      timeoutMs: API_SYNC_TIMEOUT_MS,
+    });
+    return mapUserOpenBets(raw);
   }
 }
 

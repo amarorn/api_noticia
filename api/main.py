@@ -43,6 +43,7 @@ from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, off
 from pipelines.wc_group_pressure import lookup_2026_group
 from pipelines.wc_group_standings import build_group_standings
 from schemas.national_teams import normalize_national_team
+from schemas.user_bet import UserOpenBetRequest
 
 WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 
@@ -400,6 +401,7 @@ class WcBetAdviceResponse(BaseModel):
     aportes: list[dict]
     inplay_summary: dict
     superbet_event_id: int
+    confidence: dict | None = None
 
 
 class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
@@ -1545,6 +1547,72 @@ def worldcup_bet_advice(req: WcBetAdviceRequest):
         inplay_summary=payload.get("inplay_summary", {}),
         superbet_event_id=req.superbet_event_id,
     )
+
+
+@app.post("/user/open-bets", response_model=dict)
+def register_open_bet(req: UserOpenBetRequest):
+    """Recebe apostas abertas capturadas da Superbet (extensão ou script)."""
+    import uuid
+
+    from api.user_bets_store import add_open_bet
+
+    bet_id = req.id or str(uuid.uuid4())
+    pick_dicts = [p.model_dump() for p in req.picks]
+    ub = add_open_bet(
+        {
+            "id": bet_id,
+            "superbet_event_id": req.superbet_event_id,
+            "event_name": req.event_name,
+            "home_team": req.home_team,
+            "away_team": req.away_team,
+            "picks": pick_dicts,
+            "stake": req.stake,
+            "odds_placed": req.odds_placed,
+            "potential_return": req.potential_return,
+            "cashout_value": req.cashout_value,
+            "ticket_code": req.ticket_code,
+            "status": "open",
+            "source": req.source,
+            "captured_at": req.captured_at or __import__("datetime", fromlist=["datetime"]).datetime.now().isoformat(),
+        }
+    )
+    return {
+        "id": ub.id,
+        "message": "Aposta cadastrada com sucesso",
+        "event_name": ub.event_name,
+        "picks_count": len(ub.picks),
+        "stake": ub.stake,
+        "odds_placed": ub.odds_placed,
+    }
+
+
+@app.get("/user/open-bets", response_model=dict)
+def list_user_open_bets():
+    """Lista apostas abertas do usuário."""
+    from api.user_bets_store import list_open_bets
+
+    bets = list_open_bets()
+    return {
+        "count": len(bets),
+        "bets": [
+            {
+                "id": b.id,
+                "event_name": b.event_name,
+                "home_team": b.home_team,
+                "away_team": b.away_team,
+                "picks": [p.model_dump() if hasattr(p, "model_dump") else dict(p) for p in b.picks],
+                "stake": b.stake,
+                "odds_placed": b.odds_placed,
+                "potential_return": b.potential_return,
+                "cashout_value": b.cashout_value,
+                "ticket_code": b.ticket_code,
+                "status": b.status,
+                "source": b.source,
+                "captured_at": b.captured_at,
+            }
+            for b in bets
+        ],
+    }
 
 
 @app.post("/worldcup/inplay", response_model=WcInPlayResponse)

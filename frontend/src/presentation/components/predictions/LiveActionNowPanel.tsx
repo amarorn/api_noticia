@@ -1,12 +1,5 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 
-const ACTION_LABELS: Record<string, string> = {
-  cashout: "Cash-out agora",
-  cashout_parcial: "Cash-out parcial (50–70%)",
-  manter: "Manter aposta aberta",
-  aguardar: "Aguardar — reavaliar em 3–5 min",
-};
-
 type Tone = "protect" | "bet" | "bet-light" | "wait" | "finished";
 
 const TONE_CONFIG: Record<
@@ -64,6 +57,7 @@ interface ActionState {
   stakeHint?: string;
   showWatchList: boolean;
   directionBadge?: { label: string; colorClass: string };
+  confidenceWarning?: string;
 }
 
 function evFromProb(prob: number, odd: number): number {
@@ -134,27 +128,35 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
     return {
       tone: "finished",
       headline: "Jogo encerrado",
-      subline: "Sem novas apostas in-play neste evento.",
+      subline: "Não há mais apostas neste evento.",
       showWatchList: false,
     };
   }
+
+  const conf = data.confidence;
+  const confWarning =
+    conf && conf.score < 0.3
+      ? "⚠️ Dados insuficientes — modelo genérico. Não aposte valores altos."
+      : undefined;
 
   if (trackBet && data.cashout) {
     const action = data.cashout.action;
     if (action === "cashout" || action === "cashout_parcial") {
       return {
         tone: "protect",
-        headline: ACTION_LABELS[action] ?? action,
+        headline: "SAIA AGORA — proteja seu dinheiro",
         subline: data.cashout.reason,
         showWatchList: false,
+        confidenceWarning: confWarning,
       };
     }
     if (action === "manter") {
       return {
         tone: "wait",
-        headline: "Manter aposta — sem sinal de saída",
+        headline: "Fique na aposta — está indo bem",
         subline: data.cashout.reason,
         showWatchList: false,
+        confidenceWarning: confWarning,
       };
     }
   }
@@ -169,65 +171,83 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
     .map((s) => s.title.replace(/^Evitar /, ""))
     .slice(0, 2);
 
+  // MODO DEFENSIVO — sem oportunidades claras
   if (strategy?.posture === "defensivo" && !top) {
     return {
       tone: "protect",
-      headline: "Aguardar — modo defensivo",
+      headline: "NÃO APOSTE neste jogo agora",
       subline:
         strategy.waitReason ||
         (avoid.length > 0
-          ? `Não abra apostas novas. Evite: ${avoid.join(", ")}.`
-          : "Não abra apostas novas neste minuto. Reavalie após gol ou em ~25s."),
+          ? `O jogo está arriscado. Evite: ${avoid.join(", ")}.`
+          : "Não encontramos vantagem neste momento. Espere o próximo refresh em ~25s."),
       showWatchList: true,
+      confidenceWarning: confWarning,
     };
   }
 
-  if (top && (top.tier === "forte" || top.tier === "moderada")) {
-    const prefix = top.tier === "forte" ? "Apostar" : "Apostar (moderado)";
+  // OPORTUNIDADE FORTE — pode apostar com confiança
+  if (top && top.tier === "forte") {
     const stakeHint =
       top.suggestedStakeValue > 0
-        ? `R$ ${top.suggestedStakeValue.toFixed(0)} · ${top.suggestedStakePct}% da banca`
+        ? `R$ ${top.suggestedStakeValue.toFixed(0)} (${top.suggestedStakePct}% da banca)`
         : undefined;
     return {
       tone: "bet",
-      headline: `${prefix}: ${top.label} — odd ${top.marketOdd.toFixed(2)}`,
-      subline: `EV +${(top.expectedValue * 100).toFixed(1)}%${
-        avoid.length > 0 ? ` · Evite: ${avoid.join(", ")}` : ""
+      headline: `APOSTE: ${top.label}`,
+      subline: `Odd ${top.marketOdd.toFixed(2)} · chance real ${(top.modelProb * 100).toFixed(0)}%${
+        avoid.length > 0 ? ` · Cuidado com: ${avoid.join(", ")}` : ""
       }`,
       stakeHint,
       showWatchList: false,
       directionBadge: resolveDirectionBadge(top.market, top.outcome),
+      confidenceWarning: confWarning,
     };
   }
 
-  if (top?.tier === "leve") {
+  // OPORTUNIDADE MODERADA — pode apostar, mas com cuidado
+  if (top && top.tier === "moderada") {
     const stakeHint =
       top.suggestedStakeValue > 0
-        ? `R$ ${top.suggestedStakeValue.toFixed(0)} · máx. ${top.suggestedStakePct}% da banca`
+        ? `R$ ${top.suggestedStakeValue.toFixed(0)} (máx. ${top.suggestedStakePct}% da banca)`
         : undefined;
     return {
       tone: "bet-light",
-      headline: `Apostar (leve): ${top.label} — odd ${top.marketOdd.toFixed(2)}`,
-      subline: `EV +${(top.expectedValue * 100).toFixed(1)}% (abaixo do ideal)${
-        avoid.length > 0 ? ` · Evite: ${avoid.join(", ")}` : ""
+      headline: `APOSTE COM CUIDADO: ${top.label}`,
+      subline: `Odd ${top.marketOdd.toFixed(2)} · oportunidade boa, mas não perfeita${
+        avoid.length > 0 ? ` · Cuidado com: ${avoid.join(", ")}` : ""
       }`,
       stakeHint,
       showWatchList: false,
       directionBadge: resolveDirectionBadge(top.market, top.outcome),
+      confidenceWarning: confWarning,
     };
   }
 
+  // OPORTUNIDADE LEVE — só para quem entende
+  if (top?.tier === "leve") {
+    return {
+      tone: "wait",
+      headline: "AGUARDE — oportunidade fraca",
+      subline: `O modelo encontrou ${top.label} @ ${top.marketOdd.toFixed(2)}, mas o valor é pequeno. Melhor esperar um momento melhor.`,
+      showWatchList: true,
+      confidenceWarning: confWarning,
+    };
+  }
+
+  // SEM OPORTUNIDADES
   const waitReason =
     strategy?.waitReason ||
     (avoid.length > 0
-      ? `Nenhum mercado com edge suficiente. Evite: ${avoid.join(", ")}.`
-      : "Nenhum mercado com edge suficiente neste minuto. Reavalie em ~25s.");
+      ? `Nenhuma aposta segura agora. Evite: ${avoid.join(", ")}.`
+      : "Nenhuma oportunidade clara neste momento. Reavalie em ~25s.");
 
   return {
     tone: "wait",
-    headline: "Aguardar — sem aposta recomendada",
+    headline: "AGUARDE — sem aposta recomendada",
     subline: waitReason,
     showWatchList: true,
+    confidenceWarning: confWarning,
   };
 }
 
@@ -273,6 +293,14 @@ export function LiveActionNowPanel({ data, trackBet }: LiveActionNowPanelProps) 
             </span>
           )}
           <p className="mt-1.5 text-sm text-slate-300">{action.subline}</p>
+
+          {/* Alerta de confiança baixa nos dados */}
+          {action.confidenceWarning && (
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2">
+              <span className="text-sm" aria-hidden="true">⚠️</span>
+              <p className="text-xs text-amber-300">{action.confidenceWarning}</p>
+            </div>
+          )}
 
           {/* Stake em destaque */}
           {action.stakeHint && (

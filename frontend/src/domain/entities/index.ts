@@ -414,6 +414,11 @@ export interface SuperbetLiveAdvice {
   h2hImplied: Record<string, number>;
   h2hOverround: number | null;
   generosityProbs: Record<string, number>;
+  confidence: {
+    score: number;
+    label: string;
+    reason: string;
+  } | null;
   marketBenchmark: {
     h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
     totals?: Record<string, { marketOver: number; modelOver: number; edgeOver: number }>;
@@ -516,6 +521,7 @@ export interface SuperbetLiveAdvice {
     probNextGoalHome?: number;
     probNextGoalAway?: number;
     probNoMoreGoals?: number;
+    topFinalScores?: Record<string, number>;
   };
 }
 
@@ -740,4 +746,27 @@ export interface HistoricalValidationResult {
   modelBreakdown: ModelBreakdown;
   cutoffDate: string;
   cutoffNote: string;
+}
+
+export interface UserOpenBet {
+  id: string;
+  eventName: string;
+  homeTeam: string;
+  awayTeam: string;
+  picks: Array<{ market: string; outcome: string; targetValue?: string | null }>;
+  stake: number;
+  oddsPlaced: number;
+  potentialReturn: number;
+  cashoutValue: number | null;
+  ticketCode: string | null;
+  status: string;
+  source: string;
+  capturedAt: string | null;
+  superbetEventId?: number | null;
+  userId?: string | null;
+}
+
+export interface UserOpenBetsList {
+  count: number;
+  bets: UserOpenBet[];
 }

@@ -14,6 +14,7 @@ import {
   ValidateHistoricalMatchUseCase,
 } from "@/application/use-cases/historicalValidationUseCases";
 import {
+  GetUserOpenBetsUseCase,
   GetValueBetsUseCase,
   GetWcGroupStandingsUseCase,
   GetWcRoundUseCase,
@@ -53,6 +54,7 @@ export const getSuperbetLiveUseCase = new GetSuperbetLiveUseCase(wcRepository);
 export const getSuperbetLiveAdviceUseCase = new GetSuperbetLiveAdviceUseCase(wcRepository);
 export const simulateWcMatchUseCase = new SimulateWcMatchUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
+export const getUserOpenBetsUseCase = new GetUserOpenBetsUseCase(wcRepository);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
   brasileiraoRepository,
 );

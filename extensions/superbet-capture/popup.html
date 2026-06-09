@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bolão AI — Captura Superbet</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+    }
+    h1 { font-size: 14px; font-weight: 700; color: #00ff88; margin-bottom: 4px; }
+    p.sub { font-size: 11px; color: #94a3b8; margin-bottom: 12px; }
+    .field { margin-bottom: 10px; }
+    label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+    input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 12px;
+    }
+    input::placeholder { color: #64748b; }
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #00ff88, #10b981);
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { margin-top: 10px; font-size: 12px; min-height: 40px; }
+    .status.ok { color: #00ff88; }
+    .status.warn { color: #fbbf24; }
+    .status.err { color: #f87171; }
+    .count { font-size: 20px; font-weight: 800; color: #00ff88; }
+    .bet-item {
+      margin-top: 6px;
+      padding: 8px;
+      background: #1e293b;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+    .bet-item strong { color: #fff; }
+    .bet-item span { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <h1>Bolão AI — Captura</h1>
+  <p class="sub">Extrai apostas abertas da Superbet e envia para o painel ao vivo.</p>
+
+  <div class="field">
+    <label for="apiKey">API Key (opcional)</label>
+    <input id="apiKey" type="password" placeholder="Cole sua API key do Bolão AI">
+  </div>
+
+  <button id="captureBtn">Capturar apostas abertas</button>
+
+  <div id="status" class="status"></div>
+  <div id="betsList"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,6 +1,36 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { formatPercent } from "@/presentation/theme";
 
+function OverroundBadge({ overround }: { overround: number }) {
+  const pct = overround * 100;
+  const { cls, icon, tip } =
+    pct < 5
+      ? {
+          cls: "bg-neon-green/15 text-neon-green border border-neon-green/30",
+          icon: "↓",
+          tip: "Margem baixa — favorável ao apostador",
+        }
+      : pct < 10
+        ? {
+            cls: "bg-amber-500/15 text-amber-300 border border-amber-500/30",
+            icon: "~",
+            tip: "Margem típica",
+          }
+        : {
+            cls: "bg-red-500/15 text-red-300 border border-red-500/30",
+            icon: "↑",
+            tip: "Margem alta — desfavorável ao apostador",
+          };
+  return (
+    <span
+      className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-semibold ${cls}`}
+      title={tip}
+    >
+      {icon} Margem {pct.toFixed(1)}%
+    </span>
+  );
+}
+
 interface ProbBarProps {
   label: string;
   prob: number;
@@ -187,11 +217,7 @@ export function LiveModelPanel({ data }: LiveModelPanelProps) {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Posição da casa
           </h3>
-          {data.h2hOverround != null && (
-            <span className="rounded-md bg-violet-500/15 px-2 py-0.5 font-mono text-[11px] text-violet-300">
-              Margem {(data.h2hOverround * 100).toFixed(1)}%
-            </span>
-          )}
+          {data.h2hOverround != null && <OverroundBadge overround={data.h2hOverround} />}
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -248,21 +274,58 @@ export function LiveModelPanel({ data }: LiveModelPanelProps) {
             </div>
           )}
 
-        {/* Generosity */}
+        {/* Generosity — prob real da casa (sem margem) */}
         {Object.keys(data.generosityProbs).length > 0 && (
-          <p className="mt-3 text-[10px] text-slate-600">
-            Generosity:{" "}
-            {data.generosityProbs.home != null && (
-              <span>
-                {teamLabel(data.homeTeam, 10)} {formatPercent(data.generosityProbs.home)}
+          <div className="mt-4 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.05] p-3">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400/70">
+              Probabilidade real da Superbet (sem margem)
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              {data.generosityProbs.home != null && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400">{teamLabel(data.homeTeam, 10)}</span>
+                  <span className="font-mono text-sm font-semibold text-emerald-300">
+                    {formatPercent(data.generosityProbs.home)}
+                  </span>
+                </div>
+              )}
+              {data.generosityProbs.away != null && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400">{teamLabel(data.awayTeam, 10)}</span>
+                  <span className="font-mono text-sm font-semibold text-emerald-300">
+                    {formatPercent(data.generosityProbs.away)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="mt-1.5 text-[10px] text-slate-500">
+              A casa já removeu a margem — esse é o "preço justo" que ela atribui a cada time.
+              Quando nosso modelo diverge muito daqui, há valor.
+            </p>
+          </div>
+        )}
+
+        {/* Confiança do modelo */}
+        {data.confidence && (
+          <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.02] p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Confiança nos dados
+              </p>
+              <span
+                className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-semibold ${
+                  data.confidence.score >= 0.7
+                    ? "bg-emerald-500/15 text-emerald-300"
+                    : data.confidence.score >= 0.3
+                      ? "bg-amber-500/15 text-amber-300"
+                      : "bg-red-500/15 text-red-300"
+                }`}
+              >
+                {data.confidence.label} · {(data.confidence.score * 100).toFixed(0)}%
               </span>
-            )}
-            {data.generosityProbs.away != null && (
-              <span className="ml-1.5">
-                {teamLabel(data.awayTeam, 10)} {formatPercent(data.generosityProbs.away)}
-              </span>
-            )}
-          </p>
+            </div>
+            <p className="text-[11px] text-slate-400">{data.confidence.reason}</p>
+          </div>
         )}
       </div>
     </div>

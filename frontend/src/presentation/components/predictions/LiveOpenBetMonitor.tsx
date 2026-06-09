@@ -6,12 +6,15 @@ export interface RegisteredBet {
   outcome: string;
   stake: number;
   oddsPlaced: number;
+  potentialReturn?: number;
+  ticketCode?: string | null;
   offeredCashout?: number | null;
 }
 
 export interface RegisteredBetEntry extends RegisteredBet {
   id: string;
   autoMonitor: boolean;
+  cashoutValue?: number | null;
 }
 
 export function createRegisteredBetId(): string {
@@ -141,13 +144,18 @@ export function LiveOpenBetMonitor({
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
               Aposta {betIndex} de {totalBets}
+              {bet.ticketCode && (
+                <span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 font-mono text-[9px] text-slate-400">
+                  #{bet.ticketCode}
+                </span>
+              )}
             </p>
             <p className="mt-1 text-base font-semibold text-white">
               {marketLabel} → {pick}
             </p>
             <p className="mt-1 font-mono text-sm text-slate-300">
               Aposta R$ {bet.stake.toFixed(2)} · odd {bet.oddsPlaced.toFixed(2)} · ganho potencial R${" "}
-              {(bet.stake * bet.oddsPlaced).toFixed(2)}
+              {(bet.potentialReturn ?? bet.stake * bet.oddsPlaced).toFixed(2)}
             </p>
             {bet.offeredCashout != null && bet.offeredCashout > 0 && (
               <p className="mt-1 font-mono text-sm text-neon-green">

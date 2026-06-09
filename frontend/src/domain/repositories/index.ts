@@ -108,6 +108,7 @@ export interface IWcRepository {
     fifaMatchId?: string;
     sofascoreEventId?: number;
   }): Promise<import("@/domain/entities").WcSimulation>;
+  getUserOpenBets(): Promise<import("@/domain/entities").UserOpenBetsList>;
 }
 
 export interface IBrasileiraoRepository {

@@ -183,21 +183,30 @@ def _find_market(markets: list[dict], name: str) -> dict | None:
     return None
 
 
+def _is_active_odd(odd: dict) -> bool:
+    """Verifica se a odd está ativa (status == 1) e com preço válido."""
+    status = odd.get("status")
+    if status is not None and int(status) != 1:
+        return False
+    price = odd.get("price")
+    if not isinstance(price, (int, float)) or price <= 1.0:
+        return False
+    return True
+
+
 def _extract_yes_no_odds(market: dict | None) -> dict[str, float]:
     if not market:
         return {}
     prices: dict[str, float] = {}
     for odd in market.get("odds") or []:
-        if not isinstance(odd, dict):
-            continue
-        price = odd.get("price")
-        if not isinstance(price, (int, float)) or price <= 1.0:
+        if not isinstance(odd, dict) or not _is_active_odd(odd):
             continue
         name = str((odd.get("metadata") or {}).get("name") or "").lower()
+        price = float(odd["price"])
         if name in {"sim", "yes"}:
-            prices["yes"] = float(price)
+            prices["yes"] = price
         elif name in {"não", "nao", "no"}:
-            prices["no"] = float(price)
+            prices["no"] = price
     return prices
 
 
@@ -232,16 +241,13 @@ def _extract_next_goal_odds(markets: list[dict], home_team: str, away_team: str)
             continue
         out: dict[str, float] = {}
         for odd in market.get("odds") or []:
-            if not isinstance(odd, dict):
-                continue
-            price = odd.get("price")
-            if not isinstance(price, (int, float)) or price <= 1.0:
+            if not isinstance(odd, dict) or not _is_active_odd(odd):
                 continue
             md = odd.get("metadata") or {}
             label = str(md.get("name") or md.get("info") or "")
             side = _team_side(label, home_team, away_team)
             if side and side not in out:
-                out[side] = float(price)
+                out[side] = float(odd["price"])
         if out:
             return out
     return {}
@@ -250,30 +256,26 @@ def _extract_next_goal_odds(markets: list[dict], home_team: str, away_team: str)
 def _extract_line_odds(market: dict) -> dict[str, dict[str, float]]:
     by_line: dict[str, dict[str, float]] = {}
     for odd in market.get("odds") or []:
-        if not isinstance(odd, dict):
-            continue
-        price = odd.get("price")
-        if not isinstance(price, (int, float)) or price <= 1.0:
+        if not isinstance(odd, dict) or not _is_active_odd(odd):
             continue
         md = odd.get("metadata") or {}
         line = str(md.get("special_bet_value") or "default")
         label = str(md.get("name") or md.get("code") or "outcome")
-        by_line.setdefault(line, {})[label] = float(price)
+        by_line.setdefault(line, {})[label] = float(odd["price"])
     return by_line
 
 
 def _extract_combo_yes_no(market: dict, key: str) -> dict[str, float] | None:
     prices: dict[str, float] = {}
     for odd in market.get("odds") or []:
+        if not isinstance(odd, dict) or not _is_active_odd(odd):
+            continue
         md = odd.get("metadata") or {}
         name = str(md.get("name") or "").lower()
-        price = odd.get("price")
-        if not isinstance(price, (int, float)):
-            continue
         if name in {"sim", "yes"}:
-            prices["yes"] = float(price)
+            prices["yes"] = float(odd["price"])
         elif name in {"não", "nao", "no"}:
-            prices["no"] = float(price)
+            prices["no"] = float(odd["price"])
     if not prices:
         return None
     return {key: v for k, v in _implied_from_prices(prices).items() for key, v in [(k, v)]}
@@ -327,14 +329,14 @@ def _extract_h2h_odds(markets: list[dict]) -> dict[str, float]:
     if not h2h_market:
         return h2h_odds
     for odd in h2h_market.get("odds") or []:
+        if not isinstance(odd, dict) or not _is_active_odd(odd):
+            continue
         md = odd.get("metadata") or {}
         code = str(md.get("name") or md.get("code") or "")
-        price = odd.get("price")
-        if not isinstance(price, (int, float)):
-            continue
+        price = float(odd["price"])
         if code in {"1", "X", "2", "0"}:
             key = "X" if code in {"X", "0"} else code
-            h2h_odds[key] = float(price)
+            h2h_odds[key] = price
     return h2h_odds
 
 
@@ -406,11 +408,11 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
             continue
         prices: dict[str, float] = {}
         for odd in market.get("odds") or []:
+            if not isinstance(odd, dict) or not _is_active_odd(odd):
+                continue
             md = odd.get("metadata") or {}
             label = str(md.get("name") or md.get("info") or "outcome")
-            price = odd.get("price")
-            if isinstance(price, (int, float)) and price > 1.0:
-                prices[label[:40]] = float(price)
+            prices[label[:40]] = float(odd["price"])
         if prices:
             combo_markets[key] = _implied_from_prices(prices)
 

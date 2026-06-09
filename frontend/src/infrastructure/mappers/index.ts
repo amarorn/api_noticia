@@ -1000,7 +1000,7 @@ interface ApiSuperbetLiveAdvice {
   strategy?: Record<string, unknown> | null;
   cashout: Record<string, unknown> | null;
   aportes: Array<Record<string, unknown>>;
-  inplay_summary: Record<string, number>;
+  inplay_summary: Record<string, unknown>;
   btts_odds?: Record<string, number>;
   next_goal_odds?: Record<string, number>;
   analysis_coverage?: {
@@ -1009,6 +1009,11 @@ interface ApiSuperbetLiveAdvice {
     btts?: boolean;
     next_goal?: boolean;
     combos?: string[];
+  } | null;
+  confidence?: {
+    score: number;
+    label: string;
+    reason: string;
   } | null;
 }
 
@@ -1103,6 +1108,13 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
     h2hImplied: raw.h2h_implied ?? {},
     h2hOverround: raw.h2h_overround ?? null,
     generosityProbs: raw.generosity_probs ?? {},
+    confidence: raw.confidence
+      ? {
+          score: Number(raw.confidence.score ?? 0),
+          label: String(raw.confidence.label ?? ""),
+          reason: String(raw.confidence.reason ?? ""),
+        }
+      : null,
     marketBenchmark: raw.market_benchmark
       ? {
           h2h: raw.market_benchmark.h2h,
@@ -1150,11 +1162,12 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
       probFinalHome: Number(summary.prob_final_home ?? 0),
       probFinalDraw: Number(summary.prob_final_draw ?? 0),
       probFinalAway: Number(summary.prob_final_away ?? 0),
-      over25: summary.over_2_5,
-      btts: summary.btts,
-      probNextGoalHome: summary.prob_next_goal_home,
-      probNextGoalAway: summary.prob_next_goal_away,
-      probNoMoreGoals: summary.prob_no_more_goals,
+      over25: summary.over_2_5 as number | undefined,
+      btts: summary.btts as number | undefined,
+      probNextGoalHome: summary.prob_next_goal_home as number | undefined,
+      probNextGoalAway: summary.prob_next_goal_away as number | undefined,
+      probNoMoreGoals: summary.prob_no_more_goals as number | undefined,
+      topFinalScores: summary.top_final_scores as Record<string, number> | undefined,
     },
     bttsOdds: raw.btts_odds ?? {},
     nextGoalOdds: raw.next_goal_odds ?? {},
@@ -1197,3 +1210,49 @@ export function mapSuperbetLiveFeed(raw: ApiSuperbetLiveFeed) {
 }
 
 export { mapWcPrediction };
+
+export function mapUserOpenBets(raw: {
+  count: number;
+  bets: Array<{
+    id: string;
+    event_name: string;
+    home_team: string;
+    away_team: string;
+    picks: Array<{ market: string; outcome: string; target_value?: string | null }>;
+    stake: number;
+    odds_placed: number;
+    potential_return?: number;
+    cashout_value?: number | null;
+    ticket_code?: string | null;
+    status: string;
+    source: string;
+    captured_at: string | null;
+    superbet_event_id?: number | null;
+    user_id?: string | null;
+  }>;
+}) {
+  return {
+    count: raw.count,
+    bets: raw.bets.map((b) => ({
+      id: b.id,
+      eventName: b.event_name,
+      homeTeam: b.home_team,
+      awayTeam: b.away_team,
+      picks: b.picks.map((p) => ({
+        market: p.market,
+        outcome: p.outcome,
+        targetValue: p.target_value ?? null,
+      })),
+      stake: b.stake,
+      oddsPlaced: b.odds_placed,
+      potentialReturn: b.potential_return != null ? b.potential_return : b.stake * b.odds_placed,
+      cashoutValue: b.cashout_value ?? null,
+      ticketCode: b.ticket_code ?? null,
+      status: b.status,
+      source: b.source,
+      capturedAt: b.captured_at,
+      superbetEventId: b.superbet_event_id ?? null,
+      userId: b.user_id ?? null,
+    })),
+  };
+}

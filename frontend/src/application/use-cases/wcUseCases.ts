@@ -10,6 +10,7 @@ import type {
   WcSchedule,
   WcSquadDetail,
   WcSquadsIndex,
+  UserOpenBetsList,
 } from "@/domain/entities";
 import type { WcPredictRequestDto } from "../dtos";
 
@@ -166,5 +167,13 @@ export class SimulateWcMatchUseCase {
     sofascoreEventId?: number;
   }): Promise<WcSimulation> {
     return this.repository.simulateMatch(dto);
+  }
+}
+
+export class GetUserOpenBetsUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(): Promise<UserOpenBetsList> {
+    return this.repository.getUserOpenBets();
   }
 }

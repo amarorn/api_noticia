@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Bolão AI — Captura Superbet",
+  "version": "1.0.0",
+  "description": "Extrai apostas abertas da Superbet (Minhas Apostas) e envia para o painel Bolão AI ao vivo.",
+  "permissions": ["activeTab", "storage", "notifications"],
+  "host_permissions": [
+    "https://superbet.com/*",
+    "https://*.superbet.com/*",
+    "https://www.superbet.com/*",
+    "http://127.0.0.1:8000/*",
+    "https://*/api/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://superbet.com/*",
+        "https://*.superbet.com/*"
+      ],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

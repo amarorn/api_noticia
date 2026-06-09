@@ -4,17 +4,16 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from ingest.superbet.benchmark import h2h_overround, market_benchmark
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
 from ingest.superbet.live_ticks import append_live_tick
-from ingest.superbet.parser import SuperbetEventSnapshot
 from ingest.superbet.store import save_event_snapshot
 from models.wc_bet_advice import UserBetInput, build_bet_advice_report
 from models.wc_bet_strategy import build_bet_strategy_report
 from models.wc_inplay import inplay_from_predictor
 from schemas.national_teams import normalize_national_team
+
+logger = logging.getLogger(__name__)
 
 _FINISHED_STATUSES = {"FINISHED", "ENDED", "CLOSED", "CANCELLED", "ABANDONED"}
 
@@ -50,6 +49,25 @@ def run_live_advice(
         status = None
         period_label = None
 
+    # --- Momentum: escanteios como proxy de pressão ao vivo ---
+    momentum_events: list[dict] = []
+    if snapshot.inplay:
+        ip = snapshot.inplay
+        for _ in range(ip.home_corners):
+            momentum_events.append({
+                "event_type": "corner",
+                "minute": minute,
+                "team": "home",
+                "detail": "escanteio",
+            })
+        for _ in range(ip.away_corners):
+            momentum_events.append({
+                "event_type": "corner",
+                "minute": minute,
+                "team": "away",
+                "detail": "escanteio",
+            })
+
     result = inplay_from_predictor(
         predictor,
         home_team=home,
@@ -61,6 +79,9 @@ def run_live_advice(
         is_neutral=True,
         ht_home_score=ht_h,
         ht_away_score=ht_a,
+        momentum_events=momentum_events,
+        home_corners=ip.home_corners if snapshot.inplay else 0,
+        away_corners=ip.away_corners if snapshot.inplay else 0,
     )
     inplay_dict = result.to_dict()
     report = build_bet_advice_report(
@@ -71,6 +92,7 @@ def run_live_advice(
         user_bet=user_bet,
         minute=minute,
         bankroll=bankroll,
+        features=result.features,
     )
 
     snapshot_dict = snapshot.to_dict()
@@ -132,6 +154,7 @@ def run_live_advice(
         "h2h_implied": snapshot.h2h_implied,
         "h2h_overround": overround,
         "generosity_probs": snapshot.generosity_probs,
+        "confidence": report.get("confidence"),
         "market_benchmark": benchmark,
         "strategy": build_bet_strategy_report(
             home_team=home,
