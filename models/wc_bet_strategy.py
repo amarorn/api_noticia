@@ -179,6 +179,7 @@ def build_bet_strategy_report(
         live=True,
         home_team=home_team,
         away_team=away_team,
+        minute=minute,
     )
     aportes = advise_aportes(
         inplay,
@@ -188,6 +189,7 @@ def build_bet_strategy_report(
         live=True,
         home_team=home_team,
         away_team=away_team,
+        minute=minute,
     )
 
     cashout = None

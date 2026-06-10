@@ -87,6 +87,19 @@ def _team_attack_defense(
     hp = get_wc_hyperparams()
     ref = ref_season if ref_season is not None else _reference_season(df)
 
+    # Guarda de sanidade: remover linhas com scores impossíveis para futebol.
+    # Dados de cricket/outros esportes às vezes se infiltram no dataset.
+    _MAX_FOOTBALL_SCORE = 15
+    pre_len = len(df)
+    df = df[(df["home_score"] <= _MAX_FOOTBALL_SCORE) & (df["away_score"] <= _MAX_FOOTBALL_SCORE)]
+    if len(df) < pre_len:
+        import structlog
+        structlog.get_logger().warning(
+            "poisson_outliers_removidos",
+            removidos=pre_len - len(df),
+            max_score_permitido=_MAX_FOOTBALL_SCORE,
+        )
+
     df["_w"] = df["season"].fillna(ref).astype(int).apply(
         lambda s: _season_weight(s, ref, hp.poisson_season_half_life)
     )

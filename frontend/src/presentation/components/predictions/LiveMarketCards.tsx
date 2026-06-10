@@ -2,68 +2,34 @@ import { useMemo, useState } from "react";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { formatPercent } from "@/presentation/theme";
 
-// ── Gauge semicircular de EV ──────────────────────────────────────────────
-// Geometria: semicírculo de (4,16) até (32,16), raio=14, centro=(18,16), topo=(18,2)
-function EvGauge({ ev }: { ev: number }) {
-  const MAX_EV = 0.20;
+// ── Barra horizontal de EV ────────────────────────────────────────────────
+// Barra fina no topo do card: preenche do centro para a direita (EV+) ou esquerda (EV−)
+function EvBar({ ev }: { ev: number }) {
+  const MAX_EV = 0.25;
   const clamped = Math.max(-MAX_EV, Math.min(MAX_EV, ev));
-  const ratio = (clamped + MAX_EV) / (2 * MAX_EV); // 0..1
-
-  // ângulo: π (esquerda/negativo) → 0 (direita/positivo)
-  const cx = 18, cy = 16, r = 14;
-  const angleRad = Math.PI - ratio * Math.PI;
-  const nx = cx + r * Math.cos(angleRad);
-  const ny = cy - r * Math.sin(angleRad);
-
-  const isPositive = ev > 0.01;
-  const isNegative = ev < -0.01;
-  const strokeColor = isPositive ? "#00ff88" : isNegative ? "#f87171" : "#94a3b8";
+  const pct = Math.abs(clamped / MAX_EV) * 50; // 0-50% da largura total
+  const isPositive = ev > 0.005;
+  const isNegative = ev < -0.005;
+  const barColor = isPositive
+    ? "bg-neon-green/60"
+    : isNegative
+      ? "bg-red-400/50"
+      : "bg-slate-600/40";
 
   return (
-    <svg
-      width="36"
-      height="18"
-      viewBox="0 0 36 18"
-      aria-label={`EV ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(0)}%`}
-      className="shrink-0"
-    >
-      {/* Arco de fundo: de (4,16) até (32,16) passando pelo topo (18,2), CCW */}
-      <path
-        d="M 4 16 A 14 14 0 0 0 32 16"
-        fill="none"
-        stroke="rgba(255,255,255,0.08)"
-        strokeWidth="2"
-        strokeLinecap="round"
+    <div className="relative mb-3 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+      {/* Marcador central (EV = 0) */}
+      <div className="absolute inset-y-0 left-1/2 w-px bg-white/15" />
+      {/* Preenchimento */}
+      <div
+        className={`absolute inset-y-0 rounded-full transition-all duration-500 ${barColor}`}
+        style={
+          isPositive
+            ? { left: "50%", width: `${pct}%` }
+            : { right: "50%", width: `${pct}%` }
+        }
       />
-      {/* Zona vermelha: metade esquerda (4,16)→(18,2) */}
-      <path
-        d="M 4 16 A 14 14 0 0 0 18 2"
-        fill="none"
-        stroke="rgba(248,113,113,0.22)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      {/* Zona verde: metade direita (18,2)→(32,16) */}
-      <path
-        d="M 18 2 A 14 14 0 0 0 32 16"
-        fill="none"
-        stroke="rgba(0,255,136,0.22)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      {/* Ponteiro */}
-      <line
-        x1={cx}
-        y1={cy}
-        x2={nx}
-        y2={ny}
-        stroke={strokeColor}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      {/* Ponto central */}
-      <circle cx={cx} cy={cy} r="1.5" fill={strokeColor} />
-    </svg>
+    </div>
   );
 }
 
@@ -332,6 +298,8 @@ function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: M
 
       {best ? (
         <>
+          {/* Barra de EV no topo */}
+          <EvBar ev={best.expectedValue} />
           {/* Badge de direção para totais, BTTS e próximo gol */}
           {(group.id === "totals" || group.id === "btts" || group.id === "next_goal") && (
             <DirectionBadge outcome={best.outcome} groupId={group.id} market={best.market} />
@@ -339,17 +307,14 @@ function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: M
           <p className="truncate text-sm font-medium text-slate-200" title={best.label}>
             {best.label}
           </p>
-          {/* Linha: odd · gauge (indicador visual) · modelo % */}
-          <div className="mt-1.5 flex items-center gap-2">
+          <div className="mt-1.5 flex items-baseline gap-3">
             <span className="font-mono text-lg font-bold text-white">
               {best.marketOdd.toFixed(2)}
             </span>
-            <EvGauge ev={best.expectedValue} />
             <span className="text-xs text-slate-400">
               Modelo {formatPercent(best.modelProb)}
             </span>
           </div>
-          {/* Detalhe EV e stake em largura total */}
           <p
             className={`mt-1.5 text-xs ${
               verdict === "apostar"

@@ -82,6 +82,11 @@ class Settings(BaseSettings):
     live_ev_min_edge: float = 0.04
     coase_bookmaker_margin: float = 0.05
     coase_transaction_cost: float = 0.0
+    # ── Guardas de qualidade de aposta ──
+    live_min_market_odd: float = 1.25  # nunca recomendar abaixo desta odd
+    live_min_edge_pp: float = 5.0  # mínimo 5pp de edge (model_prob - implied_prob)
+    live_max_minute_full_advice: int = 85  # após este minuto, exigir EV muito alto
+    live_late_game_ev_multiplier: float = 3.0  # multiplicador do threshold no fim de jogo
     dixit_sigma: float = 2.0
     mlflow_tracking_uri: str = "sqlite:///./mlflow.db"
     mlflow_experiment_wc: str = "api-noticia/wc-benchmark"

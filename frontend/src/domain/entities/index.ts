@@ -523,6 +523,36 @@ export interface SuperbetLiveAdvice {
     probNoMoreGoals?: number;
     topFinalScores?: Record<string, number>;
   };
+  hedgeReport: {
+    advices: Array<{
+      bet_id: string;
+      event_name: string;
+      market: string;
+      outcome: string;
+      stake: number;
+      odds_placed: number;
+      potential_return: number;
+      prob_current: number;
+      ev_remaining: number;
+      action: "cashout" | "hedge" | "hold" | "shift";
+      urgency: "critical" | "high" | "medium" | "low";
+      reasoning: string;
+      hedge?: {
+        market: string;
+        outcome: string;
+        odd_current: number;
+        stake_suggested: number;
+        guaranteed_return: number;
+        net_if_original_wins: number;
+        net_if_hedge_wins: number;
+      };
+      cashout_value?: number;
+    }>;
+    total_at_risk: number;
+    total_potential: number;
+    overall_action: string;
+    summary: string;
+  } | null;
 }
 
 export interface WcSquadPlayer {

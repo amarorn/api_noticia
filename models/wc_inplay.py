@@ -342,6 +342,26 @@ def simulate_inplay(
             match_minutes=match_minutes,
         )
 
+    # --- P0.2: Penalidade por déficit de placar ---
+    # Times perdendo por 2+ gols têm rendimento real inferior ao λ Bayesian.
+    # Fatores empíricos baseados em dados históricos de viradas:
+    # - Trailing by 1: ~15-20% viram → leve redução
+    # - Trailing by 2: ~3-5% viram → redução forte
+    # - Trailing by 3+: ~1% viram → redução muito forte
+    score_diff = home_score - away_score  # positivo = casa vence
+    if score_diff != 0:
+        deficit_factors = {1: 0.90, 2: 0.65, 3: 0.45, 4: 0.30}
+        surplus_factors = {1: 1.08, 2: 1.18, 3: 1.25, 4: 1.30}
+        abs_diff = min(abs(score_diff), 4)
+        if score_diff > 0:
+            # Casa vencendo: casa ganha boost, fora penalizado
+            lambda_full_home *= surplus_factors[abs_diff]
+            lambda_full_away *= deficit_factors[abs_diff]
+        else:
+            # Fora vencendo: fora ganha boost, casa penalizada
+            lambda_full_away *= surplus_factors[abs_diff]
+            lambda_full_home *= deficit_factors[abs_diff]
+
     # --- P1c: Market shrinkage (mistura λ modelo com λ implícito do mercado) ---
     if market_probs is not None:
         from models.wc_market_shrinkage import shrink_lambda

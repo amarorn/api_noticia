@@ -27,6 +27,7 @@ import type {
   WcFriendlyMatch,
   WcSimulation,
   WcSimulationLineupPlayer,
+  SuperbetLiveAdvice,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -1015,6 +1016,7 @@ interface ApiSuperbetLiveAdvice {
     label: string;
     reason: string;
   } | null;
+  hedge_report?: Record<string, unknown> | null;
 }
 
 function mapBetStrategy(raw: Record<string, unknown> | null | undefined) {
@@ -1180,6 +1182,7 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
           combos: ((raw.analysis_coverage.combos as string[]) ?? []).map(String),
         }
       : null,
+    hedgeReport: (raw.hedge_report as SuperbetLiveAdvice["hedgeReport"]) ?? null,
   };
 }
 

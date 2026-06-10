@@ -7,15 +7,45 @@ from typing import Any
 from ingest.superbet.benchmark import h2h_overround, market_benchmark
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
 from ingest.superbet.live_ticks import append_live_tick
+from ingest.superbet.parser import SuperbetEventSnapshot
 from ingest.superbet.store import save_event_snapshot
 from models.wc_bet_advice import UserBetInput, build_bet_advice_report
 from models.wc_bet_strategy import build_bet_strategy_report
+from models.wc_hedge_advisor import advise_open_bets, hedge_report_to_dict
 from models.wc_inplay import inplay_from_predictor
 from schemas.national_teams import normalize_national_team
 
 logger = logging.getLogger(__name__)
 
 _FINISHED_STATUSES = {"FINISHED", "ENDED", "CLOSED", "CANCELLED", "ABANDONED"}
+
+
+def _build_hedge_report(
+    inplay_dict: dict[str, Any],
+    snapshot: SuperbetEventSnapshot,
+    minute: int,
+    home_team: str,
+    away_team: str,
+) -> dict[str, Any] | None:
+    """Constrói o hedge report se houver apostas abertas do usuário."""
+    try:
+        from api.user_bets_store import get_bets_for_event
+
+        user_bets = get_bets_for_event(home_team, away_team, status="open")
+        if not user_bets:
+            return None
+        report = advise_open_bets(
+            open_bets=user_bets,
+            inplay=inplay_dict,
+            snapshot=snapshot,
+            minute=minute,
+            home_team=home_team,
+            away_team=away_team,
+        )
+        return hedge_report_to_dict(report)
+    except Exception as exc:
+        logger.warning("Erro ao construir hedge_report: %s", exc)
+        return None
 
 
 def run_live_advice(
@@ -179,6 +209,13 @@ def run_live_advice(
             "next_goal": bool(snapshot.next_goal_odds),
             "combos": list(snapshot.combo_markets.keys()),
         },
+        "hedge_report": _build_hedge_report(
+            inplay_dict=inplay_dict,
+            snapshot=snapshot,
+            minute=minute,
+            home_team=home,
+            away_team=away,
+        ),
     }
 
 

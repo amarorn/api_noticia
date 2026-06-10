@@ -20,6 +20,7 @@ import {
 } from "@/presentation/components/predictions/LiveOpenBetMonitor";
 import { LivePlainGuide } from "@/presentation/components/predictions/LivePlainGuide";
 import { LiveScoreHeatmap } from "@/presentation/components/predictions/LiveScoreHeatmap";
+import LiveHedgeAlert from "@/presentation/components/predictions/LiveHedgeAlert";
 
 const POLL_MS = 25_000;
 const MAX_OPEN_BETS = 2;
@@ -352,6 +353,9 @@ export function LiveInPlayPage() {
 
           {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
+
+          {/* ── 2b. ALERTA DE HEDGE (apostas do usuário) ── */}
+          <LiveHedgeAlert report={data?.hedgeReport ?? null} />
 
           {/* ── 3. COLUNA DUPLA: Mercados | Modelo + Casa ── */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">

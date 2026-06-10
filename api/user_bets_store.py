@@ -84,3 +84,52 @@ def update_bet_status(bet_id: str, status: str) -> bool:
             _save_store(store)
             return True
     return False
+
+
+def get_bets_for_event(
+    home_team: str,
+    away_team: str,
+    *,
+    status: str = "open",
+) -> list[dict]:
+    """Retorna apostas do evento filtradas por time, já deduplicadas.
+
+    Deduplicação: mesmo stake + odds + market + outcome = duplicata de captura repetida.
+    """
+    store = _load_store()
+    all_bets = store.get("bets", [])
+
+    home_lower = home_team.lower()
+    away_lower = away_team.lower()
+
+    relevant = []
+    for b in all_bets:
+        if status and b.get("status") != status:
+            continue
+        event = (b.get("event_name") or "").lower()
+        b_home = (b.get("home_team") or "").lower()
+        b_away = (b.get("away_team") or "").lower()
+        # Match flexível por substring nos times ou event_name
+        match = (
+            (home_lower in b_home or home_lower in event)
+            and (away_lower in b_away or away_lower in event)
+        )
+        if match:
+            relevant.append(b)
+
+    # Deduplicar por (stake, odds, market, outcome)
+    seen: set[tuple] = set()
+    unique: list[dict] = []
+    for b in relevant:
+        picks = b.get("picks") or []
+        key = (
+            b.get("stake"),
+            b.get("odds_placed"),
+            picks[0].get("market") if picks else "",
+            picks[0].get("outcome") if picks else "",
+        )
+        if key not in seen:
+            seen.add(key)
+            unique.append(b)
+
+    return unique

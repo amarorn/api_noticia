@@ -256,6 +256,9 @@ def _aporte_candidates(
         odd = _market_odd(snapshot, market, outcome)
         if odd is None or odd <= 1.0:
             continue
+        # ── Guarda: odd mínima (não recomendar odds muito baixas) ──
+        if odd < settings.live_min_market_odd:
+            continue
         candidates.append((market, outcome, label, float(prob), float(odd)))
     return candidates
 
@@ -269,9 +272,14 @@ def scan_all_market_edges(
     live: bool = False,
     home_team: str = "Casa",
     away_team: str = "Fora",
+    minute: int = 0,
 ) -> tuple[list[dict[str, Any]], float]:
     """Todos os mercados mapeados com EV, ordenados do maior para o menor."""
     threshold = _effective_min_edge(min_edge=min_edge, live=live)
+    # Ajuste de fim de jogo
+    effective_threshold = threshold
+    if minute > settings.live_max_minute_full_advice:
+        effective_threshold = threshold * settings.live_late_game_ev_multiplier
     bankroll = bankroll or 1000.0
     rows: list[dict[str, Any]] = []
 
@@ -283,6 +291,11 @@ def scan_all_market_edges(
         edge_pp = (prob - ev.implied_prob) * 100
         kelly_q = ev.kelly_quarter
         suggested_pct = round(min(5.0, kelly_q * 100), 2)
+        # Verificação de qualidade: edge em pp + threshold efetivo
+        quality_pass = (
+            ev.expected_value >= effective_threshold
+            and edge_pp >= settings.live_min_edge_pp
+        )
         rows.append({
             "market": market,
             "outcome": outcome,
@@ -294,11 +307,11 @@ def scan_all_market_edges(
             "edge_pp": round(edge_pp, 2),
             "suggested_stake_pct": suggested_pct,
             "suggested_stake_value": round(bankroll * suggested_pct / 100, 2),
-            "meets_threshold": ev.expected_value >= threshold,
+            "meets_threshold": quality_pass,
         })
 
     rows.sort(key=lambda x: x["expected_value"], reverse=True)
-    return rows, threshold
+    return rows, effective_threshold
 
 
 def _is_suspicious_odd(
@@ -335,8 +348,12 @@ def advise_aportes(
     home_team: str = "Casa",
     away_team: str = "Fora",
     allow_h2h: bool = True,
+    minute: int = 0,
 ) -> list[AporteAdvice]:
     threshold = _effective_min_edge(min_edge=min_edge, live=live)
+    # ── Guarda de fim de jogo: exigir EV muito maior após minuto 85 ──
+    if minute > settings.live_max_minute_full_advice:
+        threshold *= settings.live_late_game_ev_multiplier
     bankroll = bankroll or 1000.0
     out: list[AporteAdvice] = []
 
@@ -352,6 +369,9 @@ def advise_aportes(
             continue
         ev = evaluate_outcome(outcome, prob, odd, house_prob=hp)
         edge_pp = (prob - ev.implied_prob) * 100
+        # ── Guarda de edge mínimo em pp: EV% não basta, precisa edge real ──
+        if edge_pp < settings.live_min_edge_pp:
+            continue
         if ev.expected_value < threshold:
             continue
         kelly_q = ev.kelly_quarter
@@ -417,6 +437,7 @@ def build_bet_advice_report(
         home_team=home_team,
         away_team=away_team,
         allow_h2h=allow_h2h,
+        minute=minute,
     )
     return {
         "home_team": home_team,
