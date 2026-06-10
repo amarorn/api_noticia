@@ -16,6 +16,7 @@ import { LivePage } from "@/presentation/pages/LivePage";
 import { LiveInPlayPage } from "@/presentation/pages/LiveInPlayPage";
 import { AlbumPage } from "@/presentation/pages/AlbumPage";
 import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
+import { CarteiraPage } from "@/presentation/pages/CarteiraPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ export function App() {
               <Route path="convocacoes" element={<SquadsPage />} />
               <Route path="grupos" element={<WcGroupsPage />} />
               <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
+              <Route path="carteira" element={<CarteiraPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
