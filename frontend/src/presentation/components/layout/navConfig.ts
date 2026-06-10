@@ -99,9 +99,15 @@ export const navGroups: NavGroup[] = [
       },
       {
         to: "/brasileirao",
-        label: "Brasileirão",
+        label: "Brasileirao",
         Icon: IconTrophy,
         description: "Rodada nacional",
+      },
+      {
+        to: "/performance",
+        label: "Performance",
+        Icon: IconHistory,
+        description: "ROI e analise de apostas",
       },
     ],
   },

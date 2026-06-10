@@ -42,6 +42,19 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true; // async
   }
 
+  if (request.type === "API_POST_SETTLED_BETS") {
+    const { payload, apiKey } = request;
+    apiFetch("/user/settled-bets/batch", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiKey ? { "X-API-Key": apiKey } : {}),
+      },
+      body: JSON.stringify({ bets: payload }),
+    }).then(sendResponse);
+    return true; // async
+  }
+
   return false;
 });
 

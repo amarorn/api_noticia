@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 from ingest.superbet.benchmark import h2h_overround, market_benchmark
@@ -13,6 +14,11 @@ from models.wc_bet_advice import UserBetInput, build_bet_advice_report
 from models.wc_bet_strategy import build_bet_strategy_report
 from models.wc_hedge_advisor import advise_open_bets, hedge_report_to_dict
 from models.wc_inplay import inplay_from_predictor
+from models.wc_trend_advisor import (
+    analyze_position,
+    load_event_ticks,
+    trend_report_to_dict,
+)
 from schemas.national_teams import normalize_national_team
 
 logger = logging.getLogger(__name__)
@@ -45,6 +51,42 @@ def _build_hedge_report(
         return hedge_report_to_dict(report)
     except Exception as exc:
         logger.warning("Erro ao construir hedge_report: %s", exc)
+        return None
+
+
+def _build_trend_report(
+    event_id: int,
+    home_team: str,
+    away_team: str,
+    event_snapshot_raw: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Analisa tendência do jogo e conselho de posição (copiloto).
+
+    Lê ticks anteriores do evento e cruza com apostas abertas do usuário.
+    """
+    try:
+        from config import get_settings
+        from api.user_bets_store import get_bets_for_event
+
+        settings = get_settings()
+        event_dir = Path(settings.lake_root) / "bronze" / "superbet" / "events" / str(event_id)
+        ticks = load_event_ticks(event_dir)
+        if len(ticks) < 2:
+            return None
+
+        # Pegar aposta do usuário para o evento (se existir)
+        user_bets = get_bets_for_event(home_team, away_team, status="open")
+        if not user_bets:
+            # Sem aposta aberta → análise de tendência pura (sem conselho de posição)
+            # Usar bet fictícia para pelo menos retornar sinais/oportunidades
+            user_bet = {"picks": []}
+        else:
+            user_bet = user_bets[0]  # Primeira aposta relevante
+
+        report = analyze_position(user_bet, ticks, event_snapshot_raw)
+        return trend_report_to_dict(report)
+    except Exception as exc:
+        logger.warning("Erro ao construir trend_report: %s", exc)
         return None
 
 
@@ -215,6 +257,12 @@ def run_live_advice(
             minute=minute,
             home_team=home,
             away_team=away,
+        ),
+        "trend_report": _build_trend_report(
+            event_id=event_id,
+            home_team=home,
+            away_team=away,
+            event_snapshot_raw=snapshot_dict,
         ),
     }
 

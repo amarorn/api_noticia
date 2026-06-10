@@ -47,3 +47,31 @@ class UserOpenBetResponse(BaseModel):
     id: str
     bets: list[dict[str, Any]] = Field(default_factory=list, description="Lista de apostas ativas")
     message: str = "ok"
+
+
+class SettledBetInput(BaseModel):
+    """Payload de uma aposta liquidada capturada pela extensão."""
+
+    id: str
+    event_name: str = ""
+    home_team: str = ""
+    away_team: str = ""
+    picks: list[PickInput] = Field(default_factory=list)
+    stake: float = Field(0, ge=0)
+    odds_placed: float = Field(0, ge=0)
+    potential_return: float = Field(0, ge=0)
+    result: str = Field(..., description="won | lost | cashout | void")
+    profit: float = Field(0, description="Lucro líquido (negativo se perdeu)")
+    cashout_value: float | None = None
+    ticket_code: str | None = None
+    source: str = "superbet_extension"
+    placed_at: str = ""
+    settled_at: str = ""
+    superbet_event_id: int | None = None
+    final_score: str | None = None
+
+
+class SettledBetsBatchRequest(BaseModel):
+    """Batch de apostas finalizadas para upload."""
+
+    bets: list[SettledBetInput] = Field(..., min_length=1)

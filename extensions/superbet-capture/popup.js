@@ -7,6 +7,7 @@
 
   const apiKeyInput = document.getElementById("apiKey");
   const captureBtn = document.getElementById("captureBtn");
+  const captureSettledBtn = document.getElementById("captureSettledBtn");
   const statusDiv = document.getElementById("status");
   const betsList = document.getElementById("betsList");
 
@@ -148,6 +149,96 @@
               <strong>${b.event_name || "—"}</strong><br>
               <span>${status} · ${b.picks.length} pick(s) · Stake R$ ${b.stake.toFixed(2)}</span>
               ${b.cashout_value ? `<br><span style="color:#fbbf24">Cash-out: R$ ${b.cashout_value.toFixed(2)}</span>` : ""}
+            </div>`;
+        })
+        .join("");
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Capturar apostas finalizadas (tab "Finalizado")
+  // ═══════════════════════════════════════════════════════════════════════
+  captureSettledBtn.addEventListener("click", async () => {
+    captureSettledBtn.disabled = true;
+    captureBtn.disabled = true;
+    setStatus("Verificando aba...", "warn");
+    betsList.innerHTML = "";
+
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) {
+      setStatus("Nenhuma aba ativa encontrada.", "err");
+      captureSettledBtn.disabled = false;
+      captureBtn.disabled = false;
+      return;
+    }
+
+    const url = tab.url || "";
+    const isSuperbet = /superbet\.(com|com\.br|bet\.br)/i.test(url);
+    if (!isSuperbet) {
+      setStatus(
+        "Abra 'Minhas Apostas > Finalizados' na Superbet.\nURL atual: " + url.slice(0, 50),
+        "err"
+      );
+      captureSettledBtn.disabled = false;
+      captureBtn.disabled = false;
+      return;
+    }
+
+    const inject = await ensureContentScript(tab.id);
+    if (!inject.ok) {
+      setStatus("Falha ao injetar script: " + (inject.error || "permissão negada"), "err");
+      captureSettledBtn.disabled = false;
+      captureBtn.disabled = false;
+      return;
+    }
+
+    setStatus("Escaneando apostas finalizadas...", "warn");
+
+    chrome.tabs.sendMessage(tab.id, { type: "CAPTURE_SETTLED_BETS" }, (response) => {
+      captureSettledBtn.disabled = false;
+      captureBtn.disabled = false;
+
+      if (chrome.runtime.lastError) {
+        setStatus("Erro: " + chrome.runtime.lastError.message, "err");
+        return;
+      }
+
+      if (!response || !response.bets) {
+        setStatus("Sem resposta do content script.\nRecarregue a página.", "err");
+        return;
+      }
+
+      const { bets, result } = response;
+      if (bets.length === 0) {
+        setStatus(
+          "Nenhuma aposta finalizada encontrada.\n" +
+          "Navegue para a aba 'Finalizados' em Minhas Apostas.",
+          "warn"
+        );
+        return;
+      }
+
+      const added = result?.data?.added ?? bets.length;
+      if (result?.ok !== false) {
+        setStatus(`✓ ${bets.length} aposta(s) finalizada(s) capturada(s)! (${added} novas)`, "ok");
+      } else {
+        setStatus(
+          `${bets.length} encontrada(s), mas falha ao enviar.\n${result.error || "API offline?"}`,
+          "err"
+        );
+      }
+
+      // Listar
+      const icons = { won: "✅", lost: "❌", cashout: "💰", void: "⏹️" };
+      betsList.innerHTML = bets
+        .map((b) => {
+          const icon = icons[b.result] || "❓";
+          const profitClass = b.profit >= 0 ? "color:#00ff88" : "color:#f87171";
+          return `
+            <div class="bet-item">
+              <strong>${icon} ${b.event_name || "—"}</strong><br>
+              <span>${b.result.toUpperCase()} · Stake R$ ${b.stake.toFixed(2)} · <span style="${profitClass}">Lucro R$ ${b.profit.toFixed(2)}</span></span>
+              ${b.final_score ? `<br><span>Placar: ${b.final_score}</span>` : ""}
             </div>`;
         })
         .join("");

@@ -354,6 +354,232 @@
     return bets;
   }
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // APOSTAS FINALIZADAS (tab "Finalizado" / "Encerrado")
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Detecta o resultado de uma aposta finalizada a partir do texto do card.
+   * Retorna: "won" | "lost" | "cashout" | "void"
+   */
+  function detectResult(text) {
+    if (/SACADO|CASHED?\s*-?\s*OUT|Cash\s*Out\s*feito/i.test(text)) return "cashout";
+    if (/GANHOU|WON|ACERTOU|VITÓRIA/i.test(text)) return "won";
+    if (/PERDEU|LOST|ERROU|DERROTA/i.test(text)) return "lost";
+    if (/CANCELAD|VOID|ANULAD|REEMBOLSAD/i.test(text)) return "void";
+    // Indicadores visuais: ✅ ou ❌ (emojis no DOM)
+    if (/✅|✓/.test(text)) return "won";
+    if (/❌|✗/.test(text)) return "lost";
+    return "lost"; // default se nenhum padrão reconhecido
+  }
+
+  /**
+   * Extrai o placar final do card (ex: "2 - 0", "1 : 1").
+   */
+  function extractFinalScore(text) {
+    // "Placar final: 2 - 0" ou "2:1" ou "2 x 1"
+    const patterns = [
+      /(?:Placar|Score|Final)\s*:?\s*(\d+)\s*[-:xX×]\s*(\d+)/i,
+      /(\d+)\s*[-:×]\s*(\d+)\s*(?:FT|Full|Final)/i,
+    ];
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m) return `${m[1]}x${m[2]}`;
+    }
+    return null;
+  }
+
+  /**
+   * Calcula o lucro/prejuízo de uma aposta finalizada.
+   */
+  function calculateProfit(result, stake, potentialReturn, cashoutValue) {
+    switch (result) {
+      case "won":
+        return +(potentialReturn - stake).toFixed(2);
+      case "cashout":
+        return +((cashoutValue || 0) - stake).toFixed(2);
+      case "void":
+        return 0;
+      case "lost":
+      default:
+        return -stake;
+    }
+  }
+
+  /**
+   * Identifica o container de card para apostas finalizadas.
+   * Diferente de apostas abertas: não tem botão Cashout, mas tem resultado (GANHOU/PERDEU).
+   */
+  function findSettledCardContainer(startEl) {
+    let el = startEl;
+    for (let i = 0; i < 20 && el && el !== document.body; i++) {
+      const text = el.textContent || "";
+      const hasAposta = /APOSTA/i.test(text);
+      const hasOdds = /ODDS/i.test(text);
+      const hasResult = /GANHOU|PERDEU|SACADO|WON|LOST|CASHED/i.test(text);
+      if (hasAposta && (hasOdds || hasResult)) {
+        // Verificar se é card individual — deve ter exatamente 1 indicador de resultado
+        const innerText = el.innerText || "";
+        const resultMatches = innerText.match(/GANHOU|PERDEU|SACADO|✅|❌/gi);
+        // Cards simples: 1 resultado; combos: podem ter mais
+        if (resultMatches && resultMatches.length >= 1 && resultMatches.length <= 6) {
+          // Verificar que não é container de múltiplos cards (muitos "APOSTA")
+          const apostaCount = (innerText.match(/^APOSTA$/gmi) || []).length;
+          if (apostaCount <= 1) return el;
+        }
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  /**
+   * Extrai dados de um card de aposta finalizada.
+   */
+  function parseSettledBetCard(card) {
+    const base = parseBetCard(card);
+    const text = card.innerText || card.textContent || "";
+
+    const result = detectResult(text);
+    const finalScore = extractFinalScore(text);
+
+    // Para cards finalizados, cashout_value pode indicar quanto recebeu (SACADO)
+    let cashoutValue = base.cashout_value;
+    if (result === "cashout" && !cashoutValue) {
+      // Tentar extrair "Valor sacado: R$ 17,68"
+      const m = text.match(/(?:Valor\s*(?:do\s*)?(?:saque|sacado|cash))\s*:?\s*R?\$?\s*([\d.,]+)/i);
+      if (m) cashoutValue = parseMoney(m[1]);
+    }
+
+    // Ganho potencial pode estar como "GANHO POTENCIAL" ou "RETORNO"
+    let potentialReturn = base.potential_return;
+    if (!potentialReturn && result === "won") {
+      // Se ganhou mas não temos retorno, tentar extrair do texto
+      const m = text.match(/(?:RETORNO|GANHO|LUCRO)\s*:?\s*R?\$?\s*([\d.,]+)/i);
+      if (m) potentialReturn = parseMoney(m[1]);
+    }
+
+    const profit = calculateProfit(result, base.stake, potentialReturn, cashoutValue);
+
+    return {
+      id: base.ticket_code || `settled_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      event_name: base.event_name,
+      home_team: base.home_team,
+      away_team: base.away_team,
+      picks: base.picks,
+      stake: base.stake,
+      odds_placed: base.odds_placed,
+      potential_return: potentialReturn,
+      result,
+      profit,
+      cashout_value: cashoutValue,
+      ticket_code: base.ticket_code,
+      source: "superbet_extension",
+      superbet_event_id: base.superbet_event_id,
+      final_score: finalScore,
+      settled_at: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Escaneia a página "Finalizado" e extrai apostas encerradas.
+   */
+  function scanSettledBets() {
+    let elements = [];
+
+    // ─── Estratégia 1: Elementos com indicadores de resultado ───
+    // Cards finalizados têm GANHOU/PERDEU/SACADO em destaque
+    const allEls = document.querySelectorAll("*");
+    const resultMarkers = Array.from(allEls).filter((el) => {
+      const t = (el.textContent || "").trim();
+      return (
+        el.children.length === 0 &&
+        /^(GANHOU|PERDEU|SACADO|WON|LOST|CASHED OUT)$/i.test(t) &&
+        t.length < 30
+      );
+    });
+    console.info(`[Bolão AI] Encontrados ${resultMarkers.length} indicadores de resultado`);
+
+    for (const marker of resultMarkers) {
+      const card = findSettledCardContainer(marker);
+      if (card && !elements.includes(card)) {
+        elements.push(card);
+      }
+    }
+
+    // ─── Estratégia 2: Busca por padrão visual ✅/❌ ───
+    if (elements.length === 0) {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        const t = node.textContent || "";
+        if (/[✅❌✓✗]/.test(t)) {
+          const card = findSettledCardContainer(node.parentElement);
+          if (card && !elements.includes(card)) {
+            elements.push(card);
+          }
+        }
+      }
+    }
+
+    // ─── Estratégia 3: Divs com "APOSTA" + "ODDS" + sem Cashout button ───
+    if (elements.length === 0) {
+      const allDivs = document.querySelectorAll("div, section, article");
+      for (const div of allDivs) {
+        const text = div.textContent || "";
+        if (!/APOSTA/i.test(text)) continue;
+        if (!/ODDS/i.test(text)) continue;
+        // Deve ter resultado mas NÃO ter botão de cashout ativo
+        const hasResult = /GANHOU|PERDEU|SACADO|WON|LOST/i.test(text);
+        if (!hasResult) continue;
+        const btns = div.querySelectorAll('button, [role="button"]');
+        const hasCashoutBtn = Array.from(btns).some(
+          (b) => /cashout/i.test(b.textContent || "")
+        );
+        if (hasCashoutBtn) continue; // É aposta aberta, não finalizada
+        // Verificar tamanho razoável
+        const h = div.offsetHeight || 0;
+        if (h > 80 && h < 500) {
+          elements.push(div);
+        }
+      }
+      // Remover ancestrais
+      elements = elements.filter(
+        (el) => !elements.some((other) => other !== el && el.contains(other))
+      );
+    }
+
+    console.info(`[Bolão AI] scanSettledBets: ${elements.length} card(s) encontrado(s)`);
+    if (elements.length > 0) {
+      console.info("[Bolão AI] Primeiro settled card:", elements[0].textContent?.slice(0, 200));
+    }
+
+    const bets = elements
+      .map(parseSettledBetCard)
+      .filter((b) => b.stake > 0 && b.result);
+
+    console.info(`[Bolão AI] Apostas finalizadas válidas: ${bets.length}`, bets);
+    return bets;
+  }
+
+  /**
+   * Envia apostas finalizadas para a API via background.
+   */
+  function sendSettledBetsViaBackground(bets, apiKey) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: "API_POST_SETTLED_BETS", payload: bets, apiKey },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ ok: false, error: chrome.runtime.lastError.message });
+          } else {
+            resolve(response || { ok: false, error: "Sem resposta do background" });
+          }
+        }
+      );
+    });
+  }
+
   /**
    * Envia uma aposta para a API via background service worker.
    */
@@ -407,6 +633,19 @@
     if (request.type === "GET_BETS") {
       sendResponse({ bets: scanOpenBets() });
       return true;
+    }
+    if (request.type === "CAPTURE_SETTLED_BETS") {
+      const bets = scanSettledBets();
+      chrome.storage.local.get(["bolao_api_key"], async (items) => {
+        const apiKey = items.bolao_api_key || "";
+        if (bets.length === 0) {
+          sendResponse({ bets: [], result: { ok: true, added: 0 } });
+          return;
+        }
+        const result = await sendSettledBetsViaBackground(bets, apiKey);
+        sendResponse({ bets, result });
+      });
+      return true; // async response
     }
     if (request.type === "PING") {
       sendResponse({ ok: true, url: location.href });

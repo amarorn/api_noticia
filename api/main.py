@@ -43,7 +43,7 @@ from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, off
 from pipelines.wc_group_pressure import lookup_2026_group
 from pipelines.wc_group_standings import build_group_standings
 from schemas.national_teams import normalize_national_team
-from schemas.user_bet import UserOpenBetRequest
+from schemas.user_bet import SettledBetsBatchRequest, UserOpenBetRequest
 
 WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 
@@ -1613,6 +1613,53 @@ def list_user_open_bets():
             for b in bets
         ],
     }
+
+
+# ---------------------------------------------------------------------------
+# Apostas finalizadas (histórico para análise de performance)
+# ---------------------------------------------------------------------------
+
+
+@app.post("/user/settled-bets/batch", response_model=dict)
+def register_settled_bets_batch(req: SettledBetsBatchRequest):
+    """Recebe lote de apostas finalizadas (won/lost/cashout) da extensão."""
+    from api.user_bets_store import add_settled_bets_batch
+
+    bets_data = [b.model_dump(mode="json") for b in req.bets]
+    # Converter picks para dicts se necessário
+    for bd in bets_data:
+        bd["picks"] = [
+            p if isinstance(p, dict) else p.model_dump() for p in bd.get("picks", [])
+        ]
+    added = add_settled_bets_batch(bets_data)
+    return {"added": added, "total_received": len(req.bets), "message": f"{added} apostas novas"}
+
+
+@app.get("/user/settled-bets", response_model=dict)
+def list_user_settled_bets():
+    """Lista todas as apostas finalizadas do usuário."""
+    from api.user_bets_store import list_settled_bets
+
+    bets = list_settled_bets()
+    return {
+        "count": len(bets),
+        "bets": [b.model_dump(mode="json") for b in bets],
+    }
+
+
+@app.get("/user/bet-performance", response_model=dict)
+def get_user_bet_performance():
+    """Retorna análise de performance com ROI, padrões de perda e sugestões."""
+    from api.user_bets_store import list_settled_bets
+    from models.wc_bet_performance import analyze_performance, performance_report_to_dict
+
+    bets = list_settled_bets()
+    if not bets:
+        return {"error": None, "report": None, "message": "Nenhuma aposta finalizada encontrada."}
+
+    bets_data = [b.model_dump(mode="json") for b in bets]
+    report = analyze_performance(bets_data)
+    return {"error": None, "report": performance_report_to_dict(report)}
 
 
 # ---------------------------------------------------------------------------
