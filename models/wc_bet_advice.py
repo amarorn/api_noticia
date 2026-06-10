@@ -215,6 +215,35 @@ def _is_comeback_unrealistic(
     return False
 
 
+def _generosity_blocks(
+    snapshot: SuperbetEventSnapshot, market: str, outcome: str
+) -> bool:
+    """Verifica se a generosity da Superbet é tão baixa que bloqueia a recomendação.
+
+    Se a Superbet dá <5% de chance para o outcome (via generosity_probs),
+    o modelo não deve recomendar essa aposta — a casa tem dados que não temos.
+    """
+    gen = getattr(snapshot, "generosity_probs", None) or {}
+    if not gen:
+        return False
+
+    BLOCK_THRESHOLD = 0.05  # 5%
+
+    if market == "h2h":
+        if outcome == "1" and gen.get("home", 1.0) < BLOCK_THRESHOLD:
+            return True
+        if outcome == "2" and gen.get("away", 1.0) < BLOCK_THRESHOLD:
+            return True
+        if outcome == "X" and gen.get("draw", 1.0) < BLOCK_THRESHOLD:
+            return True
+    elif market == "next_goal":
+        if outcome == "home" and gen.get("home", 1.0) < BLOCK_THRESHOLD:
+            return True
+        if outcome == "away" and gen.get("away", 1.0) < BLOCK_THRESHOLD:
+            return True
+    return False
+
+
 def _aporte_candidates(
     inplay: dict[str, Any],
     snapshot: SuperbetEventSnapshot | None,
@@ -253,11 +282,27 @@ def _aporte_candidates(
             outcome, home_score, away_score
         ):
             continue
+        # ── Gate: não apostar next_goal no time que está apanhando (gap >= 2) ──
+        score_gap = home_score - away_score
+        if market == "next_goal" and outcome == "away" and score_gap >= 2:
+            continue  # time visitante perdendo por 2+ → não apostar nele
+        if market == "next_goal" and outcome == "home" and score_gap <= -2:
+            continue  # time mandante perdendo por 2+ → não apostar nele
+        # ── Gate: se generosity da Superbet < 5% para o outcome, bloquear ──
+        if snapshot and _generosity_blocks(snapshot, market, outcome):
+            continue
         odd = _market_odd(snapshot, market, outcome)
         if odd is None or odd <= 1.0:
             continue
         # ── Guarda: odd mínima (não recomendar odds muito baixas) ──
         if odd < settings.live_min_market_odd:
+            continue
+        # ── Guarda: divergência absurda modelo vs mercado (modelo errado) ──
+        if odd > 10.0 and prob < 0.20:
+            # Modelo diz <20% mas odd sugere <10% → modelo provavelmente errado
+            continue
+        if odd > 20.0:
+            # Odds > 20 = mercado morto, não recomendar
             continue
         candidates.append((market, outcome, label, float(prob), float(odd)))
     return candidates
@@ -281,6 +326,17 @@ def scan_all_market_edges(
     if minute > settings.live_max_minute_full_advice:
         effective_threshold = threshold * settings.live_late_game_ev_multiplier
     bankroll = bankroll or 1000.0
+
+    # ── Gate: jogo morto (score gap ≥ 3 E minute > 50) → sem recomendações ──
+    score_str = inplay.get("current_score", "0x0")
+    parts = str(score_str).split("x")
+    h_sc = int(parts[0]) if len(parts) == 2 and parts[0].isdigit() else 0
+    a_sc = int(parts[1]) if len(parts) == 2 and parts[1].isdigit() else 0
+    gap = abs(h_sc - a_sc)
+    if gap >= 3 and minute > 50:
+        # Jogo decidido — não recomendar nada
+        return [], effective_threshold
+
     rows: list[dict[str, Any]] = []
 
     for market, outcome, label, prob, odd in _aporte_candidates(
