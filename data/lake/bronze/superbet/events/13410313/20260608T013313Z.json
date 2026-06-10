@@ -1,0 +1,70 @@
+{
+  "event_id": 13410313,
+  "home_team": "San Jose Earthquakes II",
+  "away_team": "Real Monarchs",
+  "event_name": "San Jose Earthquakes II·Real Monarchs",
+  "utc_date": "2026-06-08T00:00:00Z",
+  "betradar_id": "68156712",
+  "is_live": true,
+  "inplay": {
+    "home_score": 3,
+    "away_score": 0,
+    "minute": 69,
+    "stoppage_time": null,
+    "home_corners": 1,
+    "away_corners": 4,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 2,
+    "ht_home_score": 3,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.002,
+    "X": 40.0,
+    "2": 50.0
+  },
+  "h2h_implied": {
+    "1": 0.9565258979386868,
+    "X": 0.024152278922951843,
+    "2": 0.019321823138361473
+  },
+  "totals": {
+    "3.5": {
+      "Mais de 3.5": 1.4,
+      "Menos de 3.5": 2.5
+    },
+    "4.5": {
+      "Mais de 4.5": 2.85,
+      "Menos de 4.5": 1.3
+    }
+  },
+  "totals_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.641025641025641,
+      "Menos de 3.5": 0.358974358974359
+    },
+    "4.5": {
+      "Mais de 4.5": 0.3132530120481928,
+      "Menos de 4.5": 0.6867469879518072
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {
+    "yes": 2.17,
+    "no": 1.6
+  },
+  "next_goal_odds": {
+    "home": 2.75,
+    "away": 2.7
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.001426
+  },
+  "raw_market_count": 12,
+  "captured_at": "2026-06-08T01:33:13.062578+00:00"
+}

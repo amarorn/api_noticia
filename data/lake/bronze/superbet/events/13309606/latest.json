@@ -1,0 +1,64 @@
+{
+  "event_id": 13309606,
+  "home_team": "Ipswich Knights",
+  "away_team": "Logan Roos",
+  "event_name": "Ipswich Knights·Logan Roos",
+  "utc_date": "2026-06-09T10:00:00Z",
+  "betradar_id": "67904478",
+  "is_live": true,
+  "inplay": {
+    "home_score": 5,
+    "away_score": 4,
+    "minute": 79,
+    "stoppage_time": null,
+    "home_corners": 6,
+    "away_corners": 2,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 2,
+    "ht_home_score": 5,
+    "ht_away_score": 3,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.11,
+    "X": 6.5,
+    "2": 25.0
+  },
+  "h2h_implied": {
+    "1": 0.8229306459372547,
+    "X": 0.14053123338313123,
+    "2": 0.036538120679614115
+  },
+  "totals": {
+    "9.5": {
+      "Mais de 9.5": 1.38,
+      "Menos de 9.5": 2.6
+    },
+    "10.5": {
+      "Mais de 10.5": 2.75,
+      "Menos de 10.5": 1.33
+    }
+  },
+  "totals_implied": {
+    "9.5": {
+      "Mais de 9.5": 0.6532663316582915,
+      "Menos de 9.5": 0.3467336683417085
+    },
+    "10.5": {
+      "Mais de 10.5": 0.3259803921568628,
+      "Menos de 10.5": 0.6740196078431373
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.019362
+  },
+  "raw_market_count": 15,
+  "captured_at": "2026-06-09T11:39:41.957423+00:00"
+}

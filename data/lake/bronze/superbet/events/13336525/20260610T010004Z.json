@@ -1,0 +1,121 @@
+{
+  "event_id": 13336525,
+  "home_team": "Arábia Saudita",
+  "away_team": "Senegal",
+  "event_name": "Arábia Saudita·Senegal",
+  "utc_date": "2026-06-09T23:07:00Z",
+  "betradar_id": null,
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 0,
+    "minute": 88,
+    "stoppage_time": null,
+    "home_corners": 1,
+    "away_corners": 3,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 2,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 7.0,
+    "X": 1.22,
+    "2": 9.5
+  },
+  "h2h_implied": {
+    "1": 0.13378737158028395,
+    "X": 0.7676324598868752,
+    "2": 0.09858016853284081
+  },
+  "totals": {
+    "0.5": {
+      "Mais de 0.5": 3.8,
+      "Menos de 0.5": 1.22
+    },
+    "1.5": {
+      "Mais de 1.5": 17.0,
+      "Menos de 1.5": 1.002
+    },
+    "2.5": {
+      "Mais de 2.5": 35.0
+    }
+  },
+  "totals_implied": {
+    "0.5": {
+      "Mais de 0.5": 0.24302788844621515,
+      "Menos de 0.5": 0.756972111553785
+    },
+    "1.5": {
+      "Mais de 1.5": 0.0560799555802332,
+      "Menos de 1.5": 0.9439200444197667
+    },
+    "2.5": {
+      "Mais de 2.5": 1.0
+    }
+  },
+  "corners": {
+    "4.5": {
+      "Mais de 4.5": 1.7,
+      "Menos de 4.5": 2.07
+    },
+    "5.5": {
+      "Mais de 5.5": 3.35,
+      "Menos de 5.5": 1.25
+    },
+    "6.5": {
+      "Mais de 6.5": 6.25,
+      "Menos de 6.5": 1.07
+    }
+  },
+  "corners_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.5490716180371352,
+      "Menos de 4.5": 0.4509283819628647
+    },
+    "5.5": {
+      "Mais de 5.5": 0.2717391304347826,
+      "Menos de 5.5": 0.7282608695652174
+    },
+    "6.5": {
+      "Mais de 6.5": 0.14617486338797814,
+      "Menos de 6.5": 0.8538251366120219
+    }
+  },
+  "combo_markets": {
+    "ft_and_btts": {
+      "Arábia Saudita e Sim": 0.00898366158250654,
+      "Arábia Saudita e Não": 0.1382101781924083,
+      "Empate e Sim": 0.02245915395626635,
+      "Empate e Não": 0.7186929266005232,
+      "Senegal e Sim": 0.00898366158250654,
+      "Senegal e Não": 0.10267041808578901
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.01989791116747857,
+      "X e Mais de 1.5": 0.02238515006341339,
+      "2 e Mais de 1.5": 0.011938746700487142,
+      "1 e Menos de 1.5": 0.13265274111652378,
+      "X e Menos de 1.5": 0.7163248020292284,
+      "2 e Menos de 1.5": 0.09680064892286872
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.007212812845416336,
+      "X e Mais de 2.5": 0.00601067737118028,
+      "2 e Mais de 2.5": 0.00601067737118028,
+      "1 e Menos de 2.5": 0.13870793933492953,
+      "X e Menos de 2.5": 0.7390177095713459,
+      "2 e Menos de 2.5": 0.10304018350594765
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.127138,
+    "away": 0.084165
+  },
+  "raw_market_count": 73,
+  "captured_at": "2026-06-10T01:00:04.852347+00:00"
+}

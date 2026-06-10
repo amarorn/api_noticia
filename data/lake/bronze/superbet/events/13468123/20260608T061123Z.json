@@ -1,0 +1,75 @@
+{
+  "event_id": 13468123,
+  "home_team": "Kingborough Lions United",
+  "away_team": "Devonport City Strikers",
+  "event_name": "Kingborough Lions United·Devonport City Strikers",
+  "utc_date": "2026-06-08T05:00:00Z",
+  "betradar_id": "71890966",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 52,
+    "stoppage_time": null,
+    "home_corners": 0,
+    "away_corners": 0,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 6.5,
+    "X": 3.75,
+    "2": 1.45
+  },
+  "h2h_implied": {
+    "1": 0.13857916533928002,
+    "X": 0.24020388658808536,
+    "2": 0.6212169480726346
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.14,
+      "Menos de 1.5": 3.95
+    },
+    "2.5": {
+      "Mais de 2.5": 1.87,
+      "Menos de 2.5": 1.8
+    },
+    "3.5": {
+      "Mais de 3.5": 3.5,
+      "Menos de 3.5": 1.2
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.7760314341846758,
+      "Menos de 1.5": 0.22396856581532412
+    },
+    "2.5": {
+      "Mais de 2.5": 0.49046321525885556,
+      "Menos de 2.5": 0.5095367847411445
+    },
+    "3.5": {
+      "Mais de 3.5": 0.2553191489361702,
+      "Menos de 3.5": 0.7446808510638298
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {
+    "yes": 1.62,
+    "no": 2.12
+  },
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.43688,
+    "away": 0.401315
+  },
+  "raw_market_count": 11,
+  "captured_at": "2026-06-08T06:11:23.928251+00:00"
+}

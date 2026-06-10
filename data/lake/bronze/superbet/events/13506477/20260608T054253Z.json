@@ -1,0 +1,56 @@
+{
+  "event_id": 13506477,
+  "home_team": "Porto (DaVa)",
+  "away_team": "Aston Villa (MeLToSik)",
+  "event_name": "Porto (DaVa)·Aston Villa (MeLToSik)",
+  "utc_date": "2026-06-08T05:36:00Z",
+  "betradar_id": null,
+  "is_live": true,
+  "inplay": {
+    "home_score": 2,
+    "away_score": 1,
+    "minute": 5,
+    "stoppage_time": null,
+    "home_corners": 0,
+    "away_corners": 0,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 2,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {},
+  "h2h_implied": {},
+  "totals": {
+    "4.5": {
+      "Mais de 4.5": 1.4,
+      "Menos de 4.5": 2.65
+    },
+    "5.5": {
+      "Mais de 5.5": 2.05,
+      "Menos de 5.5": 1.65
+    }
+  },
+  "totals_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.654320987654321,
+      "Menos de 4.5": 0.34567901234567905
+    },
+    "5.5": {
+      "Mais de 5.5": 0.44594594594594594,
+      "Menos de 5.5": 0.5540540540540541
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 1.7,
+    "away": 2.3
+  },
+  "generosity_probs": {},
+  "raw_market_count": 9,
+  "captured_at": "2026-06-08T05:42:53.344853+00:00"
+}

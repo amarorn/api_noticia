@@ -1,0 +1,1124 @@
+{
+  "Brasil": {
+    "team": "Brasil",
+    "year": 2026,
+    "updated_at": "2026-06-10T03:38:29.298185+00:00",
+    "count": 4,
+    "friendlies": [
+      {
+        "event_id": 15691379,
+        "fifa_match_id": "4ceid8yudkkcihumh24hjscno",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Brasil",
+        "away_team": "Egito",
+        "match_date": "2026-06-06T22:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15926535,
+        "fifa_match_id": "6ldgjtk9kf1tcfyppin95dxxw",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Brasil",
+        "away_team": "Panamá",
+        "match_date": "2026-05-31T21:30:00+00:00",
+        "status": "finished",
+        "home_score": 6,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15332282,
+        "fifa_match_id": "77api02043k38olppgeoexbf8",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Croácia",
+        "away_team": "Brasil",
+        "match_date": "2026-04-01T00:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 3,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15341366,
+        "fifa_match_id": "czt1ct8yt0dlnxhfsjbvzep78",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Brasil",
+        "away_team": "França",
+        "match_date": "2026-03-26T20:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Canadá": {
+    "team": "Canadá",
+    "year": 2026,
+    "updated_at": "2026-06-06T17:21:43.857875+00:00",
+    "count": 7,
+    "friendlies": [
+      {
+        "event_id": 15926541,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Canadá",
+        "away_team": "Irlanda",
+        "match_date": "2026-06-05T23:30:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": null,
+        "fifa_match_id": "blxwx39q83xtcw7a0k6ugza50",
+        "sources": [
+          "fifa"
+        ],
+        "home_team": "Canadá",
+        "away_team": "República da Irlanda",
+        "match_date": "2026-06-05T23:30:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 1,
+        "tournament": "Friendly 2026",
+        "is_home": true
+      },
+      {
+        "event_id": 15530938,
+        "fifa_match_id": "3v98lwjueowojkv3qnmtqdnh0",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Canadá",
+        "away_team": "Uzbequistão",
+        "match_date": "2026-06-02T01:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15691374,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Canadá",
+        "away_team": "Tunísia",
+        "match_date": "2026-04-01T01:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": null,
+        "fifa_match_id": "b8ixwpcwlq5onweu5pvsdvkes",
+        "sources": [
+          "fifa"
+        ],
+        "home_team": "Canadá",
+        "away_team": "Tunísia",
+        "match_date": "2026-03-31T23:30:00+00:00",
+        "status": "notstarted",
+        "home_score": 0,
+        "away_score": 0,
+        "tournament": "Friendly 2026",
+        "is_home": true
+      },
+      {
+        "event_id": 15437153,
+        "fifa_match_id": "b7blcsc30awohib8cn3gmqc5w",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Canadá",
+        "away_team": "Islândia",
+        "match_date": "2026-03-28T17:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15362807,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Canadá",
+        "away_team": "Guatemala",
+        "match_date": "2026-01-18T03:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Croácia": {
+    "team": "Croácia",
+    "year": 2026,
+    "updated_at": "2026-06-06T18:01:05.217504+00:00",
+    "count": 4,
+    "friendlies": [
+      {
+        "event_id": 15536792,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Croácia",
+        "away_team": "Eslovênia",
+        "match_date": "2026-06-07T18:45:00+00:00",
+        "status": "notstarted",
+        "home_score": null,
+        "away_score": null,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15536790,
+        "fifa_match_id": "axlm984boyrjk108a3d0cufis",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Croácia",
+        "away_team": "Bélgica",
+        "match_date": "2026-06-02T16:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15332282,
+        "fifa_match_id": "77api02043k38olppgeoexbf8",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Croácia",
+        "away_team": "Brasil",
+        "match_date": "2026-04-01T00:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 3,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15332281,
+        "fifa_match_id": "bybdtvmimwcms1fta8w8aejv8",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Colômbia",
+        "away_team": "Croácia",
+        "match_date": "2026-03-26T23:30:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      }
+    ]
+  },
+  "Coreia do Sul": {
+    "team": "Coreia do Sul",
+    "year": 2026,
+    "updated_at": "2026-06-06T18:01:17.244108+00:00",
+    "count": 4,
+    "friendlies": [
+      {
+        "event_id": 16173602,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Coreia do Sul",
+        "away_team": "El Salvador",
+        "match_date": "2026-06-04T01:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16173601,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Coreia do Sul",
+        "away_team": "Trinidad and Tobago",
+        "match_date": "2026-05-31T01:00:00+00:00",
+        "status": "finished",
+        "home_score": 5,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15691372,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Áustria",
+        "away_team": "Coreia do Sul",
+        "match_date": "2026-03-31T18:45:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15776616,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Coreia do Sul",
+        "away_team": "Costa do Marfim",
+        "match_date": "2026-03-28T14:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 4,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Cabo Verde": {
+    "team": "Cabo Verde",
+    "year": 2026,
+    "updated_at": "2026-06-06T18:01:30.803848+00:00",
+    "count": 2,
+    "friendlies": [
+      {
+        "event_id": 16277698,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Cabo Verde",
+        "away_team": "Bermuda",
+        "match_date": "2026-06-06T20:00:00+00:00",
+        "status": "notstarted",
+        "home_score": null,
+        "away_score": null,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16130132,
+        "fifa_match_id": "c4pq3e6ss6258jq1d6xodj6s4",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Cabo Verde",
+        "away_team": "Sérvia",
+        "match_date": "2026-05-31T15:00:00+00:00",
+        "status": "finished",
+        "home_score": 3,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Argentina": {
+    "team": "Argentina",
+    "year": 2026,
+    "updated_at": "2026-06-07T01:55:54.419955+00:00",
+    "count": 4,
+    "friendlies": [
+      {
+        "event_id": 16174777,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Argentina",
+        "away_team": "Islândia",
+        "match_date": "2026-06-10T00:30:00+00:00",
+        "status": "notstarted",
+        "home_score": null,
+        "away_score": null,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16118858,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Argentina",
+        "away_team": "Honduras",
+        "match_date": "2026-06-07T00:00:00+00:00",
+        "status": "live",
+        "home_score": 2,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15884050,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Argentina",
+        "away_team": "Zambia",
+        "match_date": "2026-03-31T23:30:00+00:00",
+        "status": "finished",
+        "home_score": 5,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15847002,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Argentina",
+        "away_team": "Mauritania",
+        "match_date": "2026-03-27T23:15:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Butão": {
+    "team": "Butão",
+    "year": 2026,
+    "updated_at": "2026-06-08T23:26:40.617846+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "British Virgin Islands": {
+    "team": "British Virgin Islands",
+    "year": 2026,
+    "updated_at": "2026-06-07T02:27:24.155893+00:00",
+    "count": 4,
+    "friendlies": [
+      {
+        "event_id": 16264574,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "British Virgin Islands",
+        "away_team": "Bonaire",
+        "match_date": "2026-06-06T17:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16205027,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Gibraltar",
+        "away_team": "British Virgin Islands",
+        "match_date": "2026-06-03T17:00:00+00:00",
+        "status": "finished",
+        "home_score": 4,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15888685,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "British Virgin Islands",
+        "away_team": "Anguilla",
+        "match_date": "2026-03-29T21:30:00+00:00",
+        "status": "finished",
+        "home_score": 4,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15888662,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Cayman Islands",
+        "away_team": "British Virgin Islands",
+        "match_date": "2026-03-27T00:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      }
+    ]
+  },
+  "Bermudas": {
+    "team": "Bermudas",
+    "year": 2026,
+    "updated_at": "2026-06-07T02:27:42.851926+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Belize": {
+    "team": "Belize",
+    "year": 2026,
+    "updated_at": "2026-06-07T02:27:46.582362+00:00",
+    "count": 2,
+    "friendlies": [
+      {
+        "event_id": 15888688,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Guyana",
+        "away_team": "Belize",
+        "match_date": "2026-03-30T20:30:00+00:00",
+        "status": "finished",
+        "home_score": 3,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15888669,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Belize",
+        "away_team": "Sint Maarten",
+        "match_date": "2026-03-27T22:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 3,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Dinamarca": {
+    "team": "Dinamarca",
+    "year": 2026,
+    "updated_at": "2026-06-07T17:56:39.678918+00:00",
+    "count": 3,
+    "friendlies": [
+      {
+        "event_id": 16174772,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Dinamarca",
+        "away_team": "Ucrânia",
+        "match_date": "2026-06-07T16:30:00+00:00",
+        "status": "live",
+        "home_score": 2,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16130145,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Dinamarca",
+        "away_team": "República Democrática do Congo",
+        "match_date": "2026-06-03T18:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": null,
+        "fifa_match_id": "1wje1olm2p5oda2e9rfg39rf8",
+        "sources": [
+          "fifa"
+        ],
+        "home_team": "RD do Congo",
+        "away_team": "Dinamarca",
+        "match_date": "2026-06-03T18:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 0,
+        "tournament": "Friendly 2026",
+        "is_home": false
+      }
+    ]
+  },
+  "Croatia U23": {
+    "team": "Croatia U23",
+    "year": 2026,
+    "updated_at": "2026-06-07T18:19:26.706603+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Kosovo": {
+    "team": "Kosovo",
+    "year": 2026,
+    "updated_at": "2026-06-07T18:19:35.881316+00:00",
+    "count": 2,
+    "friendlies": [
+      {
+        "event_id": 16223229,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Kosovo",
+        "away_team": "Andorra",
+        "match_date": "2026-06-07T18:00:00+00:00",
+        "status": "live",
+        "home_score": 0,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16186148,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "República Tcheca",
+        "away_team": "Kosovo",
+        "match_date": "2026-05-31T14:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      }
+    ]
+  },
+  "Colômbia": {
+    "team": "Colômbia",
+    "year": 2026,
+    "updated_at": "2026-06-08T00:39:43.094679+00:00",
+    "count": 4,
+    "friendlies": [
+      {
+        "event_id": 16118860,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Colômbia",
+        "away_team": "Jordânia",
+        "match_date": "2026-06-07T23:00:00+00:00",
+        "status": "live",
+        "home_score": 2,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16112839,
+        "fifa_match_id": "90ut0tvvx9kwphi6kfifgwmj8",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Colômbia",
+        "away_team": "Costa Rica",
+        "match_date": "2026-06-01T23:00:00+00:00",
+        "status": "finished",
+        "home_score": 3,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15655701,
+        "fifa_match_id": "d0dv1q4skih9t6kdr61higutw",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Colômbia",
+        "away_team": "França",
+        "match_date": "2026-03-29T19:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 3,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15332281,
+        "fifa_match_id": "bybdtvmimwcms1fta8w8aejv8",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Colômbia",
+        "away_team": "Croácia",
+        "match_date": "2026-03-26T23:30:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Austrália": {
+    "team": "Austrália",
+    "year": 2026,
+    "updated_at": "2026-06-08T23:27:44.775765+00:00",
+    "count": 2,
+    "friendlies": [
+      {
+        "event_id": 16118856,
+        "fifa_match_id": "4mlv8jenh5g1oxevvowsf66ms",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Suíça",
+        "away_team": "Austrália",
+        "match_date": "2026-06-06T19:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15891671,
+        "fifa_match_id": "arj1vbjk2e4c53nfz7i0i3mdw",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "México",
+        "away_team": "Austrália",
+        "match_date": "2026-05-31T02:00:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      }
+    ]
+  },
+  "Filipinas": {
+    "team": "Filipinas",
+    "year": 2026,
+    "updated_at": "2026-06-08T08:06:20.628902+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Sri Lanka": {
+    "team": "Sri Lanka",
+    "year": 2026,
+    "updated_at": "2026-06-08T08:07:38.347050+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Camarões": {
+    "team": "Camarões",
+    "year": 2026,
+    "updated_at": "2026-06-08T15:15:55.296015+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Cazaquistão": {
+    "team": "Cazaquistão",
+    "year": 2026,
+    "updated_at": "2026-06-08T15:19:13.263358+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Arábia Saudita": {
+    "team": "Arábia Saudita",
+    "year": 2026,
+    "updated_at": "2026-06-09T20:33:28.614507+00:00",
+    "count": 6,
+    "friendlies": [
+      {
+        "event_id": 16173603,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Senegal",
+        "away_team": "Arábia Saudita",
+        "match_date": "2026-06-09T23:00:00+00:00",
+        "status": "notstarted",
+        "home_score": null,
+        "away_score": null,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": null,
+        "fifa_match_id": "bhz5drgsjkpyki995ixf5wy6s",
+        "sources": [
+          "fifa"
+        ],
+        "home_team": "Porto Rico",
+        "away_team": "Arábia Saudita",
+        "match_date": "2026-06-06T00:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 3,
+        "tournament": "Friendly 2026",
+        "is_home": false
+      },
+      {
+        "event_id": 16277694,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Arábia Saudita",
+        "away_team": "Puerto Rico",
+        "match_date": "2026-06-05T23:00:00+00:00",
+        "status": "finished",
+        "home_score": 3,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 16143337,
+        "fifa_match_id": "2pdq43eo947vum679tj81q3o4",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Equador",
+        "away_team": "Arábia Saudita",
+        "match_date": "2026-05-31T00:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15842566,
+        "fifa_match_id": "cca8rjahua6mw1d35urjurggk",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Sérvia",
+        "away_team": "Arábia Saudita",
+        "match_date": "2026-03-31T16:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15859096,
+        "fifa_match_id": "8dfu7be9cd6srea65oaez31n8",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Arábia Saudita",
+        "away_team": "Egito",
+        "match_date": "2026-03-27T17:30:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 4,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Itália": {
+    "team": "Itália",
+    "year": 2026,
+    "updated_at": "2026-06-08T17:24:33.028838+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Uzbequistão": {
+    "team": "Uzbequistão",
+    "year": 2026,
+    "updated_at": "2026-06-08T19:05:55.432044+00:00",
+    "count": 4,
+    "friendlies": [
+      {
+        "event_id": 16205032,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Holanda",
+        "away_team": "Uzbequistão",
+        "match_date": "2026-06-08T18:45:00+00:00",
+        "status": "live",
+        "home_score": 0,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15530938,
+        "fifa_match_id": "3v98lwjueowojkv3qnmtqdnh0",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Canadá",
+        "away_team": "Uzbequistão",
+        "match_date": "2026-06-02T01:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15448896,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Uzbequistão",
+        "away_team": "Urartu",
+        "match_date": "2026-01-30T13:00:00+00:00",
+        "status": "finished",
+        "home_score": 4,
+        "away_score": 2,
+        "tournament": "Club Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15433285,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Uzbequistão",
+        "away_team": "China",
+        "match_date": "2026-01-26T12:30:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      }
+    ]
+  },
+  "Bulgária": {
+    "team": "Bulgária",
+    "year": 2026,
+    "updated_at": "2026-06-08T23:26:44.413747+00:00",
+    "count": 0,
+    "friendlies": []
+  },
+  "Catar": {
+    "team": "Catar",
+    "year": 2026,
+    "updated_at": "2026-06-08T23:26:48.299577+00:00",
+    "count": 3,
+    "friendlies": [
+      {
+        "event_id": 16118857,
+        "fifa_match_id": "98k0n9a3taue2rz2u4bxuidck",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Catar",
+        "away_team": "El Salvador",
+        "match_date": "2026-06-06T20:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15891670,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Irlanda",
+        "away_team": "Catar",
+        "match_date": "2026-05-28T18:45:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": null,
+        "fifa_match_id": "6w89623vojcheocd7kn67eac",
+        "sources": [
+          "fifa"
+        ],
+        "home_team": "República da Irlanda",
+        "away_team": "Catar",
+        "match_date": "2026-05-28T18:45:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 0,
+        "tournament": "Friendly 2026",
+        "is_home": false
+      }
+    ]
+  },
+  "Japão": {
+    "team": "Japão",
+    "year": 2026,
+    "updated_at": "2026-06-09T00:39:09.140360+00:00",
+    "count": 3,
+    "friendlies": [
+      {
+        "event_id": 16012856,
+        "fifa_match_id": "42fafb27a9cce9p9qzjepfro",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Japão",
+        "away_team": "Islândia",
+        "match_date": "2026-05-31T10:25:00+00:00",
+        "status": "finished",
+        "home_score": 1,
+        "away_score": 0,
+        "tournament": "Int. Friendly Games",
+        "is_home": true
+      },
+      {
+        "event_id": 15366477,
+        "fifa_match_id": "7dvu9pni7lpkg85ruh97uq51w",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Inglaterra",
+        "away_team": "Japão",
+        "match_date": "2026-03-31T18:45:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 15396516,
+        "fifa_match_id": "ra3rh8vr8fqf21ssf4z7gs9g",
+        "sources": [
+          "sofascore",
+          "fifa"
+        ],
+        "home_team": "Escócia",
+        "away_team": "Japão",
+        "match_date": "2026-03-28T17:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      }
+    ]
+  },
+  "Malta": {
+    "team": "Malta",
+    "year": 2026,
+    "updated_at": "2026-06-09T11:00:45.462869+00:00",
+    "count": 2,
+    "friendlies": [
+      {
+        "event_id": 16174766,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Azerbaijan",
+        "away_team": "Malta",
+        "match_date": "2026-06-05T18:00:00+00:00",
+        "status": "finished",
+        "home_score": 0,
+        "away_score": 2,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      },
+      {
+        "event_id": 16153423,
+        "fifa_match_id": null,
+        "sources": [
+          "sofascore"
+        ],
+        "home_team": "Eslováquia",
+        "away_team": "Malta",
+        "match_date": "2026-06-01T16:00:00+00:00",
+        "status": "finished",
+        "home_score": 2,
+        "away_score": 1,
+        "tournament": "Int. Friendly Games",
+        "is_home": false
+      }
+    ]
+  }
+}

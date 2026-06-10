@@ -1,0 +1,155 @@
+{
+  "event_id": 13127506,
+  "home_team": "Colômbia",
+  "away_team": "Jordânia",
+  "event_name": "Colômbia·Jordânia",
+  "utc_date": "2026-06-07T23:00:00Z",
+  "betradar_id": "71170504",
+  "is_live": true,
+  "inplay": {
+    "home_score": 2,
+    "away_score": 0,
+    "minute": 82,
+    "stoppage_time": null,
+    "home_corners": 2,
+    "away_corners": 1,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 1,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.003,
+    "X": 75.0,
+    "2": 250.0
+  },
+  "h2h_implied": {
+    "1": 0.9827945435246943,
+    "X": 0.013234966519465884,
+    "2": 0.003970489955839765
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 2.4,
+      "Menos de 2.5": 1.55
+    },
+    "3.5": {
+      "Mais de 3.5": 8.0,
+      "Menos de 3.5": 1.05
+    },
+    "4.5": {
+      "Mais de 4.5": 25.0
+    },
+    "5.5": {
+      "Mais de 5.5": 40.0
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.3924050632911393,
+      "Menos de 2.5": 0.6075949367088608
+    },
+    "3.5": {
+      "Mais de 3.5": 0.11602209944751382,
+      "Menos de 3.5": 0.8839779005524862
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {
+    "3.5": {
+      "Mais de 3.5": 1.45,
+      "Menos de 3.5": 2.55
+    },
+    "4.5": {
+      "Mais de 4.5": 2.6,
+      "Menos de 4.5": 1.42
+    },
+    "5.5": {
+      "Mais de 5.5": 4.85,
+      "Menos de 5.5": 1.12
+    },
+    "6.5": {
+      "Mais de 6.5": 8.75,
+      "Menos de 6.5": 1.02
+    },
+    "7.5": {
+      "Mais de 7.5": 15.0
+    },
+    "8.5": {
+      "Mais de 8.5": 25.0
+    }
+  },
+  "corners_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.6375000000000001,
+      "Menos de 3.5": 0.36250000000000004
+    },
+    "4.5": {
+      "Mais de 4.5": 0.35323383084577115,
+      "Menos de 4.5": 0.6467661691542289
+    },
+    "5.5": {
+      "Mais de 5.5": 0.18760469011725298,
+      "Menos de 5.5": 0.8123953098827471
+    },
+    "6.5": {
+      "Mais de 6.5": 0.10440122824974413,
+      "Menos de 6.5": 0.8955987717502559
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    },
+    "8.5": {
+      "Mais de 8.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.15492957746478872,
+      "Não": 0.8450704225352113
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.07275320970042796,
+      "Não": 0.927246790299572
+    },
+    "ft_and_btts": {
+      "Colômbia e Sim": 0.14226391879421718,
+      "Colômbia e Não": 0.8330770019481185,
+      "Empate e Sim": 0.015411924536040194,
+      "Jordânia e Sim": 0.009247154721624117
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.3791020987173712,
+      "X e Mais de 2.5": 0.015480002364292658,
+      "2 e Mais de 2.5": 0.006192000945717064,
+      "1 e Menos de 2.5": 0.599225897972619
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.10393697727957103,
+      "X e Mais de 3.5": 0.015590546591935655,
+      "2 e Mais de 3.5": 0.006236218636774263,
+      "1 e Menos de 3.5": 0.874236257491719
+    }
+  },
+  "btts_odds": {
+    "yes": 6.15,
+    "no": 1.1
+  },
+  "next_goal_odds": {
+    "home": 3.25,
+    "away": 7.0
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.000288
+  },
+  "raw_market_count": 117,
+  "captured_at": "2026-06-08T00:50:16.507554+00:00"
+}

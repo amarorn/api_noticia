@@ -10,7 +10,7 @@ build/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-data/lake/
+# data/lake/
 mlflow.db
 mlruns/
 *.parquet

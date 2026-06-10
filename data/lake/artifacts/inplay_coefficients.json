@@ -1,0 +1,117 @@
+{
+  "momentum_betas": [
+    {
+      "name": "intercept",
+      "value": 0.15036884985347537,
+      "std_error": 0.006890062082547906,
+      "z_score": 21.824,
+      "significant": true
+    },
+    {
+      "name": "goal_diff",
+      "value": 0.013152041312626279,
+      "std_error": 0.004456166368044765,
+      "z_score": 2.951,
+      "significant": true
+    },
+    {
+      "name": "goal_diff_squared",
+      "value": 0.01603121845545421,
+      "std_error": 0.0007041636691759307,
+      "z_score": 22.766,
+      "significant": true
+    },
+    {
+      "name": "late_game",
+      "value": -0.20625625998552247,
+      "std_error": 0.0684656817151109,
+      "z_score": -3.013,
+      "significant": true
+    },
+    {
+      "name": "home_red_cards",
+      "value": 0.0,
+      "std_error": 2.62144,
+      "z_score": 0.0,
+      "significant": false
+    },
+    {
+      "name": "away_red_cards",
+      "value": 0.0,
+      "std_error": 2.62144,
+      "z_score": 0.0,
+      "significant": false
+    },
+    {
+      "name": "corner_share",
+      "value": 0.0,
+      "std_error": 2.62144,
+      "z_score": 0.0,
+      "significant": false
+    },
+    {
+      "name": "goal_diff_x_late",
+      "value": -0.04726041723890076,
+      "std_error": 0.017449531200326565,
+      "z_score": -2.708,
+      "significant": true
+    }
+  ],
+  "nhpp_weights": [
+    {
+      "start_min": 0,
+      "end_min": 15,
+      "weight": 0.30000000301866087,
+      "std_error": 0.05
+    },
+    {
+      "start_min": 15,
+      "end_min": 30,
+      "weight": 1.823615507433534,
+      "std_error": 0.05
+    },
+    {
+      "start_min": 30,
+      "end_min": 45,
+      "weight": 1.5021982513789027,
+      "std_error": 0.05
+    },
+    {
+      "start_min": 45,
+      "end_min": 60,
+      "weight": 1.1373641751103523,
+      "std_error": 0.05
+    },
+    {
+      "start_min": 60,
+      "end_min": 75,
+      "weight": 0.8038024739166277,
+      "std_error": 0.05
+    },
+    {
+      "start_min": 75,
+      "end_min": 90,
+      "weight": 0.4330225031573292,
+      "std_error": 0.05
+    }
+  ],
+  "trained_at": "2026-06-09T11:28:06.213337+00:00",
+  "train_seasons": [
+    2010,
+    2011,
+    2012,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021
+  ],
+  "n_observations": 15660,
+  "in_sample_loglik": 0.0,
+  "holdout_brier": 0.0,
+  "holdout_brier_baseline": 0.0,
+  "dataset_hash": ""
+}

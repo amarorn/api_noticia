@@ -1,0 +1,65 @@
+{
+  "event_id": 13259539,
+  "home_team": "9 De Octubre",
+  "away_team": "Vinotinto",
+  "event_name": "9 De Octubre·Vinotinto",
+  "utc_date": "2026-06-09T20:30:00Z",
+  "betradar_id": "69880388",
+  "is_live": true,
+  "inplay": {
+    "home_score": 2,
+    "away_score": 1,
+    "minute": 95,
+    "stoppage_time": "5:25",
+    "home_corners": 2,
+    "away_corners": 1,
+    "home_yellow_cards": 5,
+    "away_yellow_cards": 2,
+    "ht_home_score": 2,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.006,
+    "X": 20.0,
+    "2": 50.0
+  },
+  "h2h_implied": {
+    "1": 0.9339684318670028,
+    "X": 0.04716540580928365,
+    "2": 0.018866162323713458
+  },
+  "totals": {
+    "3.5": {
+      "Mais de 3.5": 8.75
+    },
+    "4.5": {
+      "Mais de 4.5": 30.0,
+      "Menos de 4.5": 1.001
+    }
+  },
+  "totals_implied": {
+    "3.5": {
+      "Mais de 3.5": 1.0
+    },
+    "4.5": {
+      "Mais de 4.5": 0.03257013866494679,
+      "Menos de 4.5": 0.9674298613350532
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 18.0,
+    "away": 20.0
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.000333
+  },
+  "raw_market_count": 11,
+  "captured_at": "2026-06-09T22:30:51.259478+00:00"
+}

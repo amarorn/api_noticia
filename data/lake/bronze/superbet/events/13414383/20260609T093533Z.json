@@ -1,0 +1,134 @@
+{
+  "event_id": 13414383,
+  "home_team": "Indonésia (F)",
+  "away_team": "Cambódia (F)",
+  "event_name": "Indonésia (F)·Cambódia (F)",
+  "utc_date": "2026-06-09T08:30:00Z",
+  "betradar_id": "71732822",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 0,
+    "minute": 45,
+    "stoppage_time": null,
+    "home_corners": 1,
+    "away_corners": 1,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 2.65,
+    "X": 2.15,
+    "2": 4.2
+  },
+  "h2h_implied": {
+    "1": 0.34922169583293056,
+    "X": 0.43043604370105387,
+    "2": 0.22034226046601568
+  },
+  "totals": {
+    "0.5": {
+      "Mais de 0.5": 1.38,
+      "Menos de 0.5": 2.75
+    },
+    "1.5": {
+      "Mais de 1.5": 2.7,
+      "Menos de 1.5": 1.4
+    },
+    "2.5": {
+      "Mais de 2.5": 6.15,
+      "Menos de 2.5": 1.07
+    },
+    "3.5": {
+      "Mais de 3.5": 14.0
+    },
+    "4.5": {
+      "Mais de 4.5": 30.0
+    },
+    "5.5": {
+      "Mais de 5.5": 35.0
+    }
+  },
+  "totals_implied": {
+    "0.5": {
+      "Mais de 0.5": 0.6658595641646489,
+      "Menos de 0.5": 0.334140435835351
+    },
+    "1.5": {
+      "Mais de 1.5": 0.3414634146341463,
+      "Menos de 1.5": 0.6585365853658537
+    },
+    "2.5": {
+      "Mais de 2.5": 0.14819944598337947,
+      "Menos de 2.5": 0.8518005540166204
+    },
+    "3.5": {
+      "Mais de 3.5": 1.0
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.11931818181818181,
+      "Não": 0.8806818181818181
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.0531299316149395,
+      "Não": 0.9468700683850605
+    },
+    "ft_and_btts": {
+      "Indonésia (F) e Sim": 0.0679963767195958,
+      "Indonésia (F) e Não": 0.2765954307237795,
+      "Empate e Sim": 0.13055304330162396,
+      "Empate e Não": 0.291413043083982,
+      "Cambódia (F) e Sim": 0.04799744239030292,
+      "Cambódia (F) e Não": 0.18544466378071583
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.14603108375925733,
+      "X e Mais de 1.5": 0.12850735370814645,
+      "2 e Mais de 1.5": 0.09179096693439032,
+      "1 e Menos de 1.5": 0.20079274016897883,
+      "X e Menos de 1.5": 0.2868467716699698,
+      "2 e Menos de 1.5": 0.14603108375925733
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.08757202740818701,
+      "X e Mais de 2.5": 0.020798356509444418,
+      "2 e Mais de 2.5": 0.05546228402518511,
+      "1 e Menos de 2.5": 0.2683658904444441,
+      "X e Menos de 2.5": 0.38694616761757056,
+      "2 e Menos de 2.5": 0.18085527399516887
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.02864131380000666,
+      "X e Mais de 3.5": 0.021480985350004995,
+      "2 e Mais de 3.5": 0.017184788280003995,
+      "1 e Menos de 3.5": 0.31823682000007397,
+      "X e Menos de 3.5": 0.39964623906986035,
+      "2 e Menos de 3.5": 0.21480985350004994
+    }
+  },
+  "btts_odds": {
+    "yes": 4.3,
+    "no": 1.18
+  },
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.34962,
+    "away": 0.217959
+  },
+  "raw_market_count": 90,
+  "captured_at": "2026-06-09T09:35:33.713459+00:00"
+}

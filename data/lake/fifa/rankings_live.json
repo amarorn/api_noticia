@@ -1,0 +1,1479 @@
+{
+  "20000": {
+    "team_id": "20000",
+    "country_code": "AFG",
+    "team_name": "Afeganistão",
+    "points": 972.745782,
+    "points_before": 978.683469
+  },
+  "43832": {
+    "team_id": "43832",
+    "country_code": "PAK",
+    "team_name": "Paquistão",
+    "points": 837.151593,
+    "points_before": 830.779322
+  },
+  "43829": {
+    "team_id": "43829",
+    "country_code": "MYA",
+    "team_name": "Mianmar",
+    "points": 1010.914839,
+    "points_before": 1015.138408
+  },
+  "43838": {
+    "team_id": "43838",
+    "country_code": "SYR",
+    "team_name": "Síria",
+    "points": 1279.304493,
+    "points_before": 1278.101128
+  },
+  "43828": {
+    "team_id": "43828",
+    "country_code": "MDV",
+    "team_name": "Maldivas",
+    "points": 954.928349,
+    "points_before": 945.015919
+  },
+  "1903356": {
+    "team_id": "1903356",
+    "country_code": "MNE",
+    "team_name": "Montenegro",
+    "points": 1301.977191,
+    "points_before": 1300.359299
+  },
+  "20001": {
+    "team_id": "20001",
+    "country_code": "AND",
+    "team_name": "Andorra",
+    "points": 946.429826,
+    "points_before": 948.383888
+  },
+  "43966": {
+    "team_id": "43966",
+    "country_code": "SMR",
+    "team_name": "San Marino",
+    "points": 722.933728,
+    "points_before": 726.330601
+  },
+  "43818": {
+    "team_id": "43818",
+    "country_code": "IRQ",
+    "team_name": "Iraque",
+    "points": 1451.153466,
+    "points_before": 1447.771454
+  },
+  "43956": {
+    "team_id": "43956",
+    "country_code": "LIE",
+    "team_name": "Liechtenstein",
+    "points": 797.701009,
+    "points_before": 799.89206
+  },
+  "1942535": {
+    "team_id": "1942535",
+    "country_code": "KOS",
+    "team_name": "Kosovo",
+    "points": 1319.120924,
+    "points_before": 1317.166862
+  },
+  "20002": {
+    "team_id": "20002",
+    "country_code": "AIA",
+    "team_name": "Anguila",
+    "points": 761.32,
+    "points_before": 769.31
+  },
+  "43904": {
+    "team_id": "43904",
+    "country_code": "SLV",
+    "team_name": "El Salvador",
+    "points": 1232.626283,
+    "points_before": 1247.769156
+  },
+  "43895": {
+    "team_id": "43895",
+    "country_code": "BAH",
+    "team_name": "Bahamas",
+    "points": 824.31,
+    "points_before": 817.25
+  },
+  "43900": {
+    "team_id": "43900",
+    "country_code": "CAY",
+    "team_name": "Ilhas Cayman",
+    "points": 850.061011,
+    "points_before": 855.449528
+  },
+  "20004": {
+    "team_id": "20004",
+    "country_code": "VGB",
+    "team_name": "Ilhas Virgens Britânicas",
+    "points": 777.405734,
+    "points_before": 782.137325
+  },
+  "20003": {
+    "team_id": "20003",
+    "country_code": "BHU",
+    "team_name": "Butão",
+    "points": 875.845061,
+    "points_before": 880.548088
+  },
+  "43825": {
+    "team_id": "43825",
+    "country_code": "LBN",
+    "team_name": "Líbano",
+    "points": 1172.215162,
+    "points_before": 1187.960362
+  },
+  "43842": {
+    "team_id": "43842",
+    "country_code": "YEM",
+    "team_name": "Iêmen",
+    "points": 1065.236881,
+    "points_before": 1049.491681
+  },
+  "43810": {
+    "team_id": "43810",
+    "country_code": "BRU",
+    "team_name": "Brunei",
+    "points": 857.733061,
+    "points_before": 863.09176
+  },
+  "44009": {
+    "team_id": "44009",
+    "country_code": "CAM",
+    "team_name": "Camboja",
+    "points": 922.317911,
+    "points_before": 916.241304
+  },
+  "43837": {
+    "team_id": "43837",
+    "country_code": "SRI",
+    "team_name": "Sri Lanka",
+    "points": 862.1698019616629,
+    "points_before": 870.0936613270889
+  },
+  "1941613": {
+    "team_id": "1941613",
+    "country_code": "GIB",
+    "team_name": "Gibraltar",
+    "points": 820.260818,
+    "points_before": 814.872301
+  },
+  "20006": {
+    "team_id": "20006",
+    "country_code": "ERI",
+    "team_name": "Eritreia",
+    "points": 887.063341,
+    "points_before": 871.672831
+  },
+  "43874": {
+    "team_id": "43874",
+    "country_code": "NAM",
+    "team_name": "Namíbia",
+    "points": 1148.839695,
+    "points_before": 1148.408265
+  },
+  "43885": {
+    "team_id": "43885",
+    "country_code": "SWZ",
+    "team_name": "Essuatíni",
+    "points": 979.013939,
+    "points_before": 994.404449
+  },
+  "20007": {
+    "team_id": "20007",
+    "country_code": "GUM",
+    "team_name": "Guam",
+    "points": 819.88369,
+    "points_before": 823.078898
+  },
+  "43814": {
+    "team_id": "43814",
+    "country_code": "HKG",
+    "team_name": "Hong Kong",
+    "points": 1024.164346,
+    "points_before": 1030.240953
+  },
+  "43915": {
+    "team_id": "43915",
+    "country_code": "PUR",
+    "team_name": "Porto Rico",
+    "points": 1026.105829,
+    "points_before": 1023.263488
+  },
+  "20012": {
+    "team_id": "20012",
+    "country_code": "ASA",
+    "team_name": "Samoa Americana",
+    "points": 878.13,
+    "points_before": 890.97
+  },
+  "43833": {
+    "team_id": "43833",
+    "country_code": "PHI",
+    "team_name": "Filipinas",
+    "points": 1081.4383185046083,
+    "points_before": 1074.05076992031
+  },
+  "20008": {
+    "team_id": "20008",
+    "country_code": "MNG",
+    "team_name": "Mongólia",
+    "points": 878.081276,
+    "points_before": 879.751523
+  },
+  "1890334": {
+    "team_id": "1890334",
+    "country_code": "TLS",
+    "team_name": "Timor-Leste",
+    "points": 830.998683,
+    "points_before": 825.639984
+  },
+  "43813": {
+    "team_id": "43813",
+    "country_code": "TPE",
+    "team_name": "Taipé Chinesa",
+    "points": 938.20546,
+    "points_before": 947.640356
+  },
+  "43836": {
+    "team_id": "43836",
+    "country_code": "SGP",
+    "team_name": "Cingapura",
+    "points": 1027.357742,
+    "points_before": 1030.4875
+  },
+  "43918": {
+    "team_id": "43918",
+    "country_code": "VIN",
+    "team_name": "São Vicente e Granadinas",
+    "points": 968.269638,
+    "points_before": 963.741411
+  },
+  "20009": {
+    "team_id": "20009",
+    "country_code": "MSR",
+    "team_name": "Montserrat",
+    "points": 926.87,
+    "points_before": 914.26
+  },
+  "44011": {
+    "team_id": "44011",
+    "country_code": "BLZ",
+    "team_name": "Belize",
+    "points": 907.001211,
+    "points_before": 910.735564
+  },
+  "43907": {
+    "team_id": "43907",
+    "country_code": "GUY",
+    "team_name": "Guiana",
+    "points": 1041.902415,
+    "points_before": 1037.344526
+  },
+  "43977": {
+    "team_id": "43977",
+    "country_code": "FIJ",
+    "team_name": "Fiji",
+    "points": 1024.172648,
+    "points_before": 1024.384218
+  },
+  "20010": {
+    "team_id": "20010",
+    "country_code": "NCL",
+    "team_name": "Nova Caledônia",
+    "points": 1046.86,
+    "points_before": 1034.43
+  },
+  "43981": {
+    "team_id": "43981",
+    "country_code": "TAH",
+    "team_name": "Taiti",
+    "points": 1019.22,
+    "points_before": 1009.52
+  },
+  "43978": {
+    "team_id": "43978",
+    "country_code": "NZL",
+    "team_name": "Nova Zelândia",
+    "points": 1269.83,
+    "points_before": 1265.18
+  },
+  "43910": {
+    "team_id": "43910",
+    "country_code": "JAM",
+    "team_name": "Jamaica",
+    "points": 1362.459023,
+    "points_before": 1363.956877
+  },
+  "20011": {
+    "team_id": "20011",
+    "country_code": "TCA",
+    "team_name": "Ilhas Turcas e Caicos",
+    "points": 803.98,
+    "points_before": 809.93
+  },
+  "44039": {
+    "team_id": "44039",
+    "country_code": "TGA",
+    "team_name": "Tonga",
+    "points": 835.64,
+    "points_before": 847.13
+  },
+  "1882637": {
+    "team_id": "1882637",
+    "country_code": "SAM",
+    "team_name": "Samoa",
+    "points": 876.41,
+    "points_before": 881.07
+  },
+  "44007": {
+    "team_id": "44007",
+    "country_code": "COK",
+    "team_name": "Ilhas Cook",
+    "points": 882.58,
+    "points_before": 896.59
+  },
+  "1881967": {
+    "team_id": "1881967",
+    "country_code": "VIR",
+    "team_name": "Ilhas Virgens Americanas",
+    "points": 779.764266,
+    "points_before": 782.606607
+  },
+  "43846": {
+    "team_id": "43846",
+    "country_code": "BOT",
+    "team_name": "Botsuana",
+    "points": 1057.90883,
+    "points_before": 1062.419241
+  },
+  "20014": {
+    "team_id": "20014",
+    "country_code": "COD",
+    "team_name": "RD do Congo",
+    "points": 1479.684122,
+    "points_before": 1478.350424
+  },
+  "43843": {
+    "team_id": "43843",
+    "country_code": "ALG",
+    "team_name": "Argélia",
+    "points": 1571.033293,
+    "points_before": 1564.2567
+  },
+  "43941": {
+    "team_id": "43941",
+    "country_code": "DEN",
+    "team_name": "Dinamarca",
+    "points": 1623.905058,
+    "points_before": 1616.75078
+  },
+  "43925": {
+    "team_id": "43925",
+    "country_code": "CHI",
+    "team_name": "Chile",
+    "points": 1455.283124,
+    "points_before": 1462.005352
+  },
+  "43808": {
+    "team_id": "43808",
+    "country_code": "BHR",
+    "team_name": "Bahrein",
+    "points": 1259.531658,
+    "points_before": 1258.675173
+  },
+  "43996": {
+    "team_id": "43996",
+    "country_code": "DJI",
+    "team_name": "Djibuti",
+    "points": 853.581786,
+    "points_before": 837.594828
+  },
+  "43884": {
+    "team_id": "43884",
+    "country_code": "SDN",
+    "team_name": "Sudão",
+    "points": 1157.223901,
+    "points_before": 1157.223901
+  },
+  "43947": {
+    "team_id": "43947",
+    "country_code": "GEO",
+    "team_name": "Geórgia",
+    "points": 1347.687729,
+    "points_before": 1347.876956
+  },
+  "43809": {
+    "team_id": "43809",
+    "country_code": "BAN",
+    "team_name": "Bangladesh",
+    "points": 902.92965,
+    "points_before": 899.532777
+  },
+  "43830": {
+    "team_id": "43830",
+    "country_code": "NEP",
+    "team_name": "Nepal",
+    "points": 909.3189566133591,
+    "points_before": 916.0370182754618
+  },
+  "43815": {
+    "team_id": "43815",
+    "country_code": "IND",
+    "team_name": "Índia",
+    "points": 1084.930775,
+    "points_before": 1083.601894
+  },
+  "43841": {
+    "team_id": "43841",
+    "country_code": "VIE",
+    "team_name": "Vietnã",
+    "points": 1225.67943,
+    "points_before": 1216.010668
+  },
+  "43812": {
+    "team_id": "43812",
+    "country_code": "CHN",
+    "team_name": "RP da China",
+    "points": 1254.574518,
+    "points_before": 1249.061675
+  },
+  "1895293": {
+    "team_id": "1895293",
+    "country_code": "CUW",
+    "team_name": "Curaçau",
+    "points": 1294.76909,
+    "points_before": 1293.083169
+  },
+  "43849": {
+    "team_id": "43849",
+    "country_code": "CMR",
+    "team_name": "Camarões",
+    "points": 1478.258548,
+    "points_before": 1482.388502
+  },
+  "43839": {
+    "team_id": "43839",
+    "country_code": "THA",
+    "team_name": "Tailândia",
+    "points": 1252.138301,
+    "points_before": 1243.266452
+  },
+  "43816": {
+    "team_id": "43816",
+    "country_code": "IDN",
+    "team_name": "Indonésia",
+    "points": 1144.884887,
+    "points_before": 1148.695439
+  },
+  "44004": {
+    "team_id": "44004",
+    "country_code": "TKM",
+    "team_name": "Turcomenistão",
+    "points": 1078.652346,
+    "points_before": 1087.524195
+  },
+  "43892": {
+    "team_id": "43892",
+    "country_code": "ZIM",
+    "team_name": "Zimbábue",
+    "points": 1119.77695,
+    "points_before": 1117.409716
+  },
+  "44003": {
+    "team_id": "44003",
+    "country_code": "TJK",
+    "team_name": "Tadjiquistão",
+    "points": 1224.925346,
+    "points_before": 1220.206214
+  },
+  "43916": {
+    "team_id": "43916",
+    "country_code": "SKN",
+    "team_name": "São Cristóvão e Nevis",
+    "points": 1035.245318,
+    "points_before": 1041.530974
+  },
+  "43936": {
+    "team_id": "43936",
+    "country_code": "BUL",
+    "team_name": "Bulgária",
+    "points": 1274.06372,
+    "points_before": 1278.904375
+  },
+  "43831": {
+    "team_id": "43831",
+    "country_code": "OMA",
+    "team_name": "Omã",
+    "points": 1320.34,
+    "points_before": 1317.38
+  },
+  "43873": {
+    "team_id": "43873",
+    "country_code": "MOZ",
+    "team_name": "Moçambique",
+    "points": 1227.5278360903485,
+    "points_before": 1223.0975724813172
+  },
+  "43817": {
+    "team_id": "43817",
+    "country_code": "IRN",
+    "team_name": "RI do Irã",
+    "points": 1617.024544,
+    "points_before": 1618.517352
+  },
+  "44005": {
+    "team_id": "44005",
+    "country_code": "UZB",
+    "team_name": "Uzbequistão",
+    "points": 1458.734068,
+    "points_before": 1461.208132
+  },
+  "43876": {
+    "team_id": "43876",
+    "country_code": "NGA",
+    "team_name": "Nigéria",
+    "points": 1586.688586,
+    "points_before": 1587.277634
+  },
+  "43901": {
+    "team_id": "43901",
+    "country_code": "CRC",
+    "team_name": "Costa Rica",
+    "points": 1459.13,
+    "points_before": 1456.28
+  },
+  "43859": {
+    "team_id": "43859",
+    "country_code": "GAM",
+    "team_name": "Gâmbia",
+    "points": 1162.1200659679114,
+    "points_before": 1156.8872912998388
+  },
+  "43869": {
+    "team_id": "43869",
+    "country_code": "MLI",
+    "team_name": "Mali",
+    "points": 1448.711274,
+    "points_before": 1457.09676
+  },
+  "43820": {
+    "team_id": "43820",
+    "country_code": "JOR",
+    "team_name": "Jordânia",
+    "points": 1390.099732,
+    "points_before": 1391.4544
+  },
+  "43923": {
+    "team_id": "43923",
+    "country_code": "BOL",
+    "team_name": "Bolívia",
+    "points": 1325.995377,
+    "points_before": 1329.415509
+  },
+  "43969": {
+    "team_id": "43969",
+    "country_code": "ESP",
+    "team_name": "Espanha",
+    "points": 1879.120563,
+    "points_before": 1877.178865
+  },
+  "43819": {
+    "team_id": "43819",
+    "country_code": "JPN",
+    "team_name": "Japão",
+    "points": 1653.7764,
+    "points_before": 1650.118048
+  },
+  "43860": {
+    "team_id": "43860",
+    "country_code": "GHA",
+    "team_name": "Gana",
+    "points": 1346.881205,
+    "points_before": 1345.227815
+  },
+  "43967": {
+    "team_id": "43967",
+    "country_code": "SCO",
+    "team_name": "Escócia",
+    "points": 1499.920138,
+    "points_before": 1498.350389
+  },
+  "43942": {
+    "team_id": "43942",
+    "country_code": "ENG",
+    "team_name": "Inglaterra",
+    "points": 1827.048678,
+    "points_before": 1825.965482
+  },
+  "43951": {
+    "team_id": "43951",
+    "country_code": "ISL",
+    "team_name": "Islândia",
+    "points": 1352.710214,
+    "points_before": 1344.838506
+  },
+  "43872": {
+    "team_id": "43872",
+    "country_code": "MAR",
+    "team_name": "Marrocos",
+    "points": 1720.393486,
+    "points_before": 1716.343617
+  },
+  "43971": {
+    "team_id": "43971",
+    "country_code": "SUI",
+    "team_name": "Suíça",
+    "points": 1654.685412,
+    "points_before": 1662.179176
+  },
+  "43926": {
+    "team_id": "43926",
+    "country_code": "COL",
+    "team_name": "Colômbia",
+    "points": 1701.299716,
+    "points_before": 1697.426968
+  },
+  "43821": {
+    "team_id": "43821",
+    "country_code": "PRK",
+    "team_name": "RPD da Coreia",
+    "points": 1151.05,
+    "points_before": 1154.63
+  },
+  "44027": {
+    "team_id": "44027",
+    "country_code": "KAZ",
+    "team_name": "Cazaquistão",
+    "points": 1182.957166,
+    "points_before": 1177.810934
+  },
+  "43834": {
+    "team_id": "43834",
+    "country_code": "QAT",
+    "team_name": "Catar",
+    "points": 1452.374271,
+    "points_before": 1454.958587
+  },
+  "43840": {
+    "team_id": "43840",
+    "country_code": "UAE",
+    "team_name": "Emirados Árabes Unidos",
+    "points": 1370.751312,
+    "points_before": 1370.469434
+  },
+  "43999": {
+    "team_id": "43999",
+    "country_code": "KGZ",
+    "team_name": "República Quirguiz",
+    "points": 1192.157969,
+    "points_before": 1191.655395
+  },
+  "43822": {
+    "team_id": "43822",
+    "country_code": "KOR",
+    "team_name": "República da Coreia",
+    "points": 1588.663904,
+    "points_before": 1593.714926
+  },
+  "43854": {
+    "team_id": "43854",
+    "country_code": "CIV",
+    "team_name": "Costa do Marfim",
+    "points": 1532.975251,
+    "points_before": 1528.215937
+  },
+  "43934": {
+    "team_id": "43934",
+    "country_code": "AUT",
+    "team_name": "Áustria",
+    "points": 1585.505339,
+    "points_before": 1590.761831
+  },
+  "43920": {
+    "team_id": "43920",
+    "country_code": "TRI",
+    "team_name": "Trinidad e Tobago",
+    "points": 1219.58613,
+    "points_before": 1221.951833
+  },
+  "43870": {
+    "team_id": "43870",
+    "country_code": "MTN",
+    "team_name": "Mauritânia",
+    "points": 1170.719266,
+    "points_before": 1171.352596
+  },
+  "43823": {
+    "team_id": "43823",
+    "country_code": "KUW",
+    "team_name": "Kuwait",
+    "points": 1106.088151,
+    "points_before": 1103.24993
+  },
+  "43855": {
+    "team_id": "43855",
+    "country_code": "EGY",
+    "team_name": "Egito",
+    "points": 1520.99,
+    "points_before": 1519.18
+  },
+  "43824": {
+    "team_id": "43824",
+    "country_code": "LAO",
+    "team_name": "Laos",
+    "points": 871.16129,
+    "points_before": 877.053338
+  },
+  "43827": {
+    "team_id": "43827",
+    "country_code": "MAS",
+    "team_name": "Malásia",
+    "points": 1086.218087,
+    "points_before": 1095.886849
+  },
+  "43826": {
+    "team_id": "43826",
+    "country_code": "MAC",
+    "team_name": "Macau",
+    "points": 860.314345,
+    "points_before": 865.288885
+  },
+  "43894": {
+    "team_id": "43894",
+    "country_code": "ARU",
+    "team_name": "Aruba",
+    "points": 875.61115,
+    "points_before": 877.297071
+  },
+  "43886": {
+    "team_id": "43886",
+    "country_code": "TAN",
+    "team_name": "Tanzânia",
+    "points": 1177.986922,
+    "points_before": 1186.136602
+  },
+  "43989": {
+    "team_id": "43989",
+    "country_code": "PLE",
+    "team_name": "Palestina",
+    "points": 1243.713925,
+    "points_before": 1244.216499
+  },
+  "43882": {
+    "team_id": "43882",
+    "country_code": "SOM",
+    "team_name": "Somália",
+    "points": 839.169697,
+    "points_before": 830.957459
+  },
+  "43835": {
+    "team_id": "43835",
+    "country_code": "KSA",
+    "team_name": "Arábia Saudita",
+    "points": 1421.427596,
+    "points_before": 1425.678021
+  },
+  "1896913": {
+    "team_id": "1896913",
+    "country_code": "COM",
+    "team_name": "Comores",
+    "points": 1187.9109,
+    "points_before": 1193.057132
+  },
+  "43888": {
+    "team_id": "43888",
+    "country_code": "TUN",
+    "team_name": "Tunísia",
+    "points": 1477.98475,
+    "points_before": 1479.038673
+  },
+  "43953": {
+    "team_id": "43953",
+    "country_code": "IRL",
+    "team_name": "República da Irlanda",
+    "points": 1436.630274,
+    "points_before": 1437.25864
+  },
+  "1902465": {
+    "team_id": "1902465",
+    "country_code": "SRB",
+    "team_name": "Sérvia",
+    "points": 1502.133186,
+    "points_before": 1505.483338
+  },
+  "43927": {
+    "team_id": "43927",
+    "country_code": "ECU",
+    "team_name": "Equador",
+    "points": 1591.73,
+    "points_before": 1589.38
+  },
+  "43937": {
+    "team_id": "43937",
+    "country_code": "BLR",
+    "team_name": "Belarus",
+    "points": 1227.091183,
+    "points_before": 1221.231545
+  },
+  "43906": {
+    "team_id": "43906",
+    "country_code": "GUA",
+    "team_name": "Guatemala",
+    "points": 1240.777936,
+    "points_before": 1243.474984
+  },
+  "43930": {
+    "team_id": "43930",
+    "country_code": "URU",
+    "team_name": "Uruguai",
+    "points": 1674.116893,
+    "points_before": 1672.615179
+  },
+  "43960": {
+    "team_id": "43960",
+    "country_code": "NED",
+    "team_name": "Holanda",
+    "points": 1753.571899,
+    "points_before": 1751.097835
+  },
+  "43883": {
+    "team_id": "43883",
+    "country_code": "RSA",
+    "team_name": "África do Sul",
+    "points": 1429.728396,
+    "points_before": 1433.754124
+  },
+  "43844": {
+    "team_id": "43844",
+    "country_code": "ANG",
+    "team_name": "Angola",
+    "points": 1266.558001,
+    "points_before": 1267.451417
+  },
+  "43851": {
+    "team_id": "43851",
+    "country_code": "CTA",
+    "team_name": "República Centro-Africana",
+    "points": 1084.180103,
+    "points_before": 1083.571601
+  },
+  "43845": {
+    "team_id": "43845",
+    "country_code": "BEN",
+    "team_name": "Benim",
+    "points": 1266.8827135794734,
+    "points_before": 1257.297484
+  },
+  "43879": {
+    "team_id": "43879",
+    "country_code": "SEN",
+    "team_name": "Senegal",
+    "points": 1647.00881718466,
+    "points_before": 1645.22503
+  },
+  "43865": {
+    "team_id": "43865",
+    "country_code": "LBR",
+    "team_name": "Libéria",
+    "points": 1074.686684,
+    "points_before": 1079.019513
+  },
+  "43861": {
+    "team_id": "43861",
+    "country_code": "GUI",
+    "team_name": "Guiné",
+    "points": 1295.598845,
+    "points_before": 1300.00536
+  },
+  "43875": {
+    "team_id": "43875",
+    "country_code": "NIG",
+    "team_name": "Níger",
+    "points": 1179.66151,
+    "points_before": 1185.0748
+  },
+  "43868": {
+    "team_id": "43868",
+    "country_code": "MWI",
+    "team_name": "Maláui",
+    "points": 1129.886817368086,
+    "points_before": 1148.812139032593
+  },
+  "43847": {
+    "team_id": "43847",
+    "country_code": "BFA",
+    "team_name": "Burkina Fasso",
+    "points": 1408.541965,
+    "points_before": 1412.494766
+  },
+  "43862": {
+    "team_id": "43862",
+    "country_code": "GNB",
+    "team_name": "Guiné-Bissau",
+    "points": 1108.381553,
+    "points_before": 1105.718587
+  },
+  "43965": {
+    "team_id": "43965",
+    "country_code": "RUS",
+    "team_name": "Rússia",
+    "points": 1529.602834,
+    "points_before": 1527.237131
+  },
+  "43848": {
+    "team_id": "43848",
+    "country_code": "BDI",
+    "team_name": "Burundi",
+    "points": 1078.009468,
+    "points_before": 1069.31301
+  },
+  "43863": {
+    "team_id": "43863",
+    "country_code": "KEN",
+    "team_name": "Quênia",
+    "points": 1179.003197,
+    "points_before": 1179.542533
+  },
+  "43858": {
+    "team_id": "43858",
+    "country_code": "GAB",
+    "team_name": "Gabão",
+    "points": 1272.991479,
+    "points_before": 1276.281232
+  },
+  "43852": {
+    "team_id": "43852",
+    "country_code": "CHA",
+    "team_name": "Chade",
+    "points": 911.950112,
+    "points_before": 913.873654
+  },
+  "43976": {
+    "team_id": "43976",
+    "country_code": "AUS",
+    "team_name": "Austrália",
+    "points": 1580.674774,
+    "points_before": 1578.136241
+  },
+  "43850": {
+    "team_id": "43850",
+    "country_code": "CPV",
+    "team_name": "Cabo Verde",
+    "points": 1369.292628,
+    "points_before": 1366.125478
+  },
+  "43945": {
+    "team_id": "43945",
+    "country_code": "FIN",
+    "team_name": "Finlândia",
+    "points": 1346.216032,
+    "points_before": 1341.813431
+  },
+  "43898": {
+    "team_id": "43898",
+    "country_code": "BER",
+    "team_name": "Bermudas",
+    "points": 1000.04,
+    "points_before": 987.41
+  },
+  "43887": {
+    "team_id": "43887",
+    "country_code": "TOG",
+    "team_name": "Togo",
+    "points": 1140.3519137886371,
+    "points_before": 1144.28004975456
+  },
+  "43889": {
+    "team_id": "43889",
+    "country_code": "UGA",
+    "team_name": "Uganda",
+    "points": 1264.090591,
+    "points_before": 1273.677568
+  },
+  "43853": {
+    "team_id": "43853",
+    "country_code": "CGO",
+    "team_name": "Congo",
+    "points": 1105.964661421659,
+    "points_before": 1108.2405823793179
+  },
+  "43946": {
+    "team_id": "43946",
+    "country_code": "FRA",
+    "team_name": "França",
+    "points": 1869.998606,
+    "points_before": 1868.589137
+  },
+  "43924": {
+    "team_id": "43924",
+    "country_code": "BRA",
+    "team_name": "Brasil",
+    "points": 1756.493933,
+    "points_before": 1760.458199
+  },
+  "43856": {
+    "team_id": "43856",
+    "country_code": "EQG",
+    "team_name": "Guiné Equatorial",
+    "points": 1195.113303,
+    "points_before": 1190.005687
+  },
+  "43867": {
+    "team_id": "43867",
+    "country_code": "MAD",
+    "team_name": "Madagascar",
+    "points": 1203.846388,
+    "points_before": 1198.872831
+  },
+  "43857": {
+    "team_id": "43857",
+    "country_code": "ETH",
+    "team_name": "Etiópia",
+    "points": 1046.41,
+    "points_before": 1056.95
+  },
+  "43878": {
+    "team_id": "43878",
+    "country_code": "STP",
+    "team_name": "São Tomé e Príncipe",
+    "points": 855.438666,
+    "points_before": 863.358444
+  },
+  "43880": {
+    "team_id": "43880",
+    "country_code": "SEY",
+    "team_name": "Seicheles",
+    "points": 804.161509,
+    "points_before": 811.103992
+  },
+  "43948": {
+    "team_id": "43948",
+    "country_code": "GER",
+    "team_name": "Alemanha",
+    "points": 1724.148302,
+    "points_before": 1716.705142
+  },
+  "43911": {
+    "team_id": "43911",
+    "country_code": "MEX",
+    "team_name": "México",
+    "points": 1687.481759,
+    "points_before": 1684.131607
+  },
+  "43974": {
+    "team_id": "43974",
+    "country_code": "WAL",
+    "team_name": "País de Gales",
+    "points": 1525.824424,
+    "points_before": 1529.705466
+  },
+  "43952": {
+    "team_id": "43952",
+    "country_code": "NIR",
+    "team_name": "Irlanda do Norte",
+    "points": 1362.157683,
+    "points_before": 1360.623767
+  },
+  "43943": {
+    "team_id": "43943",
+    "country_code": "EST",
+    "team_name": "Estônia",
+    "points": 1130.63629,
+    "points_before": 1126.256951
+  },
+  "43905": {
+    "team_id": "43905",
+    "country_code": "GRN",
+    "team_name": "Granada",
+    "points": 989.590097,
+    "points_before": 986.475887
+  },
+  "43864": {
+    "team_id": "43864",
+    "country_code": "LES",
+    "team_name": "Lesoto",
+    "points": 1067.132424,
+    "points_before": 1060.189941
+  },
+  "43866": {
+    "team_id": "43866",
+    "country_code": "LBY",
+    "team_name": "Líbia",
+    "points": 1179.57,
+    "points_before": 1170.6
+  },
+  "43881": {
+    "team_id": "43881",
+    "country_code": "SLE",
+    "team_name": "Serra Leoa",
+    "points": 1149.0967381771927,
+    "points_before": 1142.8921211239256
+  },
+  "43871": {
+    "team_id": "43871",
+    "country_code": "MRI",
+    "team_name": "Maurício",
+    "points": 911.487501,
+    "points_before": 913.449739
+  },
+  "43922": {
+    "team_id": "43922",
+    "country_code": "ARG",
+    "team_name": "Argentina",
+    "points": 1876.118331,
+    "points_before": 1874.814835
+  },
+  "43928": {
+    "team_id": "43928",
+    "country_code": "PAR",
+    "team_name": "Paraguai",
+    "points": 1506.298152,
+    "points_before": 1501.50072
+  },
+  "43961": {
+    "team_id": "43961",
+    "country_code": "NOR",
+    "team_name": "Noruega",
+    "points": 1550.943159,
+    "points_before": 1549.992061
+  },
+  "43962": {
+    "team_id": "43962",
+    "country_code": "POL",
+    "team_name": "Polônia",
+    "points": 1525.594311,
+    "points_before": 1528.003812
+  },
+  "43877": {
+    "team_id": "43877",
+    "country_code": "RWA",
+    "team_name": "Ruanda",
+    "points": 1126.622275,
+    "points_before": 1121.578445
+  },
+  "43929": {
+    "team_id": "43929",
+    "country_code": "PER",
+    "team_name": "Peru",
+    "points": 1457.692964,
+    "points_before": 1459.390555
+  },
+  "43921": {
+    "team_id": "43921",
+    "country_code": "USA",
+    "team_name": "EUA",
+    "points": 1673.126608,
+    "points_before": 1677.34376
+  },
+  "43994": {
+    "team_id": "43994",
+    "country_code": "AZE",
+    "team_name": "Azerbaijão",
+    "points": 1130.263211,
+    "points_before": 1136.6663
+  },
+  "43914": {
+    "team_id": "43914",
+    "country_code": "PAN",
+    "team_name": "Panamá",
+    "points": 1539.155509,
+    "points_before": 1540.598716
+  },
+  "43913": {
+    "team_id": "43913",
+    "country_code": "NCA",
+    "team_name": "Nicarágua",
+    "points": 1115.13142,
+    "points_before": 1116.861511
+  },
+  "1935341": {
+    "team_id": "1935341",
+    "country_code": "SSD",
+    "team_name": "Sudão do Sul",
+    "points": 970.944527,
+    "points_before": 986.931485
+  },
+  "43908": {
+    "team_id": "43908",
+    "country_code": "HAI",
+    "team_name": "Haiti",
+    "points": 1296.614495,
+    "points_before": 1291.711814
+  },
+  "43899": {
+    "team_id": "43899",
+    "country_code": "CAN",
+    "team_name": "Canadá",
+    "points": 1560.616649,
+    "points_before": 1556.482247
+  },
+  "43935": {
+    "team_id": "43935",
+    "country_code": "BEL",
+    "team_name": "Bélgica",
+    "points": 1730.705123,
+    "points_before": 1730.018643
+  },
+  "43891": {
+    "team_id": "43891",
+    "country_code": "ZAM",
+    "team_name": "Zâmbia",
+    "points": 1261.960926,
+    "points_before": 1264.703147
+  },
+  "1882218": {
+    "team_id": "1882218",
+    "country_code": "ATG",
+    "team_name": "Antígua e Barbuda",
+    "points": 986.584414,
+    "points_before": 991.142303
+  },
+  "43896": {
+    "team_id": "43896",
+    "country_code": "BRB",
+    "team_name": "Barbados",
+    "points": 949.48,
+    "points_before": 944.1
+  },
+  "43997": {
+    "team_id": "43997",
+    "country_code": "DMA",
+    "team_name": "Dominica",
+    "points": 900.0,
+    "points_before": 898.38
+  },
+  "43917": {
+    "team_id": "43917",
+    "country_code": "LCA",
+    "team_name": "Santa Lúcia",
+    "points": 976.708996,
+    "points_before": 980.284636
+  },
+  "43931": {
+    "team_id": "43931",
+    "country_code": "VEN",
+    "team_name": "Venezuela",
+    "points": 1468.046323,
+    "points_before": 1468.072771
+  },
+  "43909": {
+    "team_id": "43909",
+    "country_code": "HON",
+    "team_name": "Honduras",
+    "points": 1342.31,
+    "points_before": 1336.96
+  },
+  "43902": {
+    "team_id": "43902",
+    "country_code": "CUB",
+    "team_name": "Cuba",
+    "points": 992.97,
+    "points_before": 979.72
+  },
+  "43903": {
+    "team_id": "43903",
+    "country_code": "DOM",
+    "team_name": "República Dominicana",
+    "points": 1085.93,
+    "points_before": 1077.31
+  },
+  "43919": {
+    "team_id": "43919",
+    "country_code": "SUR",
+    "team_name": "Suriname",
+    "points": 1132.425895,
+    "points_before": 1140.540363
+  },
+  "43995": {
+    "team_id": "43995",
+    "country_code": "CZE",
+    "team_name": "Tchéquia",
+    "points": 1503.040808,
+    "points_before": 1501.3824
+  },
+  "43963": {
+    "team_id": "43963",
+    "country_code": "POR",
+    "team_name": "Portugal",
+    "points": 1766.177547,
+    "points_before": 1763.834406
+  },
+  "44037": {
+    "team_id": "44037",
+    "country_code": "BIH",
+    "team_name": "Bósnia e Herzegovina",
+    "points": 1387.215771,
+    "points_before": 1385.772564
+  },
+  "43980": {
+    "team_id": "43980",
+    "country_code": "SOL",
+    "team_name": "Ilhas Salomão",
+    "points": 1031.894156,
+    "points_before": 1036.948533
+  },
+  "43938": {
+    "team_id": "43938",
+    "country_code": "CRO",
+    "team_name": "Croácia",
+    "points": 1716.882861,
+    "points_before": 1712.606573
+  },
+  "43949": {
+    "team_id": "43949",
+    "country_code": "GRE",
+    "team_name": "Grécia",
+    "points": 1476.148459,
+    "points_before": 1475.819913
+  },
+  "43972": {
+    "team_id": "43972",
+    "country_code": "TUR",
+    "team_name": "Turquia",
+    "points": 1599.03767,
+    "points_before": 1592.434728
+  },
+  "43932": {
+    "team_id": "43932",
+    "country_code": "ALB",
+    "team_name": "Albânia",
+    "points": 1382.48785,
+    "points_before": 1388.058361
+  },
+  "43973": {
+    "team_id": "43973",
+    "country_code": "UKR",
+    "team_name": "Ucrânia",
+    "points": 1549.287173,
+    "points_before": 1546.877672
+  },
+  "43984": {
+    "team_id": "43984",
+    "country_code": "ISR",
+    "team_name": "Israel",
+    "points": 1328.144269,
+    "points_before": 1322.201055
+  },
+  "43958": {
+    "team_id": "43958",
+    "country_code": "LUX",
+    "team_name": "Luxemburgo",
+    "points": 1227.765462,
+    "points_before": 1223.391368
+  },
+  "43933": {
+    "team_id": "43933",
+    "country_code": "ARM",
+    "team_name": "Armênia",
+    "points": 1189.632762,
+    "points_before": 1191.334973
+  },
+  "43950": {
+    "team_id": "43950",
+    "country_code": "HUN",
+    "team_name": "Hungria",
+    "points": 1506.393663,
+    "points_before": 1504.135797
+  },
+  "44036": {
+    "team_id": "44036",
+    "country_code": "MDA",
+    "team_name": "Moldávia",
+    "points": 1008.240035,
+    "points_before": 1006.537824
+  },
+  "43939": {
+    "team_id": "43939",
+    "country_code": "CYP",
+    "team_name": "Chipre",
+    "points": 1128.334119,
+    "points_before": 1124.432422
+  },
+  "43968": {
+    "team_id": "43968",
+    "country_code": "SVN",
+    "team_name": "Eslovênia",
+    "points": 1446.439067,
+    "points_before": 1442.783015
+  },
+  "44000": {
+    "team_id": "44000",
+    "country_code": "MKD",
+    "team_name": "Macedônia do Norte",
+    "points": 1372.110056,
+    "points_before": 1372.043897
+  },
+  "43944": {
+    "team_id": "43944",
+    "country_code": "FRO",
+    "team_name": "Ilhas Faroe",
+    "points": 1135.417636,
+    "points_before": 1129.953554
+  },
+  "43957": {
+    "team_id": "43957",
+    "country_code": "LTU",
+    "team_name": "Lituânia",
+    "points": 1060.918048,
+    "points_before": 1056.336287
+  },
+  "43955": {
+    "team_id": "43955",
+    "country_code": "LVA",
+    "team_name": "Letônia",
+    "points": 1090.569353,
+    "points_before": 1086.670187
+  },
+  "43964": {
+    "team_id": "43964",
+    "country_code": "ROU",
+    "team_name": "Romênia",
+    "points": 1451.161007,
+    "points_before": 1456.036047
+  },
+  "44002": {
+    "team_id": "44002",
+    "country_code": "SVK",
+    "team_name": "Eslováquia",
+    "points": 1469.063401,
+    "points_before": 1485.648588
+  },
+  "43970": {
+    "team_id": "43970",
+    "country_code": "SWE",
+    "team_name": "Suécia",
+    "points": 1501.306098,
+    "points_before": 1487.129128
+  },
+  "43954": {
+    "team_id": "43954",
+    "country_code": "ITA",
+    "team_name": "Itália",
+    "points": 1700.370754,
+    "points_before": 1707.45503
+  },
+  "43959": {
+    "team_id": "43959",
+    "country_code": "MLT",
+    "team_name": "Malta",
+    "points": 986.390408,
+    "points_before": 987.730586
+  },
+  "43982": {
+    "team_id": "43982",
+    "country_code": "VAN",
+    "team_name": "Vanuatu",
+    "points": 1015.52,
+    "points_before": 1005.49
+  },
+  "43979": {
+    "team_id": "43979",
+    "country_code": "PNG",
+    "team_name": "Papua Nova Guiné",
+    "points": 969.17,
+    "points_before": 966.54
+  }
+}

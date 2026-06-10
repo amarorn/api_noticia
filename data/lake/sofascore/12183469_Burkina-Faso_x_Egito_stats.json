@@ -1,0 +1,20 @@
+{
+  "event_id": 12183469,
+  "home_team": "Burkina Faso",
+  "away_team": "Egito",
+  "match_date": "2025-09-09T16:00:00+00:00",
+  "source": "sofascore",
+  "home_yellow_cards": 1.0,
+  "away_yellow_cards": 1.0,
+  "home_red_cards": 0.0,
+  "away_red_cards": 0.0,
+  "incident_goals_home": 0,
+  "incident_goals_away": 0,
+  "incident_yellow_cards_home": 1,
+  "incident_yellow_cards_away": 1,
+  "incident_red_cards_home": 0,
+  "incident_red_cards_away": 0,
+  "incident_substitutions_home": 3,
+  "incident_substitutions_away": 5,
+  "fetched_at": "2026-06-06T02:56:40.269613+00:00"
+}

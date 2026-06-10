@@ -1,0 +1,2075 @@
+{
+  "version": 1,
+  "bets": [
+    {
+      "id": "d8432219-c25d-48ca-a7a6-ebabdb394903",
+      "event_name": "Japão (F) · África do Sul (F)",
+      "home_team": "Japão (F)",
+      "away_team": "África do Sul (F)",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "2",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 4.85,
+      "status": "open",
+      "source": "extension",
+      "captured_at": "2026-06-09T04:36:06.198723",
+      "superbet_event_id": null,
+      "user_id": null,
+      "potential_return": 72.75,
+      "cashout_value": null,
+      "ticket_code": null
+    },
+    {
+      "id": "auto_1781041876608",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "totals_3.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.85,
+      "potential_return": 57.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T18:51:16.756381",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781041876759",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.5,
+      "potential_return": 50.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T18:51:16.762413",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781041876764",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.22,
+      "potential_return": 33.3,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T18:51:16.765516",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781041876766",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 29.0,
+      "odds_placed": 30.0,
+      "potential_return": 870.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T18:51:16.768447",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043052494",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "totals_3.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.85,
+      "potential_return": 57.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:10:52.666334",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043052670",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.5,
+      "potential_return": 50.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:10:52.672659",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043052674",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.22,
+      "potential_return": 33.3,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:10:52.676023",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043052677",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 29.0,
+      "odds_placed": 30.0,
+      "potential_return": 870.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:10:52.679247",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043398094",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "totals_3.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.85,
+      "potential_return": 57.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:16:38.254990",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043398257",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.5,
+      "potential_return": 50.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:16:38.259088",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043398263",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.22,
+      "potential_return": 33.3,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:16:38.265828",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043398267",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 29.0,
+      "odds_placed": 30.0,
+      "potential_return": 870.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:16:38.269434",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043431142",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "totals_3.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.85,
+      "potential_return": 57.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:17:11.302543",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043431304",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.5,
+      "potential_return": 50.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:17:11.306653",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043431308",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "9 De Octubre",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.22,
+      "potential_return": 33.3,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:17:11.309954",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043431311",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 29.0,
+      "odds_placed": 30.0,
+      "potential_return": 870.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:17:11.312781",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043775910",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "totals_3.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.85,
+      "potential_return": 57.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:22:56.079332",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043776081",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 29.0,
+      "odds_placed": 30.0,
+      "potential_return": 870.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:22:56.083765",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043927631",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "totals_3.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.85,
+      "potential_return": 57.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:25:27.643683",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781043927646",
+      "event_name": "9 De Octubre — Vinotinto",
+      "home_team": "9 De Octubre",
+      "away_team": "Vinotinto",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 29.0,
+      "odds_placed": 30.0,
+      "potential_return": 870.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:25:27.648469",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781044745598",
+      "event_name": "9 DE JUN. DE 2026 — 19:38",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:38",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:39:05.779964",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781044825274",
+      "event_name": "9 DE JUN. DE 2026 — 19:40",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:40",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:40:25.418449",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781044825421",
+      "event_name": "9 DE JUN. DE 2026 — 19:38",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:38",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:40:25.423838",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045039305",
+      "event_name": "9 DE JUN. DE 2026 — 19:40",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:40",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:43:59.319777",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045039323",
+      "event_name": "9 DE JUN. DE 2026 — 19:38",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:38",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:43:59.325247",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045619572",
+      "event_name": "9 DE JUN. DE 2026 — 19:53",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:53",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:53:39.746031",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045619749",
+      "event_name": "9 DE JUN. DE 2026 — 19:40",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:40",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:53:39.750907",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045619752",
+      "event_name": "9 DE JUN. DE 2026 — 19:38",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:38",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:53:39.754010",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045624812",
+      "event_name": "9 DE JUN. DE 2026 — 19:53",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:53",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:53:44.816059",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045624818",
+      "event_name": "9 DE JUN. DE 2026 — 19:40",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:40",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:53:44.820502",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781045624822",
+      "event_name": "9 DE JUN. DE 2026 — 19:38",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:38",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T19:53:44.824127",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781046221990",
+      "event_name": "9 DE JUN. DE 2026 — 19:53",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:53",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:03:47.794234",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781046227959",
+      "event_name": "9 DE JUN. DE 2026 — 19:40",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:40",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:03:48.029164",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781046228150",
+      "event_name": "9 DE JUN. DE 2026 — 19:38",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "19:38",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:03:48.279759",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781046836339",
+      "event_name": "9 DE JUN. DE 2026 — 20:12",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "20:12",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:13:56.380514",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781046836410",
+      "event_name": "9 DE JUN. DE 2026 — 20:12",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "20:12",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:13:56.438221",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781046836467",
+      "event_name": "9 DE JUN. DE 2026 — 20:12",
+      "home_team": "9 DE JUN. DE 2026",
+      "away_team": "20:12",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:13:56.541296",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781047039438",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:17:19.629240",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781047039632",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:17:19.634036",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781047039636",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:17:19.638032",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781047970340",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:32:50.599142",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781047970604",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:32:50.606209",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781047970608",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:32:50.610200",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781048343482",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:39:03.499026",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781048343522",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.25,
+      "potential_return": 65.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:39:03.569643",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781048343571",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:39:03.584148",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781048578698",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:42:58.871609",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781048578874",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:42:58.876093",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781049211968",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Fortaleza",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 3.4,
+      "potential_return": 68.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:53:31.979718",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781049211983",
+      "event_name": "Náutico PE — Fortaleza",
+      "home_team": "Náutico PE",
+      "away_team": "Fortaleza",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 4.1,
+      "potential_return": 82.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T20:53:31.985547",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781051556327",
+      "event_name": "Arábia Saudita — Senegal",
+      "home_team": "Arábia Saudita",
+      "away_team": "Senegal",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "draw",
+          "target_value": null
+        }
+      ],
+      "stake": 25.0,
+      "odds_placed": 1.97,
+      "potential_return": 49.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T21:32:36.547108",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781051893352",
+      "event_name": "Arábia Saudita — Senegal",
+      "home_team": "Arábia Saudita",
+      "away_team": "Senegal",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "draw",
+          "target_value": null
+        }
+      ],
+      "stake": 25.0,
+      "odds_placed": 1.97,
+      "potential_return": 49.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T21:38:13.740762",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781052481073",
+      "event_name": "Arábia Saudita — Senegal",
+      "home_team": "Arábia Saudita",
+      "away_team": "Senegal",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "draw",
+          "target_value": null
+        }
+      ],
+      "stake": 25.0,
+      "odds_placed": 1.97,
+      "potential_return": 49.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T21:48:01.371406",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781052574504",
+      "event_name": "Arábia Saudita — Senegal",
+      "home_team": "Arábia Saudita",
+      "away_team": "Senegal",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "draw",
+          "target_value": null
+        }
+      ],
+      "stake": 25.0,
+      "odds_placed": 1.97,
+      "potential_return": 49.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T21:49:34.695343",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781052772335",
+      "event_name": "Arábia Saudita — Senegal",
+      "home_team": "Arábia Saudita",
+      "away_team": "Senegal",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "draw",
+          "target_value": null
+        }
+      ],
+      "stake": 25.0,
+      "odds_placed": 1.97,
+      "potential_return": 49.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T21:52:52.563530",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781052786327",
+      "event_name": "Arábia Saudita — Senegal",
+      "home_team": "Arábia Saudita",
+      "away_team": "Senegal",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "draw",
+          "target_value": null
+        }
+      ],
+      "stake": 25.0,
+      "odds_placed": 1.97,
+      "potential_return": 49.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T21:53:06.330081",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054164480",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "home",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 3.45,
+      "potential_return": 51.75,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:16:04.646443",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054349971",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:19:09.983500",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054349986",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:19:09.989009",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054349991",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "home",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 3.45,
+      "potential_return": 51.75,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:19:09.993949",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054378970",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:19:39.140560",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054379143",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:19:39.145056",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054379147",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "home",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 3.45,
+      "potential_return": 51.75,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:19:39.149555",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054405618",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:20:05.622734",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054405625",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:20:05.627613",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054405630",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "home",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 3.45,
+      "potential_return": 51.75,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:20:05.631491",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054807391",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:26:47.596783",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054807600",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:26:47.602199",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781054807604",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "home",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 3.45,
+      "potential_return": 51.75,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:26:47.606296",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055216465",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Iraque",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.3,
+      "potential_return": 34.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:33:36.472896",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055216477",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:33:36.479510",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055216481",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:33:36.483395",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055229984",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Iraque",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.3,
+      "potential_return": 34.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:33:49.988914",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055229991",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:33:50.018027",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055230020",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:33:50.022815",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055299804",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Iraque",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.3,
+      "potential_return": 34.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:00.023474",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055300026",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:00.028785",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055300031",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:00.035732",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055300878",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Iraque",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.3,
+      "potential_return": 34.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:00.882063",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055300887",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:00.893698",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055300906",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:00.909272",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055301328",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Iraque",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.3,
+      "potential_return": 34.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:01.331154",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055301333",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:01.336045",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055301338",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:35:01.342476",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055614632",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Iraque",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.3,
+      "potential_return": 34.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:40:15.135981",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055664924",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Iraque",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.3,
+      "potential_return": 34.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:41:05.132205",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055665135",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "btts",
+          "outcome": "yes",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.55,
+      "potential_return": 38.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:41:05.137554",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055665140",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "totals_1.5",
+          "outcome": "over",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.75,
+      "potential_return": 26.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:41:05.142548",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781055665144",
+      "event_name": "Iraque — Venezuela",
+      "home_team": "Iraque",
+      "away_team": "Venezuela",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "home",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 3.45,
+      "potential_return": 51.75,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-09T22:41:05.147120",
+      "superbet_event_id": null,
+      "user_id": null
+    }
+  ]
+}

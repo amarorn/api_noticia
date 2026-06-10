@@ -1,0 +1,159 @@
+{
+  "event_id": 13413082,
+  "home_team": "Almeria",
+  "away_team": "Castellon",
+  "event_name": "Almeria·Castellon",
+  "utc_date": "2026-06-09T19:00:00Z",
+  "betradar_id": "71853260",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 2,
+    "minute": 74,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 4,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 0,
+    "ht_home_score": 1,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 17.0,
+    "X": 4.6,
+    "2": 1.28
+  },
+  "h2h_implied": {
+    "1": 0.05562693673947547,
+    "X": 0.2055778096893659,
+    "2": 0.7387952535711586
+  },
+  "totals": {
+    "3.5": {
+      "Mais de 3.5": 1.8,
+      "Menos de 3.5": 2.0
+    },
+    "4.5": {
+      "Mais de 4.5": 4.85,
+      "Menos de 4.5": 1.14
+    },
+    "5.5": {
+      "Mais de 5.5": 13.0,
+      "Menos de 5.5": 1.006
+    },
+    "6.5": {
+      "Mais de 6.5": 30.0
+    },
+    "7.5": {
+      "Mais de 7.5": 40.0
+    }
+  },
+  "totals_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.5263157894736842,
+      "Menos de 3.5": 0.47368421052631576
+    },
+    "4.5": {
+      "Mais de 4.5": 0.1903171953255426,
+      "Menos de 4.5": 0.8096828046744575
+    },
+    "5.5": {
+      "Mais de 5.5": 0.07209136331192006,
+      "Menos de 5.5": 0.92790863668808
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    }
+  },
+  "corners": {
+    "7.5": {
+      "Mais de 7.5": 1.08,
+      "Menos de 7.5": 5.75
+    },
+    "8.5": {
+      "Mais de 8.5": 1.4,
+      "Menos de 8.5": 2.65
+    },
+    "9.5": {
+      "Mais de 9.5": 2.05,
+      "Menos de 9.5": 1.7
+    },
+    "10.5": {
+      "Mais de 10.5": 3.1,
+      "Menos de 10.5": 1.3
+    },
+    "11.5": {
+      "Mais de 11.5": 5.0,
+      "Menos de 11.5": 1.11
+    },
+    "12.5": {
+      "Mais de 12.5": 8.0,
+      "Menos de 12.5": 1.03
+    },
+    "13.5": {
+      "Mais de 13.5": 12.0
+    },
+    "14.5": {
+      "Mais de 14.5": 18.0
+    }
+  },
+  "corners_implied": {
+    "7.5": {
+      "Mais de 7.5": 0.8418740849194728,
+      "Menos de 7.5": 0.1581259150805271
+    },
+    "8.5": {
+      "Mais de 8.5": 0.654320987654321,
+      "Menos de 8.5": 0.34567901234567905
+    },
+    "9.5": {
+      "Mais de 9.5": 0.4533333333333333,
+      "Menos de 9.5": 0.5466666666666666
+    },
+    "10.5": {
+      "Mais de 10.5": 0.29545454545454547,
+      "Menos de 10.5": 0.7045454545454546
+    },
+    "11.5": {
+      "Mais de 11.5": 0.1816693944353519,
+      "Menos de 11.5": 0.8183306055646481
+    },
+    "12.5": {
+      "Mais de 12.5": 0.11406423034330011,
+      "Menos de 12.5": 0.8859357696566998
+    },
+    "13.5": {
+      "Mais de 13.5": 1.0
+    },
+    "14.5": {
+      "Mais de 14.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_3_5": {
+      "Sim": 0.5189189189189188,
+      "Não": 0.48108108108108105
+    },
+    "ft_and_btts": {
+      "Almeria e Sim": 0.06200457988374141,
+      "Empate e Sim": 0.2113792496036639,
+      "Castellon e Sim": 0.7266161705125946
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 3.25,
+    "away": 3.5
+  },
+  "generosity_probs": {
+    "home": 0.043078,
+    "away": 0.759112
+  },
+  "raw_market_count": 117,
+  "captured_at": "2026-06-09T20:36:36.820261+00:00"
+}

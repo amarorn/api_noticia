@@ -1,0 +1,165 @@
+{
+  "event_id": 13108473,
+  "home_team": "França",
+  "away_team": "Irlanda do Norte",
+  "event_name": "França·Irlanda do Norte",
+  "utc_date": "2026-06-08T19:10:00Z",
+  "betradar_id": "71307342",
+  "is_live": true,
+  "inplay": {
+    "home_score": 2,
+    "away_score": 1,
+    "minute": 72,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 0,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 1,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.03,
+    "X": 17.0,
+    "2": 150.0
+  },
+  "h2h_implied": {
+    "1": 0.9368077266431791,
+    "X": 0.056759526967204384,
+    "2": 0.0064327463896164975
+  },
+  "totals": {
+    "3.5": {
+      "Mais de 3.5": 1.57,
+      "Menos de 3.5": 2.35
+    },
+    "4.5": {
+      "Mais de 4.5": 3.6,
+      "Menos de 4.5": 1.25
+    },
+    "5.5": {
+      "Mais de 5.5": 9.5,
+      "Menos de 5.5": 1.03
+    },
+    "6.5": {
+      "Mais de 6.5": 25.0
+    },
+    "7.5": {
+      "Mais de 7.5": 35.0
+    }
+  },
+  "totals_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.5994897959183673,
+      "Menos de 3.5": 0.4005102040816326
+    },
+    "4.5": {
+      "Mais de 4.5": 0.25773195876288657,
+      "Menos de 4.5": 0.7422680412371133
+    },
+    "5.5": {
+      "Mais de 5.5": 0.09781576448243115,
+      "Menos de 5.5": 0.902184235517569
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    }
+  },
+  "corners": {
+    "3.5": {
+      "Mais de 3.5": 1.1,
+      "Menos de 3.5": 5.25
+    },
+    "4.5": {
+      "Mais de 4.5": 1.45,
+      "Menos de 4.5": 2.55
+    },
+    "5.5": {
+      "Mais de 5.5": 2.17,
+      "Menos de 5.5": 1.62
+    },
+    "6.5": {
+      "Mais de 6.5": 3.35,
+      "Menos de 6.5": 1.25
+    },
+    "7.5": {
+      "Mais de 7.5": 5.25,
+      "Menos de 7.5": 1.1
+    },
+    "8.5": {
+      "Mais de 8.5": 8.5,
+      "Menos de 8.5": 1.02
+    },
+    "9.5": {
+      "Mais de 9.5": 13.0
+    },
+    "10.5": {
+      "Mais de 10.5": 20.0
+    }
+  },
+  "corners_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.8267716535433072,
+      "Menos de 3.5": 0.17322834645669294
+    },
+    "4.5": {
+      "Mais de 4.5": 0.6375000000000001,
+      "Menos de 4.5": 0.36250000000000004
+    },
+    "5.5": {
+      "Mais de 5.5": 0.4274406332453826,
+      "Menos de 5.5": 0.5725593667546175
+    },
+    "6.5": {
+      "Mais de 6.5": 0.2717391304347826,
+      "Menos de 6.5": 0.7282608695652174
+    },
+    "7.5": {
+      "Mais de 7.5": 0.17322834645669294,
+      "Menos de 7.5": 0.8267716535433072
+    },
+    "8.5": {
+      "Mais de 8.5": 0.10714285714285715,
+      "Menos de 8.5": 0.8928571428571429
+    },
+    "9.5": {
+      "Mais de 9.5": 1.0
+    },
+    "10.5": {
+      "Mais de 10.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_3_5": {
+      "Sim": 0.5911458333333334,
+      "Não": 0.4088541666666667
+    },
+    "ft_and_btts": {
+      "França e Sim": 0.9274717121127805,
+      "Empate e Sim": 0.06306807642366907,
+      "Irlanda do Norte e Sim": 0.009460211463550361
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.5394506785218286,
+      "X e Mais de 3.5": 0.061137743565807236,
+      "2 e Mais de 3.5": 0.009170661534871087,
+      "1 e Menos de 3.5": 0.39024091637749303
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 1.78,
+    "away": 10.0
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.002286
+  },
+  "raw_market_count": 119,
+  "captured_at": "2026-06-08T20:43:47.130139+00:00"
+}

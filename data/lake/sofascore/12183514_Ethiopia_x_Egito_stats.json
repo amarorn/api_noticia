@@ -1,0 +1,20 @@
+{
+  "event_id": 12183514,
+  "home_team": "Ethiopia",
+  "away_team": "Egito",
+  "match_date": "2025-03-21T21:00:00+00:00",
+  "source": "sofascore",
+  "home_yellow_cards": 0.0,
+  "away_yellow_cards": 0.0,
+  "home_red_cards": 0.0,
+  "away_red_cards": 0.0,
+  "incident_goals_home": 0,
+  "incident_goals_away": 2,
+  "incident_yellow_cards_home": 0,
+  "incident_yellow_cards_away": 0,
+  "incident_red_cards_home": 0,
+  "incident_red_cards_away": 0,
+  "incident_substitutions_home": 5,
+  "incident_substitutions_away": 5,
+  "fetched_at": "2026-06-06T02:56:39.110881+00:00"
+}
