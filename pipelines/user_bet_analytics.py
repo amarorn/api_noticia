@@ -5,12 +5,145 @@ frontend (`/carteira`).
 """
 from __future__ import annotations
 
+import json
+from datetime import date, datetime, timedelta
+from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
+from config import settings
 from ingest.user_transactions.store import load_transactions
 from pipelines.user_bet_reconciliation import load_reconciliation
+
+_BR_TZ = ZoneInfo("America/Sao_Paulo")
+
+
+def _today_br() -> date:
+    return datetime.now(_BR_TZ).date()
+
+
+def _max_period_end(last_tx: pd.Timestamp) -> pd.Timestamp:
+    """Estende period_end até hoje (BR) quando o CSV não inclui o dia atual."""
+    today_end = pd.Timestamp(_today_br()).replace(hour=23, minute=59, second=59)
+    if last_tx.tzinfo is not None:
+        today_end = today_end.tz_localize(last_tx.tzinfo)
+    return max(last_tx, today_end)
+
+
+def _parse_bet_date(iso_ts: str) -> date | None:
+    """Converte timestamp ISO da aposta para data em horário de Brasília."""
+    if not iso_ts:
+        return None
+    try:
+        ts = iso_ts.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(ts)
+        if dt.tzinfo is None:
+            return dt.date()
+        return dt.astimezone(_BR_TZ).date()
+    except ValueError:
+        return None
+
+
+def _empty_daily_row(d: date) -> dict[str, Any]:
+    return {
+        "date": str(d),
+        "staked": 0.0,
+        "won": 0.0,
+        "pnl": 0.0,
+        "n_bets": 0,
+        "is_today": d == _today_br(),
+    }
+
+
+def _fill_daily_gaps(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Preenche dias sem transação entre o primeiro registro e hoje (BR)."""
+    if not daily:
+        return daily
+    by_date = {d["date"]: d for d in daily}
+    dates = sorted(date.fromisoformat(d["date"]) for d in daily)
+    end = max(dates[-1], _today_br())
+    out: list[dict[str, Any]] = []
+    cur = dates[0]
+    while cur <= end:
+        key = str(cur)
+        if key in by_date:
+            row = dict(by_date[key])
+        else:
+            row = _empty_daily_row(cur)
+        row["is_today"] = cur == _today_br()
+        out.append(row)
+        cur += timedelta(days=1)
+    return out
+
+
+def _load_supplemental_bets(user_id: str) -> tuple[list[dict], list[dict]]:
+    """Lê apostas abertas/liquidadas (extensão/API) não presentes no CSV."""
+    root = Path(settings.lake_root)
+    open_bets: list[dict] = []
+    settled: list[dict] = []
+
+    open_path = root / "user_open_bets.json"
+    if open_path.exists():
+        data = json.loads(open_path.read_text(encoding="utf-8"))
+        for b in data.get("bets", []):
+            if b.get("status") != "open":
+                continue
+            uid = b.get("user_id")
+            if uid and uid != user_id:
+                continue
+            open_bets.append(b)
+
+    settled_path = root / "user_settled_bets.json"
+    if settled_path.exists():
+        data = json.loads(settled_path.read_text(encoding="utf-8"))
+        settled = list(data.get("bets", []))
+
+    return open_bets, settled
+
+
+def _merge_supplemental_daily(
+    daily: list[dict[str, Any]],
+    user_id: str,
+) -> list[dict[str, Any]]:
+    """Incorpora apostas da extensão/API nos dias ainda sem CSV (ex.: hoje)."""
+    open_bets, settled = _load_supplemental_bets(user_id)
+    if not open_bets and not settled:
+        return daily
+
+    by_date = {d["date"]: d for d in daily}
+
+    for bet in open_bets:
+        dkey = _parse_bet_date(bet.get("captured_at", ""))
+        if dkey is None:
+            continue
+        key = str(dkey)
+        row = by_date.setdefault(key, _empty_daily_row(dkey))
+        stake = float(bet.get("stake", 0))
+        row["staked"] = round(float(row["staked"]) + stake, 2)
+        row["n_bets"] = int(row["n_bets"]) + 1
+        row["pnl"] = round(float(row["pnl"]) - stake, 2)
+        row["supplemental"] = True
+
+    for bet in settled:
+        dkey = _parse_bet_date(bet.get("placed_at") or bet.get("settled_at", ""))
+        if dkey is None:
+            continue
+        key = str(dkey)
+        row = by_date.setdefault(key, _empty_daily_row(dkey))
+        stake = float(bet.get("stake", 0))
+        profit = float(bet.get("profit", 0))
+        row["staked"] = round(float(row["staked"]) + stake, 2)
+        row["n_bets"] = int(row["n_bets"]) + 1
+        row["won"] = round(float(row["won"]) + max(profit + stake, 0), 2)
+        row["pnl"] = round(float(row["pnl"]) + profit, 2)
+        row["supplemental"] = True
+
+    out = sorted(by_date.values(), key=lambda x: x["date"])
+    for row in out:
+        row["is_today"] = row["date"] == str(_today_br())
+    return out
 
 
 def compute_wallet_summary(user_id: str) -> dict[str, Any]:
@@ -73,7 +206,12 @@ def compute_wallet_summary(user_id: str) -> dict[str, Any]:
             "won": round(d_won, 2),
             "pnl": round(d_pnl, 2),
             "n_bets": int((grp["transaction_type"] == "bilhete colocado").sum()),
+            "is_today": date == _today_br(),
         })
+
+    daily.sort(key=lambda x: x["date"])
+    daily = _fill_daily_gaps(daily)
+    daily = _merge_supplemental_daily(daily, user_id)
 
     # Breakdown por tipo de jogo (in-play vs casino vs UNKNOWN)
     by_game = []
@@ -118,7 +256,8 @@ def compute_wallet_summary(user_id: str) -> dict[str, Any]:
         "total_deposits": round(total_deposits, 2),
         "current_balance": round(current_balance, 2),
         "period_start": df["transaction_at"].min().isoformat(),
-        "period_end": df["transaction_at"].max().isoformat(),
+        "period_end": _max_period_end(df["transaction_at"].max()).isoformat(),
+        "today": str(_today_br()),
         "daily_pnl": daily,
         "by_game_type": by_game,
         "balance_series": balance_series,
@@ -272,9 +411,21 @@ def _extract_prob_proxy(row: pd.Series) -> float:
 
     Se não há dados, retorna 0.5 (neutro).
     """
+    hs = row.get("home_score")
+    as_ = row.get("away_score")
+    p_home = row.get("prob_final_home")
+    p_away = row.get("prob_final_away")
+    p_draw = row.get("prob_final_draw")
+    if p_home is not None and pd.notna(p_home) and hs is not None and as_ is not None:
+        if hs > as_:
+            return float(p_home)
+        if hs < as_ and p_away is not None and pd.notna(p_away):
+            return float(p_away)
+        if p_draw is not None and pd.notna(p_draw):
+            return float(p_draw)
+        return float(p_home)
+
     gen_home = row.get("model_generosity_home")
     if gen_home is not None and pd.notna(gen_home):
-        # Generosity é "modelo vs mercado"; entre 0 e 1.
-        # Para Brier proxy, usamos como "confiança no resultado favorável"
         return float(gen_home)
     return 0.5

@@ -110,6 +110,21 @@ def market_prob_to_lambda(
     return lambda_home, lambda_away
 
 
+def market_probs_from_h2h_implied(h2h_implied: dict[str, float] | None) -> tuple[float, float, float] | None:
+    """Extrai (P1, PX, P2) normalizadas do snapshot Superbet."""
+    if not h2h_implied:
+        return None
+    p1 = float(h2h_implied.get("1") or 0)
+    px = float(h2h_implied.get("X") or 0)
+    p2 = float(h2h_implied.get("2") or 0)
+    if p1 <= 0 or px <= 0 or p2 <= 0:
+        return None
+    total = p1 + px + p2
+    if total <= 0:
+        return None
+    return p1 / total, px / total, p2 / total
+
+
 def shrink_lambda(
     lambda_model_home: float,
     lambda_model_away: float,

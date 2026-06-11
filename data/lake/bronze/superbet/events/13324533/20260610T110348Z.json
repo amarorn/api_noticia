@@ -1,0 +1,93 @@
+{
+  "event_id": 13324533,
+  "home_team": "Canberra Croatia",
+  "away_team": "Queanbeyan City",
+  "event_name": "Canberra Croatia·Queanbeyan City",
+  "utc_date": "2026-06-10T09:30:00Z",
+  "betradar_id": "69194952",
+  "is_live": true,
+  "inplay": {
+    "home_score": 2,
+    "away_score": 2,
+    "minute": 64,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 0,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 1,
+    "ht_home_score": 2,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 2.4,
+    "X": 2.45,
+    "2": 3.7
+  },
+  "h2h_implied": {
+    "1": 0.38048268625393494,
+    "X": 0.37271773347324233,
+    "2": 0.24679958027282264
+  },
+  "totals": {
+    "4.5": {
+      "Mais de 4.5": 1.25,
+      "Menos de 4.5": 3.25
+    },
+    "5.5": {
+      "Mais de 5.5": 2.2,
+      "Menos de 5.5": 1.57
+    },
+    "6.5": {
+      "Mais de 6.5": 4.5,
+      "Menos de 6.5": 1.12
+    },
+    "7.5": {
+      "Mais de 7.5": 9.5
+    },
+    "8.5": {
+      "Mais de 8.5": 20.0
+    }
+  },
+  "totals_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.7222222222222222,
+      "Menos de 4.5": 0.2777777777777778
+    },
+    "5.5": {
+      "Mais de 5.5": 0.4164456233421751,
+      "Menos de 5.5": 0.583554376657825
+    },
+    "6.5": {
+      "Mais de 6.5": 0.19928825622775798,
+      "Menos de 6.5": 0.8007117437722419
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    },
+    "8.5": {
+      "Mais de 8.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 2.07,
+    "away": 2.85
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.240568
+  },
+  "team_totals": {
+    "home": {},
+    "away": {}
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "raw_market_count": 23,
+  "captured_at": "2026-06-10T11:03:48.060095+00:00"
+}

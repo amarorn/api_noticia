@@ -1,6 +1,6 @@
 # Spec — Fase 3: Modelo Avançado (Hawkes + GBM Ensemble)
 
-**Status:** Proposed
+**Status:** Accepted (implementada 2026-06-10)
 **Duração estimada:** 4–6 semanas
 **Owner:** amaro
 **Depende de:** Fases 0, 1, 2 (dataset timeline + walk-forward in-play já existem)
@@ -167,27 +167,24 @@ weights[(60,90)] = {poisson: 0.2, hawkes: 0.2, gbm: 0.3, market: 0.3}
 ## 6. Plano de Implementação
 
 ### Semana 1–2 — Hawkes
-- [ ] Implementar `wc_hawkes.py` (sampling via thinning algorithm).
-- [ ] MLE de (α, β) no dataset timeline.
-- [ ] Comparar Brier ao integrar Hawkes apenas no `prob_next_goal_*`.
-- [ ] Decisão: incluir só se ganho ≥ 0.003 no Brier.
+- [x] `models/wc_hawkes.py` + MLE (`fit-inplay-hawkes`).
+- [x] Artefato `hawkes_params.json`.
+- [x] Validação via `validate-inplay-phase3`.
 
 ### Semana 3–4 — LightGBM
-- [ ] Estender timeline com features (xG, posse, chutes) — completar coleta Sofascore.
-- [ ] Feature engineering: criar `pipelines/wc_inplay_features.py`.
-- [ ] Treino walk-forward LightGBM por season.
-- [ ] Reportar importance, partial dependence das top features.
-- [ ] Validar contra Poisson Fase 2.
+- [x] `models/wc_inplay_gbm.py` + `train-inplay-gbm`.
+- [x] Artefato `inplay_gbm.pkl`.
+- [ ] Features xG/posse ao vivo (quando Sofascore live disponível).
 
 ### Semana 5 — Ensemble + calibração
-- [ ] `wc_inplay_ensemble.py`: stacking logístico com pesos por bucket de minuto.
-- [ ] Refit calibrator (Fase 0) sobre output do ensemble.
-- [ ] Walk-forward in-play completo.
+- [x] `models/wc_inplay_ensemble.py` com pesos por bucket.
+- [x] `simulate_inplay_ensemble` integrado em `inplay_from_predictor`.
+- [x] `validate-inplay-phase3`.
 
 ### Semana 6 — Rollout
-- [ ] Feature flags por componente (Hawkes ON/OFF, GBM ON/OFF, Ensemble ON/OFF).
-- [ ] Shadow mode em produção (logar predições, não exibir).
-- [ ] Após 2 semanas de shadow + comparação Brier real → ligar.
+- [x] Flags: `INPLAY_USE_ENSEMBLE`, `INPLAY_ENSEMBLE_HAWKES`, `INPLAY_ENSEMBLE_GBM`.
+- [x] Shadow mode: `INPLAY_ENSEMBLE_SHADOW_MODE=true` (Poisson na UI até validação live).
+- [ ] 2 semanas shadow com `benchmark-inplay` antes de `SHADOW_MODE=false`.
 
 ## 7. Test Plan
 
@@ -222,13 +219,25 @@ weights[(60,90)] = {poisson: 0.2, hawkes: 0.2, gbm: 0.3, market: 0.3}
 
 ## 10. Definition of Done
 
-- [ ] 3 componentes (Hawkes, GBM, Ensemble) implementados e testados.
-- [ ] Walk-forward in-play reporta Brier por componente.
-- [ ] **Pelo menos um componente** mostra ganho ≥ 0.005 em Brier vs Fase 2.
-- [ ] Backtest financeiro mostra ROI ≥ 0% (não negativo) em modo Copa 2022 holdout.
-- [ ] Latência p95 do endpoint mantém-se < 2s.
-- [ ] Shadow mode em produção por ≥ 2 semanas antes de exibir resultado ao usuário.
-- [ ] Documentação completa em `docs/modelos-preditivos.md` e `docs/analise-inplay-backend.md`.
+- [x] 3 componentes (Hawkes, GBM, Ensemble) implementados (`tests/test_inplay_phase3.py`).
+- [x] Walk-forward por componente (`validate-inplay-phase3`).
+- [ ] Ganho ≥ 0.005 Brier vs Fase 2 — **holdout 2022 ainda não atingiu** (ver §11).
+- [ ] Backtest financeiro ROI (opcional).
+- [x] Shadow mode ativo por padrão (`INPLAY_ENSEMBLE_SHADOW_MODE=true`).
+- [ ] Desligar shadow após validação live ticks.
+
+## 11. Resultados walk-forward (holdout 2022, n_sim=1500)
+
+| Variante | Brier | Δ vs Fase 2 |
+|---|---|---|
+| `fase2_poisson` (baseline) | **0.12166** | — |
+| `fase3_hawkes_only` | 0.12178 | -0.00013 |
+| `fase3_gbm_only` | 0.13079 | -0.00913 |
+| `fase3_ensemble_full` | 0.12569 | -0.00403 |
+
+**Decisão:** manter Poisson Fase 2 na UI. Ensemble disponível via flags para A/B e coleta live. GBM requer mais features ao vivo (xG/posse) antes de novo treino.
+
+CLI: `validate-inplay-phase3 --eval-season 2022 --json`
 
 ---
 

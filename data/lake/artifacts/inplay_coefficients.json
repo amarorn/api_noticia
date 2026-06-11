@@ -2,100 +2,100 @@
   "momentum_betas": [
     {
       "name": "intercept",
-      "value": 0.15036884985347537,
-      "std_error": 0.006890062082547906,
-      "z_score": 21.824,
+      "value": 0.14927898626855246,
+      "std_error": 0.0068925742552714605,
+      "z_score": 21.658,
       "significant": true
     },
     {
       "name": "goal_diff",
-      "value": 0.013152041312626279,
-      "std_error": 0.004456166368044765,
-      "z_score": 2.951,
+      "value": 0.016344505190862082,
+      "std_error": 0.004397609384635599,
+      "z_score": 3.717,
       "significant": true
     },
     {
       "name": "goal_diff_squared",
-      "value": 0.01603121845545421,
-      "std_error": 0.0007041636691759307,
-      "z_score": 22.766,
+      "value": 0.013645142716911288,
+      "std_error": 0.000692322754728487,
+      "z_score": 19.709,
       "significant": true
     },
     {
       "name": "late_game",
-      "value": -0.20625625998552247,
-      "std_error": 0.0684656817151109,
-      "z_score": -3.013,
-      "significant": true
+      "value": -0.0015386669375454418,
+      "std_error": 0.0651704415241671,
+      "z_score": -0.024,
+      "significant": false
     },
     {
       "name": "home_red_cards",
       "value": 0.0,
-      "std_error": 2.62144,
+      "std_error": 1.8536380004736632,
       "z_score": 0.0,
       "significant": false
     },
     {
       "name": "away_red_cards",
       "value": 0.0,
-      "std_error": 2.62144,
+      "std_error": 1.8536380004736632,
       "z_score": 0.0,
       "significant": false
     },
     {
       "name": "corner_share",
       "value": 0.0,
-      "std_error": 2.62144,
+      "std_error": 1.8536380004736632,
       "z_score": 0.0,
       "significant": false
     },
     {
       "name": "goal_diff_x_late",
-      "value": -0.04726041723890076,
-      "std_error": 0.017449531200326565,
-      "z_score": -2.708,
-      "significant": true
+      "value": -0.032771382980516364,
+      "std_error": 0.020059560677237333,
+      "z_score": -1.634,
+      "significant": false
     }
   ],
   "nhpp_weights": [
     {
       "start_min": 0,
       "end_min": 15,
-      "weight": 0.30000000301866087,
+      "weight": 0.30000081457138533,
       "std_error": 0.05
     },
     {
       "start_min": 15,
       "end_min": 30,
-      "weight": 1.823615507433534,
+      "weight": 1.8269713394053408,
       "std_error": 0.05
     },
     {
       "start_min": 30,
       "end_min": 45,
-      "weight": 1.5021982513789027,
+      "weight": 1.5107121065080942,
       "std_error": 0.05
     },
     {
       "start_min": 45,
       "end_min": 60,
-      "weight": 1.1373641751103523,
+      "weight": 1.1493484534231726,
       "std_error": 0.05
     },
     {
       "start_min": 60,
       "end_min": 75,
-      "weight": 0.8038024739166277,
+      "weight": 0.7926720994413318,
       "std_error": 0.05
     },
     {
       "start_min": 75,
       "end_min": 90,
-      "weight": 0.4330225031573292,
+      "weight": 0.4202951867166661,
       "std_error": 0.05
     }
   ],
-  "trained_at": "2026-06-09T11:28:06.213337+00:00",
+  "trained_at": "2026-06-11T02:37:45.975807+00:00",
   "train_seasons": [
     2010,
     2011,
@@ -110,8 +110,8 @@
     2021
   ],
   "n_observations": 15660,
-  "in_sample_loglik": 0.0,
-  "holdout_brier": 0.0,
-  "holdout_brier_baseline": 0.0,
-  "dataset_hash": ""
+  "in_sample_loglik": -32788.42,
+  "holdout_brier": 0.11818,
+  "holdout_brier_baseline": 0.119568,
+  "dataset_hash": "b1dad2eff8858a1d"
 }

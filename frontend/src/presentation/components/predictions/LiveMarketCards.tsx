@@ -58,12 +58,33 @@ const MARKET_GROUPS: MarketGroup[] = [
   {
     id: "totals",
     superbetName: "Total de Gols",
-    matchMarket: (m) => m.startsWith("over_"),
+    matchMarket: (m) => m.startsWith("over_") && !m.startsWith("home_") && !m.startsWith("away_") && !m.startsWith("1h_") && !m.startsWith("2h_"),
   },
   {
     id: "btts",
     superbetName: "Ambas as Equipes Marcam",
     matchMarket: (m) => m === "btts",
+  },
+  {
+    id: "team_totals",
+    superbetName: "Total por Time",
+    matchMarket: (m) => m.startsWith("home_over_") || m.startsWith("away_over_"),
+  },
+  {
+    id: "second_half",
+    superbetName: "2º Tempo Gols",
+    matchMarket: (m) => m.startsWith("2h_over_"),
+  },
+  {
+    id: "first_half",
+    superbetName: "1º Tempo Gols",
+    matchMarket: (m) => m.startsWith("1h_over_"),
+  },
+  {
+    id: "combos",
+    superbetName: "Combos",
+    matchMarket: (m) => m.startsWith("combo_"),
+    note: "Mercados combinados: BTTS+Gols, Time+BTTS",
   },
 ];
 
@@ -156,6 +177,14 @@ function buildFallbackScan(data: SuperbetLiveAdvice): MarketScanRow[] {
     s.probNextGoalAway,
     data.nextGoalOdds.away,
   );
+
+  // Novos mercados vindos dos aportes expandidos
+  for (const ap of data.aportes) {
+    // Evitar duplicar os que já foram inseridos acima
+    if (["h2h", "btts", "next_goal"].includes(ap.market) && !ap.market.startsWith("combo_")) continue;
+    if (ap.market === "over_2_5") continue;
+    push(ap.market, ap.outcome, ap.label, ap.modelProb, ap.marketOdd);
+  }
 
   return rows;
 }
@@ -371,7 +400,7 @@ export function LiveMarketCards({ data }: LiveMarketCardsProps) {
           group,
           best: null as MarketScanRow | null,
           verdict: "sem_odds" as Verdict,
-          detail: "Superbet não enviou odd neste refresh",
+          detail: "Mercado não disponível para este evento",
           stakeHint: undefined as string | undefined,
           alternatives: [] as MarketScanRow[],
         };
@@ -423,8 +452,8 @@ export function LiveMarketCards({ data }: LiveMarketCardsProps) {
         </button>
         {showExtra && (
           <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
-            Total por time, asiático, resultado correto, último gol, janelas de tempo, 2º tempo,
-            ímpar/par, método do gol, combos — fora do modelo in-play atual.
+            Handicap asiático, resultado correto, último gol, janelas de tempo,
+            ímpar/par, método do gol — fora do modelo in-play atual.
           </p>
         )}
       </div>

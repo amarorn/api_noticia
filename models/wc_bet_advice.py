@@ -58,6 +58,10 @@ class AporteAdvice:
 
 def _prob_from_inplay(inplay: dict[str, Any], market: str, outcome: str) -> float | None:
     key = f"{market}:{outcome}".lower()
+    flp = inplay.get("final_line_probs", {})
+    team_lp = inplay.get("team_final_line_probs", {})
+    sh_lp = inplay.get("second_half_line_probs", {})
+    ht_lp = inplay.get("ht_line_probs", {})
     mapping: dict[str, float] = {
         "h2h:1": inplay.get("prob_final_home", 0),
         "h2h:x": inplay.get("prob_final_draw", 0),
@@ -68,12 +72,31 @@ def _prob_from_inplay(inplay: dict[str, Any], market: str, outcome: str) -> floa
         "next_goal:none": inplay.get("prob_no_more_goals", 0),
         "btts:yes": inplay.get("btts_final", 0),
         "btts:no": 1.0 - float(inplay.get("btts_final", 0)),
-        "over_2_5:yes": inplay.get("final_line_probs", {}).get("over_2_5", 0),
-        "over_2_5:no": inplay.get("final_line_probs", {}).get("under_2_5", 0),
-        "over_3_5:yes": inplay.get("final_line_probs", {}).get("over_3_5", 0),
-        "over_3_5:no": inplay.get("final_line_probs", {}).get("under_3_5", 0),
+        "over_1_5:yes": flp.get("over_1_5", 0),
+        "over_1_5:no": flp.get("under_1_5", 0),
+        "over_2_5:yes": flp.get("over_2_5", 0),
+        "over_2_5:no": flp.get("under_2_5", 0),
+        "over_3_5:yes": flp.get("over_3_5", 0),
+        "over_3_5:no": flp.get("under_3_5", 0),
+        "over_4_5:yes": flp.get("over_4_5", 0),
+        "over_4_5:no": flp.get("under_4_5", 0),
+        "combo_btts_over_2_5:yes": inplay.get("combo_markets", {}).get("btts_and_over_2_5", 0),
+        "combo_btts_over_2_5:no": 1.0 - float(inplay.get("combo_markets", {}).get("btts_and_over_2_5", 0)),
         "combo_btts_over_3_5:yes": inplay.get("combo_markets", {}).get("btts_and_over_3_5", 0),
         "combo_btts_over_3_5:no": 1.0 - float(inplay.get("combo_markets", {}).get("btts_and_over_3_5", 0)),
+        "combo_home_btts:yes": inplay.get("combo_markets", {}).get("ft_home_and_btts", 0),
+        "combo_away_btts:yes": inplay.get("combo_markets", {}).get("ft_away_and_btts", 0),
+        "home_over_0_5:yes": team_lp.get("home_over_0_5", 0),
+        "home_over_1_5:yes": team_lp.get("home_over_1_5", 0),
+        "home_over_2_5:yes": team_lp.get("home_over_2_5", 0),
+        "away_over_0_5:yes": team_lp.get("away_over_0_5", 0),
+        "away_over_1_5:yes": team_lp.get("away_over_1_5", 0),
+        "away_over_2_5:yes": team_lp.get("away_over_2_5", 0),
+        "2h_over_0_5:yes": sh_lp.get("over_0_5", 0),
+        "2h_over_1_5:yes": sh_lp.get("over_1_5", 0),
+        "2h_over_0_5:no": sh_lp.get("under_0_5", 0),
+        "1h_over_0_5:yes": ht_lp.get("over_0_5", 0),
+        "1h_over_1_5:yes": ht_lp.get("over_1_5", 0),
     }
     if key in mapping:
         return float(mapping[key])
@@ -120,6 +143,67 @@ def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: st
         return (snapshot.btts_odds or {}).get(key)
     if market == "next_goal":
         return (snapshot.next_goal_odds or {}).get(outcome.lower())
+    # --- Total por time (home_over_X_Y, away_over_X_Y) ---
+    if market.startswith(("home_over_", "away_over_")):
+        team_totals = getattr(snapshot, "team_totals", None) or {}
+        side = "home" if market.startswith("home_") else "away"
+        line = market.replace(f"{side}_over_", "").replace("_", ".")
+        prices = team_totals.get(side, {}).get(line, {})
+        for name, price in prices.items():
+            if "mais" in name.lower():
+                return price
+        return None
+    # --- 2º Tempo / 1º Tempo totals ---
+    if market.startswith("2h_over_"):
+        sh_totals = getattr(snapshot, "second_half_totals", None) or {}
+        line = market.replace("2h_over_", "").replace("_", ".")
+        prices = sh_totals.get(line, {})
+        for name, price in prices.items():
+            if outcome in {"yes", "sim"} and "mais" in name.lower():
+                return price
+            if outcome in {"no", "não", "nao"} and "menos" in name.lower():
+                return price
+        return None
+    if market.startswith("1h_over_"):
+        ht_totals = getattr(snapshot, "first_half_totals", None) or {}
+        line = market.replace("1h_over_", "").replace("_", ".")
+        prices = ht_totals.get(line, {})
+        for name, price in prices.items():
+            if "mais" in name.lower():
+                return price
+        return None
+    # --- Combos (extraídos do parser) ---
+    if market.startswith("combo_"):
+        combo_key_map = {
+            "combo_btts_over_2_5": "btts_and_over_2_5",
+            "combo_btts_over_3_5": "btts_and_over_3_5",
+            "combo_home_btts": "ft_and_btts",
+            "combo_away_btts": "ft_and_btts",
+        }
+        combo_key = combo_key_map.get(market)
+        if not combo_key:
+            return None
+        combo_odds = snapshot.combo_markets.get(combo_key, {})
+        if not combo_odds:
+            return None
+        # Para ft_and_btts, precisa achar a sub-odd correta
+        if market == "combo_home_btts":
+            for label_name, price in combo_odds.items():
+                if "1" in label_name.split("/")[0] if "/" in label_name else "1" in label_name:
+                    return price
+            # Fallback: menor odd (mais provável)
+            return min(combo_odds.values()) if combo_odds else None
+        if market == "combo_away_btts":
+            for label_name, price in combo_odds.items():
+                if "2" in label_name:
+                    return price
+            return None
+        # combo_btts_over: geralmente "Sim" é a aposta
+        for label_name, price in combo_odds.items():
+            if "sim" in label_name.lower() or "yes" in label_name.lower():
+                return price
+        # Se não tem "sim", pegar a primeira
+        return next(iter(combo_odds.values()), None)
     return None
 
 
@@ -263,16 +347,81 @@ def _aporte_candidates(
         home_score = int(parts[0]) if len(parts) == 2 else 0
         away_score = int(parts[1]) if len(parts) == 2 else 0
 
+    flp = inplay.get("final_line_probs", {})
+    team_lp = inplay.get("team_final_line_probs", {})
+    sh_lp = inplay.get("second_half_line_probs", {})
+    ht_lp = inplay.get("ht_line_probs", {})
+    combos = inplay.get("combo_markets", {})
+
     specs: list[tuple[str, str, str, Callable[[], float | None]]] = [
+        # --- 1X2 ---
         ("h2h", "1", f"{home_team} vence", lambda: inplay.get("prob_final_home")),
         ("h2h", "X", "Empate", lambda: inplay.get("prob_final_draw")),
         ("h2h", "2", f"{away_team} vence", lambda: inplay.get("prob_final_away")),
-        ("over_2_5", "yes", "Mais de 2.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_2_5")),
-        ("over_3_5", "yes", "Mais de 3.5 gols", lambda: inplay.get("final_line_probs", {}).get("over_3_5")),
+        # --- BTTS ---
         ("btts", "yes", "Ambos marcam", lambda: inplay.get("btts_final")),
+        ("btts", "no", "Ambos não marcam", lambda: (
+            1.0 - inplay["btts_final"] if "btts_final" in inplay else None
+        )),
+        # --- Próximo gol ---
         ("next_goal", "home", f"Próximo gol {home_team}", lambda: inplay.get("prob_next_goal_home")),
         ("next_goal", "away", f"Próximo gol {away_team}", lambda: inplay.get("prob_next_goal_away")),
     ]
+
+    # --- Total de Gols (linhas disponíveis no snapshot) ---
+    if snapshot:
+        for line_key in snapshot.totals:
+            line_num = line_key.replace(".", "_")
+            over_prob = flp.get(f"over_{line_num}")
+            under_prob = flp.get(f"under_{line_num}")
+            if over_prob is not None:
+                specs.append((f"over_{line_num}", "yes", f"Mais de {line_key} gols", lambda p=over_prob: p))
+            if under_prob is not None:
+                specs.append((f"over_{line_num}", "no", f"Menos de {line_key} gols", lambda p=under_prob: p))
+
+    # --- Total por Time (linhas disponíveis) ---
+    if snapshot:
+        for side in ("home", "away"):
+            team_name = home_team if side == "home" else away_team
+            for line_key in snapshot.team_totals.get(side, {}):
+                line_num = line_key.replace(".", "_")
+                prob = team_lp.get(f"{side}_over_{line_num}")
+                if prob is not None:
+                    specs.append((f"{side}_over_{line_num}", "yes", f"{team_name} mais de {line_key} gols", lambda p=prob: p))
+
+    # --- 2º Tempo (linhas disponíveis) ---
+    if snapshot:
+        for line_key in snapshot.second_half_totals:
+            line_num = line_key.replace(".", "_")
+            over_prob = sh_lp.get(f"over_{line_num}")
+            under_prob = sh_lp.get(f"under_{line_num}")
+            if over_prob is not None:
+                specs.append((f"2h_over_{line_num}", "yes", f"2º Tempo: mais de {line_key} gols", lambda p=over_prob: p))
+            if under_prob is not None:
+                specs.append((f"2h_over_{line_num}", "no", f"2º Tempo: menos de {line_key} gols", lambda p=under_prob: p))
+
+    # --- 1º Tempo (linhas disponíveis) ---
+    if snapshot:
+        for line_key in snapshot.first_half_totals:
+            line_num = line_key.replace(".", "_")
+            over_prob = ht_lp.get(f"over_{line_num}")
+            under_prob = ht_lp.get(f"under_{line_num}")
+            if over_prob is not None:
+                specs.append((f"1h_over_{line_num}", "yes", f"1º Tempo: mais de {line_key} gols", lambda p=over_prob: p))
+            if under_prob is not None:
+                specs.append((f"1h_over_{line_num}", "no", f"1º Tempo: menos de {line_key} gols", lambda p=under_prob: p))
+
+    # --- Combos ---
+    combo_map = {
+        "combo_btts_over_2_5": ("btts_and_over_2_5", "BTTS + Mais de 2.5"),
+        "combo_btts_over_3_5": ("btts_and_over_3_5", "BTTS + Mais de 3.5"),
+        "combo_home_btts": ("ft_home_and_btts", f"{home_team} vence + BTTS"),
+        "combo_away_btts": ("ft_away_and_btts", f"{away_team} vence + BTTS"),
+    }
+    for market, (combo_key, label) in combo_map.items():
+        prob = combos.get(combo_key)
+        if prob is not None:
+            specs.append((market, "yes", label, lambda p=prob: p))
     for market, outcome, label, prob_fn in specs:
         prob = prob_fn()
         if prob is None or prob <= 0:

@@ -1,0 +1,153 @@
+{
+  "event_id": 12312213,
+  "home_team": "Sport Recife",
+  "away_team": "Athletic Club MG",
+  "event_name": "Sport Recife·Athletic Club MG",
+  "utc_date": "2026-06-11T00:00:00Z",
+  "betradar_id": "68822948",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 1,
+    "minute": 89,
+    "stoppage_time": null,
+    "home_corners": 8,
+    "away_corners": 2,
+    "home_yellow_cards": 1,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 6.25,
+    "X": 1.22,
+    "2": 11.0
+  },
+  "h2h_implied": {
+    "1": 0.14945152848154128,
+    "X": 0.7656328303357648,
+    "2": 0.08491564118269392
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 3.65,
+      "Menos de 2.5": 1.22
+    },
+    "3.5": {
+      "Mais de 3.5": 15.0
+    },
+    "4.5": {
+      "Mais de 4.5": 35.0
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.25051334702258726,
+      "Menos de 2.5": 0.7494866529774128
+    },
+    "3.5": {
+      "Mais de 3.5": 1.0
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    }
+  },
+  "corners": {
+    "10.5": {
+      "Mais de 10.5": 1.38,
+      "Menos de 10.5": 2.75
+    },
+    "11.5": {
+      "Mais de 11.5": 2.35,
+      "Menos de 11.5": 1.53
+    },
+    "12.5": {
+      "Mais de 12.5": 4.2,
+      "Menos de 12.5": 1.16
+    },
+    "13.5": {
+      "Mais de 13.5": 7.5,
+      "Menos de 13.5": 1.04
+    },
+    "14.5": {
+      "Mais de 14.5": 13.0
+    },
+    "15.5": {
+      "Mais de 15.5": 20.0
+    }
+  },
+  "corners_implied": {
+    "10.5": {
+      "Mais de 10.5": 0.6658595641646489,
+      "Menos de 10.5": 0.334140435835351
+    },
+    "11.5": {
+      "Mais de 11.5": 0.3943298969072165,
+      "Menos de 11.5": 0.6056701030927835
+    },
+    "12.5": {
+      "Mais de 12.5": 0.21641791044776118,
+      "Menos de 12.5": 0.7835820895522388
+    },
+    "13.5": {
+      "Mais de 13.5": 0.12177985948477753,
+      "Menos de 13.5": 0.8782201405152225
+    },
+    "14.5": {
+      "Mais de 14.5": 1.0
+    },
+    "15.5": {
+      "Mais de 15.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.24302788844621515,
+      "Não": 0.756972111553785
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.0531299316149395,
+      "Não": 0.9468700683850605
+    },
+    "ft_and_btts": {
+      "Sport Recife e Sim": 0.15903017662777813,
+      "Empate e Sim": 0.7495274718112495,
+      "Athletic Club MG e Sim": 0.09144235156097244
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 6.0,
+    "away": 9.0
+  },
+  "generosity_probs": {
+    "home": 0.140493,
+    "away": 0.071495
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 5.15,
+        "Menos de 1.5": 1.12
+      },
+      "2.5": {
+        "Mais de 2.5": 25.0
+      }
+    },
+    "away": {
+      "1.5": {
+        "Mais de 1.5": 7.75,
+        "Menos de 1.5": 1.04
+      },
+      "2.5": {
+        "Mais de 2.5": 35.0
+      }
+    }
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "raw_market_count": 96,
+  "captured_at": "2026-06-11T01:50:03.871347+00:00"
+}

@@ -93,6 +93,9 @@ class SuperbetEventSnapshot:
     btts_odds: dict[str, float]
     next_goal_odds: dict[str, float]
     generosity_probs: dict[str, float]
+    team_totals: dict[str, dict[str, dict[str, float]]]
+    first_half_totals: dict[str, dict[str, float]]
+    second_half_totals: dict[str, dict[str, float]]
     raw_market_count: int
     captured_at: str
 
@@ -129,6 +132,9 @@ class SuperbetEventSnapshot:
             "btts_odds": self.btts_odds,
             "next_goal_odds": self.next_goal_odds,
             "generosity_probs": self.generosity_probs,
+            "team_totals": self.team_totals,
+            "first_half_totals": self.first_half_totals,
+            "second_half_totals": self.second_half_totals,
             "raw_market_count": self.raw_market_count,
             "captured_at": self.captured_at,
         }
@@ -421,6 +427,36 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
     btts_odds = _extract_yes_no_odds(_find_market(markets, "Ambas as Equipes Marcam"))
     next_goal_odds = _extract_next_goal_odds(markets, home_team, away_team)
 
+    # Total por time (home / away)
+    team_totals: dict[str, dict[str, dict[str, float]]] = {"home": {}, "away": {}}
+    home_total_mkt = _find_market(markets, f"{home_team} - Total de Gols")
+    if not home_total_mkt:
+        home_total_mkt = _find_market(markets, "Total de Gols - Time da Casa")
+    if not home_total_mkt:
+        home_total_mkt = _find_market(markets, f"Total de Gols - {home_team}")
+    if home_total_mkt:
+        team_totals["home"] = _extract_line_odds(home_total_mkt)
+    away_total_mkt = _find_market(markets, f"{away_team} - Total de Gols")
+    if not away_total_mkt:
+        away_total_mkt = _find_market(markets, "Total de Gols - Time Visitante")
+    if not away_total_mkt:
+        away_total_mkt = _find_market(markets, f"Total de Gols - {away_team}")
+    if away_total_mkt:
+        team_totals["away"] = _extract_line_odds(away_total_mkt)
+
+    # Total 1º Tempo e 2º Tempo
+    first_half_totals = _extract_line_odds(
+        _find_market(markets, "Total de Gols (1º Tempo)") or {}
+    )
+    if not first_half_totals:
+        # Fallback: "Total de Gols nos Primeiros X Minutos" (ex: 45 min = 1º tempo)
+        first_half_totals = _extract_line_odds(
+            _find_market(markets, "Total de Gols nos Primeiros X Minutos") or {}
+        )
+    second_half_totals = _extract_line_odds(
+        _find_market(markets, "Total de Gols (2º Tempo)") or {}
+    )
+
     return SuperbetEventSnapshot(
         event_id=int(ev.get("event_id") or fixture.get("event_id") or 0),
         home_team=home_team,
@@ -440,6 +476,9 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         btts_odds=btts_odds,
         next_goal_odds=next_goal_odds,
         generosity_probs=generosity,
+        team_totals=team_totals,
+        first_half_totals=first_half_totals,
+        second_half_totals=second_half_totals,
         raw_market_count=len(markets),
         captured_at=datetime.now(timezone.utc).isoformat(),
     )

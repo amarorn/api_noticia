@@ -6,13 +6,6 @@
     "points": 972.745782,
     "points_before": 978.683469
   },
-  "43832": {
-    "team_id": "43832",
-    "country_code": "PAK",
-    "team_name": "Paquistão",
-    "points": 837.151593,
-    "points_before": 830.779322
-  },
   "43829": {
     "team_id": "43829",
     "country_code": "MYA",
@@ -34,6 +27,13 @@
     "points": 954.928349,
     "points_before": 945.015919
   },
+  "43832": {
+    "team_id": "43832",
+    "country_code": "PAK",
+    "team_name": "Paquistão",
+    "points": 840.280827,
+    "points_before": 837.151593
+  },
   "1903356": {
     "team_id": "1903356",
     "country_code": "MNE",
@@ -52,8 +52,8 @@
     "team_id": "43966",
     "country_code": "SMR",
     "team_name": "San Marino",
-    "points": 722.933728,
-    "points_before": 726.330601
+    "points": 721.201827,
+    "points_before": 722.933728
   },
   "43818": {
     "team_id": "43818",
@@ -580,6 +580,13 @@
     "points": 1879.120563,
     "points_before": 1877.178865
   },
+  "43931": {
+    "team_id": "43931",
+    "country_code": "VEN",
+    "team_name": "Venezuela",
+    "points": 1468.046323,
+    "points_before": 1468.072771
+  },
   "43819": {
     "team_id": "43819",
     "country_code": "JPN",
@@ -612,8 +619,8 @@
     "team_id": "43951",
     "country_code": "ISL",
     "team_name": "Islândia",
-    "points": 1352.710214,
-    "points_before": 1344.838506
+    "points": 1344.717553,
+    "points_before": 1352.710214
   },
   "43872": {
     "team_id": "43872",
@@ -811,6 +818,13 @@
     "points": 1591.73,
     "points_before": 1589.38
   },
+  "43879": {
+    "team_id": "43879",
+    "country_code": "SEN",
+    "team_name": "Senegal",
+    "points": 1647.00881718466,
+    "points_before": 1645.22503
+  },
   "43937": {
     "team_id": "43937",
     "country_code": "BLR",
@@ -864,22 +878,15 @@
     "team_id": "43845",
     "country_code": "BEN",
     "team_name": "Benim",
-    "points": 1266.8827135794734,
-    "points_before": 1257.297484
-  },
-  "43879": {
-    "team_id": "43879",
-    "country_code": "SEN",
-    "team_name": "Senegal",
-    "points": 1647.00881718466,
-    "points_before": 1645.22503
+    "points": 1252.170944,
+    "points_before": 1258.224853
   },
   "43865": {
     "team_id": "43865",
     "country_code": "LBR",
     "team_name": "Libéria",
-    "points": 1074.686684,
-    "points_before": 1079.019513
+    "points": 1080.435325,
+    "points_before": 1074.686684
   },
   "43861": {
     "team_id": "43861",
@@ -894,6 +901,13 @@
     "team_name": "Níger",
     "points": 1179.66151,
     "points_before": 1185.0748
+  },
+  "43887": {
+    "team_id": "43887",
+    "country_code": "TOG",
+    "team_name": "Togo",
+    "points": 1140.3519137886371,
+    "points_before": 1144.28004975456
   },
   "43868": {
     "team_id": "43868",
@@ -979,13 +993,6 @@
     "points": 1000.04,
     "points_before": 987.41
   },
-  "43887": {
-    "team_id": "43887",
-    "country_code": "TOG",
-    "team_name": "Togo",
-    "points": 1140.3519137886371,
-    "points_before": 1144.28004975456
-  },
   "43889": {
     "team_id": "43889",
     "country_code": "UGA",
@@ -1032,8 +1039,8 @@
     "team_id": "43857",
     "country_code": "ETH",
     "team_name": "Etiópia",
-    "points": 1046.41,
-    "points_before": 1056.95
+    "points": 1071.546532,
+    "points_before": 1063.626754
   },
   "43878": {
     "team_id": "43878",
@@ -1123,8 +1130,8 @@
     "team_id": "43922",
     "country_code": "ARG",
     "team_name": "Argentina",
-    "points": 1876.118331,
-    "points_before": 1874.814835
+    "points": 1877.266571,
+    "points_before": 1876.118331
   },
   "43928": {
     "team_id": "43928",
@@ -1172,8 +1179,8 @@
     "team_id": "43994",
     "country_code": "AZE",
     "team_name": "Azerbaijão",
-    "points": 1130.263211,
-    "points_before": 1136.6663
+    "points": 1131.995112,
+    "points_before": 1130.263211
   },
   "43914": {
     "team_id": "43914",
@@ -1251,13 +1258,6 @@
     "team_name": "Santa Lúcia",
     "points": 976.708996,
     "points_before": 980.284636
-  },
-  "43931": {
-    "team_id": "43931",
-    "country_code": "VEN",
-    "team_name": "Venezuela",
-    "points": 1468.046323,
-    "points_before": 1468.072771
   },
   "43909": {
     "team_id": "43909",

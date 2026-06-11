@@ -196,6 +196,23 @@ class TestAnalytics:
         assert summary["n_transactions"] == 0
         assert summary["pnl"] == 0.0
 
+    def test_daily_pnl_includes_today_gap(self, tmp_path, monkeypatch):
+        from pipelines.user_bet_analytics import _fill_daily_gaps, _today_br
+
+        daily = [
+            {"date": "2026-06-08", "staked": 10.0, "won": 0.0, "pnl": -10.0, "n_bets": 1},
+            {"date": "2026-06-09", "staked": 20.0, "won": 5.0, "pnl": -15.0, "n_bets": 2},
+        ]
+        filled = _fill_daily_gaps(daily)
+        dates = [d["date"] for d in filled]
+        assert "2026-06-08" in dates
+        assert "2026-06-09" in dates
+        if str(_today_br()) > "2026-06-09":
+            assert str(_today_br()) in dates
+            today_row = next(d for d in filled if d["date"] == str(_today_br()))
+            assert today_row["n_bets"] == 0
+            assert today_row["is_today"] is True
+
     def test_summary_with_data(self, tmp_path, monkeypatch):
         from config import settings as s
 
@@ -213,3 +230,28 @@ class TestAnalytics:
     def test_model_errors_empty(self):
         result = compute_model_errors_heatmap("usuario_xyz_inexistente")
         assert result["buckets"] == []
+
+
+class TestBrierContribution:
+    def test_brier_won_high_prob(self):
+        from pipelines.user_bet_reconciliation import _brier_for_bet_row
+
+        row = {
+            "won": True,
+            "home_score": 2,
+            "away_score": 0,
+            "prob_final_home": 0.8,
+            "prob_final_away": 0.1,
+            "prob_final_draw": 0.1,
+        }
+        brier = _brier_for_bet_row(row)
+        assert brier is not None
+        assert abs(brier - 0.04) < 1e-6  # (0.8 - 1)^2
+
+    def test_brier_lost_low_prob(self):
+        from pipelines.user_bet_reconciliation import _brier_for_bet_row
+
+        row = {"won": False, "home_score": 0, "away_score": 1, "prob_final_away": 0.2}
+        brier = _brier_for_bet_row(row)
+        assert brier is not None
+        assert abs(brier - 0.04) < 1e-6

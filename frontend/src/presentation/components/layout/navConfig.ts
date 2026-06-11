@@ -8,6 +8,7 @@ import {
   IconNewspaper,
   IconTrophy,
   IconUsers,
+  IconWallet,
   IconZap,
 } from "@/presentation/components/ui/Icons";
 
@@ -108,6 +109,12 @@ export const navGroups: NavGroup[] = [
         label: "Performance",
         Icon: IconHistory,
         description: "ROI e analise de apostas",
+      },
+      {
+        to: "/carteira",
+        label: "Carteira",
+        Icon: IconWallet,
+        description: "CSV Superbet e reconciliação",
       },
     ],
   },

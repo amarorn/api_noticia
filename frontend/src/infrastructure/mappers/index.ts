@@ -1212,6 +1212,42 @@ export function mapSuperbetLiveFeed(raw: ApiSuperbetLiveFeed) {
   };
 }
 
+interface ApiSuperbetEvent {
+  event_id: number;
+  home_team: string;
+  away_team: string;
+  is_live: boolean;
+  inplay: {
+    home_score?: number;
+    away_score?: number;
+    minute?: number;
+    period_label?: string | null;
+    status?: string | null;
+  } | null;
+  h2h_odds: Record<string, number>;
+  raw_market_count: number;
+  captured_at: string;
+}
+
+export function mapSuperbetEvent(raw: ApiSuperbetEvent) {
+  const inplay = raw.inplay;
+  const homeScore = inplay?.home_score ?? 0;
+  const awayScore = inplay?.away_score ?? 0;
+  return {
+    eventId: raw.event_id,
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    isLive: raw.is_live,
+    currentScore: inplay ? `${homeScore}x${awayScore}` : null,
+    minute: inplay?.minute ?? 0,
+    periodLabel: inplay?.period_label ?? null,
+    status: inplay?.status ?? null,
+    h2hOdds: raw.h2h_odds ?? {},
+    rawMarketCount: raw.raw_market_count ?? 0,
+    capturedAt: raw.captured_at,
+  };
+}
+
 export { mapWcPrediction };
 
 export function mapUserOpenBets(raw: {

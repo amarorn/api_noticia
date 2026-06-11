@@ -155,6 +155,14 @@ export class GetSuperbetLiveAdviceUseCase {
   }
 }
 
+export class GetSuperbetEventUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: { eventId: number; saveBronze?: boolean }) {
+    return this.repository.getSuperbetEvent(dto);
+  }
+}
+
 export class SimulateWcMatchUseCase {
   constructor(private readonly repository: IWcRepository) {}
 

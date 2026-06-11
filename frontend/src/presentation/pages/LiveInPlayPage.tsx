@@ -1,7 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { getSuperbetLiveAdviceUseCase, getUserOpenBetsUseCase } from "@/application/container";
+import {
+  getSuperbetEventUseCase,
+  getSuperbetLiveAdviceUseCase,
+  getUserOpenBetsUseCase,
+} from "@/application/container";
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
@@ -22,7 +26,8 @@ import { LivePlainGuide } from "@/presentation/components/predictions/LivePlainG
 import { LiveScoreHeatmap } from "@/presentation/components/predictions/LiveScoreHeatmap";
 import LiveHedgeAlert from "@/presentation/components/predictions/LiveHedgeAlert";
 
-const POLL_MS = 25_000;
+const POLL_MS = 15_000;
+const SCORE_POLL_MS = 10_000;
 const MAX_OPEN_BETS = 2;
 
 type BetDraft = {
@@ -105,8 +110,50 @@ export function LiveInPlayPage() {
       query.state.data?.isFinished ? false : POLL_MS,
   });
 
+  const scoreTickQuery = useQuery({
+    queryKey: ["superbet-event-score", eventId],
+    queryFn: () => getSuperbetEventUseCase.execute({ eventId, saveBronze: false }),
+    enabled: Number.isFinite(eventId) && eventId > 0,
+    staleTime: 5_000,
+    refetchInterval: (query) =>
+      query.state.data?.isLive === false ? false : SCORE_POLL_MS,
+  });
+
   const data = adviceQuery.data;
+  const scoreTick = scoreTickQuery.data;
   const isLoading = adviceQuery.isLoading && !data;
+
+  const liveHeader = useMemo(() => {
+    if (!data) return null;
+    const adviceCapturedMs = data.capturedAt ? Date.parse(data.capturedAt) : 0;
+    const tickCapturedMs = scoreTick?.capturedAt ? Date.parse(scoreTick.capturedAt) : 0;
+    const useTick =
+      scoreTick != null &&
+      Number.isFinite(tickCapturedMs) &&
+      tickCapturedMs >= adviceCapturedMs;
+    return {
+      currentScore: useTick ? scoreTick.currentScore : data.currentScore,
+      minute: useTick ? scoreTick.minute : data.minute,
+      periodLabel: useTick ? scoreTick.periodLabel : data.periodLabel,
+      h2hOdds: useTick ? scoreTick.h2hOdds : data.h2hOdds,
+      rawMarketCount: useTick ? scoreTick.rawMarketCount : data.rawMarketCount,
+      capturedAt: useTick ? scoreTick.capturedAt : data.capturedAt,
+      scoreIsFresh: useTick,
+    };
+  }, [data, scoreTick]);
+
+  useEffect(() => {
+    if (!scoreTick?.currentScore || !data?.currentScore) return;
+    if (scoreTick.currentScore === data.currentScore) return;
+    if (adviceQuery.isFetching || data.isFinished) return;
+    void adviceQuery.refetch();
+  }, [
+    scoreTick?.currentScore,
+    data?.currentScore,
+    data?.isFinished,
+    adviceQuery.isFetching,
+    adviceQuery.refetch,
+  ]);
 
   const apiBets: RegisteredBetEntry[] = useMemo(() => {
     if (!openBetsQuery.data?.bets) return [];
@@ -242,15 +289,19 @@ export function LiveInPlayPage() {
                 </div>
                 <div className="px-2 text-center">
                   <p className="font-mono text-2xl font-bold text-white">
-                    {data.currentScore?.replace("x", " × ") ?? "0 × 0"}
+                    {liveHeader?.currentScore?.replace("x", " × ") ??
+                      data.currentScore?.replace("x", " × ") ??
+                      "0 × 0"}
                   </p>
                   <p className="mt-0.5 flex items-center justify-center gap-1.5 text-xs font-semibold">
                     {data.isLive && !data.isFinished && (
                       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
                     )}
                     <span className="text-amber-300">
-                      {data.minute}&apos;
-                      {data.periodLabel ? ` · ${data.periodLabel}` : ""}
+                      {(liveHeader?.minute ?? data.minute)}&apos;
+                      {(liveHeader?.periodLabel ?? data.periodLabel)
+                        ? ` · ${liveHeader?.periodLabel ?? data.periodLabel}`
+                        : ""}
                     </span>
                   </p>
                 </div>
@@ -262,17 +313,26 @@ export function LiveInPlayPage() {
               <div className="text-right text-[11px] text-slate-500">
                 <p>
                   Odds:{" "}
-                  <span className="text-slate-300">{formatOddsLine(data.h2hOdds)}</span>
+                  <span className="text-slate-300">
+                    {formatOddsLine(liveHeader?.h2hOdds ?? data.h2hOdds)}
+                  </span>
                 </p>
-                <p>{data.rawMarketCount} mercados</p>
+                <p>{liveHeader?.rawMarketCount ?? data.rawMarketCount} mercados</p>
                 <p className="mt-0.5 flex items-center justify-end gap-2">
                   <span>
-                    Captura {formatCapturedAt(data.capturedAt)}
-                    {data.isLive ? ` · refresh ${POLL_MS / 1000}s` : ""}
+                    Captura {formatCapturedAt(liveHeader?.capturedAt ?? data.capturedAt)}
+                    {data.isLive
+                      ? liveHeader?.scoreIsFresh
+                        ? ` · placar ${SCORE_POLL_MS / 1000}s · modelo ${POLL_MS / 1000}s`
+                        : ` · refresh ${POLL_MS / 1000}s`
+                      : ""}
                   </span>
                   <button
-                    onClick={() => adviceQuery.refetch()}
-                    disabled={adviceQuery.isFetching}
+                    onClick={() => {
+                      void scoreTickQuery.refetch();
+                      void adviceQuery.refetch();
+                    }}
+                    disabled={adviceQuery.isFetching || scoreTickQuery.isFetching}
                     title="Atualizar agora"
                     className="rounded p-0.5 text-slate-500 transition hover:text-slate-300 disabled:opacity-40"
                   >

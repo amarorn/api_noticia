@@ -95,6 +95,24 @@ class TestMomentumCalibrated:
         lam_85 = compute_remaining_lambda(1.5, 85)
         assert lam_0 > lam_30 > lam_60 > lam_85 > 0
 
+    def test_get_intensity_profile_loads_calibrated(self, tmp_path, monkeypatch):
+        from pipelines.wc_intensity_profile import get_intensity_profile
+
+        coefs = InPlayCoefficients(
+            nhpp_weights=[NHPPWeight(0, 15, 0.99, 0.01)],
+        )
+        path = tmp_path / "inplay_coefficients.json"
+        save_inplay_coefficients(coefs, path)
+
+        monkeypatch.setattr(
+            "models.wc_inplay_coefficients.load_inplay_coefficients",
+            lambda p=None: load_inplay_coefficients(path),
+        )
+        monkeypatch.setattr("config.settings.inplay_use_calibrated_nhpp", True)
+
+        profile = get_intensity_profile()
+        assert profile[0].weight == 0.99
+
 
 class TestBuildTimeline:
     """Testes do pipeline de timeline."""

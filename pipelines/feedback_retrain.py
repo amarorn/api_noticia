@@ -84,9 +84,10 @@ def build_feedback_features(
         # Fração NHPP restante: heurística simples
         X[idx, 4] = max(0, 90 - minute) / 90  # remaining_fraction
 
-        # Lambda remaining: estimativa default
-        X[idx, 5] = 0.015  # home_lambda_remaining
-        X[idx, 6] = 0.012  # away_lambda_remaining
+        p_h = row.get("prob_final_home")
+        p_a = row.get("prob_final_away")
+        X[idx, 5] = float(p_h) * 0.03 if pd.notna(p_h) else 0.015
+        X[idx, 6] = float(p_a) * 0.03 if pd.notna(p_a) else 0.012
 
         # Cards: assumir 0 (não temos no snapshot in-play básico)
         X[idx, 7] = 0.0
@@ -120,8 +121,7 @@ def build_feedback_features(
             elif (hs - as_) < 0:
                 y[idx] = 2
             else:
-                # Empate; aposta provavelmente em over/btts → contar como gol
-                y[idx] = 1 if np.random.random() < 0.5 else 2
+                y[idx] = 0  # empate: sem lado claro → no_goal
         else:
             y[idx] = 0
 

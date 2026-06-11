@@ -279,3 +279,33 @@ def run_gbm_training(
         seed=seed,
     )
     return result
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Treina LightGBM in-play (Fase 3)")
+    parser.add_argument("--min-season", type=int, default=2010)
+    parser.add_argument("--val-season", type=int, default=2022)
+    parser.add_argument("--max-season", type=int, default=2026)
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+
+    result = run_gbm_training(
+        min_season=args.min_season,
+        val_season=args.val_season,
+        max_season=args.max_season,
+        seed=args.seed,
+    )
+    print(
+        f"GBM: train_ll={result.train_logloss:.4f} val_ll={result.val_logloss:.4f} "
+        f"val_acc={result.val_accuracy:.3f} n_train={result.n_train}"
+    )
+    if result.feature_importance:
+        top = sorted(result.feature_importance.items(), key=lambda x: -x[1])[:5]
+        print("  Top features:", ", ".join(f"{k}={v:.0f}" for k, v in top))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

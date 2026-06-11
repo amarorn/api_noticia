@@ -3,7 +3,7 @@
 **Status:** Accepted (specs derivadas)
 **Date:** 2026-06-09
 **Deciders:** amaro
-**Specs:** Fases [0](spec-fase-0-reorganizacao.md), [1](spec-fase-1-quickwins-inplay.md), [2](spec-fase-2-momentum-calibrado.md), [3](spec-fase-3-modelo-avancado.md)
+**Specs:** Fases [0](spec-fase-0-reorganizacao.md), [1](spec-fase-1-quickwins-inplay.md), [2](spec-fase-2-momentum-calibrado.md), [3](spec-fase-3-modelo-avancado.md), [4](spec-fase-4-feedback-loop.md)
 
 ---
 
@@ -26,9 +26,10 @@ Evoluir o in-play em **4 fases incrementais**, cada uma com spec executável ind
 | Fase | Foco | Esforço | Ganho esperado |
 |---|---|---|---|
 | 0 | Pipeline reproduzível + Platt scaling | 3 dias | Reproducibilidade + ECE -30% |
-| 1 | Inverter ordem + NHPP + Shrinkage mercado | 1 semana | Brier -0.005~0.010 |
-| 2 | MLE momentum e NHPP com timeline histórica | 2 semanas | Substitui chutes por dados |
-| 3 | Hawkes + LightGBM + Ensemble stacking | 4-6 semanas | Brier -0.005~0.015 adicional |
+| 1 | Inverter ordem + NHPP + Shrinkage mercado | 1 semana | Brier -0.005~0.010 ✅ |
+| 2 | MLE momentum e NHPP com timeline histórica | 2 semanas | Substitui chutes por dados ✅ |
+| 3 | Hawkes + LightGBM + Ensemble stacking | 4-6 semanas | Implementado ✅; holdout 2022 sem ganho vs Fase 2 — shadow mode |
+| 4 | Feedback loop CSV ↔ snapshot ↔ retreino | 2 semanas | Implementado ✅; match rate depende de CSV + ticks |
 
 ## Consequences
 

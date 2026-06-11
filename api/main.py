@@ -1437,7 +1437,7 @@ def worldcup_superbet_live(
 
 
 @app.get("/worldcup/superbet/live/{event_id}/advice", response_model=WcSuperbetLiveAdviceResponse)
-def worldcup_superbet_live_advice(
+async def worldcup_superbet_live_advice(
     event_id: int,
     phase: str = Query("friendly", description="Fase do modelo (friendly para amistosos)"),
     bankroll: float = Query(1000, gt=0),
@@ -1466,7 +1466,8 @@ def worldcup_superbet_live_advice(
         )
 
     try:
-        payload = run_live_advice(
+        payload = await asyncio.to_thread(
+            run_live_advice,
             event_id,
             predictor,
             phase=phase,
@@ -1480,7 +1481,7 @@ def worldcup_superbet_live_advice(
 
 
 @app.get("/worldcup/superbet/events/{event_id}", response_model=WcSuperbetEventResponse)
-def worldcup_superbet_event(
+async def worldcup_superbet_event(
     event_id: int,
     merge_odds: bool = False,
     save_bronze: bool = True,
@@ -1490,14 +1491,14 @@ def worldcup_superbet_event(
     from ingest.superbet.store import merge_snapshot_into_odds_file, save_event_snapshot
 
     try:
-        snapshot = SuperbetClient().fetch_event(event_id)
+        snapshot = await asyncio.to_thread(SuperbetClient().fetch_event, event_id)
     except SuperbetClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     if save_bronze:
-        save_event_snapshot(snapshot)
+        await asyncio.to_thread(save_event_snapshot, snapshot)
     if merge_odds and snapshot.h2h_odds:
-        merge_snapshot_into_odds_file(snapshot)
+        await asyncio.to_thread(merge_snapshot_into_odds_file, snapshot)
         from pipelines.wc_market_features import load_match_odds_index
 
         load_match_odds_index.cache_clear()
@@ -1803,6 +1804,12 @@ def worldcup_inplay(req: WcInPlayRequest):
         except SuperbetClientError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
 
+    from models.wc_market_shrinkage import market_probs_from_h2h_implied
+
+    market_probs = None
+    if superbet_snapshot is not None:
+        market_probs = market_probs_from_h2h_implied(superbet_snapshot.h2h_implied)
+
     result = inplay_from_predictor(
         predictor,
         home_team=home,
@@ -1815,6 +1822,7 @@ def worldcup_inplay(req: WcInPlayRequest):
         match_minutes=req.match_minutes,
         ht_home_score=ht_home,
         ht_away_score=ht_away,
+        market_probs=market_probs,
     )
     payload = result.to_dict()
     if superbet_snapshot and superbet_snapshot.h2h_implied:

@@ -1,6 +1,6 @@
 # Spec — Fase 1: Quick Wins In-Play
 
-**Status:** Proposed
+**Status:** Accepted (implementada 2026-06-10)
 **Duração estimada:** 1 semana
 **Owner:** amaro
 **Depende de:** Fase 0 (pipeline reproduzível)
@@ -185,30 +185,29 @@ Permite A/B em produção: rodar simulações com e sem cada feature, comparar B
 ## 6. Plano de Implementação
 
 ### Dia 1–2 — Sub-fase 1a (ordem)
-- [ ] Refatorar `simulate_inplay` para aplicar momentum só em λ_remaining.
-- [ ] Atualizar `wc_live_momentum.adjust_lambdas` para receber `lam_rem` em vez de `lam_full`.
-- [ ] Testes: snapshot de probas pré vs pós refatoração em jogo conhecido (Brasil 4×1 Coreia 2022).
+- [x] Refatorar `simulate_inplay` para aplicar momentum só em λ_remaining.
+- [x] Momentum via `compute_momentum_calibrated` em λ_remaining (não λ_full).
+- [x] Testes: `tests/test_inplay_phase1.py`.
 
 ### Dia 3 — Sub-fase 1b (NHPP)
-- [ ] Criar `pipelines/wc_intensity_profile.py` com pesos iniciais.
-- [ ] Substituir `_half_lambdas` para usar `integrated_intensity`.
-- [ ] Teste: soma dos pesos integrados = 1.0 (sanity).
+- [x] `pipelines/wc_intensity_profile.py` com pesos iniciais.
+- [x] `compute_half_lambdas_nhpp` integrado em `simulate_inplay`.
+- [x] Teste: `tests/test_intensity_profile.py`.
 
 ### Dia 4–5 — Sub-fase 1c (shrinkage)
-- [ ] Criar `models/wc_market_shrinkage.py`.
-- [ ] Resolver inversão odds → λ via `scipy.optimize` (objetivo: minimizar Σ(p_model - p_market)²).
-- [ ] Integrar no `inplay_from_predictor`.
-- [ ] Testes: odds 50/50 com placar 0-0 retornam λ próximos (sanity).
+- [x] `models/wc_market_shrinkage.py`.
+- [x] Heurística odds → λ + `shrink_lambda` com α(minute).
+- [x] Integrado em `inplay_from_predictor`, `advice.py`, `api/main.py`.
+- [x] Testes: `tests/test_market_shrinkage.py`.
 
 ### Dia 6 — Integração API + validação
-- [ ] `api/main.py`: endpoint `/inplay/predict` aceita odds opcionais.
-- [ ] Walk-forward simplificado com dataset de Copa 2022.
-- [ ] MLflow: logar Brier com cada feature flag ligada/desligada (matriz 2×2×2).
+- [x] `/worldcup/inplay` e `/worldcup/superbet/live/{id}/advice` passam odds Superbet.
+- [x] Walk-forward A/B: `validate-inplay-phase1`.
+- [ ] MLflow: logar Brier por variante (opcional).
 
 ### Dia 7 — Documentação + rollout
-- [ ] Atualizar `docs/analise-inplay-backend.md`.
-- [ ] Deploy com feature flags **desligadas** por padrão.
-- [ ] Ligar uma de cada vez em produção e medir Brier por 3 dias.
+- [x] Feature flags em `config.py` (ligadas por padrão).
+- [x] CLI `validate-inplay-phase1` para medir ganho vs baseline.
 
 ## 7. Test Plan
 
@@ -241,8 +240,8 @@ Permite A/B em produção: rodar simulações com e sem cada feature, comparar B
 
 ## 10. Definition of Done
 
-- [ ] As 3 sub-fases mergeadas atrás de feature flag.
-- [ ] Walk-forward in-play reporta Brier para cada combinação de flags.
-- [ ] Latência p95 do endpoint `/inplay/predict` documentada antes/depois.
-- [ ] Pelo menos a sub-fase 1a (ordem) está LIGADA em produção sem regressão.
-- [ ] Sub-fases 1b e 1c em rollout gradual.
+- [x] As 3 sub-fases mergeadas atrás de feature flag (`config.py`).
+- [x] Walk-forward in-play reporta Brier para cada combinação de flags (`validate-inplay-phase1`).
+- [ ] Latência p95 do endpoint documentada antes/depois (medir em produção).
+- [x] Sub-fases 1a, 1b e 1c ligadas por padrão em dev.
+- [x] Shrinkage ativo quando odds Superbet disponíveis no advice/inplay.

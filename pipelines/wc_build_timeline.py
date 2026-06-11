@@ -207,3 +207,32 @@ def load_timeline(path: Path | None = None) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame()
     return pd.read_parquet(path)
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Materializa timeline in-play (silver/wc_timeline)")
+    parser.add_argument("--min-season", type=int, default=2010)
+    parser.add_argument("--max-season", type=int, default=2026)
+    parser.add_argument("--verbose", "-v", action="store_true", default=True)
+    args = parser.parse_args()
+
+    df = build_timeline_from_fixtures(min_season=args.min_season, max_season=args.max_season)
+    if df.empty:
+        print("Nenhum snapshot gerado — verifique fixtures WC.")
+        return 1
+
+    path = save_timeline(df)
+    if args.verbose:
+        print(
+            f"Timeline: {path}\n"
+            f"  Snapshots: {len(df)}\n"
+            f"  Jogos: {df['match_id'].nunique()}\n"
+            f"  Seasons: {sorted(df['season'].unique().tolist())}"
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

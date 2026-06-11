@@ -397,6 +397,21 @@ export interface SuperbetLiveFeed {
   capturedAt: string;
 }
 
+/** Snapshot leve da Superbet (placar/minuto/odds) sem rodar o modelo in-play. */
+export interface SuperbetEventSnapshot {
+  eventId: number;
+  homeTeam: string;
+  awayTeam: string;
+  isLive: boolean;
+  currentScore: string | null;
+  minute: number;
+  periodLabel: string | null;
+  status: string | null;
+  h2hOdds: Record<string, number>;
+  rawMarketCount: number;
+  capturedAt: string;
+}
+
 export interface SuperbetLiveAdvice {
   homeTeam: string;
   awayTeam: string;

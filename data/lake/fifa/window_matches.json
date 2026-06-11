@@ -5,132 +5,6 @@
       "IdSeason": "289781",
       "IdStage": "289782",
       "IdGroup": "",
-      "IdMatch": "400021271",
-      "IdMatchIfes": "146315",
-      "Date": "2025-10-14T15:00:00+00:00",
-      "LocalDate": "2025-10-14",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 1,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Asian Nations Cup 2027 Prel. Comp."
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Group E"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Round Three"
-        }
-      ],
-      "Stadium": null,
-      "Winner": null,
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "20000",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Afeganistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
-        "IdCountry": "AFG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43832",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Paquistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
-        "IdCountry": "PAK",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 991.1926486284524,
-      "TeamAPointsBefore": 994.9493465871931,
-      "TeamBPoints": 837.0919313715476,
-      "TeamBPointsBefore": 833.3352334128069,
-      "PointsVisibility": 1,
-      "TeamAId": "20000",
-      "TeamBId": "43832",
-      "HomeTeam": {
-        "IdTeam": "20000",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Afeganistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
-        "IdCountry": "AFG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43832",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Paquistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
-        "IdCountry": "PAK",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 0,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "10012",
-      "IdSeason": "289781",
-      "IdStage": "289782",
-      "IdGroup": "",
       "IdMatch": "400021272",
       "IdMatchIfes": "146318",
       "Date": "2026-03-26T10:30:00+00:00",
@@ -621,6 +495,132 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
         "IdCountry": "PAK",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 0,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2mh7mzrxd7du4lfx4aat003kk",
+      "IdGroup": "",
+      "IdMatch": "brk3s6fnnz9na2psnmst1ipec",
+      "IdMatchIfes": "153899",
+      "Date": "2026-06-10T16:00:00+00:00",
+      "LocalDate": "2026-06-10",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Diamond Jubilee International Football Tournament"
+        }
+      ],
+      "GroupName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Final"
+        }
+      ],
+      "StageName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Segunda fase"
+        }
+      ],
+      "Stadium": null,
+      "Winner": "43832",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43832",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Paquistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
+        "IdCountry": "PAK",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "20000",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Afeganistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
+        "IdCountry": "AFG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 840.280827,
+      "TeamAPointsBefore": 837.151593,
+      "TeamBPoints": 968.073401,
+      "TeamBPointsBefore": 971.202635,
+      "PointsVisibility": 2,
+      "TeamAId": "43832",
+      "TeamBId": "20000",
+      "HomeTeam": {
+        "IdTeam": "43832",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Paquistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
+        "IdCountry": "PAK",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "20000",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Afeganistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
+        "IdCountry": "AFG",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -13513,132 +13513,6 @@
     {
       "IdCompetition": "10013",
       "IdSeason": "290556",
-      "IdStage": "290557",
-      "IdGroup": "",
-      "IdMatch": "400020138",
-      "IdMatchIfes": "148927",
-      "Date": "2025-12-09T17:00:00+00:00",
-      "LocalDate": "2025-12-09",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "95'",
-      "ResultType": 1,
-      "HomeTeamScore": 2,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Copa Árabe da FIFA Catar 2025™"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo D"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Group Stage"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43843",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43843",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Argélia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ALG",
-        "IdCountry": "ALG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43818",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Iraque"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRQ",
-        "IdCountry": "IRQ",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1562.8266,
-      "TeamAPointsBefore": 1560.910309,
-      "TeamBPoints": 1435.026873,
-      "TeamBPointsBefore": 1436.943164,
-      "PointsVisibility": 1,
-      "TeamAId": "43843",
-      "TeamBId": "43818",
-      "HomeTeam": {
-        "IdTeam": "43843",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Argélia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ALG",
-        "IdCountry": "ALG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43818",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Iraque"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRQ",
-        "IdCountry": "IRQ",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "10013",
-      "IdSeason": "290556",
       "IdStage": "290563",
       "IdGroup": "",
       "IdMatch": "400020143",
@@ -14097,6 +13971,122 @@
       "AwayTeam": {
         "IdTeam": "43818",
         "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Iraque"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRQ",
+        "IdCountry": "IRQ",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "7l5b2rybg38j864j40tclqs5w",
+      "IdMatchIfes": "153664",
+      "Date": "2026-06-10T01:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43931",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43931",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Venezuela"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/VEN",
+        "IdCountry": "VEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43818",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Iraque"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRQ",
+        "IdCountry": "IRQ",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1469.177672,
+      "TeamAPointsBefore": 1464.303811,
+      "TeamBPoints": 1446.279605,
+      "TeamBPointsBefore": 1451.153466,
+      "PointsVisibility": 2,
+      "TeamAId": "43931",
+      "TeamBId": "43818",
+      "HomeTeam": {
+        "IdTeam": "43931",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Venezuela"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/VEN",
+        "IdCountry": "VEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43818",
+        "Score": 0,
         "IdConfederation": "",
         "TeamName": [
           {
@@ -22105,132 +22095,6 @@
       "IdSeason": "289781",
       "IdStage": "289782",
       "IdGroup": "",
-      "IdMatch": "400021271",
-      "IdMatchIfes": "146315",
-      "Date": "2025-10-14T15:00:00+00:00",
-      "LocalDate": "2025-10-14",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 1,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Asian Nations Cup 2027 Prel. Comp."
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Group E"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Round Three"
-        }
-      ],
-      "Stadium": null,
-      "Winner": null,
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "20000",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Afeganistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
-        "IdCountry": "AFG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43832",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Paquistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
-        "IdCountry": "PAK",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 991.1926486284524,
-      "TeamAPointsBefore": 994.9493465871931,
-      "TeamBPoints": 837.0919313715476,
-      "TeamBPointsBefore": 833.3352334128069,
-      "PointsVisibility": 1,
-      "TeamAId": "20000",
-      "TeamBId": "43832",
-      "HomeTeam": {
-        "IdTeam": "20000",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Afeganistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
-        "IdCountry": "AFG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43832",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Paquistão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
-        "IdCountry": "PAK",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 0,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "10012",
-      "IdSeason": "289781",
-      "IdStage": "289782",
-      "IdGroup": "",
       "IdMatch": "400021270",
       "IdMatchIfes": "146317",
       "Date": "2025-11-18T09:00:00+00:00",
@@ -22721,6 +22585,132 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
         "IdCountry": "PAK",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 0,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2mh7mzrxd7du4lfx4aat003kk",
+      "IdGroup": "",
+      "IdMatch": "brk3s6fnnz9na2psnmst1ipec",
+      "IdMatchIfes": "153899",
+      "Date": "2026-06-10T16:00:00+00:00",
+      "LocalDate": "2026-06-10",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Diamond Jubilee International Football Tournament"
+        }
+      ],
+      "GroupName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Final"
+        }
+      ],
+      "StageName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Segunda fase"
+        }
+      ],
+      "Stadium": null,
+      "Winner": "43832",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43832",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Paquistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
+        "IdCountry": "PAK",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "20000",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Afeganistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
+        "IdCountry": "AFG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 840.280827,
+      "TeamAPointsBefore": 837.151593,
+      "TeamBPoints": 968.073401,
+      "TeamBPointsBefore": 971.202635,
+      "PointsVisibility": 2,
+      "TeamAId": "43832",
+      "TeamBId": "20000",
+      "HomeTeam": {
+        "IdTeam": "43832",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Paquistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PAK",
+        "IdCountry": "PAK",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "20000",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Afeganistão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AFG",
+        "IdCountry": "AFG",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -23971,127 +23961,6 @@
       "Attendance": 0
     },
     {
-      "IdCompetition": "10013",
-      "IdSeason": "290556",
-      "IdStage": "290565",
-      "IdGroup": "",
-      "IdMatch": "400020118",
-      "IdMatchIfes": "148935",
-      "Date": "2025-12-18T11:00:00+00:00",
-      "LocalDate": "2025-12-18",
-      "MatchDay": "",
-      "MatchStatus": 4,
-      "MatchTime": "",
-      "ResultType": 1,
-      "HomeTeamScore": 0,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Copa Árabe da FIFA Catar 2025™"
-        }
-      ],
-      "GroupName": [],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Decisão do terceiro lugar"
-        }
-      ],
-      "Stadium": null,
-      "Winner": null,
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43835",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Arábia Saudita"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/KSA",
-        "IdCountry": "KSA",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43840",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Emirados Árabes Unidos"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/UAE",
-        "IdCountry": "UAE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1429.19915,
-      "TeamAPointsBefore": 1429.481028,
-      "TeamBPoints": 1370.751312,
-      "TeamBPointsBefore": 1370.469434,
-      "PointsVisibility": 1,
-      "TeamAId": "43835",
-      "TeamBId": "43840",
-      "HomeTeam": {
-        "IdTeam": "43835",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Arábia Saudita"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/KSA",
-        "IdCountry": "KSA",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43840",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Emirados Árabes Unidos"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/UAE",
-        "IdCountry": "UAE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 4,
-      "Attendance": 0
-    },
-    {
       "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
       "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
       "IdStage": "2m1wojm5bt709wu4kugtytxqs",
@@ -24537,6 +24406,122 @@
       "AwayTeam": {
         "IdTeam": "43835",
         "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Arábia Saudita"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/KSA",
+        "IdCountry": "KSA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "5etme7cr29oxe6lefcno8cjkk",
+      "IdMatchIfes": "153117",
+      "Date": "2026-06-09T23:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 0,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": null,
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43879",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Senegal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
+        "IdCountry": "SEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43835",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Arábia Saudita"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/KSA",
+        "IdCountry": "KSA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1684.069879,
+      "TeamAPointsBefore": 1686.412769,
+      "TeamBPoints": 1423.881229,
+      "TeamBPointsBefore": 1421.538339,
+      "PointsVisibility": 2,
+      "TeamAId": "43879",
+      "TeamBId": "43835",
+      "HomeTeam": {
+        "IdTeam": "43879",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Senegal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
+        "IdCountry": "SEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43835",
+        "Score": 0,
         "IdConfederation": "",
         "TeamName": [
           {
@@ -30068,132 +30053,6 @@
     {
       "IdCompetition": "400132623",
       "IdSeason": "1z35p4iuhfxxdfaqjwzkqn2fo",
-      "IdStage": "207mir3y73ql1144i13i8xe6s",
-      "IdGroup": "",
-      "IdMatch": "cfyx06zjk52590c6ycsoymuj8",
-      "IdMatchIfes": "147511",
-      "Date": "2025-12-30T19:00:00+00:00",
-      "LocalDate": "2025-12-30",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 0,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 3,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Africa Cup of Nations 2025"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo D"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Primeira fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43879",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43845",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Benim"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/BEN",
-        "IdCountry": "BEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43879",
-        "Score": 3,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Senegal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
-        "IdCountry": "SEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1250.045847,
-      "TeamAPointsBefore": 1256.469786,
-      "TeamBPoints": 1651.814295,
-      "TeamBPointsBefore": 1645.390356,
-      "PointsVisibility": 1,
-      "TeamAId": "43845",
-      "TeamBId": "43879",
-      "HomeTeam": {
-        "IdTeam": "43845",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Benim"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/BEN",
-        "IdCountry": "BEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43879",
-        "Score": 3,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Senegal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
-        "IdCountry": "SEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "400132623",
-      "IdSeason": "1z35p4iuhfxxdfaqjwzkqn2fo",
       "IdStage": "1ztmwb2hf7rwgj1gcxm0n9dzo",
       "IdGroup": "",
       "IdMatch": "a3y0erz76jpc30v6b78c6cqac",
@@ -30656,6 +30515,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NIG",
         "IdCountry": "NIG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 0,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2mh7mzrxd7du4lfx4aat003kk",
+      "IdGroup": "",
+      "IdMatch": "bf8ccs73npa1pqhk81fxl0c2c",
+      "IdMatchIfes": "153870",
+      "Date": "2026-06-09T18:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "",
+      "ResultType": 1,
+      "HomeTeamScore": 1,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 5,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43887",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43845",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Benim"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/BEN",
+        "IdCountry": "BEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43887",
+        "Score": 5,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Togo"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/TOG",
+        "IdCountry": "TOG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1252.170944,
+      "TeamAPointsBefore": 1258.224853,
+      "TeamBPoints": 1152.757527,
+      "TeamBPointsBefore": 1146.703618,
+      "PointsVisibility": 2,
+      "TeamAId": "43845",
+      "TeamBId": "43887",
+      "HomeTeam": {
+        "IdTeam": "43845",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Benim"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/BEN",
+        "IdCountry": "BEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43887",
+        "Score": 5,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Togo"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/TOG",
+        "IdCountry": "TOG",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -42216,132 +42191,6 @@
       "Attendance": 0
     },
     {
-      "IdCompetition": "520",
-      "IdSeason": "288282",
-      "IdStage": "288289",
-      "IdGroup": "",
-      "IdMatch": "400021070",
-      "IdMatchIfes": "150648",
-      "Date": "2025-10-13T13:00:00+00:00",
-      "LocalDate": "2025-10-13",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 1,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias CAF da Copa do Mundo 26"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo H"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "1ª fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": null,
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43856",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Guiné Equatorial"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/EQG",
-        "IdCountry": "EQG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43865",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Libéria"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/LBR",
-        "IdCountry": "LBR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1229.9084175868172,
-      "TeamAPointsBefore": 1233.466608967407,
-      "TeamBPoints": 1084.4620449273905,
-      "TeamBPointsBefore": 1080.9038535468007,
-      "PointsVisibility": 1,
-      "TeamAId": "43856",
-      "TeamBId": "43865",
-      "HomeTeam": {
-        "IdTeam": "43856",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Guiné Equatorial"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/EQG",
-        "IdCountry": "EQG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43865",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Libéria"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/LBR",
-        "IdCountry": "LBR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
       "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
       "IdSeason": "8pw8cm9fuczk7lmxm1oxjdyc4",
       "IdStage": "1rx2wl3z1ru2ebbz8r5636zv8",
@@ -42803,6 +42652,122 @@
         "FootballType": 0
       },
       "Period": 0,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2mh7mzrxd7du4lfx4aat003kk",
+      "IdGroup": "",
+      "IdMatch": "130mxb7uxsrjpm7ckzt5rias4",
+      "IdMatchIfes": "153966",
+      "Date": "2026-06-09T18:30:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 3,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 1,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43865",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43865",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Libéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/LBR",
+        "IdCountry": "LBR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43881",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Serra Leoa"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SLE",
+        "IdCountry": "SLE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1080.435325,
+      "TeamAPointsBefore": 1074.686684,
+      "TeamBPoints": 1147.560535,
+      "TeamBPointsBefore": 1153.309176,
+      "PointsVisibility": 2,
+      "TeamAId": "43865",
+      "TeamBId": "43881",
+      "HomeTeam": {
+        "IdTeam": "43865",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Libéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/LBR",
+        "IdCountry": "LBR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43881",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Serra Leoa"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SLE",
+        "IdCountry": "SLE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
       "Attendance": 0
     },
     {
@@ -50678,132 +50643,6 @@
     {
       "IdCompetition": "400132623",
       "IdSeason": "1z35p4iuhfxxdfaqjwzkqn2fo",
-      "IdStage": "21k7tr7d2kmcfbpzklndjf6l0",
-      "IdGroup": "",
-      "IdMatch": "8cjpt2v82l93o3q1wsvsf2238",
-      "IdMatchIfes": "147543",
-      "Date": "2026-01-14T17:00:00+00:00",
-      "LocalDate": "2026-01-14",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Africa Cup of Nations 2025"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Semifinal"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Segunda fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43879",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43879",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Senegal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
-        "IdCountry": "SEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43855",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Egito"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/EGY",
-        "IdCountry": "EGY",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1684.855416,
-      "TeamAPointsBefore": 1669.12633,
-      "TeamBPoints": 1556.096748,
-      "TeamBPointsBefore": 1556.096748,
-      "PointsVisibility": 1,
-      "TeamAId": "43879",
-      "TeamBId": "43855",
-      "HomeTeam": {
-        "IdTeam": "43879",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Senegal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
-        "IdCountry": "SEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43855",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Egito"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/EGY",
-        "IdCountry": "EGY",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "400132623",
-      "IdSeason": "1z35p4iuhfxxdfaqjwzkqn2fo",
       "IdStage": "200pei0x59t6sp30c7bcytvdg",
       "IdGroup": "",
       "IdMatch": "432vlk6bpvcnqs8iygzdjr4es",
@@ -51266,6 +51105,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
         "IdCountry": "SEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "5etme7cr29oxe6lefcno8cjkk",
+      "IdMatchIfes": "153117",
+      "Date": "2026-06-09T23:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 0,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": null,
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43879",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Senegal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
+        "IdCountry": "SEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43835",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Arábia Saudita"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/KSA",
+        "IdCountry": "KSA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1684.069879,
+      "TeamAPointsBefore": 1686.412769,
+      "TeamBPoints": 1423.881229,
+      "TeamBPointsBefore": 1421.538339,
+      "PointsVisibility": 2,
+      "TeamAId": "43879",
+      "TeamBId": "43835",
+      "HomeTeam": {
+        "IdTeam": "43879",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Senegal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SEN",
+        "IdCountry": "SEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43835",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Arábia Saudita"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/KSA",
+        "IdCountry": "KSA",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -51910,132 +51865,6 @@
       "IdSeason": "288282",
       "IdStage": "288289",
       "IdGroup": "",
-      "IdMatch": "400020767",
-      "IdMatchIfes": "149880",
-      "Date": "2025-09-09T13:00:00+00:00",
-      "LocalDate": "2025-09-09",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "",
-      "ResultType": 1,
-      "HomeTeamScore": 2,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias CAF da Copa do Mundo 26"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo A"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "1ª fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43881",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43881",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Serra Leoa"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SLE",
-        "IdCountry": "SLE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43857",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Etiópia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ETH",
-        "IdCountry": "ETH",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1150.1,
-      "TeamAPointsBefore": 1139.57,
-      "TeamBPoints": 1046.41,
-      "TeamBPointsBefore": 1056.95,
-      "PointsVisibility": 1,
-      "TeamAId": "43881",
-      "TeamBId": "43857",
-      "HomeTeam": {
-        "IdTeam": "43881",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Serra Leoa"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SLE",
-        "IdCountry": "SLE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43857",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Etiópia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ETH",
-        "IdCountry": "ETH",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "520",
-      "IdSeason": "288282",
-      "IdStage": "288289",
-      "IdGroup": "",
       "IdMatch": "400021031",
       "IdMatchIfes": "150595",
       "Date": "2025-10-08T16:00:00+00:00",
@@ -52523,6 +52352,122 @@
         "FootballType": 0
       },
       "Period": 0,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2mh7mzrxd7du4lfx4aat003kk",
+      "IdGroup": "",
+      "IdMatch": "130mxb7uxsrjpm7ckzt5rias4",
+      "IdMatchIfes": "153966",
+      "Date": "2026-06-09T18:30:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 3,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 1,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43865",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43865",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Libéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/LBR",
+        "IdCountry": "LBR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43881",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Serra Leoa"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SLE",
+        "IdCountry": "SLE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1080.435325,
+      "TeamAPointsBefore": 1074.686684,
+      "TeamBPoints": 1147.560535,
+      "TeamBPointsBefore": 1153.309176,
+      "PointsVisibility": 2,
+      "TeamAId": "43865",
+      "TeamBId": "43881",
+      "HomeTeam": {
+        "IdTeam": "43865",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Libéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/LBR",
+        "IdCountry": "LBR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43881",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Serra Leoa"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SLE",
+        "IdCountry": "SLE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
       "Attendance": 0
     },
     {
@@ -55640,132 +55585,6 @@
       "IdSeason": "288282",
       "IdStage": "288289",
       "IdGroup": "",
-      "IdMatch": "400021039",
-      "IdMatchIfes": "150610",
-      "Date": "2025-10-10T13:00:00+00:00",
-      "LocalDate": "2025-10-10",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 0,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 1,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias CAF da Copa do Mundo 26"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo B"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "1ª fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "20014",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43887",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Togo"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/TOG",
-        "IdCountry": "TOG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "20014",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "RD do Congo"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/COD",
-        "IdCountry": "COD",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1144.28004975456,
-      "TeamAPointsBefore": 1151.080451,
-      "TeamBPoints": 1414.39721724544,
-      "TeamBPointsBefore": 1407.596816,
-      "PointsVisibility": 1,
-      "TeamAId": "43887",
-      "TeamBId": "20014",
-      "HomeTeam": {
-        "IdTeam": "43887",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Togo"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/TOG",
-        "IdCountry": "TOG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "20014",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "RD do Congo"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/COD",
-        "IdCountry": "COD",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "520",
-      "IdSeason": "288282",
-      "IdStage": "288289",
-      "IdGroup": "",
       "IdMatch": "400021041",
       "IdMatchIfes": "150612",
       "Date": "2025-10-13T13:00:00+00:00",
@@ -56233,6 +56052,122 @@
         "FootballType": 0
       },
       "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2mh7mzrxd7du4lfx4aat003kk",
+      "IdGroup": "",
+      "IdMatch": "bf8ccs73npa1pqhk81fxl0c2c",
+      "IdMatchIfes": "153870",
+      "Date": "2026-06-09T18:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "",
+      "ResultType": 1,
+      "HomeTeamScore": 1,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 5,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43887",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43845",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Benim"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/BEN",
+        "IdCountry": "BEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43887",
+        "Score": 5,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Togo"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/TOG",
+        "IdCountry": "TOG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1252.170944,
+      "TeamAPointsBefore": 1258.224853,
+      "TeamBPoints": 1152.757527,
+      "TeamBPointsBefore": 1146.703618,
+      "PointsVisibility": 2,
+      "TeamAId": "43845",
+      "TeamBId": "43887",
+      "HomeTeam": {
+        "IdTeam": "43845",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Benim"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/BEN",
+        "IdCountry": "BEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43887",
+        "Score": 5,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Togo"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/TOG",
+        "IdCountry": "TOG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 0,
       "Attendance": 0
     },
     {
@@ -74540,122 +74475,6 @@
       "IdSeason": "8pw8cm9fuczk7lmxm1oxjdyc4",
       "IdStage": "1rj1740ys47h5s938mfswsh78",
       "IdGroup": "",
-      "IdMatch": "7s6a8dp2r0lhatwvxs5zdcg7o",
-      "IdMatchIfes": "150390",
-      "Date": "2025-10-15T00:00:00+00:00",
-      "LocalDate": "2025-10-14",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "",
-      "ResultType": 1,
-      "HomeTeamScore": 6,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Friendly 2025"
-        }
-      ],
-      "GroupName": [],
-      "StageName": [],
-      "Stadium": null,
-      "Winner": "43922",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43922",
-        "Score": 6,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Argentina"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ARG",
-        "IdCountry": "ARG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43915",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Porto Rico"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PUR",
-        "IdCountry": "PUR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1872.43,
-      "TeamAPointsBefore": 1872.07,
-      "TeamBPoints": 1020.07,
-      "TeamBPointsBefore": 1020.44,
-      "PointsVisibility": 1,
-      "TeamAId": "43922",
-      "TeamBId": "43915",
-      "HomeTeam": {
-        "IdTeam": "43922",
-        "Score": 6,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Argentina"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ARG",
-        "IdCountry": "ARG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43915",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Porto Rico"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/PUR",
-        "IdCountry": "PUR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 0,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
-      "IdSeason": "8pw8cm9fuczk7lmxm1oxjdyc4",
-      "IdStage": "1rj1740ys47h5s938mfswsh78",
-      "IdGroup": "",
       "IdMatch": "6f8by0l813zjguexynj42xqfo",
       "IdMatchIfes": "151042",
       "Date": "2025-11-14T16:00:00+00:00",
@@ -75106,6 +74925,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/HON",
         "IdCountry": "HON",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "9bnevuo0a8mcogaie6vizqec4",
+      "IdMatchIfes": "153227",
+      "Date": "2026-06-10T01:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 3,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43922",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43922",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Argentina"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ARG",
+        "IdCountry": "ARG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43951",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Islândia"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
+        "IdCountry": "ISL",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1877.266571,
+      "TeamAPointsBefore": 1876.118331,
+      "TeamBPoints": 1342.771961,
+      "TeamBPointsBefore": 1343.920201,
+      "PointsVisibility": 2,
+      "TeamAId": "43922",
+      "TeamBId": "43951",
+      "HomeTeam": {
+        "IdTeam": "43922",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Argentina"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ARG",
+        "IdCountry": "ARG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43951",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Islândia"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
+        "IdCountry": "ISL",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -79800,122 +79735,6 @@
       "IdSeason": "8pw8cm9fuczk7lmxm1oxjdyc4",
       "IdStage": "1rj1740ys47h5s938mfswsh78",
       "IdGroup": "",
-      "IdMatch": "1gw0mukw0hm3pk9rtxqro6bys",
-      "IdMatchIfes": "151044",
-      "Date": "2025-11-15T02:30:00+00:00",
-      "LocalDate": "2025-11-14",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Friendly 2025"
-        }
-      ],
-      "GroupName": [],
-      "StageName": [],
-      "Stadium": null,
-      "Winner": "43931",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43931",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Venezuela"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/VEN",
-        "IdCountry": "VEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43976",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Austrália"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AUS",
-        "IdCountry": "AUS",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1469.411156,
-      "TeamAPointsBefore": 1463.273016,
-      "TeamBPoints": 1577.879035,
-      "TeamBPointsBefore": 1584.017175,
-      "PointsVisibility": 1,
-      "TeamAId": "43931",
-      "TeamBId": "43976",
-      "HomeTeam": {
-        "IdTeam": "43931",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Venezuela"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/VEN",
-        "IdCountry": "VEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43976",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Austrália"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AUS",
-        "IdCountry": "AUS",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 0,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
-      "IdSeason": "8pw8cm9fuczk7lmxm1oxjdyc4",
-      "IdStage": "1rj1740ys47h5s938mfswsh78",
-      "IdGroup": "",
       "IdMatch": "bb3c0ml41cs71xyojzah84vtg",
       "IdMatchIfes": "150542",
       "Date": "2025-11-19T01:30:00+00:00",
@@ -80386,6 +80205,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/TUR",
         "IdCountry": "TUR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "7l5b2rybg38j864j40tclqs5w",
+      "IdMatchIfes": "153664",
+      "Date": "2026-06-10T01:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43931",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43931",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Venezuela"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/VEN",
+        "IdCountry": "VEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43818",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Iraque"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRQ",
+        "IdCountry": "IRQ",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1469.177672,
+      "TeamAPointsBefore": 1464.303811,
+      "TeamBPoints": 1446.279605,
+      "TeamBPointsBefore": 1451.153466,
+      "PointsVisibility": 2,
+      "TeamAId": "43931",
+      "TeamBId": "43818",
+      "HomeTeam": {
+        "IdTeam": "43931",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Venezuela"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/VEN",
+        "IdCountry": "VEN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43818",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Iraque"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRQ",
+        "IdCountry": "IRQ",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -91156,132 +91091,6 @@
       "Attendance": 0
     },
     {
-      "IdCompetition": "520",
-      "IdSeason": "288329",
-      "IdStage": "288330",
-      "IdGroup": "",
-      "IdMatch": "400019276",
-      "IdMatchIfes": "146388",
-      "Date": "2025-11-16T17:00:00+00:00",
-      "LocalDate": "2025-11-16",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 2,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias da UEFA para a Copa do Mundo da FIFA 26™"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo D"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "1ª fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43973",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43973",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Ucrânia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/UKR",
-        "IdCountry": "UKR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43951",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Islândia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
-        "IdCountry": "ISL",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1557.469865,
-      "TeamAPointsBefore": 1549.477204,
-      "TeamBPoints": 1344.717553,
-      "TeamBPointsBefore": 1352.710214,
-      "PointsVisibility": 1,
-      "TeamAId": "43973",
-      "TeamBId": "43951",
-      "HomeTeam": {
-        "IdTeam": "43973",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Ucrânia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/UKR",
-        "IdCountry": "UKR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43951",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Islândia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
-        "IdCountry": "ISL",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
       "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
       "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
       "IdStage": "2m1wojm5bt709wu4kugtytxqs",
@@ -91718,6 +91527,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/JPN",
         "IdCountry": "JPN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43951",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Islândia"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
+        "IdCountry": "ISL",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "9bnevuo0a8mcogaie6vizqec4",
+      "IdMatchIfes": "153227",
+      "Date": "2026-06-10T01:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 3,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43922",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43922",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Argentina"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ARG",
+        "IdCountry": "ARG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43951",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Islândia"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
+        "IdCountry": "ISL",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1877.266571,
+      "TeamAPointsBefore": 1876.118331,
+      "TeamBPoints": 1342.771961,
+      "TeamBPointsBefore": 1343.920201,
+      "PointsVisibility": 2,
+      "TeamAId": "43922",
+      "TeamBId": "43951",
+      "HomeTeam": {
+        "IdTeam": "43922",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Argentina"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ARG",
+        "IdCountry": "ARG",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -100186,122 +100111,6 @@
       "Attendance": 0
     },
     {
-      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
-      "IdSeason": "8pw8cm9fuczk7lmxm1oxjdyc4",
-      "IdStage": "1rj1740ys47h5s938mfswsh78",
-      "IdGroup": "",
-      "IdMatch": "5abm65kxssy0l8t5tp0hgj28k",
-      "IdMatchIfes": "150276",
-      "Date": "2025-11-13T17:00:00+00:00",
-      "LocalDate": "2025-11-13",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Friendly 2025"
-        }
-      ],
-      "GroupName": [],
-      "StageName": [],
-      "Stadium": null,
-      "Winner": "43995",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43995",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Tchéquia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CZE",
-        "IdCountry": "CZE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43966",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "San Marino"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SMR",
-        "IdCountry": "SMR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1485.198884,
-      "TeamAPointsBefore": 1484.679353,
-      "TeamBPoints": 727.428569,
-      "TeamBPointsBefore": 727.9481,
-      "PointsVisibility": 1,
-      "TeamAId": "43995",
-      "TeamBId": "43966",
-      "HomeTeam": {
-        "IdTeam": "43995",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Tchéquia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CZE",
-        "IdCountry": "CZE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43966",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "San Marino"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SMR",
-        "IdCountry": "SMR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 0,
-      "Attendance": 0
-    },
-    {
       "IdCompetition": "520",
       "IdSeason": "288329",
       "IdStage": "288330",
@@ -100766,6 +100575,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/BAN",
         "IdCountry": "BAN",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m9n05frk6wimte4qrptzyxp0",
+      "IdGroup": "",
+      "IdMatch": "apu63vq3zgw1mzj7w7jalldsk",
+      "IdMatchIfes": "153412",
+      "Date": "2026-06-09T18:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 1,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43994",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43994",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Azerbaijão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AZE",
+        "IdCountry": "AZE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43966",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "San Marino"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SMR",
+        "IdCountry": "SMR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1131.995112,
+      "TeamAPointsBefore": 1130.263211,
+      "TeamBPoints": 721.201827,
+      "TeamBPointsBefore": 722.933728,
+      "PointsVisibility": 2,
+      "TeamAId": "43994",
+      "TeamBId": "43966",
+      "HomeTeam": {
+        "IdTeam": "43994",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Azerbaijão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AZE",
+        "IdCountry": "AZE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43966",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "San Marino"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SMR",
+        "IdCountry": "SMR",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -111080,132 +111005,6 @@
       "IdSeason": "288329",
       "IdStage": "288330",
       "IdGroup": "",
-      "IdMatch": "400019279",
-      "IdMatchIfes": "146385",
-      "Date": "2025-11-13T17:00:00+00:00",
-      "LocalDate": "2025-11-13",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 0,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 2,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias da UEFA para a Copa do Mundo da FIFA 26™"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo D"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "1ª fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43951",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43994",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Azerbaijão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AZE",
-        "IdCountry": "AZE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43951",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Islândia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
-        "IdCountry": "ISL",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1134.379738,
-      "TeamAPointsBefore": 1142.251446,
-      "TeamBPoints": 1352.710214,
-      "TeamBPointsBefore": 1344.838506,
-      "PointsVisibility": 1,
-      "TeamAId": "43994",
-      "TeamBId": "43951",
-      "HomeTeam": {
-        "IdTeam": "43994",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Azerbaijão"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AZE",
-        "IdCountry": "AZE",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43951",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Islândia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ISL",
-        "IdCountry": "ISL",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "520",
-      "IdSeason": "288329",
-      "IdStage": "288330",
-      "IdGroup": "",
       "IdMatch": "400019278",
       "IdMatchIfes": "146387",
       "Date": "2025-11-16T17:00:00+00:00",
@@ -111686,6 +111485,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/MLT",
         "IdCountry": "MLT",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m9n05frk6wimte4qrptzyxp0",
+      "IdGroup": "",
+      "IdMatch": "apu63vq3zgw1mzj7w7jalldsk",
+      "IdMatchIfes": "153412",
+      "Date": "2026-06-09T18:00:00+00:00",
+      "LocalDate": "2026-06-09",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 1,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43994",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43994",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Azerbaijão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AZE",
+        "IdCountry": "AZE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43966",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "San Marino"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SMR",
+        "IdCountry": "SMR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1131.995112,
+      "TeamAPointsBefore": 1130.263211,
+      "TeamBPoints": 721.201827,
+      "TeamBPointsBefore": 722.933728,
+      "PointsVisibility": 2,
+      "TeamAId": "43994",
+      "TeamBId": "43966",
+      "HomeTeam": {
+        "IdTeam": "43994",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Azerbaijão"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/AZE",
+        "IdCountry": "AZE",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43966",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "San Marino"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SMR",
+        "IdCountry": "SMR",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,

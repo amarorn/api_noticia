@@ -65,10 +65,8 @@ def _build_trend_report(
     Lê ticks anteriores do evento e cruza com apostas abertas do usuário.
     """
     try:
-        from config import get_settings
         from api.user_bets_store import get_bets_for_event
-
-        settings = get_settings()
+        from config import settings
         event_dir = Path(settings.lake_root) / "bronze" / "superbet" / "events" / str(event_id)
         ticks = load_event_ticks(event_dir)
         if len(ticks) < 2:
@@ -140,6 +138,10 @@ def run_live_advice(
                 "detail": "escanteio",
             })
 
+    from models.wc_market_shrinkage import market_probs_from_h2h_implied
+
+    market_probs = market_probs_from_h2h_implied(snapshot.h2h_implied)
+
     result = inplay_from_predictor(
         predictor,
         home_team=home,
@@ -154,6 +156,7 @@ def run_live_advice(
         momentum_events=momentum_events,
         home_corners=ip.home_corners if snapshot.inplay else 0,
         away_corners=ip.away_corners if snapshot.inplay else 0,
+        market_probs=market_probs,
     )
     inplay_dict = result.to_dict()
     report = build_bet_advice_report(

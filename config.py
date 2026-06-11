@@ -72,10 +72,19 @@ class Settings(BaseSettings):
     wc_rho_step: float = 0.005
     wc_draw_prob_floor: float = 0.18
     wc_mc_simulations: int = 5000
+    # Fase 1 in-play (docs/specs/spec-fase-1-quickwins-inplay.md)
+    inplay_use_nhpp: bool = True
+    inplay_use_market_shrinkage: bool = True
+    inplay_momentum_on_remaining: bool = True
+    inplay_score_lambda_adjust: bool = False
     inplay_use_calibrated_coefficients: bool = True
+    inplay_use_calibrated_nhpp: bool = False
     inplay_use_ensemble: bool = True
     inplay_ensemble_hawkes: bool = True
     inplay_ensemble_gbm: bool = True
+    inplay_ensemble_shadow_mode: bool = True
+    # Fase 4 — carteira / feedback loop (docs/specs/spec-fase-4-feedback-loop.md)
+    wallet_dashboard_enabled: bool = True
     lgn_min_samples: int = 30
     lgn_bootstrap_samples: int = 2000
     ev_min_edge: float = 0.03

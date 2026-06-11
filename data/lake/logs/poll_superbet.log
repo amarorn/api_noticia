@@ -1,0 +1,8 @@
+=== 2026-06-10T22:03:50Z poll tick (TZ=America/Sao_Paulo, hour=19) ===
+2026-06-10 19:03:52 [info     ] wc_artifact_loaded             created_at=2026-06-09T20:31:45.466422+00:00
+2026-06-10 19:04:42 [info     ] fifa_rankings_loaded_from_cache age_hours=0.9
+2026-06-10 19:04:42 [warning  ] poisson_outliers_removidos     max_score_permitido=15 removidos=186
+[13108463] Inglaterra x Costa Rica 1x0 @ 45' — 5 aportes
+
+Resumo: 1 capturados, 0 ignorados, 0 erros
+Ticks: data/lake/bronze/superbet/live_ticks.parquet

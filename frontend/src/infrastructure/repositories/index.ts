@@ -20,6 +20,7 @@ import {
   mapWcFriendlies,
   mapSuperbetLiveFeed,
   mapSuperbetLiveAdvice,
+  mapSuperbetEvent,
   mapWcSimulation,
   mapUserOpenBets,
 } from "../mappers";
@@ -186,6 +187,17 @@ export class WcApiRepository implements IWcRepository {
       { timeoutMs: API_SYNC_TIMEOUT_MS },
     );
     return mapSuperbetLiveFeed(raw);
+  }
+
+  async getSuperbetEvent(dto: { eventId: number; saveBronze?: boolean }) {
+    const params = new URLSearchParams();
+    if (dto.saveBronze === false) params.set("save_bronze", "false");
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapSuperbetEvent>[0]>(
+      `/worldcup/superbet/events/${dto.eventId}${qs}`,
+      { timeoutMs: 30_000 },
+    );
+    return mapSuperbetEvent(raw);
   }
 
   async getSuperbetLiveAdvice(dto: {

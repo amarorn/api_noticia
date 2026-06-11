@@ -50,6 +50,22 @@ def default_intensity_profile() -> list[IntensityBucket]:
     return list(_DEFAULT_PROFILE)
 
 
+def get_intensity_profile() -> list[IntensityBucket]:
+    """Perfil ativo: calibrado (Fase 2) se disponível, senão literatura (Fase 1)."""
+    from config import settings
+
+    if settings.inplay_use_calibrated_nhpp:
+        from models.wc_inplay_coefficients import load_inplay_coefficients
+
+        coefs = load_inplay_coefficients()
+        if coefs and coefs.nhpp_weights:
+            return [
+                IntensityBucket(w.start_min, w.end_min, w.weight)
+                for w in coefs.nhpp_weights
+            ]
+    return default_intensity_profile()
+
+
 def compute_remaining_lambda(
     lambda_full: float,
     minute: int,
@@ -71,7 +87,7 @@ def compute_remaining_lambda(
         λ restante ajustado pelo perfil NHPP.
     """
     if profile is None:
-        profile = _DEFAULT_PROFILE
+        profile = get_intensity_profile()
 
     if minute >= match_minutes or minute < 0:
         return 0.0
@@ -106,7 +122,7 @@ def compute_half_lambdas_nhpp(
         (lambda_remaining_1h, lambda_2h)
     """
     if profile is None:
-        profile = _DEFAULT_PROFILE
+        profile = get_intensity_profile()
 
     half = match_minutes // 2
     total_weighted = sum(b.weight * b.duration for b in profile)
@@ -139,7 +155,7 @@ def intensity_at_minute(
     Útil para visualizações e debug.
     """
     if profile is None:
-        profile = _DEFAULT_PROFILE
+        profile = get_intensity_profile()
 
     for b in profile:
         if b.start_min <= minute < b.end_min:

@@ -35,6 +35,11 @@ def evaluate_inplay(
     snapshot_minutes: list[int] | None = None,
     n_simulations: int = 5000,
     use_momentum: bool = True,
+    use_nhpp: bool = True,
+    use_calibrated_coefficients: bool | None = None,
+    use_ensemble: bool = False,
+    use_ensemble_hawkes: bool | None = None,
+    use_ensemble_gbm: bool | None = None,
     lambda_home_default: float = 1.35,
     lambda_away_default: float = 1.10,
     verbose: bool = False,
@@ -50,7 +55,12 @@ def evaluate_inplay(
             usa λ default do estilo Copa do Mundo).
         snapshot_minutes: Minutos a avaliar.
         n_simulations: Simulações Monte Carlo por snapshot.
-        use_momentum: Se True, aplica momentum (com eventos simulados).
+        use_momentum: Se True, aplica momentum em λ_remaining.
+        use_nhpp: Se True, usa perfil NHPP (Fase 1b); senão intensidade homogênea.
+        use_calibrated_coefficients: Se True, usa β's MLE (Fase 2); None = config.
+        use_ensemble: Se True, usa simulate_inplay_ensemble (Fase 3).
+        use_ensemble_hawkes: Override flag Hawkes; None = config.
+        use_ensemble_gbm: Override flag GBM; None = config.
         lambda_home_default: λ_full_home default (média Copa).
         lambda_away_default: λ_full_away default (média Copa).
         verbose: Imprime progresso.
@@ -63,12 +73,35 @@ def evaluate_inplay(
 
     start_time = time.time()
 
+    from config import settings
+
+    calibrated = (
+        settings.inplay_use_calibrated_coefficients
+        if use_calibrated_coefficients is None
+        else use_calibrated_coefficients
+    )
+    prev_calibrated = settings.inplay_use_calibrated_coefficients
+    settings.inplay_use_calibrated_coefficients = calibrated
+
+    prev_ensemble = settings.inplay_use_ensemble
+    prev_hawkes = settings.inplay_ensemble_hawkes
+    prev_gbm = settings.inplay_ensemble_gbm
+    settings.inplay_use_ensemble = use_ensemble
+    if use_ensemble_hawkes is not None:
+        settings.inplay_ensemble_hawkes = use_ensemble_hawkes
+    if use_ensemble_gbm is not None:
+        settings.inplay_ensemble_gbm = use_ensemble_gbm
+
     # Construir timeline (filtrar eval_season)
     timeline = build_timeline_from_fixtures(
         min_season=eval_season, max_season=eval_season,
         snapshot_minutes=snapshot_minutes,
     )
     if timeline.empty:
+        settings.inplay_use_calibrated_coefficients = prev_calibrated
+        settings.inplay_use_ensemble = prev_ensemble
+        settings.inplay_ensemble_hawkes = prev_hawkes
+        settings.inplay_ensemble_gbm = prev_gbm
         return WalkForwardResult(eval_season=eval_season)
 
     # Resultado real de cada jogo (para calcular Brier)
@@ -109,7 +142,10 @@ def evaluate_inplay(
                 })
 
         try:
-            result = simulate_inplay(
+            from models.wc_inplay import simulate_inplay, simulate_inplay_ensemble
+
+            sim_fn = simulate_inplay_ensemble if use_ensemble else simulate_inplay
+            result = sim_fn(
                 home_team=str(row["home_team"]),
                 away_team=str(row["away_team"]),
                 home_score=hs_partial,
@@ -121,6 +157,7 @@ def evaluate_inplay(
                 momentum_events=momentum_events if momentum_events else None,
                 home_corners=int(row.get("home_corners", 0)),
                 away_corners=int(row.get("away_corners", 0)),
+                **({} if use_ensemble else {"use_nhpp": use_nhpp, "use_momentum": use_momentum}),
             )
         except Exception:
             continue
@@ -139,6 +176,11 @@ def evaluate_inplay(
             "home_score_partial": hs_partial,
             "away_score_partial": as_partial,
         })
+
+    settings.inplay_use_calibrated_coefficients = prev_calibrated
+    settings.inplay_use_ensemble = prev_ensemble
+    settings.inplay_ensemble_hawkes = prev_hawkes
+    settings.inplay_ensemble_gbm = prev_gbm
 
     if not predictions:
         return WalkForwardResult(eval_season=eval_season)

@@ -22,6 +22,24 @@ function formatPct(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function computeRoi(pnl: number, staked: number): number | null {
+  if (staked <= 0) return null;
+  return pnl / staked;
+}
+
+function formatRoiSigned(roi: number | null): string {
+  if (roi === null) return "—";
+  const pct = roi * 100;
+  return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
+}
+
+function roiTextColor(roi: number | null): string {
+  if (roi === null) return "text-slate-400";
+  if (roi > 0) return "text-emerald-400";
+  if (roi < 0) return "text-red-400";
+  return "text-slate-300";
+}
+
 // ---------------------------------------------------------------------------
 // CSV Dropzone
 // ---------------------------------------------------------------------------
@@ -225,6 +243,175 @@ function BalanceChart({ summary }: { summary: WalletSummary }) {
 }
 
 // ---------------------------------------------------------------------------
+// ROI breakdown
+// ---------------------------------------------------------------------------
+
+function RoiBreakdownSection({
+  summary,
+  reconciliationItems,
+}: {
+  summary: WalletSummary;
+  reconciliationItems: ReconciliationItem[];
+}) {
+  const reconciled = useMemo(() => {
+    if (!reconciliationItems.length) return null;
+    const staked = reconciliationItems.reduce((s, it) => s + it.stake, 0);
+    const pnl = reconciliationItems.reduce((s, it) => s + it.pnl, 0);
+    const matched = reconciliationItems.filter((it) => it.match_confidence >= 0.5).length;
+    const highConf = reconciliationItems.filter((it) => it.match_confidence >= 0.7).length;
+    return {
+      n: reconciliationItems.length,
+      staked,
+      pnl,
+      roi: computeRoi(pnl, staked),
+      matched,
+      highConf,
+    };
+  }, [reconciliationItems]);
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-5">
+      <div>
+        <h3 className="text-sm font-semibold text-slate-200">Seu ROI</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          ROI = P&L ÷ stake líquido · {formatBRL(summary.pnl)} ÷ {formatBRL(summary.total_staked)}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="rounded-xl bg-white/5 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">ROI geral</div>
+          <div className={`mt-1 text-xl font-bold ${roiTextColor(summary.roi)}`}>
+            {formatRoiSigned(summary.roi)}
+          </div>
+        </div>
+        <div className="rounded-xl bg-white/5 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">P&L</div>
+          <div className={`mt-1 text-xl font-bold ${roiTextColor(computeRoi(summary.pnl, summary.total_staked))}`}>
+            {formatBRL(summary.pnl)}
+          </div>
+        </div>
+        <div className="rounded-xl bg-white/5 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Hit rate</div>
+          <div className="mt-1 text-xl font-bold text-slate-200">{formatPct(summary.hit_rate)}</div>
+          <div className="text-[10px] text-slate-500">{summary.n_bets_won} ganhos</div>
+        </div>
+        <div className="rounded-xl bg-white/5 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">Stake</div>
+          <div className="mt-1 text-xl font-bold text-slate-200">{formatBRL(summary.total_staked)}</div>
+          <div className="text-[10px] text-slate-500">{summary.n_bets_placed} bilhetes</div>
+        </div>
+      </div>
+
+      {summary.daily_pnl.length > 0 && (
+        <div>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            ROI por dia
+          </h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-slate-500 border-b border-white/10">
+                  <th className="pb-2 pr-4">Data</th>
+                  <th className="pb-2 pr-4 text-right">ROI</th>
+                  <th className="pb-2 pr-4 text-right">P&L</th>
+                  <th className="pb-2 pr-4 text-right">Stake</th>
+                  <th className="pb-2 text-right">Apostas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.daily_pnl.map((d) => {
+                  const roi = computeRoi(d.pnl, d.staked);
+                  return (
+                    <tr
+                      key={d.date}
+                      className={`border-b border-white/5 ${d.is_today ? "bg-emerald-500/5" : ""}`}
+                    >
+                      <td className="py-2 pr-4 font-mono text-slate-300">
+                        {d.date}
+                        {d.is_today && (
+                          <span className="ml-2 rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300">
+                            hoje
+                          </span>
+                        )}
+                        {d.supplemental && !d.is_today && (
+                          <span className="ml-1 text-[10px] text-slate-600">+ext</span>
+                        )}
+                      </td>
+                      <td className={`py-2 pr-4 text-right font-semibold ${roiTextColor(roi)}`}>
+                        {formatRoiSigned(roi)}
+                      </td>
+                      <td className={`py-2 pr-4 text-right font-mono ${d.pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {formatBRL(d.pnl)}
+                      </td>
+                      <td className="py-2 pr-4 text-right font-mono text-slate-400">
+                        {formatBRL(d.staked)}
+                      </td>
+                      <td className="py-2 text-right text-slate-500">{d.n_bets}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {summary.by_game_type.length > 0 && (
+        <div>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            ROI por categoria
+          </h4>
+          <div className="space-y-2">
+            {summary.by_game_type.map((g) => {
+              const roi = computeRoi(g.pnl, g.staked);
+              return (
+                <div
+                  key={g.category}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="capitalize font-medium text-slate-200">{g.category}</span>
+                    <span className="text-slate-500">({g.n_bets} apostas)</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`font-semibold ${roiTextColor(roi)}`}>
+                      {formatRoiSigned(roi)}
+                    </span>
+                    <span className={g.pnl >= 0 ? "text-emerald-400" : "text-red-400"}>
+                      {formatBRL(g.pnl)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {reconciled && (
+        <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            ROI reconciliado (com snapshot do modelo)
+          </h4>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+            <span className={`text-lg font-bold ${roiTextColor(reconciled.roi)}`}>
+              {formatRoiSigned(reconciled.roi)}
+            </span>
+            <span className="text-xs text-slate-400">
+              {reconciled.n} pares · P&L {formatBRL(reconciled.pnl)} · stake {formatBRL(reconciled.staked)}
+            </span>
+          </div>
+          <p className="mt-1 text-[10px] text-slate-600">
+            Match ≥ 0,5: {reconciled.matched} · alta confiança ≥ 0,7: {reconciled.highConf}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Daily P&L bars
 // ---------------------------------------------------------------------------
 
@@ -242,8 +429,14 @@ function DailyPnlBars({ summary }: { summary: WalletSummary }) {
           const widthPct = (Math.abs(d.pnl) / maxAbs) * 100;
           const positive = d.pnl >= 0;
           return (
-            <div key={d.date} className="flex items-center gap-3">
-              <div className="w-24 shrink-0 text-xs text-slate-400">{d.date}</div>
+            <div
+              key={d.date}
+              className={`flex items-center gap-3 ${d.is_today ? "opacity-100" : ""}`}
+            >
+              <div className="w-28 shrink-0 text-xs text-slate-400">
+                {d.date}
+                {d.is_today && <span className="ml-1 text-emerald-400">· hoje</span>}
+              </div>
               <div className="relative flex h-6 flex-1 items-center bg-white/5 rounded">
                 <div
                   className={`absolute h-full rounded ${positive ? "bg-emerald-500/60" : "bg-red-500/60"}`}
@@ -253,7 +446,10 @@ function DailyPnlBars({ summary }: { summary: WalletSummary }) {
                   {formatBRL(d.pnl)}
                 </span>
               </div>
-              <div className="w-16 shrink-0 text-right text-xs text-slate-500">
+              <div className="w-14 shrink-0 text-right text-xs text-slate-500">
+                {formatRoiSigned(computeRoi(d.pnl, d.staked))}
+              </div>
+              <div className="w-12 shrink-0 text-right text-xs text-slate-500">
                 {d.n_bets} bets
               </div>
             </div>
@@ -284,8 +480,13 @@ function BetTypeBreakdown({ summary }: { summary: WalletSummary }) {
                 <span className="capitalize">{g.category}</span>
                 <span className="text-slate-500">({g.n_bets} bets)</span>
               </div>
-              <div className={positive ? "text-emerald-400" : "text-red-400"}>
-                {formatBRL(g.pnl)}
+              <div className="flex items-center gap-3">
+                <span className={`font-semibold ${roiTextColor(computeRoi(g.pnl, g.staked))}`}>
+                  {formatRoiSigned(computeRoi(g.pnl, g.staked))}
+                </span>
+                <span className={positive ? "text-emerald-400" : "text-red-400"}>
+                  {formatBRL(g.pnl)}
+                </span>
               </div>
             </div>
           );
@@ -493,7 +694,7 @@ export function CarteiraPage() {
 
   const reconciliationQ = useQuery({
     queryKey: ["wallet-reconciliation", userId],
-    queryFn: () => walletRepository.getReconciliation(userId, 100, 0),
+    queryFn: () => walletRepository.getReconciliation(userId, 500, 0),
   });
 
   const errorsQ = useQuery({
@@ -547,6 +748,11 @@ export function CarteiraPage() {
         {summaryQ.data && summaryQ.data.n_transactions > 0 && (
           <>
             <WalletKpiCards summary={summaryQ.data} />
+
+            <RoiBreakdownSection
+              summary={summaryQ.data}
+              reconciliationItems={reconciliationQ.data?.items ?? []}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">

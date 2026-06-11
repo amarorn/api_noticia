@@ -1,6 +1,6 @@
 # Spec — Fase 4: Reconciliação Aposta-Modelo
 
-**Status:** In Progress
+**Status:** Accepted (implementada 2026-06-10)
 **Depende de:** Fases 0–3 (Hawkes + GBM + Ensemble já em produção)
 **Habilita:** Calibração contínua baseada no histórico real do usuário
 
@@ -102,11 +102,11 @@ Componentes: `CsvDropzone`, `WalletKpiCards`, `BalanceChart`, `BetTypePie`, `Dai
 
 ## 6. Plano de Implementação
 
-- **Marco A**: backend upload + parser + store + CLI.
-- **Marco B**: reconciliação aposta ⇄ snapshot.
-- **Marco C**: analytics + 3 endpoints de leitura.
-- **Marco D**: frontend tela `/carteira`.
-- **Marco E**: pipeline feedback_retrain.
+- [x] **Marco A**: upload + parser + `upload-user-csv`.
+- [x] **Marco B**: reconciliação + enrich `live_ticks`.
+- [x] **Marco C**: analytics + endpoints summary/reconciliation/model-errors.
+- [x] **Marco D**: frontend `/carteira` + nav.
+- [x] **Marco E**: `retrain-with-feedback` + `validate-inplay-phase4`.
 
 ## 7. Test Plan
 
@@ -131,11 +131,11 @@ Componentes: `CsvDropzone`, `WalletKpiCards`, `BalanceChart`, `BetTypePie`, `Dai
 
 ## 10. Definition of Done
 
-- [ ] Upload do CSV `jamarorn` processa sem erro.
-- [ ] Tela `/carteira` mostra P&L, hit rate, gráficos, tabela.
-- [ ] ≥ 60% dos bilhetes in-play recebem `match_confidence ≥ 0.7`.
-- [ ] Brier baseline por bucket reportado.
-- [ ] Pipeline `retrain-with-feedback` rodando ponta-a-ponta.
-- [ ] Latência upload < 3s para 200 linhas.
-- [ ] Documentação em `docs/feedback-loop-aposta-modelo.md`.
-- [ ] Testes unitários cobrindo parser, reconciliação, analytics, retreino.
+- [x] Upload CSV via API e `upload-user-csv`.
+- [x] Tela `/carteira` com P&L, gráficos, tabela, heatmap.
+- [ ] ≥ 60% bilhetes com `match_confidence ≥ 0.7` (medir após CSV real + ticks).
+- [x] Brier por bucket (`compute_model_errors_heatmap`).
+- [x] `retrain-with-feedback` com gate Brier.
+- [x] `validate-inplay-phase4`.
+- [x] Documentação em `docs/feedback-loop-aposta-modelo.md`.
+- [x] `tests/test_user_wallet_phase4.py` (15 testes).

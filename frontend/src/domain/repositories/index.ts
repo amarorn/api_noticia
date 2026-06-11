@@ -91,6 +91,10 @@ export interface IWcRepository {
     sportId?: number;
     allSports?: boolean;
   }): Promise<import("@/domain/entities").SuperbetLiveFeed>;
+  getSuperbetEvent(request: {
+    eventId: number;
+    saveBronze?: boolean;
+  }): Promise<import("@/domain/entities").SuperbetEventSnapshot>;
   getSuperbetLiveAdvice(request: {
     eventId: number;
     phase?: string;

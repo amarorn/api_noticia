@@ -368,3 +368,29 @@ def run_hawkes_calibration(
     log.info("hawkes_params_saved", path=str(path))
 
     return fit
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Calibra parâmetros Hawkes in-play (Fase 3)")
+    parser.add_argument("--min-season", type=int, default=2010)
+    parser.add_argument("--max-season", type=int, default=2026)
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+
+    fit = run_hawkes_calibration(
+        min_season=args.min_season,
+        max_season=args.max_season,
+        seed=args.seed,
+    )
+    print(
+        f"Hawkes: α_self={fit.alpha_self:.4f} α_cross={fit.alpha_cross:.4f} "
+        f"β={fit.beta:.4f} half_life={fit.half_life_minutes:.1f}min "
+        f"stable={fit.is_stable}"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

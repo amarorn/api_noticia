@@ -19,6 +19,8 @@ export interface DailyPnl {
   won: number;
   pnl: number;
   n_bets: number;
+  is_today?: boolean;
+  supplemental?: boolean;
 }
 
 export interface GameTypeBreakdown {
@@ -49,6 +51,7 @@ export interface WalletSummary {
   current_balance: number;
   period_start: string | null;
   period_end: string | null;
+  today?: string | null;
   daily_pnl: DailyPnl[];
   by_game_type: GameTypeBreakdown[];
   balance_series: BalancePoint[];

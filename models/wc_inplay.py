@@ -317,12 +317,22 @@ def simulate_inplay(
     home_corners: int = 0,
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
+    use_nhpp: bool | None = None,
+    use_market_shrinkage: bool | None = None,
+    use_momentum: bool | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
     remaining_fraction = max(0.0, (match_minutes - minute) / match_minutes)
     n = n_simulations or settings.wc_mc_simulations
     rng = np.random.default_rng(random_seed)
+    nhpp_enabled = settings.inplay_use_nhpp if use_nhpp is None else use_nhpp
+    shrinkage_enabled = (
+        settings.inplay_use_market_shrinkage if use_market_shrinkage is None else use_market_shrinkage
+    )
+    momentum_enabled = (
+        settings.inplay_momentum_on_remaining if use_momentum is None else use_momentum
+    )
 
     # --- P0.1: Bayesian update de λ com gols observados ---
     # Ajusta λ_full com base nos gols reais marcados até agora.
@@ -342,14 +352,9 @@ def simulate_inplay(
             match_minutes=match_minutes,
         )
 
-    # --- P0.2: Penalidade por déficit de placar ---
-    # Times perdendo por 2+ gols têm rendimento real inferior ao λ Bayesian.
-    # Fatores empíricos baseados em dados históricos de viradas:
-    # - Trailing by 1: ~15-20% viram → leve redução
-    # - Trailing by 2: ~3-5% viram → redução forte
-    # - Trailing by 3+: ~1% viram → redução muito forte
+    # Ajuste legado em λ_full (desligado por padrão — Fase 1a usa momentum em λ_remaining)
     score_diff = home_score - away_score  # positivo = casa vence
-    if score_diff != 0:
+    if settings.inplay_score_lambda_adjust and score_diff != 0:
         deficit_factors = {1: 0.90, 2: 0.65, 3: 0.45, 4: 0.30}
         surplus_factors = {1: 1.08, 2: 1.18, 3: 1.25, 4: 1.30}
         abs_diff = min(abs(score_diff), 4)
@@ -363,7 +368,7 @@ def simulate_inplay(
             lambda_full_home *= deficit_factors[abs_diff]
 
     # --- P1c: Market shrinkage (mistura λ modelo com λ implícito do mercado) ---
-    if market_probs is not None:
+    if shrinkage_enabled and market_probs is not None:
         from models.wc_market_shrinkage import shrink_lambda
 
         mp_h, mp_d, mp_a = market_probs
@@ -381,22 +386,27 @@ def simulate_inplay(
             lambda_full_away = shrink.lambda_shrunk_away
 
     # Computar λ_remaining ANTES do momentum (Fase 1a: momentum só age em λ_remaining)
-    # Fase 1b: Usar perfil NHPP em vez de intensidade constante
-    lam_rem_1h_h, lam_2h_h = compute_half_lambdas_nhpp(
-        lambda_full_home, minute, match_minutes
-    )
-    lam_rem_1h_a, lam_2h_a = compute_half_lambdas_nhpp(
-        lambda_full_away, minute, match_minutes
-    )
+    if nhpp_enabled:
+        lam_rem_1h_h, lam_2h_h = compute_half_lambdas_nhpp(
+            lambda_full_home, minute, match_minutes
+        )
+        lam_rem_1h_a, lam_2h_a = compute_half_lambdas_nhpp(
+            lambda_full_away, minute, match_minutes
+        )
+    else:
+        lam_rem_1h_h, lam_rem_1h_a, lam_2h_h, lam_2h_a, _, _ = _half_lambdas(
+            minute=minute,
+            match_minutes=match_minutes,
+            lambda_full_home=lambda_full_home,
+            lambda_full_away=lambda_full_away,
+            ht_home_score=ht_home_score,
+            ht_away_score=ht_away_score,
+        )
     lam_h = lam_rem_1h_h + lam_2h_h
     lam_a = lam_rem_1h_a + lam_2h_a
 
-    # --- P1: Momentum por placar + minuto + eventos ---
-    # Fase 1a: Momentum aplicado sobre λ_remaining (não λ_full).
-    # Isso evita que o momentum contamine a estimativa Bayesian do jogo inteiro;
-    # ele apenas modula a intensidade do que resta.
-    momentum_result = None
-    if minute > 0:
+    # --- P1a: Momentum aplicado sobre λ_remaining (não λ_full) ---
+    if momentum_enabled and minute > 0:
         from models.wc_live_momentum import (
             MomentumContext,
             GameEvent,
@@ -563,6 +573,7 @@ def inplay_from_predictor(
     momentum_events: list[dict] | None = None,
     home_corners: int = 0,
     away_corners: int = 0,
+    market_probs: tuple[float, float, float] | None = None,
 ) -> InPlayResult:
     from datetime import datetime, timezone
 
@@ -590,7 +601,7 @@ def inplay_from_predictor(
         rho=rho,
     )
     seed = hash((home_team, away_team, home_score, away_score, minute)) % (2**32)
-    result = simulate_inplay(
+    sim_kwargs = dict(
         home_team=home_team,
         away_team=away_team,
         home_score=home_score,
@@ -607,7 +618,15 @@ def inplay_from_predictor(
         momentum_events=momentum_events,
         home_corners=home_corners,
         away_corners=away_corners,
+        market_probs=market_probs,
     )
+
+    use_ensemble = settings.inplay_use_ensemble and not settings.inplay_ensemble_shadow_mode
+    if use_ensemble and minute > 0:
+        result = simulate_inplay_ensemble(**sim_kwargs)
+    else:
+        result = simulate_inplay(**sim_kwargs)
+
     result.features = features
     return result
 

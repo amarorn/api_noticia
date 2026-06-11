@@ -1,0 +1,62 @@
+{
+  "event_id": 13518906,
+  "home_team": "Edo Queens (F)",
+  "away_team": "Abia Angels (F)",
+  "event_name": "Edo Queens (F)·Abia Angels (F)",
+  "utc_date": "2026-06-10T08:00:00Z",
+  "betradar_id": "71948798",
+  "is_live": true,
+  "inplay": {
+    "home_score": 4,
+    "away_score": 1,
+    "minute": 69,
+    "stoppage_time": null,
+    "home_corners": 1,
+    "away_corners": 0,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 2,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "X": 50.0,
+    "2": 50.0
+  },
+  "h2h_implied": {
+    "X": 0.5,
+    "2": 0.5
+  },
+  "totals": {
+    "5.5": {
+      "Mais de 5.5": 1.55,
+      "Menos de 5.5": 2.2
+    },
+    "6.5": {
+      "Mais de 6.5": 3.5,
+      "Menos de 6.5": 1.2
+    }
+  },
+  "totals_implied": {
+    "5.5": {
+      "Mais de 5.5": 0.5866666666666667,
+      "Menos de 5.5": 0.41333333333333333
+    },
+    "6.5": {
+      "Mais de 6.5": 0.2553191489361702,
+      "Menos de 6.5": 0.7446808510638298
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 8.5e-05
+  },
+  "raw_market_count": 11,
+  "captured_at": "2026-06-10T09:28:57.255047+00:00"
+}

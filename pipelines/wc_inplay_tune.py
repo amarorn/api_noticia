@@ -300,16 +300,97 @@ def run_inplay_tune(
     ]
 
     train_seasons = sorted(train_df["season"].unique().tolist())
+
+    # Log-likelihood in-sample no ótimo
+    X = _build_feature_matrix(train_df)
+    remaining_frac = train_df["remaining_fraction"].values
+    obs_home = train_df["remaining_goals_home"].values.astype(float)
+    obs_away = train_df["remaining_goals_away"].values.astype(float)
+    base_home = 1.35 * remaining_frac
+    base_away = 1.10 * remaining_frac
+    factor = np.exp(X @ betas)
+    in_sample_ll = _poisson_loglik(base_home * factor, obs_home) + _poisson_loglik(
+        base_away * factor, obs_away
+    )
+
+    # Holdout walk-forward na season de avaliação
+    from config import settings as app_settings
+    from pipelines.wc_inplay_walkforward import evaluate_inplay
+
+    baseline_holdout = evaluate_inplay(
+        eval_season=eval_season,
+        n_simulations=2000,
+        use_momentum=True,
+        use_nhpp=True,
+        use_calibrated_coefficients=False,
+        verbose=False,
+    )
+    calibrated_holdout = evaluate_inplay(
+        eval_season=eval_season,
+        n_simulations=2000,
+        use_momentum=True,
+        use_nhpp=True,
+        use_calibrated_coefficients=True,
+        verbose=False,
+    )
+
+    timeline_path = app_settings.lake_root / "silver" / "wc_timeline" / "timeline.parquet"
+    from models.wc_inplay_coefficients import compute_dataset_hash
+
     coefficients = InPlayCoefficients(
         momentum_betas=momentum_betas,
         nhpp_weights=nhpp_weights,
         train_seasons=train_seasons,
         n_observations=len(train_df),
+        in_sample_loglik=round(in_sample_ll, 2),
+        holdout_brier=calibrated_holdout.brier_overall,
+        holdout_brier_baseline=baseline_holdout.brier_overall,
+        dataset_hash=compute_dataset_hash(timeline_path.parent),
     )
 
-    # Salvar
     path = save_inplay_coefficients(coefficients)
     if verbose:
+        print(f"\nHoldout {eval_season}:")
+        print(f"  Brier Fase 1 (constantes): {baseline_holdout.brier_overall:.5f}")
+        print(f"  Brier Fase 2 (calibrado):  {calibrated_holdout.brier_overall:.5f}")
+        delta = baseline_holdout.brier_overall - calibrated_holdout.brier_overall
+        print(f"  Ganho calibrado: {delta:+.5f}")
         print(f"\nCoeficientes salvos em: {path}")
 
     return coefficients
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="MLE momentum + NHPP in-play (Fase 2)")
+    parser.add_argument("--eval-season", type=int, default=2022)
+    parser.add_argument("--min-train-season", type=int, default=2010)
+    parser.add_argument("--regularization", type=float, default=0.1)
+    parser.add_argument("--save-timeline", action="store_true", default=True)
+    parser.add_argument("--verbose", "-v", action="store_true", default=True)
+    args = parser.parse_args()
+
+    from pipelines.wc_build_timeline import build_timeline_from_fixtures, save_timeline
+
+    if args.save_timeline:
+        full_timeline = build_timeline_from_fixtures(
+            min_season=args.min_train_season,
+            max_season=args.eval_season,
+        )
+        if not full_timeline.empty:
+            path = save_timeline(full_timeline)
+            if args.verbose:
+                print(f"Timeline salva: {path} ({len(full_timeline)} snapshots)")
+
+    run_inplay_tune(
+        eval_season=args.eval_season,
+        min_train_season=args.min_train_season,
+        regularization=args.regularization,
+        verbose=args.verbose,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

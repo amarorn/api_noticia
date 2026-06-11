@@ -7,7 +7,7 @@
   "fifa_fingerprint": "fifa_rankings_2026.json:1780482950041067352:3863",
   "odds_fingerprint": "wc_2026_odds.json:1780470584354654295:1024|superbet_odds.json:1780993039783829731:1026",
   "baselines_fingerprint": "team_baselines.json:1780470584355706916:68260",
-  "silver_fingerprint": "2fa192575fdbf415",
+  "silver_fingerprint": "83a2012ffba411c3",
   "hyperparams": {
     "elo_k": 24.0,
     "elo_home_adv": 30.0,

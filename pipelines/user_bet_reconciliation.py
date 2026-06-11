@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +26,8 @@ from ingest.user_transactions.store import load_transactions
 
 # Janela máxima de busca por snapshot
 MATCH_WINDOW_SECONDS = 180  # ±3 min
+
+_LIVE_TICKS_CACHE: pd.DataFrame | None = None
 TS_FILENAME_RE = re.compile(r"(\d{8}T\d{6}Z)\.json$")
 
 
@@ -116,6 +118,67 @@ class MatchResult:
     delta_seconds: float | None = None
     confidence: float = 0.0
     candidates_considered: int = 0
+
+
+def _load_live_ticks() -> pd.DataFrame:
+    """Carrega live_ticks.parquet (cache em memória por execução)."""
+    global _LIVE_TICKS_CACHE
+    if _LIVE_TICKS_CACHE is not None:
+        return _LIVE_TICKS_CACHE
+    from ingest.superbet.live_ticks import live_ticks_path
+
+    path = live_ticks_path()
+    if not path.exists():
+        _LIVE_TICKS_CACHE = pd.DataFrame()
+        return _LIVE_TICKS_CACHE
+    df = pd.read_parquet(path)
+    if "captured_at" in df.columns:
+        df["captured_at"] = pd.to_datetime(df["captured_at"], utc=True, errors="coerce")
+    _LIVE_TICKS_CACHE = df
+    return df
+
+
+def find_tick_for_bet(
+    event_id: int,
+    bet_at_utc: datetime,
+    ticks: pd.DataFrame,
+    *,
+    window_seconds: int = MATCH_WINDOW_SECONDS,
+) -> dict[str, Any] | None:
+    """Busca tick do modelo mais próximo da aposta (por event_id + tempo)."""
+    if ticks.empty or "event_id" not in ticks.columns:
+        return None
+    subset = ticks[ticks["event_id"] == event_id]
+    if subset.empty or "captured_at" not in subset.columns:
+        return None
+
+    best_row = None
+    best_delta = float("inf")
+    for _, row in subset.iterrows():
+        cap = row.get("captured_at")
+        if pd.isna(cap):
+            continue
+        cap_dt = cap.to_pydatetime()
+        if cap_dt.tzinfo is None:
+            cap_dt = cap_dt.replace(tzinfo=timezone.utc)
+        bet_dt = bet_at_utc if bet_at_utc.tzinfo else bet_at_utc.replace(tzinfo=timezone.utc)
+        delta = abs((cap_dt - bet_dt).total_seconds())
+        if delta <= window_seconds and delta < best_delta:
+            best_delta = delta
+            best_row = row
+
+    if best_row is None:
+        return None
+
+    return {
+        "prob_final_home": float(best_row["prob_final_home"])
+        if pd.notna(best_row.get("prob_final_home")) else None,
+        "prob_final_draw": float(best_row["prob_final_draw"])
+        if pd.notna(best_row.get("prob_final_draw")) else None,
+        "prob_final_away": float(best_row["prob_final_away"])
+        if pd.notna(best_row.get("prob_final_away")) else None,
+        "tick_delta_seconds": best_delta,
+    }
 
 
 def find_snapshot_for_bet(
@@ -276,6 +339,7 @@ def reconcile_user_transactions(
     if snapshots is None:
         snapshots = index_event_snapshots()
 
+    ticks = _load_live_ticks()
     pairs = pair_placed_with_outcome(df_tx)
 
     rows = []
@@ -312,6 +376,17 @@ def reconcile_user_transactions(
                 "model_generosity_home": generosity.get("home"),
                 "model_generosity_away": generosity.get("away"),
             })
+            bet_at_utc = bet_at + timedelta(hours=3)
+            tick = find_tick_for_bet(snap.event_id, bet_at_utc, ticks)
+            if tick:
+                row.update(tick)
+            else:
+                row.update({
+                    "prob_final_home": None,
+                    "prob_final_draw": None,
+                    "prob_final_away": None,
+                    "tick_delta_seconds": None,
+                })
         else:
             row.update({
                 "event_id": None,
@@ -323,10 +398,48 @@ def reconcile_user_transactions(
                 "away_score": None,
                 "model_generosity_home": None,
                 "model_generosity_away": None,
+                "prob_final_home": None,
+                "prob_final_draw": None,
+                "prob_final_away": None,
+                "tick_delta_seconds": None,
             })
+
+        row["brier_contribution"] = _brier_for_bet_row(row)
         rows.append(row)
 
     return pd.DataFrame(rows)
+
+
+def _brier_for_bet_row(row: dict[str, Any]) -> float | None:
+    """Brier binário: (p_modelo - won)² usando prob do favorito no placar."""
+    won = row.get("won")
+    if won is None:
+        return None
+    hs = row.get("home_score")
+    as_ = row.get("away_score")
+    p_home = row.get("prob_final_home")
+    p_away = row.get("prob_final_away")
+    p_draw = row.get("prob_final_draw")
+
+    p: float | None = None
+    if hs is not None and as_ is not None:
+        if hs > as_ and p_home is not None:
+            p = float(p_home)
+        elif hs < as_ and p_away is not None:
+            p = float(p_away)
+        elif hs == as_ and p_draw is not None:
+            p = float(p_draw)
+        elif p_home is not None:
+            p = float(p_home)
+        elif p_away is not None:
+            p = float(p_away)
+    elif row.get("model_generosity_home") is not None:
+        p = float(row["model_generosity_home"])
+
+    if p is None:
+        return None
+    outcome = 1.0 if won else 0.0
+    return (p - outcome) ** 2
 
 
 def save_reconciliation(df: pd.DataFrame, user_id: str) -> Path:

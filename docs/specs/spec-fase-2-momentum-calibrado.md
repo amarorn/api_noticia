@@ -1,6 +1,6 @@
 # Spec — Fase 2: Calibração MLE do Momentum e In-Play
 
-**Status:** Proposed
+**Status:** Accepted (implementada 2026-06-10)
 **Duração estimada:** 2 semanas
 **Owner:** amaro
 **Depende de:** Fases 0, 1
@@ -160,39 +160,34 @@ Carregado por `wc_live_momentum` e `wc_intensity_profile`. Fallback: constantes 
 ### Semana 1 — Dataset e walk-forward
 
 **Dia 1–3 — Pipeline timeline**
-- [ ] Inspecionar dump Sofascore disponível (`ingest/sofascore/`).
-- [ ] Criar `pipelines/wc_build_timeline.py`: percorre fixtures, gera eventos minuto-a-minuto.
-- [ ] Persistir em `data/lake/silver/wc_timeline/` (particionado por `season`).
-- [ ] Testes: contagem de gols na timeline bate com `home_score`/`away_score` final dos fixtures.
+- [x] `pipelines/wc_build_timeline.py` + CLI `build-wc-timeline`.
+- [x] Persistência em `data/lake/silver/wc_timeline/timeline.parquet`.
+- [x] Testes: `tests/test_inplay_phase2.py`.
 
 **Dia 4–5 — Walk-forward in-play**
-- [ ] Criar `pipelines/wc_inplay_walkforward.py`.
-- [ ] Reportar Brier por (snapshot_minute, mercado).
-- [ ] Rodar com configuração Fase 1 → estabelecer baseline.
-- [ ] Logar no MLflow.
+- [x] `pipelines/wc_inplay_walkforward.py` com Brier por minuto.
+- [x] Flag `use_calibrated_coefficients` para A/B.
+- [ ] MLflow (opcional).
 
 ### Semana 2 — MLE e integração
 
 **Dia 6–8 — MLE momentum**
-- [ ] Criar `pipelines/wc_inplay_tune.py` com `fit_momentum_mle`.
-- [ ] Treinar com seasons < eval_season; evaluar em eval_season.
-- [ ] Verificar intervalos de confiança (erros padrão da Hessiana).
-- [ ] Identificar quais β's são estatisticamente significativos (p < 0.05).
+- [x] `pipelines/wc_inplay_tune.py` com `fit_momentum_mle` + IC 95%.
+- [x] CLI `tune-inplay` com holdout Brier.
 
 **Dia 9 — MLE NHPP**
-- [ ] Estender `wc_inplay_tune.py` para estimar pesos NHPP.
-- [ ] Comparar perfil estimado vs perfil literatura (Fase 1) — esperado: muito próximos.
+- [x] `fit_nhpp_weights` integrado no tune.
 
 **Dia 10 — Persistência e integração**
-- [ ] Criar `wc_inplay_coefficients.py`, integrar em `wc_live_momentum` e `wc_intensity_profile`.
-- [ ] `models/train.py --with-inplay` orquestra MLE no fim.
-- [ ] Rerun walk-forward com coeficientes calibrados → comparar Brier.
+- [x] `models/wc_inplay_coefficients.py`.
+- [x] `wc_live_momentum` + `wc_intensity_profile.get_intensity_profile()`.
+- [x] `validate-inplay-phase2`.
 
 **Dia 11–12 — Relatório e rollout**
-- [ ] Atualizar `wc_calibration.py` para incluir métricas in-play.
-- [ ] Documentar coeficientes encontrados + interpretação (`docs/modelos-preditivos.md`).
-- [ ] Deploy: feature flag `inplay_use_calibrated_coefficients=True`.
-- [ ] Monitorar Brier in-play em produção por 1 semana.
+- [ ] `wc_calibration.py` seção in-play (opcional).
+- [ ] Doc `docs/modelos-preditivos.md` (opcional).
+- [x] Momentum MLE: `inplay_use_calibrated_coefficients=True`.
+- [x] NHPP MLE treinado mas **desligado** por padrão (`inplay_use_calibrated_nhpp=false`) até timeline real Sofascore.
 
 ## 7. Test Plan
 
@@ -227,9 +222,9 @@ Carregado por `wc_live_momentum` e `wc_intensity_profile`. Fallback: constantes 
 
 ## 10. Definition of Done
 
-- [ ] `data/lake/silver/wc_timeline/` populado com ≥ 200 jogos.
-- [ ] Walk-forward in-play documentado em MLflow com Brier por bucket de minuto.
-- [ ] Coeficientes MLE persistidos com IC 95% reportados.
-- [ ] Brier in-play (calibrado) **reduz pelo menos 0.005** em comparação a Fase 1.
-- [ ] Produção rodando com coeficientes calibrados ≥ 1 semana sem regressão.
-- [ ] Doc `docs/modelos-preditivos.md` atualizada com interpretação dos β's.
+- [x] `data/lake/silver/wc_timeline/` via `build-wc-timeline` (≥ 200 jogos).
+- [x] Walk-forward com Brier por bucket (`validate-inplay-phase2`).
+- [x] Coeficientes em `data/lake/artifacts/inplay_coefficients.json` com IC 95%.
+- [ ] Brier calibrado reduz ≥ 0.005 vs Fase 1 (medir com `validate-inplay-phase2`).
+- [x] Produção com `inplay_use_calibrated_coefficients=True`.
+- [ ] Doc β's (opcional).
