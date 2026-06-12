@@ -1010,6 +1010,8 @@ interface ApiSuperbetLiveAdvice {
     btts?: boolean;
     next_goal?: boolean;
     combos?: string[];
+    first_half?: boolean;
+    second_half?: boolean;
   } | null;
   confidence?: {
     score: number;
@@ -1017,6 +1019,75 @@ interface ApiSuperbetLiveAdvice {
     reason: string;
   } | null;
   hedge_report?: Record<string, unknown> | null;
+  half_markets?: Record<string, Record<string, unknown>>;
+  first_half_totals?: Record<string, Record<string, number>>;
+  second_half_totals?: Record<string, Record<string, number>>;
+}
+
+function mapPatternAccuracy(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  return {
+    score: Number(raw.score ?? 0),
+    label: String(raw.label ?? "sem_dados"),
+    reason: String(raw.reason ?? ""),
+    homeHitRate: raw.home_hit_rate != null ? Number(raw.home_hit_rate) : null,
+    awayHitRate: raw.away_hit_rate != null ? Number(raw.away_hit_rate) : null,
+    patternCount: Number(raw.pattern_count ?? 0),
+  };
+}
+
+function mapComboLeg(raw: Record<string, unknown>) {
+  return {
+    rank: Number(raw.rank ?? 0),
+    role: String(raw.role ?? ""),
+    label: String(raw.label ?? ""),
+    stat: String(raw.stat ?? ""),
+    period: String(raw.period ?? ""),
+    direction: String(raw.direction ?? ""),
+    line: raw.line != null ? Number(raw.line) : null,
+    hitRate: Number(raw.hit_rate ?? 0),
+    hits: Number(raw.hits ?? 0),
+    total: Number(raw.total ?? 10),
+    patternRef: String(raw.pattern_ref ?? ""),
+    score: Number(raw.score ?? 0),
+    availableOnBook: raw.available_on_book != null ? Boolean(raw.available_on_book) : undefined,
+    marketOdd: raw.market_odd != null ? Number(raw.market_odd) : null,
+    impliedProb: raw.implied_prob != null ? Number(raw.implied_prob) : null,
+    expectedValue: raw.expected_value != null ? Number(raw.expected_value) : null,
+    edgePp: raw.edge_pp != null ? Number(raw.edge_pp) : null,
+    superbetMarket: raw.superbet_market != null ? String(raw.superbet_market) : null,
+    superbetPick: raw.superbet_pick != null ? String(raw.superbet_pick) : null,
+    lineAdjustment: raw.line_adjustment != null ? String(raw.line_adjustment) : null,
+    fairOdd: raw.fair_odd != null ? Number(raw.fair_odd) : null,
+  };
+}
+
+export function mapComboTicket(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const accuracyRaw = raw.accuracy as Record<string, unknown> | null | undefined;
+  return {
+    available: Boolean(raw.available),
+    title: String(raw.title ?? ""),
+    reason: raw.reason != null ? String(raw.reason) : null,
+    accuracy: mapPatternAccuracy(accuracyRaw),
+    mainBets: ((raw.main_bets as Array<Record<string, unknown>>) ?? []).map(mapComboLeg),
+    reserveBets: ((raw.reserve_bets as Array<Record<string, unknown>>) ?? []).map(mapComboLeg),
+    strategyNotes: ((raw.strategy_notes as string[]) ?? []).map(String),
+    suggestedStakePct: Number(raw.suggested_stake_pct ?? 0),
+    suggestedStakeValue: Number(raw.suggested_stake_value ?? 0),
+    combinedHitRateEstimate: Number(raw.combined_hit_rate_estimate ?? 0),
+    comboOdd: raw.combo_odd != null ? Number(raw.combo_odd) : null,
+    comboEv: raw.combo_ev != null ? Number(raw.combo_ev) : null,
+    superbetCapturedAt: raw.superbet_captured_at != null ? String(raw.superbet_captured_at) : null,
+    bookCoverage: raw.book_coverage
+      ? {
+          mainAvailable: Number((raw.book_coverage as Record<string, unknown>).main_available ?? 0),
+          mainTotal: Number((raw.book_coverage as Record<string, unknown>).main_total ?? 0),
+          reserveAvailable: Number((raw.book_coverage as Record<string, unknown>).reserve_available ?? 0),
+          reserveTotal: Number((raw.book_coverage as Record<string, unknown>).reserve_total ?? 0),
+        }
+      : null,
+  };
 }
 
 function mapBetStrategy(raw: Record<string, unknown> | null | undefined) {
@@ -1063,11 +1134,15 @@ function mapBetStrategy(raw: Record<string, unknown> | null | undefined) {
       tier: String(op.tier),
       modelProb: Number(op.model_prob),
       marketOdd: Number(op.market_odd),
+      impliedProb: op.implied_prob != null ? Number(op.implied_prob) : undefined,
       expectedValue: Number(op.expected_value),
       edgePp: Number(op.edge_pp),
       suggestedStakePct: Number(op.suggested_stake_pct),
       suggestedStakeValue: Number(op.suggested_stake_value),
       action: String(op.action),
+      timing: op.timing != null ? String(op.timing) : undefined,
+      timingReason: op.timing_reason != null ? String(op.timing_reason) : undefined,
+      fundamentacao: op.fundamentacao != null ? String(op.fundamentacao) : undefined,
     })),
     shields: shields.map((s) => ({
       action: String(s.action),
@@ -1087,6 +1162,8 @@ function mapBetStrategy(raw: Record<string, unknown> | null | undefined) {
           reason: String(cash.reason),
         }
       : null,
+    patternAccuracy: mapPatternAccuracy(raw.pattern_accuracy as Record<string, unknown> | null),
+    comboTicket: mapComboTicket(raw.combo_ticket as Record<string, unknown> | null),
   };
 }
 
@@ -1115,6 +1192,9 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
           score: Number(raw.confidence.score ?? 0),
           label: String(raw.confidence.label ?? ""),
           reason: String(raw.confidence.reason ?? ""),
+          patternAccuracy: raw.confidence.pattern_accuracy
+            ? mapPatternAccuracy(raw.confidence.pattern_accuracy as Record<string, unknown>)
+            : undefined,
         }
       : null,
     marketBenchmark: raw.market_benchmark
@@ -1164,13 +1244,30 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
       probFinalHome: Number(summary.prob_final_home ?? 0),
       probFinalDraw: Number(summary.prob_final_draw ?? 0),
       probFinalAway: Number(summary.prob_final_away ?? 0),
+      probHtHome: summary.prob_ht_home as number | undefined,
+      probHtDraw: summary.prob_ht_draw as number | undefined,
+      probHtAway: summary.prob_ht_away as number | undefined,
+      probShHome: summary.prob_sh_home as number | undefined,
+      probShDraw: summary.prob_sh_draw as number | undefined,
+      probShAway: summary.prob_sh_away as number | undefined,
       over25: summary.over_2_5 as number | undefined,
       btts: summary.btts as number | undefined,
       probNextGoalHome: summary.prob_next_goal_home as number | undefined,
       probNextGoalAway: summary.prob_next_goal_away as number | undefined,
       probNoMoreGoals: summary.prob_no_more_goals as number | undefined,
       topFinalScores: summary.top_final_scores as Record<string, number> | undefined,
+      htCorrectScores: summary.ht_correct_scores as Record<string, number> | undefined,
+      shCorrectScores: summary.sh_correct_scores as Record<string, number> | undefined,
+      htExactTotals: summary.ht_exact_totals as Record<string, number> | undefined,
+      shExactTotals: summary.sh_exact_totals as Record<string, number> | undefined,
+      htLineProbs: summary.ht_line_probs as Record<string, number> | undefined,
+      secondHalfLineProbs: summary.second_half_line_probs as Record<string, number> | undefined,
+      htHandicapProbs: summary.ht_handicap_probs as Record<string, number> | undefined,
+      shHandicapProbs: summary.sh_handicap_probs as Record<string, number> | undefined,
     },
+    halfMarkets: (raw.half_markets as SuperbetLiveAdvice["halfMarkets"]) ?? undefined,
+    firstHalfTotals: raw.first_half_totals ?? undefined,
+    secondHalfTotals: raw.second_half_totals ?? undefined,
     bttsOdds: raw.btts_odds ?? {},
     nextGoalOdds: raw.next_goal_odds ?? {},
     analysisCoverage: raw.analysis_coverage
@@ -1180,6 +1277,8 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
           btts: Boolean(raw.analysis_coverage.btts),
           nextGoal: Boolean(raw.analysis_coverage.next_goal),
           combos: ((raw.analysis_coverage.combos as string[]) ?? []).map(String),
+          firstHalf: Boolean(raw.analysis_coverage.first_half),
+          secondHalf: Boolean(raw.analysis_coverage.second_half),
         }
       : null,
     hedgeReport: (raw.hedge_report as SuperbetLiveAdvice["hedgeReport"]) ?? null,

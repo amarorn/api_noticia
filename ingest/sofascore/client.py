@@ -11,10 +11,20 @@ logger = structlog.get_logger()
 
 DEFAULT_BASE_URL = "https://api.sofascore.com/api/v1"
 DEFAULT_IMPERSONATE = "chrome124"
+DEFAULT_HEADERS = {
+    "Accept": "application/json",
+    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Origin": "https://www.sofascore.com",
+    "Referer": "https://www.sofascore.com/",
+}
 
 
 class SofascoreClientError(RuntimeError):
     pass
+
+
+class SofascoreWafBlockedError(SofascoreClientError):
+    """WAF Cloudflare bloqueou o IP (403 challenge)."""
 
 
 class SofascoreClient:
@@ -28,7 +38,11 @@ class SofascoreClient:
         self._base = (base_url or settings.sofascore_base_url).rstrip("/")
         self._impersonate = impersonate or settings.sofascore_impersonate
         self._min_interval = min_interval_sec or settings.sofascore_min_interval_sec
+        self._waf_max_retries = settings.sofascore_waf_max_retries
+        self._waf_retry_base_sec = settings.sofascore_waf_retry_base_sec
+        self._waf_fail_fast_after = settings.sofascore_waf_fail_fast_after
         self._last_request_at = 0.0
+        self._consecutive_waf_blocks = 0
         self._session = self._build_session()
 
     def _build_session(self):
@@ -46,28 +60,99 @@ class SofascoreClient:
         if elapsed < self._min_interval:
             time.sleep(self._min_interval - elapsed)
 
+    def _reset_session(self) -> None:
+        self._session = self._build_session()
+
+    @staticmethod
+    def _is_waf_challenge(response: Any) -> bool:
+        if response.status_code != 403:
+            return False
+        body = (response.text or "").lower()
+        return "challenge" in body or '"code": 403' in body
+
+    def _raise_waf_blocked(self) -> None:
+        raise SofascoreWafBlockedError(
+            "Sofascore retornou 403 (WAF challenge). O IP parece bloqueado — "
+            "aguarde algumas horas, aumente SOFASCORE_MIN_INTERVAL_SEC (ex.: 2.0) "
+            "e rode lotes menores (--home ou --limit). Troque de rede/VPN se persistir."
+        )
+
+    def probe(self) -> bool:
+        """Testa conectividade com a API. Retorna True se responder 200."""
+        saved_retries = self._waf_max_retries
+        self._waf_max_retries = 0
+        try:
+            self.get_json("sport/football/scheduled-events/2026-06-11")
+        except SofascoreWafBlockedError:
+            return False
+        except SofascoreClientError:
+            return False
+        finally:
+            self._waf_max_retries = saved_retries
+        return True
+
+    @property
+    def waf_blocked(self) -> bool:
+        return self._consecutive_waf_blocks >= self._waf_fail_fast_after
+
     def get_json(self, path: str, *, params: dict | None = None) -> dict[str, Any]:
         url = path if path.startswith("http") else f"{self._base}/{path.lstrip('/')}"
-        self._throttle()
-        response = self._session.get(
-            url,
-            params=params,
-            timeout=settings.sofascore_timeout_sec,
-            headers={"Accept": "application/json"},
-        )
-        self._last_request_at = time.monotonic()
-        if response.status_code == 403:
-            raise SofascoreClientError(
-                "Sofascore retornou 403 (WAF). Verifique curl_cffi e rate limits."
+        last_error: SofascoreClientError | None = None
+
+        for attempt in range(self._waf_max_retries + 1):
+            self._throttle()
+            response = self._session.get(
+                url,
+                params=params,
+                timeout=settings.sofascore_timeout_sec,
+                headers=DEFAULT_HEADERS,
             )
-        if response.status_code >= 400:
-            raise SofascoreClientError(
-                f"Sofascore HTTP {response.status_code} para {path}: {response.text[:200]}"
-            )
-        payload = response.json()
-        if not isinstance(payload, dict):
-            raise SofascoreClientError(f"Resposta inesperada de {path}")
-        return payload
+            self._last_request_at = time.monotonic()
+
+            if response.status_code == 403 and self._is_waf_challenge(response):
+                self._consecutive_waf_blocks += 1
+                last_error = SofascoreWafBlockedError(
+                    "Sofascore retornou 403 (WAF challenge). "
+                    "Verifique curl_cffi, rate limits e bloqueio de IP."
+                )
+                if self.waf_blocked:
+                    logger.error(
+                        "sofascore_waf_fail_fast",
+                        consecutive_blocks=self._consecutive_waf_blocks,
+                        path=path,
+                    )
+                    self._raise_waf_blocked()
+                if attempt < self._waf_max_retries:
+                    wait_sec = self._waf_retry_base_sec * (2**attempt)
+                    logger.warning(
+                        "sofascore_waf_retry",
+                        attempt=attempt + 1,
+                        wait_sec=wait_sec,
+                        path=path,
+                    )
+                    time.sleep(wait_sec)
+                    self._reset_session()
+                    continue
+                self._raise_waf_blocked()
+
+            if response.status_code == 403:
+                raise SofascoreClientError(
+                    "Sofascore retornou 403 (WAF). Verifique curl_cffi e rate limits."
+                )
+            if response.status_code >= 400:
+                raise SofascoreClientError(
+                    f"Sofascore HTTP {response.status_code} para {path}: {response.text[:200]}"
+                )
+
+            self._consecutive_waf_blocks = 0
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise SofascoreClientError(f"Resposta inesperada de {path}")
+            return payload
+
+        if last_error is not None:
+            raise last_error
+        raise SofascoreClientError(f"Falha ao consultar {path}")
 
     def scheduled_events(self, sport: str, date_iso: str) -> list[dict[str, Any]]:
         data = self.get_json(f"sport/{sport}/scheduled-events/{date_iso}")

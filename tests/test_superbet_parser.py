@@ -7,6 +7,7 @@ from ingest.superbet.store import merge_snapshot_into_odds_file
 from pipelines.wc_market_features import load_match_odds_index, match_implied_probs
 
 FIXTURE = Path(__file__).parent / "fixtures" / "superbet_brasil_egito.json"
+HALF_FIXTURE = Path(__file__).parent / "fixtures" / "superbet_mexico_sa_half.json"
 
 
 def test_parse_superbet_event_fixture():
@@ -54,3 +55,25 @@ def test_market_benchmark_edges():
     )
     assert "1" in bench["h2h"]
     assert "edge" in bench["h2h"]["1"]
+
+
+def test_parse_half_markets_mexico_sa():
+    raw = json.loads(HALF_FIXTURE.read_text(encoding="utf-8"))
+    snap = parse_superbet_event(raw)
+    assert snap.home_team == "México"
+    assert snap.away_team == "África do Sul"
+    assert "0.5" in snap.first_half_totals or snap.first_half_totals
+    assert "0.5" in snap.second_half_totals
+
+    hm = snap.half_markets
+    assert hm["1h"]["h2h"]["1"] == 3.10 or hm["1h"]["h2h"]["1"] == 2.85
+    assert "1" in hm["1h"]["h2h"]
+    assert hm["1h"]["correct_score"]["0x0"] == 2.80
+    assert hm["1h"]["correct_score"]["1x0"] == 4.50
+    assert hm["1h"]["exact_total"]["1"] == 2.60
+    assert hm["1h"]["exact_team_home"]["0"] == 1.85
+    assert hm["1h"]["exact_team_away"]["0"] == 1.55
+    assert hm["1h"]["handicap"]["m0_5"]["home"] == 1.90
+    assert hm["2h"]["h2h"]["X"] == 2.30
+    assert hm["2h"]["correct_score"]["1x0"] == 5.50
+    assert "exact_total" in hm["2h"]

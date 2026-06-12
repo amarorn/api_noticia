@@ -1,0 +1,146 @@
+{
+  "event_id": 13338480,
+  "home_team": "District Elite",
+  "away_team": "Ristozi FC",
+  "event_name": "District Elite·Ristozi FC",
+  "utc_date": "2026-06-11T23:30:00Z",
+  "betradar_id": "71221016",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 2,
+    "minute": 44,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 3,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 1,
+    "ht_away_score": 2,
+    "period_label": "1H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 8.0,
+    "X": 4.85,
+    "2": 1.28
+  },
+  "h2h_implied": {
+    "1": 0.1123660584998552,
+    "X": 0.18534607587604984,
+    "2": 0.7022878656240951
+  },
+  "totals": {
+    "3.5": {
+      "Mais de 3.5": 1.07,
+      "Menos de 3.5": 5.25
+    },
+    "4.5": {
+      "Mais de 4.5": 1.47,
+      "Menos de 4.5": 2.35
+    },
+    "5.5": {
+      "Mais de 5.5": 2.45,
+      "Menos de 5.5": 1.42
+    }
+  },
+  "totals_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.8306962025316457,
+      "Menos de 3.5": 0.16930379746835444
+    },
+    "4.5": {
+      "Mais de 4.5": 0.6151832460732984,
+      "Menos de 4.5": 0.38481675392670156
+    },
+    "5.5": {
+      "Mais de 5.5": 0.36692506459948315,
+      "Menos de 5.5": 0.6330749354005168
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 2.5,
+    "away": 1.8
+  },
+  "generosity_probs": {
+    "home": 0.090844,
+    "away": 0.740425
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 1.6,
+        "Menos de 1.5": 2.12
+      },
+      "2.5": {
+        "Mais de 2.5": 3.6,
+        "Menos de 2.5": 1.18
+      }
+    },
+    "away": {
+      "2.5": {
+        "Mais de 2.5": 1.3,
+        "Menos de 2.5": 2.85
+      },
+      "3.5": {
+        "Mais de 3.5": 2.45,
+        "Menos de 3.5": 1.42
+      },
+      "4.5": {
+        "Mais de 4.5": 5.25,
+        "Menos de 4.5": 1.07
+      }
+    }
+  },
+  "first_half_totals": {
+    "3.5-50": {
+      "Primeiros 50 min - Mais de 3.5": 2.85,
+      "Primeiros 50 min - Menos de 3.5": 1.33
+    },
+    "3.5-55": {
+      "Primeiros 55 min - Mais de 3.5": 2.07,
+      "Primeiros 55 min - Menos de 3.5": 1.62
+    },
+    "3.5-60": {
+      "Primeiros 60 min - Mais de 3.5": 1.7,
+      "Primeiros 60 min - Menos de 3.5": 1.95
+    },
+    "3.5-65": {
+      "Primeiros 65 min - Mais de 3.5": 1.53,
+      "Primeiros 65 min - Menos de 3.5": 2.25
+    },
+    "3.5-70": {
+      "Primeiros 70 min - Mais de 3.5": 1.38,
+      "Primeiros 70 min - Menos de 3.5": 2.65
+    },
+    "4.5-75": {
+      "Primeiros 75 min - Mais de 4.5": 2.4,
+      "Primeiros 75 min - Menos de 4.5": 1.47
+    },
+    "4.5-80": {
+      "Primeiros 80 min - Mais de 4.5": 2.02,
+      "Primeiros 80 min - Menos de 4.5": 1.65
+    }
+  },
+  "second_half_totals": {},
+  "half_markets": {
+    "1h": {
+      "handicap": {
+        "p1": {
+          "home": 2.25,
+          "away": 1.5
+        },
+        "p1_5": {
+          "home": 1.04,
+          "away": 5.5
+        }
+      }
+    }
+  },
+  "raw_market_count": 26,
+  "captured_at": "2026-06-12T00:18:32.179494+00:00"
+}

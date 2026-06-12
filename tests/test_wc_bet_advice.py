@@ -1,4 +1,17 @@
-from models.wc_bet_advice import UserBetInput, advise_cashout, advise_aportes, build_bet_advice_report
+from models.wc_bet_advice import (
+    UserBetInput,
+    advise_cashout,
+    advise_aportes,
+    build_bet_advice_report,
+    _prob_from_inplay,
+    _market_odd,
+)
+from models.wc_inplay import simulate_inplay
+from ingest.superbet.parser import parse_superbet_event
+import json
+from pathlib import Path
+
+HALF_FIXTURE = Path(__file__).parent / "fixtures" / "superbet_mexico_sa_half.json"
 
 
 def _inplay_1x1_late():
@@ -50,3 +63,62 @@ def test_build_report_includes_aportes_list():
     assert report["cashout"] is not None
     assert "action" in report["cashout"]
     assert isinstance(report["aportes"], list)
+
+
+def test_half_market_prob_and_odd_mapping():
+    raw = json.loads(HALF_FIXTURE.read_text(encoding="utf-8"))
+    snap = parse_superbet_event(raw)
+    inplay = simulate_inplay(
+        home_team=snap.home_team,
+        away_team=snap.away_team,
+        home_score=0,
+        away_score=0,
+        minute=12,
+        lambda_full_home=1.3,
+        lambda_full_away=1.0,
+        n_simulations=5000,
+        random_seed=17,
+    ).to_dict()
+
+    prob_cs = _prob_from_inplay(inplay, "1h_cs_1_0", "yes")
+    assert prob_cs is not None
+    assert 0.0 < prob_cs < 1.0
+
+    odd_cs = _market_odd(snap, "1h_cs_1_0", "yes")
+    assert odd_cs == 4.50
+
+    prob_exact = _prob_from_inplay(inplay, "1h_exact_1", "yes")
+    assert prob_exact is not None
+
+    prob_hcap = _prob_from_inplay(inplay, "1h_hcap_home_m0_5", "yes")
+    assert prob_hcap is not None
+    assert _market_odd(snap, "1h_hcap_home_m0_5", "yes") == 1.90
+
+
+def test_advise_aportes_includes_half_markets_when_edge():
+    raw = json.loads(HALF_FIXTURE.read_text(encoding="utf-8"))
+    snap = parse_superbet_event(raw)
+    inplay = simulate_inplay(
+        home_team=snap.home_team,
+        away_team=snap.away_team,
+        home_score=0,
+        away_score=0,
+        minute=12,
+        lambda_full_home=2.5,
+        lambda_full_away=0.4,
+        n_simulations=6000,
+        random_seed=23,
+    ).to_dict()
+
+    aportes = advise_aportes(
+        inplay,
+        snap,
+        bankroll=1000,
+        live=True,
+        home_team=snap.home_team,
+        away_team=snap.away_team,
+        minute=12,
+        min_edge=-0.5,
+    )
+    half_markets = {a.market for a in aportes if a.market.startswith(("1h_", "2h_"))}
+    assert half_markets

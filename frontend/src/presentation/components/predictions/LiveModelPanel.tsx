@@ -209,6 +209,53 @@ export function LiveModelPanel({ data }: LiveModelPanelProps) {
             </div>
           </>
         )}
+
+        {(s.probHtHome != null || s.probShHome != null) && (
+          <>
+            <div className="my-3 h-px bg-white/8" />
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Por tempo
+            </p>
+            <div className="space-y-3">
+              {s.probHtHome != null && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-slate-500">1º tempo — 1X2</p>
+                  <ProbBar
+                    label={teamLabel(data.homeTeam, 10)}
+                    title={data.homeTeam}
+                    prob={s.probHtHome}
+                    color="slate"
+                  />
+                  <ProbBar label="Empate" prob={s.probHtDraw ?? 0} color="slate" />
+                  <ProbBar
+                    label={teamLabel(data.awayTeam, 10)}
+                    title={data.awayTeam}
+                    prob={s.probHtAway ?? 0}
+                    color="slate"
+                  />
+                </div>
+              )}
+              {s.probShHome != null && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-slate-500">2º tempo — 1X2</p>
+                  <ProbBar
+                    label={teamLabel(data.homeTeam, 10)}
+                    title={data.homeTeam}
+                    prob={s.probShHome}
+                    color="slate"
+                  />
+                  <ProbBar label="Empate" prob={s.probShDraw ?? 0} color="slate" />
+                  <ProbBar
+                    label={teamLabel(data.awayTeam, 10)}
+                    title={data.awayTeam}
+                    prob={s.probShAway ?? 0}
+                    color="slate"
+                  />
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Posição da casa — edge 1X2 */}

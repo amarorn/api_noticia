@@ -1,0 +1,297 @@
+{
+  "event_id": 12512380,
+  "home_team": "Coreia do Sul",
+  "away_team": "República Tcheca",
+  "event_name": "Coreia do Sul·República Tcheca",
+  "utc_date": "2026-06-12T02:00:00Z",
+  "betradar_id": "66456906",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 64,
+    "stoppage_time": null,
+    "home_corners": 4,
+    "away_corners": 4,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 9.25,
+    "X": 3.55,
+    "2": 1.5
+  },
+  "h2h_implied": {
+    "1": 0.10233005044439107,
+    "X": 0.2666346384818641,
+    "2": 0.6310353110737449
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.6,
+      "Menos de 1.5": 2.3
+    },
+    "2.5": {
+      "Mais de 2.5": 3.75,
+      "Menos de 2.5": 1.25
+    },
+    "3.5": {
+      "Mais de 3.5": 10.5,
+      "Menos de 3.5": 1.03
+    },
+    "4.5": {
+      "Mais de 4.5": 30.0
+    },
+    "5.5": {
+      "Mais de 5.5": 40.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.5897435897435896,
+      "Menos de 1.5": 0.41025641025641024
+    },
+    "2.5": {
+      "Mais de 2.5": 0.25,
+      "Menos de 2.5": 0.75
+    },
+    "3.5": {
+      "Mais de 3.5": 0.08933217692974847,
+      "Menos de 3.5": 0.9106678230702514
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {
+    "8.5": {
+      "Menos de 8.5": 10.5
+    },
+    "9.5": {
+      "Mais de 9.5": 1.14,
+      "Menos de 9.5": 4.5
+    },
+    "10.5": {
+      "Mais de 10.5": 1.45,
+      "Menos de 10.5": 2.55
+    },
+    "11.5": {
+      "Mais de 11.5": 2.0,
+      "Menos de 11.5": 1.75
+    },
+    "12.5": {
+      "Mais de 12.5": 2.85,
+      "Menos de 12.5": 1.35
+    },
+    "13.5": {
+      "Mais de 13.5": 4.2,
+      "Menos de 13.5": 1.16
+    },
+    "14.5": {
+      "Mais de 14.5": 6.25,
+      "Menos de 14.5": 1.07
+    },
+    "15.5": {
+      "Mais de 15.5": 9.25,
+      "Menos de 15.5": 1.01
+    },
+    "16.5": {
+      "Mais de 16.5": 14.0
+    },
+    "17.5": {
+      "Mais de 17.5": 20.0
+    }
+  },
+  "corners_implied": {
+    "8.5": {
+      "Menos de 8.5": 1.0
+    },
+    "9.5": {
+      "Mais de 9.5": 0.7978723404255319,
+      "Menos de 9.5": 0.20212765957446804
+    },
+    "10.5": {
+      "Mais de 10.5": 0.6375000000000001,
+      "Menos de 10.5": 0.36250000000000004
+    },
+    "11.5": {
+      "Mais de 11.5": 0.4666666666666667,
+      "Menos de 11.5": 0.5333333333333333
+    },
+    "12.5": {
+      "Mais de 12.5": 0.32142857142857145,
+      "Menos de 12.5": 0.6785714285714286
+    },
+    "13.5": {
+      "Mais de 13.5": 0.21641791044776118,
+      "Menos de 13.5": 0.7835820895522388
+    },
+    "14.5": {
+      "Mais de 14.5": 0.14617486338797814,
+      "Menos de 14.5": 0.8538251366120219
+    },
+    "15.5": {
+      "Mais de 15.5": 0.09844054580896687,
+      "Menos de 15.5": 0.9015594541910331
+    },
+    "16.5": {
+      "Mais de 16.5": 1.0
+    },
+    "17.5": {
+      "Mais de 17.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.22857142857142856,
+      "Não": 0.7714285714285714
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.08933217692974847,
+      "Não": 0.9106678230702514
+    },
+    "ft_and_btts": {
+      "Coreia do Sul e Sim": 0.10472635465305678,
+      "Empate e Sim": 0.2543354327288522,
+      "República Tcheca e Sim": 0.10789988055163427,
+      "República Tcheca e Não": 0.5330383320664568
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.10503615374857288,
+      "X e Mais de 1.5": 0.2587847266269187,
+      "2 e Mais de 1.5": 0.2480020296841304,
+      "2 e Menos de 1.5": 0.38817708994037803
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.10332611690612085,
+      "X e Mais de 2.5": 0.03513087974808109,
+      "2 e Mais de 2.5": 0.12546742767171817,
+      "X e Menos de 2.5": 0.23420586498720725,
+      "2 e Menos de 2.5": 0.5018697106868727
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.03482587064676617,
+      "X e Mais de 3.5": 0.03482587064676617,
+      "2 e Mais de 3.5": 0.03482587064676617,
+      "1 e Menos de 3.5": 0.08291873963515754,
+      "X e Menos de 3.5": 0.23217247097844113,
+      "2 e Menos de 3.5": 0.5804311774461027
+    }
+  },
+  "btts_odds": {
+    "yes": 2.17,
+    "no": 1.67
+  },
+  "next_goal_odds": {
+    "home": 2.4,
+    "away": 4.05
+  },
+  "generosity_probs": {
+    "home": 0.087821,
+    "away": 0.650764
+  },
+  "team_totals": {
+    "home": {
+      "0.5": {
+        "Mais de 0.5": 2.1,
+        "Menos de 0.5": 1.7
+      },
+      "1.5": {
+        "Mais de 1.5": 6.25,
+        "Menos de 1.5": 1.08
+      },
+      "2.5": {
+        "Mais de 2.5": 20.0
+      },
+      "3.5": {
+        "Mais de 3.5": 35.0
+      }
+    },
+    "away": {
+      "1.5": {
+        "Mais de 1.5": 3.2,
+        "Menos de 1.5": 1.3
+      },
+      "2.5": {
+        "Mais de 2.5": 13.0,
+        "Menos de 2.5": 1.005
+      },
+      "3.5": {
+        "Mais de 3.5": 35.0
+      }
+    }
+  },
+  "first_half_totals": {
+    "1.5-65": {
+      "Primeiros 65 min - Mais de 1.5": 12.0,
+      "Primeiros 65 min - Menos de 1.5": 1.02
+    },
+    "1.5-75": {
+      "Primeiros 75 min - Mais de 1.5": 3.2,
+      "Primeiros 75 min - Menos de 1.5": 1.3
+    },
+    "1.5-80": {
+      "Primeiros 80 min - Mais de 1.5": 2.5,
+      "Primeiros 80 min - Menos de 1.5": 1.47
+    },
+    "1.5-85": {
+      "Primeiros 85 min - Mais de 1.5": 2.07,
+      "Primeiros 85 min - Menos de 1.5": 1.67
+    }
+  },
+  "second_half_totals": {
+    "1.5": {
+      "Mais de 1.5": 1.57,
+      "Menos de 1.5": 2.27
+    },
+    "2.5": {
+      "Mais de 2.5": 3.6,
+      "Menos de 2.5": 1.22
+    }
+  },
+  "yellow_cards": {},
+  "first_half_yellow_cards": {},
+  "team_shots": {
+    "home": {},
+    "away": {}
+  },
+  "half_markets": {
+    "2h": {
+      "handicap": {
+        "m0_5": {
+          "home": 7.75,
+          "away": 1.05
+        },
+        "p0_5": {
+          "home": 2.6,
+          "away": 1.45
+        },
+        "p1_5": {
+          "home": 1.14,
+          "away": 4.75
+        },
+        "p1": {
+          "home": 2.65,
+          "away": 5.15
+        }
+      },
+      "correct_score": {
+        "0x1": 2.27,
+        "0x2": 6.25,
+        "1x1": 3.75,
+        "1x2": 9.5,
+        "2x1": 10.5,
+        "2x2": 25.0
+      }
+    }
+  },
+  "raw_market_count": 164,
+  "captured_at": "2026-06-12T03:24:02.886139+00:00"
+}

@@ -535,8 +535,8 @@
     "team_id": "43876",
     "country_code": "NGA",
     "team_name": "Nigéria",
-    "points": 1586.688586,
-    "points_before": 1587.277634
+    "points": 1585.017102,
+    "points_before": 1586.688586
   },
   "43901": {
     "team_id": "43901",
@@ -1154,6 +1154,13 @@
     "points": 1525.594311,
     "points_before": 1528.003812
   },
+  "43963": {
+    "team_id": "43963",
+    "country_code": "POR",
+    "team_name": "Portugal",
+    "points": 1767.849031,
+    "points_before": 1766.177547
+  },
   "43877": {
     "team_id": "43877",
     "country_code": "RWA",
@@ -1293,13 +1300,6 @@
     "team_name": "Tchéquia",
     "points": 1503.040808,
     "points_before": 1501.3824
-  },
-  "43963": {
-    "team_id": "43963",
-    "country_code": "POR",
-    "team_name": "Portugal",
-    "points": 1766.177547,
-    "points_before": 1763.834406
   },
   "44037": {
     "team_id": "44037",

@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from ingest.superbet.event_finalize import maybe_finalize_finished_event
 from ingest.superbet.benchmark import h2h_overround, market_benchmark
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
 from ingest.superbet.live_ticks import append_live_tick
@@ -184,6 +185,14 @@ def run_live_advice(
 
     is_finished = str(status or "").upper() in _FINISHED_STATUSES
 
+    finalize_info = maybe_finalize_finished_event(
+        event_id=event_id,
+        snapshot=snapshot,
+        inplay=inplay_dict,
+        advice=report,
+        is_finished=is_finished,
+    )
+
     model_h2h = {
         "1": float(inplay_dict.get("prob_final_home") or 0),
         "X": float(inplay_dict.get("prob_final_draw") or 0),
@@ -212,18 +221,36 @@ def run_live_advice(
         "status": status,
         "is_finished": is_finished,
         "is_live": snapshot.is_live and not is_finished,
+        "event_finalize": finalize_info,
         "cashout": report.get("cashout"),
         "aportes": report.get("aportes", []),
         "inplay_summary": {
             "prob_final_home": inplay_dict.get("prob_final_home"),
             "prob_final_draw": inplay_dict.get("prob_final_draw"),
             "prob_final_away": inplay_dict.get("prob_final_away"),
+            "prob_ht_home": inplay_dict.get("prob_ht_home"),
+            "prob_ht_draw": inplay_dict.get("prob_ht_draw"),
+            "prob_ht_away": inplay_dict.get("prob_ht_away"),
+            "prob_sh_home": inplay_dict.get("prob_sh_home"),
+            "prob_sh_draw": inplay_dict.get("prob_sh_draw"),
+            "prob_sh_away": inplay_dict.get("prob_sh_away"),
             "over_2_5": inplay_dict.get("final_line_probs", {}).get("over_2_5"),
             "btts": inplay_dict.get("btts_final"),
             "prob_next_goal_home": inplay_dict.get("prob_next_goal_home"),
             "prob_next_goal_away": inplay_dict.get("prob_next_goal_away"),
             "prob_no_more_goals": inplay_dict.get("prob_no_more_goals"),
+            "ht_correct_scores": inplay_dict.get("ht_correct_scores"),
+            "sh_correct_scores": inplay_dict.get("sh_correct_scores"),
+            "ht_exact_totals": inplay_dict.get("ht_exact_totals"),
+            "sh_exact_totals": inplay_dict.get("sh_exact_totals"),
+            "ht_line_probs": inplay_dict.get("ht_line_probs"),
+            "second_half_line_probs": inplay_dict.get("second_half_line_probs"),
+            "ht_handicap_probs": inplay_dict.get("ht_handicap_probs"),
+            "sh_handicap_probs": inplay_dict.get("sh_handicap_probs"),
         },
+        "half_markets": snapshot.half_markets,
+        "first_half_totals": snapshot.first_half_totals,
+        "second_half_totals": snapshot.second_half_totals,
         "superbet_event_id": event_id,
         "h2h_odds": snapshot.h2h_odds,
         "h2h_implied": snapshot.h2h_implied,
@@ -241,6 +268,8 @@ def run_live_advice(
             minute=minute,
             bankroll=bankroll,
             h2h_overround=overround,
+            confidence=report.get("confidence"),
+            event_id=event_id,
         ),
         "captured_at": snapshot.captured_at,
         "betradar_id": snapshot.betradar_id,
@@ -253,6 +282,8 @@ def run_live_advice(
             "btts": bool(snapshot.btts_odds),
             "next_goal": bool(snapshot.next_goal_odds),
             "combos": list(snapshot.combo_markets.keys()),
+            "first_half": bool(snapshot.half_markets.get("1h") or snapshot.first_half_totals),
+            "second_half": bool(snapshot.half_markets.get("2h") or snapshot.second_half_totals),
         },
         "hedge_report": _build_hedge_report(
             inplay_dict=inplay_dict,

@@ -163,6 +163,19 @@ export class GetSuperbetEventUseCase {
   }
 }
 
+export class GetWcComboTicketUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    bankroll?: number;
+    superbetEventId?: number;
+  }) {
+    return this.repository.getComboTicket(dto);
+  }
+}
+
 export class SimulateWcMatchUseCase {
   constructor(private readonly repository: IWcRepository) {}
 

@@ -3,16 +3,21 @@ from __future__ import annotations
 
 from typing import Any
 
+from config import settings
 from ingest.superbet.parser import SuperbetEventSnapshot
 from models.ev_value import evaluate_outcome
 from models.wc_bet_advice import (
     UserBetInput,
     _market_odd,
     _prob_from_inplay,
+    _score_from_inplay,
     advise_aportes,
     advise_cashout,
+    is_aggressive_leading_handicap,
     scan_all_market_edges,
 )
+from models.wc_bet_timing import assess_bet_timing, build_fundamentacao
+from models.wc_team_patterns import build_combo_ticket, pattern_accuracy_score
 
 _CORRELATION_GROUPS: list[frozenset[str]] = [
     frozenset({"h2h:1", "next_goal:home"}),
@@ -24,6 +29,18 @@ _CORRELATION_GROUPS: list[frozenset[str]] = [
 
 def _market_key(market: str, outcome: str) -> str:
     return f"{market}:{outcome.lower()}"
+
+
+def _tier_by_edge(edge_pp: float, min_edge_pp: float | None = None) -> str:
+    """Classifica oportunidade pelo edge probabilístico (modelo vs mercado)."""
+    min_pp = min_edge_pp or settings.live_min_edge_pp
+    if edge_pp >= min_pp * 2.5:
+        return "forte"
+    if edge_pp >= min_pp * 1.5:
+        return "moderada"
+    if edge_pp >= min_pp:
+        return "leve"
+    return "abaixo_limiar"
 
 
 def _tier(ev: float, threshold: float) -> str:
@@ -160,6 +177,65 @@ def _hedge_suggestions(
     return shields
 
 
+def _aggressive_handicap_shields(
+    *,
+    home_team: str,
+    away_team: str,
+    inplay: dict[str, Any],
+    minute: int,
+    all_edges: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Alerta quando favorito já lidera e handicaps ≤ −1 no 2T parecem atrativos."""
+    if minute < 45:
+        return []
+
+    home_sc, away_sc = _score_from_inplay(inplay)
+    gap = home_sc - away_sc
+    if gap >= 1:
+        leader_name = home_team
+    elif gap <= -1:
+        leader_name = away_team
+    else:
+        return []
+
+    score_str = f"{home_sc}x{away_sc}"
+    shields: list[dict[str, Any]] = [
+        {
+            "action": "evitar",
+            "priority": "alta",
+            "title": f"Evitar handicap agressivo no 2º tempo ({leader_name})",
+            "reason": (
+                f"{leader_name} já lidera {score_str}. Handicaps −1 ou piores no 2T "
+                f"(ex.: −1.5, −2.5) exigem goleada no período — cenário improvável com "
+                f"jogo controlado. Prefira over 0.5 no 2T ou handicap −0.5 / empate anula."
+            ),
+        },
+    ]
+
+    for row in all_edges:
+        blocked, detail = is_aggressive_leading_handicap(
+            row["market"],
+            inplay,
+            minute=minute,
+        )
+        if not blocked or row.get("expected_value", 0) <= 0:
+            continue
+        shields.append({
+            "action": "evitar",
+            "priority": "alta",
+            "title": f"Armadilha: {row['label']}",
+            "reason": (
+                f"Odd {row['market_odd']:.2f} parece atrativa (EV +{row['expected_value'] * 100:.1f}%), "
+                f"mas {detail}. Não recomendamos este aporte."
+            ),
+            "market": row["market"],
+            "outcome": row.get("outcome", "yes"),
+            "odd": row["market_odd"],
+            "expected_value": row["expected_value"],
+        })
+    return shields
+
+
 def build_bet_strategy_report(
     *,
     home_team: str,
@@ -171,7 +247,14 @@ def build_bet_strategy_report(
     minute: int = 0,
     bankroll: float = 1000.0,
     h2h_overround: float | None = None,
+    confidence: dict[str, Any] | None = None,
+    event_id: int | None = None,
 ) -> dict[str, Any]:
+    conf_score = float((confidence or {}).get("score") or 1.0)
+    min_edge_pp = settings.live_min_edge_pp
+    if conf_score < 0.5:
+        min_edge_pp = max(min_edge_pp, 8.0)
+
     all_edges, threshold = scan_all_market_edges(
         inplay,
         snapshot,
@@ -190,6 +273,7 @@ def build_bet_strategy_report(
         home_team=home_team,
         away_team=away_team,
         minute=minute,
+        confidence_score=conf_score,
     )
 
     cashout = None
@@ -204,19 +288,33 @@ def build_bet_strategy_report(
         }
 
     opportunities: list[dict[str, Any]] = []
-    # P1.2: threshold efetivo aumenta na reta final (time decay de confiança)
     decay = _time_decay_confidence(minute)
     effective_threshold = threshold / decay if decay > 0 else threshold
     for rank, a in enumerate(aportes, start=1):
-        tier = _tier(a.expected_value, effective_threshold)
+        tier = _tier_by_edge(a.edge_pp, min_edge_pp)
         stake_pct = a.suggested_stake_pct
         if tier == "leve":
             stake_pct = round(min(stake_pct, 1.5), 2)
-        # Na reta final, reduzir stakes adicionalmente
         if minute >= 80:
             stake_pct = round(stake_pct * 0.6, 2)
         elif minute >= 75:
             stake_pct = round(stake_pct * 0.8, 2)
+
+        timing = assess_bet_timing(
+            event_id=event_id,
+            market=a.market,
+            outcome=a.outcome,
+            model_prob=a.model_prob,
+            implied_prob=a.implied_prob,
+        )
+        fundamentacao = build_fundamentacao(
+            confidence=confidence,
+            market=a.market,
+            model_prob=a.model_prob,
+            implied_prob=a.implied_prob,
+            edge_pp=a.edge_pp,
+            minute=minute,
+        )
         opportunities.append({
             "rank": rank,
             "market": a.market,
@@ -225,11 +323,15 @@ def build_bet_strategy_report(
             "tier": tier,
             "model_prob": a.model_prob,
             "market_odd": a.market_odd,
+            "implied_prob": a.implied_prob,
             "expected_value": a.expected_value,
             "edge_pp": a.edge_pp,
             "suggested_stake_pct": stake_pct,
             "suggested_stake_value": round(bankroll * stake_pct / 100, 2),
             "action": a.action,
+            "timing": timing["timing"],
+            "timing_reason": timing["timing_reason"],
+            "fundamentacao": fundamentacao,
         })
 
     strong_ops = sum(1 for o in opportunities if o["tier"] in {"forte", "moderada"})
@@ -244,6 +346,29 @@ def build_bet_strategy_report(
     max_new_exposure_pct = min(5.0, total_exposure_pct) if posture != "defensivo" else min(2.0, total_exposure_pct)
 
     shields: list[dict[str, Any]] = []
+
+    if confidence and conf_score < 0.25:
+        shields.append({
+            "action": "aguardar",
+            "priority": "alta",
+            "title": "Modelo sem dados suficientes",
+            "reason": (
+                confidence.get("reason")
+                or "Não há histórico confiável para estes times. "
+                "Não recomendamos apostas — aguarde mais contexto ou use mercados "
+                "com dados Sofascore/FIFA carregados."
+            ),
+        })
+    elif confidence and conf_score < 0.5:
+        shields.append({
+            "action": "aguardar",
+            "priority": "media",
+            "title": "Confiança baixa nos dados",
+            "reason": (
+                f"{confidence.get('reason', '')} "
+                "Só entram recomendações com edge ≥ 8 pp."
+            ).strip(),
+        })
 
     if posture == "defensivo":
         shields.append({
@@ -279,6 +404,15 @@ def build_bet_strategy_report(
         })
 
     shields.extend(_house_trap_shields(benchmark))
+    shields.extend(
+        _aggressive_handicap_shields(
+            home_team=home_team,
+            away_team=away_team,
+            inplay=inplay,
+            minute=minute,
+            all_edges=all_edges,
+        )
+    )
     shields.extend(_correlation_warnings(opportunities))
     shields.extend(_hedge_suggestions(user_bet, inplay, snapshot, threshold=threshold, minute=minute))
 
@@ -303,6 +437,15 @@ def build_bet_strategy_report(
     if not opportunities:
         rules.append("Sem oportunidade com edge — aguardar é a melhor blindagem")
 
+    pattern_accuracy = pattern_accuracy_score(home_team, away_team)
+    combo_ticket = build_combo_ticket(
+        home_team, away_team, bankroll=bankroll, snapshot=snapshot
+    )
+    if pattern_accuracy["score"] >= 0.45 and combo_ticket.get("available"):
+        rules.append(
+            "Bilhete combo KXL disponível — use a seção abaixo; não duplique stakes no combo e nas oportunidades EV."
+        )
+
     return {
         "posture": posture,
         "max_new_exposure_pct": max_new_exposure_pct,
@@ -319,6 +462,8 @@ def build_bet_strategy_report(
         "shields": shields,
         "rules": rules,
         "cashout": cashout,
+        "pattern_accuracy": pattern_accuracy,
+        "combo_ticket": combo_ticket,
     }
 
 
@@ -329,17 +474,20 @@ def _wait_reason(all_edges: list[dict[str, Any]], threshold: float, minute: int)
             "Aguarde o próximo refresh (~25s)."
         )
     best = all_edges[0]
-    ev_pct = best["expected_value"] * 100
-    need_pct = threshold * 100
-    if best["expected_value"] < 0:
+    edge = best.get("edge_pp", 0)
+    min_pp = settings.live_min_edge_pp
+    if edge < 0:
         return (
-            f"Nenhum mercado com valor positivo. O menos ruim é {best['label']} "
-            f"(EV {ev_pct:.1f}%). Não aposte."
+            f"Nenhum mercado com vantagem probabilística. O menos ruim é {best['label']} "
+            f"(edge {edge:.1f} pp). Não aposte."
         )
-    if best["expected_value"] < threshold:
+    if edge < min_pp:
         return (
-            f"O mercado mais próximo é {best['label']} @ {best['market_odd']} "
-            f"(EV +{ev_pct:.1f}%), mas o limiar in-play é +{need_pct:.0f}%. "
-            f"Veja a lista abaixo ou aguarde gol / refresh (~25s)."
+            f"O melhor mercado agora é {best['label']} (edge +{edge:.1f} pp), "
+            f"mas ainda abaixo do mínimo de {min_pp:.0f} pp. Monitore a linha nos próximos refreshes."
         )
-    return f"Reavalie após gol ou em ~25s (minuto {minute}')."
+    if minute >= 80:
+        return "Jogo avançado — exigimos edge maior para recomendar entrada."
+    return (
+        f"Edge insuficiente no momento. Melhor leitura: {best['label']} (+{edge:.1f} pp)."
+    )

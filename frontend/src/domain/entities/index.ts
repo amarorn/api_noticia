@@ -433,6 +433,14 @@ export interface SuperbetLiveAdvice {
     score: number;
     label: string;
     reason: string;
+    patternAccuracy?: {
+      score: number;
+      label: string;
+      reason: string;
+      homeHitRate: number | null;
+      awayHitRate: number | null;
+      patternCount: number;
+    };
   } | null;
   marketBenchmark: {
     h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
@@ -477,11 +485,15 @@ export interface SuperbetLiveAdvice {
       tier: string;
       modelProb: number;
       marketOdd: number;
+      impliedProb?: number;
       expectedValue: number;
       edgePp: number;
       suggestedStakePct: number;
       suggestedStakeValue: number;
       action: string;
+      timing?: string;
+      timingReason?: string;
+      fundamentacao?: string;
     }>;
     shields: Array<{
       action: string;
@@ -495,6 +507,86 @@ export interface SuperbetLiveAdvice {
     }>;
     rules: string[];
     cashout: { action: string; confidence: number; reason: string } | null;
+    patternAccuracy: {
+      score: number;
+      label: string;
+      reason: string;
+      homeHitRate: number | null;
+      awayHitRate: number | null;
+      patternCount: number;
+    } | null;
+    comboTicket: {
+      available: boolean;
+      title: string;
+      reason: string | null;
+      accuracy: {
+        score: number;
+        label: string;
+        reason: string;
+        homeHitRate: number | null;
+        awayHitRate: number | null;
+        patternCount: number;
+      } | null;
+      mainBets: Array<{
+        rank: number;
+        role: string;
+        label: string;
+        stat: string;
+        period: string;
+        direction: string;
+        line: number | null;
+        hitRate: number;
+        hits: number;
+        total: number;
+        patternRef: string;
+        score: number;
+        availableOnBook?: boolean;
+        marketOdd: number | null;
+        impliedProb?: number | null;
+        expectedValue?: number | null;
+        edgePp?: number | null;
+        superbetMarket?: string | null;
+        superbetPick?: string | null;
+        lineAdjustment?: string | null;
+        fairOdd?: number | null;
+      }>;
+      reserveBets: Array<{
+        rank: number;
+        role: string;
+        label: string;
+        stat: string;
+        period: string;
+        direction: string;
+        line: number | null;
+        hitRate: number;
+        hits: number;
+        total: number;
+        patternRef: string;
+        score: number;
+        availableOnBook?: boolean;
+        marketOdd: number | null;
+        impliedProb?: number | null;
+        expectedValue?: number | null;
+        edgePp?: number | null;
+        superbetMarket?: string | null;
+        superbetPick?: string | null;
+        lineAdjustment?: string | null;
+        fairOdd?: number | null;
+      }>;
+      strategyNotes: string[];
+      suggestedStakePct: number;
+      suggestedStakeValue: number;
+      combinedHitRateEstimate: number;
+      comboOdd: number | null;
+      comboEv: number | null;
+      superbetCapturedAt: string | null;
+      bookCoverage: {
+        mainAvailable: number;
+        mainTotal: number;
+        reserveAvailable: number;
+        reserveTotal: number;
+      } | null;
+    } | null;
   } | null;
   cashout: {
     action: string;
@@ -526,17 +618,46 @@ export interface SuperbetLiveAdvice {
     btts: boolean;
     nextGoal: boolean;
     combos: string[];
+    firstHalf?: boolean;
+    secondHalf?: boolean;
   } | null;
+  halfMarkets?: Record<
+    string,
+    {
+      h2h?: Record<string, number>;
+      correct_score?: Record<string, number>;
+      exact_total?: Record<string, number>;
+      exact_team_home?: Record<string, number>;
+      exact_team_away?: Record<string, number>;
+      handicap?: Record<string, Record<string, number>>;
+    }
+  >;
+  firstHalfTotals?: Record<string, Record<string, number>>;
+  secondHalfTotals?: Record<string, Record<string, number>>;
   inplaySummary: {
     probFinalHome: number;
     probFinalDraw: number;
     probFinalAway: number;
+    probHtHome?: number;
+    probHtDraw?: number;
+    probHtAway?: number;
+    probShHome?: number;
+    probShDraw?: number;
+    probShAway?: number;
     over25?: number;
     btts?: number;
     probNextGoalHome?: number;
     probNextGoalAway?: number;
     probNoMoreGoals?: number;
     topFinalScores?: Record<string, number>;
+    htCorrectScores?: Record<string, number>;
+    shCorrectScores?: Record<string, number>;
+    htExactTotals?: Record<string, number>;
+    shExactTotals?: Record<string, number>;
+    htLineProbs?: Record<string, number>;
+    secondHalfLineProbs?: Record<string, number>;
+    htHandicapProbs?: Record<string, number>;
+    shHandicapProbs?: Record<string, number>;
   };
   hedgeReport: {
     advices: Array<{
@@ -569,6 +690,9 @@ export interface SuperbetLiveAdvice {
     summary: string;
   } | null;
 }
+
+/** Bilhete combo KXL (pré-jogo ou in-play via strategy.comboTicket). */
+export type WcComboTicket = NonNullable<NonNullable<SuperbetLiveAdvice["strategy"]>["comboTicket"]>;
 
 export interface WcSquadPlayer {
   name: string;

@@ -1506,6 +1506,35 @@ async def worldcup_superbet_event(
     return WcSuperbetEventResponse(**snapshot.to_dict())
 
 
+@app.get("/worldcup/combo-ticket")
+async def worldcup_combo_ticket(
+    home_team: str = Query(..., description="Seleção mandante"),
+    away_team: str = Query(..., description="Seleção visitante"),
+    bankroll: float = Query(1000, gt=0),
+    superbet_event_id: int | None = Query(
+        None,
+        description="Opcional: cruza odds/EV com snapshot Superbet deste evento",
+    ),
+):
+    """Monta bilhete combo KXL (padrões 9/10–10/10) com odds Superbet opcionais."""
+    from ingest.superbet.client import SuperbetClient, SuperbetClientError
+    from models.wc_team_patterns import build_combo_ticket
+
+    snapshot = None
+    if superbet_event_id is not None:
+        try:
+            snapshot = await asyncio.to_thread(SuperbetClient().fetch_event, superbet_event_id)
+        except SuperbetClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return build_combo_ticket(
+        home_team,
+        away_team,
+        bankroll=bankroll,
+        snapshot=snapshot,
+    )
+
+
 @app.post("/worldcup/bet/advice", response_model=WcBetAdviceResponse)
 def worldcup_bet_advice(req: WcBetAdviceRequest):
     """Captura jogo ao vivo (Superbet), roda modelo e recomenda cash-out / aporte."""

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,7 +38,17 @@ class Settings(BaseSettings):
     superbet_locale: str = "pt-BR"
     superbet_timeout_sec: float = 45.0
     superbet_odds_path: Path = Path("data/rounds/superbet_odds.json")
-    sofascore_min_interval_sec: float = 0.12
+    sofascore_min_interval_sec: float = Field(
+        default=0.12,
+        validation_alias=AliasChoices(
+            "sofascore_min_interval_sec",
+            "SOFASCORE_MIN_INTERVAL_SEC",
+            "SOFASCORE_MIN_INTERVAL_SECONDS",
+        ),
+    )
+    sofascore_waf_max_retries: int = 3
+    sofascore_waf_retry_base_sec: float = 5.0
+    sofascore_waf_fail_fast_after: int = 8
     sofascore_fept_dir: Path = Path("data/lake/fept")
     sofascore_stats_dir: Path = Path("data/lake/sofascore")
     sofascore_enrich_dir: Path = Path("data/lake/sofascore/enrich")
@@ -91,6 +102,14 @@ class Settings(BaseSettings):
     live_ev_min_edge: float = 0.04
     coase_bookmaker_margin: float = 0.05
     coase_transaction_cost: float = 0.0
+    # Finalização automática Superbet (salvar gold + retreino in-play)
+    superbet_finalize_enabled: bool = True
+    superbet_finalize_retrain: bool = True
+    superbet_finalize_user_id: str = "jamarorn"
+    superbet_finalize_retrain_gbm: bool = True
+    superbet_finalize_retrain_feedback: bool = True
+    superbet_finalize_retrain_coefficients: bool = False
+    superbet_finalize_min_confidence: float = 0.7
     # ── Guardas de qualidade de aposta ──
     live_min_market_odd: float = 1.25  # nunca recomendar abaixo desta odd
     live_min_edge_pp: float = 5.0  # mínimo 5pp de edge (model_prob - implied_prob)

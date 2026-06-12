@@ -21,6 +21,7 @@ import {
   mapSuperbetLiveFeed,
   mapSuperbetLiveAdvice,
   mapSuperbetEvent,
+  mapComboTicket,
   mapWcSimulation,
   mapUserOpenBets,
 } from "../mappers";
@@ -198,6 +199,27 @@ export class WcApiRepository implements IWcRepository {
       { timeoutMs: 30_000 },
     );
     return mapSuperbetEvent(raw);
+  }
+
+  async getComboTicket(dto: {
+    homeTeam: string;
+    awayTeam: string;
+    bankroll?: number;
+    superbetEventId?: number;
+  }) {
+    const params = new URLSearchParams({
+      home_team: dto.homeTeam,
+      away_team: dto.awayTeam,
+    });
+    if (dto.bankroll != null) params.set("bankroll", String(dto.bankroll));
+    if (dto.superbetEventId != null) {
+      params.set("superbet_event_id", String(dto.superbetEventId));
+    }
+    const raw = await apiFetch<Record<string, unknown>>(
+      `/worldcup/combo-ticket?${params}`,
+      { timeoutMs: 30_000 },
+    );
+    return mapComboTicket(raw)!;
   }
 
   async getSuperbetLiveAdvice(dto: {

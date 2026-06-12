@@ -3,7 +3,11 @@ from models.wc_inplay import (
     bayesian_lambda_update,
     _apply_guaranteed_lines,
     _apply_team_guaranteed_lines,
+    _exact_goals_distribution,
+    _handicap_probs,
+    _score_distribution,
 )
+import numpy as np
 
 
 def test_inplay_1x1_at_17_needs_one_for_over25():
@@ -56,6 +60,7 @@ def test_inplay_combo_markets_present():
     assert r.combo_markets["ft_draw_and_btts"] > 0.2
     assert "X/X" in r.top_ht_ft or "X/1" in r.top_ht_ft
     assert abs(r.prob_ht_home + r.prob_ht_draw + r.prob_ht_away - 1.0) < 0.02
+    assert abs(r.prob_sh_home + r.prob_sh_draw + r.prob_sh_away - 1.0) < 0.02
 
 
 # --- P0.1: Testes Bayesian lambda update ---
@@ -224,3 +229,99 @@ def test_simulate_inplay_guaranteed_over_with_high_score():
     assert r.team_final_line_probs["home_over_2_5"] == 1.0
     assert r.team_final_line_probs["away_over_0_5"] == 1.0
     assert r.team_final_line_probs["away_over_1_5"] == 1.0
+
+
+def test_half_market_probs_present_in_simulation():
+    r = simulate_inplay(
+        home_team="Brasil",
+        away_team="Egito",
+        home_score=0,
+        away_score=0,
+        minute=20,
+        lambda_full_home=1.4,
+        lambda_full_away=0.9,
+        n_simulations=6000,
+        random_seed=13,
+    )
+    assert r.ht_correct_scores
+    assert r.sh_correct_scores
+    assert r.ht_exact_totals
+    assert r.sh_exact_totals
+    assert r.ht_home_exact
+    assert r.ht_away_exact
+    assert r.sh_home_exact
+    assert r.ht_handicap_probs
+    assert r.sh_handicap_probs
+    d = r.to_dict()
+    assert "ht_correct_scores" in d
+    assert "sh_exact_totals" in d
+
+
+def test_exact_goals_distribution_sums_to_one():
+    goals = np.array([0, 0, 1, 1, 2, 3, 3, 3, 6, 7])
+    dist = _exact_goals_distribution(goals, len(goals), max_goals=5)
+    assert abs(sum(dist.values()) - 1.0) < 1e-9
+    assert dist["0"] == 0.2
+    assert dist["3"] == 0.3
+    assert dist["5+"] == 0.2
+
+
+def test_score_distribution_top_scores():
+    h = np.array([1, 1, 0, 2])
+    a = np.array([0, 1, 0, 1])
+    dist = _score_distribution(h, a, len(h), top_k=5)
+    assert dist["1x0"] == 0.25
+    assert dist["1x1"] == 0.25
+    assert sum(dist.values()) == 1.0
+
+
+def test_handicap_probs_match_ht_outcome_at_zero_line():
+    h = np.array([2, 1, 1, 0, 0])
+    a = np.array([0, 1, 0, 0, 1])
+    n = len(h)
+    probs = _handicap_probs(h, a, n, lines=(0.0,))
+    assert abs(probs["home_0"] - np.sum(h > a) / n) < 1e-9
+    assert abs(probs["away_0"] - np.sum(h < a) / n) < 1e-9
+
+
+def test_ht_markets_deterministic_after_halftime():
+    """Com intervalo encerrado (1x0 HT), mercados de 1º tempo colapsam no placar HT."""
+    r = simulate_inplay(
+        home_team="México",
+        away_team="África do Sul",
+        home_score=1,
+        away_score=0,
+        minute=55,
+        ht_home_score=1,
+        ht_away_score=0,
+        lambda_full_home=1.2,
+        lambda_full_away=0.8,
+        n_simulations=4000,
+        random_seed=21,
+    )
+    assert r.ht_correct_scores.get("1x0", 0) == 1.0
+    assert r.ht_exact_totals.get("1", 0) == 1.0
+    assert r.ht_home_exact.get("1", 0) == 1.0
+    assert r.ht_away_exact.get("0", 0) == 1.0
+    assert r.ht_handicap_probs.get("home_0", 0) == 1.0
+    assert r.ht_handicap_probs.get("away_0", 0) == 0.0
+    assert r.ht_line_probs["over_0_5"] == 1.0
+    assert r.ht_line_probs["under_0_5"] == 0.0
+
+
+def test_exact_totals_sum_to_one_in_first_half():
+    r = simulate_inplay(
+        home_team="Brasil",
+        away_team="Egito",
+        home_score=0,
+        away_score=0,
+        minute=10,
+        lambda_full_home=1.3,
+        lambda_full_away=1.1,
+        n_simulations=8000,
+        random_seed=5,
+    )
+    assert abs(sum(r.ht_exact_totals.values()) - 1.0) < 0.02
+    assert abs(sum(r.sh_exact_totals.values()) - 1.0) < 0.02
+    assert abs(sum(r.ht_home_exact.values()) - 1.0) < 0.02
+    assert abs(sum(r.sh_away_exact.values()) - 1.0) < 0.02

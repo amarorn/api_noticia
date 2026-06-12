@@ -83,6 +83,9 @@ class InPlayResult:
     prob_ht_home: float
     prob_ht_draw: float
     prob_ht_away: float
+    prob_sh_home: float
+    prob_sh_draw: float
+    prob_sh_away: float
     prob_no_more_goals: float
     prob_next_goal_home: float
     prob_next_goal_away: float
@@ -92,6 +95,16 @@ class InPlayResult:
     second_half_line_probs: dict[str, float]
     team_final_line_probs: dict[str, float]
     top_final_scores: dict[str, float]
+    ht_correct_scores: dict[str, float]
+    sh_correct_scores: dict[str, float]
+    ht_exact_totals: dict[str, float]
+    sh_exact_totals: dict[str, float]
+    ht_home_exact: dict[str, float]
+    ht_away_exact: dict[str, float]
+    sh_home_exact: dict[str, float]
+    sh_away_exact: dict[str, float]
+    ht_handicap_probs: dict[str, float]
+    sh_handicap_probs: dict[str, float]
     top_ht_ft: dict[str, float]
     combo_markets: dict[str, float]
     btts_final: float
@@ -117,6 +130,9 @@ class InPlayResult:
             "prob_ht_home": round(self.prob_ht_home, 4),
             "prob_ht_draw": round(self.prob_ht_draw, 4),
             "prob_ht_away": round(self.prob_ht_away, 4),
+            "prob_sh_home": round(self.prob_sh_home, 4),
+            "prob_sh_draw": round(self.prob_sh_draw, 4),
+            "prob_sh_away": round(self.prob_sh_away, 4),
             "prob_no_more_goals": round(self.prob_no_more_goals, 4),
             "prob_next_goal_home": round(self.prob_next_goal_home, 4),
             "prob_next_goal_away": round(self.prob_next_goal_away, 4),
@@ -126,6 +142,16 @@ class InPlayResult:
             "second_half_line_probs": {k: round(v, 4) for k, v in self.second_half_line_probs.items()},
             "team_final_line_probs": {k: round(v, 4) for k, v in self.team_final_line_probs.items()},
             "top_final_scores": self.top_final_scores,
+            "ht_correct_scores": self.ht_correct_scores,
+            "sh_correct_scores": self.sh_correct_scores,
+            "ht_exact_totals": {k: round(v, 4) for k, v in self.ht_exact_totals.items()},
+            "sh_exact_totals": {k: round(v, 4) for k, v in self.sh_exact_totals.items()},
+            "ht_home_exact": {k: round(v, 4) for k, v in self.ht_home_exact.items()},
+            "ht_away_exact": {k: round(v, 4) for k, v in self.ht_away_exact.items()},
+            "sh_home_exact": {k: round(v, 4) for k, v in self.sh_home_exact.items()},
+            "sh_away_exact": {k: round(v, 4) for k, v in self.sh_away_exact.items()},
+            "ht_handicap_probs": {k: round(v, 4) for k, v in self.ht_handicap_probs.items()},
+            "sh_handicap_probs": {k: round(v, 4) for k, v in self.sh_handicap_probs.items()},
             "top_ht_ft": self.top_ht_ft,
             "combo_markets": {k: round(v, 4) for k, v in self.combo_markets.items()},
             "btts_final": round(self.btts_final, 4),
@@ -295,6 +321,88 @@ def _top_ht_ft(ht_h: np.ndarray, ht_a: np.ndarray, final_h: np.ndarray, final_a:
         key = f"{ho}/{fo}"
         counts[key] = counts.get(key, 0) + 1
     return {k: round(v / n, 4) for k, v in sorted(counts.items(), key=lambda x: -x[1])[:9]}
+
+
+_HALF_HANDICAP_LINES = (-1.5, -0.5, 0.0, 0.5, 1.5)
+_HALF_EXACT_MAX_GOALS = 5
+
+
+def _handicap_line_key(line: float) -> str:
+    """Formata linha de handicap para chave estável (-0.5 → m0_5, 1.5 → p1_5)."""
+    if line == 0.0:
+        return "0"
+    sign = "p" if line > 0 else "m"
+    return f"{sign}{abs(line):g}".replace(".", "_")
+
+
+def _score_distribution(
+    h: np.ndarray,
+    a: np.ndarray,
+    n: int,
+    *,
+    top_k: int = 12,
+) -> dict[str, float]:
+    """Resultado correto por período (ex.: 1x0 → 0.18)."""
+    counts: dict[str, int] = {}
+    for hi, ai in zip(h, a, strict=False):
+        key = f"{int(hi)}x{int(ai)}"
+        counts[key] = counts.get(key, 0) + 1
+    return {k: round(v / n, 4) for k, v in sorted(counts.items(), key=lambda x: -x[1])[:top_k]}
+
+
+def _exact_goals_distribution(
+    goals: np.ndarray,
+    n: int,
+    *,
+    max_goals: int = _HALF_EXACT_MAX_GOALS,
+) -> dict[str, float]:
+    """Número exato de gols (total ou por time): 0, 1, 2, …, 5+."""
+    out: dict[str, float] = {}
+    for g in range(max_goals + 1):
+        out[str(g)] = float(np.sum(goals == g) / n)
+    out[f"{max_goals}+"] = float(np.sum(goals > max_goals) / n)
+    return out
+
+
+def _handicap_probs(
+    h: np.ndarray,
+    a: np.ndarray,
+    n: int,
+    lines: tuple[float, ...] = _HALF_HANDICAP_LINES,
+) -> dict[str, float]:
+    """Handicap europeu/asiático simples: home_cover = P(h - a + line > 0)."""
+    diff = h.astype(float) - a.astype(float)
+    out: dict[str, float] = {}
+    for line in lines:
+        lk = _handicap_line_key(line)
+        out[f"home_{lk}"] = float(np.sum(diff + line > 0) / n)
+        out[f"away_{lk}"] = float(np.sum(-diff - line > 0) / n)
+    return out
+
+
+def _half_market_probs(
+    *,
+    ht_h: np.ndarray,
+    ht_a: np.ndarray,
+    h_2h: np.ndarray,
+    a_2h: np.ndarray,
+    n: int,
+) -> dict[str, dict[str, float]]:
+    """Agrega mercados de 1º e 2º tempo a partir dos arrays MC."""
+    ht_total = ht_h + ht_a
+    sh_total = h_2h + a_2h
+    return {
+        "ht_correct_scores": _score_distribution(ht_h, ht_a, n),
+        "sh_correct_scores": _score_distribution(h_2h, a_2h, n),
+        "ht_exact_totals": _exact_goals_distribution(ht_total, n),
+        "sh_exact_totals": _exact_goals_distribution(sh_total, n),
+        "ht_home_exact": _exact_goals_distribution(ht_h, n),
+        "ht_away_exact": _exact_goals_distribution(ht_a, n),
+        "sh_home_exact": _exact_goals_distribution(h_2h, n),
+        "sh_away_exact": _exact_goals_distribution(a_2h, n),
+        "ht_handicap_probs": _handicap_probs(ht_h, ht_a, n),
+        "sh_handicap_probs": _handicap_probs(h_2h, a_2h, n),
+    }
 
 
 def simulate_inplay(
@@ -483,6 +591,9 @@ def simulate_inplay(
     ht_home_wins = int(np.sum(ht_h > ht_a))
     ht_draws = int(np.sum(ht_h == ht_a))
     ht_away_wins = int(np.sum(ht_h < ht_a))
+    sh_home_wins = int(np.sum(h_2h > a_2h))
+    sh_draws = int(np.sum(h_2h == a_2h))
+    sh_away_wins = int(np.sum(h_2h < a_2h))
     no_more = int(np.sum((h_rem == 0) & (a_rem == 0)))
 
     lam_sum = lam_h + lam_a
@@ -521,6 +632,22 @@ def simulate_inplay(
     team_lines = _team_final_lines(final_h, final_a)
     team_lines = _apply_team_guaranteed_lines(team_lines, home_score, away_score)
 
+    ht_lp = _line_probs_from_totals(ht_total, [0.5, 1.5, 2.5])
+    sh_lp = _line_probs_from_totals(sh_total, [0.5, 1.5, 2.5])
+    if minute > match_minutes // 2:
+        ht_current_total = int(ht_total[0])
+        ht_lp = _apply_guaranteed_lines(ht_lp, ht_current_total)
+        sh_current_total = int(h_2h[0]) + int(a_2h[0])
+        sh_lp = _apply_guaranteed_lines(sh_lp, sh_current_total)
+
+    half_markets = _half_market_probs(
+        ht_h=ht_h,
+        ht_a=ht_a,
+        h_2h=h_2h,
+        a_2h=a_2h,
+        n=n,
+    )
+
     return InPlayResult(
         home_team=home_team,
         away_team=away_team,
@@ -540,15 +667,28 @@ def simulate_inplay(
         prob_ht_home=ht_home_wins / n,
         prob_ht_draw=ht_draws / n,
         prob_ht_away=ht_away_wins / n,
+        prob_sh_home=sh_home_wins / n,
+        prob_sh_draw=sh_draws / n,
+        prob_sh_away=sh_away_wins / n,
         prob_no_more_goals=no_more / n,
         prob_next_goal_home=p_next_home,
         prob_next_goal_away=p_next_away,
         final_line_probs=final_lp,
         remainder_line_probs=_line_probs_from_totals(rem_total, [0.5, 1.5, 2.5]),
-        ht_line_probs=_line_probs_from_totals(ht_total, [0.5, 1.5, 2.5]),
-        second_half_line_probs=_line_probs_from_totals(sh_total, [0.5, 1.5, 2.5]),
+        ht_line_probs=ht_lp,
+        second_half_line_probs=sh_lp,
         team_final_line_probs=team_lines,
         top_final_scores=top_final,
+        ht_correct_scores=half_markets["ht_correct_scores"],
+        sh_correct_scores=half_markets["sh_correct_scores"],
+        ht_exact_totals=half_markets["ht_exact_totals"],
+        sh_exact_totals=half_markets["sh_exact_totals"],
+        ht_home_exact=half_markets["ht_home_exact"],
+        ht_away_exact=half_markets["ht_away_exact"],
+        sh_home_exact=half_markets["sh_home_exact"],
+        sh_away_exact=half_markets["sh_away_exact"],
+        ht_handicap_probs=half_markets["ht_handicap_probs"],
+        sh_handicap_probs=half_markets["sh_handicap_probs"],
         top_ht_ft=_top_ht_ft(ht_h, ht_a, final_h, final_a, n),
         combo_markets=combo,
         btts_final=btts,

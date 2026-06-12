@@ -336,7 +336,7 @@
       "TeamAPointsBefore": 954.928349,
       "TeamBPoints": 977.574906,
       "TeamBPointsBefore": 972.745782,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43828",
       "TeamBId": "20000",
       "HomeTeam": {
@@ -462,7 +462,7 @@
       "TeamAPointsBefore": 977.574906,
       "TeamBPoints": 837.151593,
       "TeamBPointsBefore": 830.779322,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20000",
       "TeamBId": "43832",
       "HomeTeam": {
@@ -588,7 +588,7 @@
       "TeamAPointsBefore": 837.151593,
       "TeamBPoints": 968.073401,
       "TeamBPointsBefore": 971.202635,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43832",
       "TeamBId": "20000",
       "HomeTeam": {
@@ -936,7 +936,7 @@
       "TeamAPointsBefore": 1447.135319,
       "TeamBPoints": 944.705799,
       "TeamBPointsBefore": 945.341934,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43818",
       "TeamBId": "20001",
       "HomeTeam": {
@@ -1052,7 +1052,7 @@
       "TeamAPointsBefore": 944.705799,
       "TeamBPoints": 799.89206,
       "TeamBPointsBefore": 803.570149,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20001",
       "TeamBId": "43956",
       "HomeTeam": {
@@ -1168,7 +1168,7 @@
       "TeamAPointsBefore": 1317.166862,
       "TeamBPoints": 946.429826,
       "TeamBPointsBefore": 948.383888,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1942535",
       "TeamBId": "20001",
       "HomeTeam": {
@@ -2292,7 +2292,7 @@
       "TeamAPointsBefore": 911.538277,
       "TeamBPoints": 875.845061,
       "TeamBPointsBefore": 880.548088,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44009",
       "TeamBId": "20003",
       "HomeTeam": {
@@ -2408,7 +2408,7 @@
       "TeamAPointsBefore": 871.820215,
       "TeamBPoints": 870.806447,
       "TeamBPointsBefore": 875.845061,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43837",
       "TeamBId": "20003",
       "HomeTeam": {
@@ -3028,7 +3028,7 @@
       "TeamAPointsBefore": 810.14071,
       "TeamBPoints": 777.405734,
       "TeamBPointsBefore": 782.137325,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1941613",
       "TeamBId": "20004",
       "HomeTeam": {
@@ -4147,7 +4147,7 @@
       "TeamAPointsBefore": 1094.097577,
       "TeamBPoints": 822.802184,
       "TeamBPointsBefore": 825.430997,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43833",
       "TeamBId": "20007",
       "HomeTeam": {
@@ -4273,7 +4273,7 @@
       "TeamAPointsBefore": 1011.876799,
       "TeamBPoints": 819.540575,
       "TeamBPointsBefore": 822.802184,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43829",
       "TeamBId": "20007",
       "HomeTeam": {
@@ -4767,7 +4767,7 @@
       "TeamAPointsBefore": 1059.530429,
       "TeamBPoints": 878.081276,
       "TeamBPointsBefore": 879.751523,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43836",
       "TeamBId": "20008",
       "HomeTeam": {
@@ -4883,7 +4883,7 @@
       "TeamAPointsBefore": 1026.628751,
       "TeamBPoints": 874.469074,
       "TeamBPointsBefore": 878.081276,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43814",
       "TeamBId": "20008",
       "HomeTeam": {
@@ -7862,7 +7862,7 @@
       "TeamAPointsBefore": 1478.350424,
       "TeamBPoints": 1619.474248,
       "TeamBPointsBefore": 1620.807946,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20014",
       "TeamBId": "43941",
       "HomeTeam": {
@@ -7978,7 +7978,7 @@
       "TeamAPointsBefore": 1479.684122,
       "TeamBPoints": 1458.196344,
       "TeamBPointsBefore": 1452.939983,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20014",
       "TeamBId": "43925",
       "HomeTeam": {
@@ -8598,7 +8598,7 @@
       "TeamAPointsBefore": 1351.140994,
       "TeamBPoints": 1254.406799,
       "TeamBPointsBefore": 1258.527492,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43947",
       "TeamBId": "43808",
       "HomeTeam": {
@@ -9198,7 +9198,7 @@
       "TeamAPointsBefore": 726.330601,
       "TeamBPoints": 902.92965,
       "TeamBPointsBefore": 899.532777,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43966",
       "TeamBId": "43809",
       "HomeTeam": {
@@ -9828,7 +9828,7 @@
       "TeamAPointsBefore": 825.639984,
       "TeamBPoints": 857.733061,
       "TeamBPointsBefore": 863.09176,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1890334",
       "TeamBId": "43810",
       "HomeTeam": {
@@ -10322,7 +10322,7 @@
       "TeamAPointsBefore": 1061.200676,
       "TeamBPoints": 1254.848285,
       "TeamBPointsBefore": 1251.597821,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43836",
       "TeamBId": "43812",
       "HomeTeam": {
@@ -10438,7 +10438,7 @@
       "TeamAPointsBefore": 1254.848285,
       "TeamBPoints": 1250.803064,
       "TeamBPointsBefore": 1250.763879,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43812",
       "TeamBId": "43839",
       "HomeTeam": {
@@ -11542,7 +11542,7 @@
       "TeamAPointsBefore": 1026.628751,
       "TeamBPoints": 874.469074,
       "TeamBPointsBefore": 878.081276,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43814",
       "TeamBId": "20008",
       "HomeTeam": {
@@ -11658,7 +11658,7 @@
       "TeamAPointsBefore": 916.241304,
       "TeamBPoints": 1024.164346,
       "TeamBPointsBefore": 1030.240953,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44009",
       "TeamBId": "43814",
       "HomeTeam": {
@@ -11910,7 +11910,7 @@
       "TeamAPointsBefore": 1357.996558,
       "TeamBPoints": 1089.707157,
       "TeamBPointsBefore": 1091.027887,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43910",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -12036,7 +12036,7 @@
       "TeamAPointsBefore": 1117.409716,
       "TeamBPoints": 1087.339923,
       "TeamBPointsBefore": 1089.707157,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43892",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -12152,7 +12152,7 @@
       "TeamAPointsBefore": 1221.78095,
       "TeamBPoints": 1083.601894,
       "TeamBPointsBefore": 1087.339923,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44003",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -12268,7 +12268,7 @@
       "TeamAPointsBefore": 1225.518979,
       "TeamBPoints": 1084.930775,
       "TeamBPointsBefore": 1083.601894,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44003",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -12762,7 +12762,7 @@
       "TeamAPointsBefore": 1144.884887,
       "TeamBPoints": 1306.901717,
       "TeamBPointsBefore": 1313.464945,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43816",
       "TeamBId": "43831",
       "HomeTeam": {
@@ -12878,7 +12878,7 @@
       "TeamAPointsBefore": 1151.448115,
       "TeamBPoints": 1218.616571,
       "TeamBPointsBefore": 1224.311107,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43816",
       "TeamBId": "43873",
       "HomeTeam": {
@@ -13352,7 +13352,7 @@
       "TeamAPointsBefore": 1615.300338,
       "TeamBPoints": 1159.637808,
       "TeamBPointsBefore": 1160.380685,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43817",
       "TeamBId": "43859",
       "HomeTeam": {
@@ -13468,7 +13468,7 @@
       "TeamAPointsBefore": 1459.125074,
       "TeamBPoints": 1619.58163,
       "TeamBPointsBefore": 1616.043215,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43869",
       "TeamBId": "43817",
       "HomeTeam": {
@@ -13831,7 +13831,7 @@
       "TeamAPointsBefore": 1447.135319,
       "TeamBPoints": 944.705799,
       "TeamBPointsBefore": 945.341934,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43818",
       "TeamBId": "20001",
       "HomeTeam": {
@@ -13947,7 +13947,7 @@
       "TeamAPointsBefore": 1876.395199,
       "TeamBPoints": 1451.153466,
       "TeamBPointsBefore": 1447.771454,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43969",
       "TeamBId": "43818",
       "HomeTeam": {
@@ -14063,7 +14063,7 @@
       "TeamAPointsBefore": 1464.303811,
       "TeamBPoints": 1446.279605,
       "TeamBPointsBefore": 1451.153466,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43931",
       "TeamBId": "43818",
       "HomeTeam": {
@@ -14643,7 +14643,7 @@
       "TeamAPointsBefore": 1660.427891,
       "TeamBPoints": 1343.920201,
       "TeamBPointsBefore": 1345.068497,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43819",
       "TeamBId": "43951",
       "HomeTeam": {
@@ -15112,7 +15112,7 @@
       "TeamAPointsBefore": 1649.39683,
       "TeamBPoints": 1390.099732,
       "TeamBPointsBefore": 1391.4544,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43971",
       "TeamBId": "43820",
       "HomeTeam": {
@@ -15228,7 +15228,7 @@
       "TeamAPointsBefore": 1695.990348,
       "TeamBPoints": 1387.738222,
       "TeamBPointsBefore": 1390.099732,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43926",
       "TeamBId": "43820",
       "HomeTeam": {
@@ -16312,7 +16312,7 @@
       "TeamAPointsBefore": 1588.663904,
       "TeamBPoints": 1221.951833,
       "TeamBPointsBefore": 1222.93812,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43822",
       "TeamBId": "43920",
       "HomeTeam": {
@@ -16428,7 +16428,7 @@
       "TeamAPointsBefore": 1589.650191,
       "TeamBPoints": 1223.278065,
       "TeamBPointsBefore": 1225.25876,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43822",
       "TeamBId": "43904",
       "HomeTeam": {
@@ -17048,7 +17048,7 @@
       "TeamAPointsBefore": 1252.138301,
       "TeamBPoints": 1106.474587,
       "TeamBPointsBefore": 1105.100165,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43839",
       "TeamBId": "43823",
       "HomeTeam": {
@@ -18308,7 +18308,7 @@
       "TeamAPointsBefore": 1187.960362,
       "TeamBPoints": 1065.236881,
       "TeamBPointsBefore": 1049.491681,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43825",
       "TeamBId": "43842",
       "HomeTeam": {
@@ -20052,7 +20052,7 @@
       "TeamAPointsBefore": 954.928349,
       "TeamBPoints": 977.574906,
       "TeamBPointsBefore": 972.745782,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43828",
       "TeamBId": "20000",
       "HomeTeam": {
@@ -20178,7 +20178,7 @@
       "TeamAPointsBefore": 950.099225,
       "TeamBPoints": 830.779322,
       "TeamBPointsBefore": 824.597998,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43828",
       "TeamBId": "43832",
       "HomeTeam": {
@@ -20682,7 +20682,7 @@
       "TeamAPointsBefore": 1011.876799,
       "TeamBPoints": 819.540575,
       "TeamBPointsBefore": 822.802184,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43829",
       "TeamBId": "20007",
       "HomeTeam": {
@@ -20808,7 +20808,7 @@
       "TeamAPointsBefore": 1096.72639,
       "TeamBPoints": 1010.914839,
       "TeamBPointsBefore": 1015.138408,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43833",
       "TeamBId": "43829",
       "HomeTeam": {
@@ -22048,7 +22048,7 @@
       "TeamAPointsBefore": 1144.884887,
       "TeamBPoints": 1306.901717,
       "TeamBPointsBefore": 1313.464945,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43816",
       "TeamBId": "43831",
       "HomeTeam": {
@@ -22426,7 +22426,7 @@
       "TeamAPointsBefore": 950.099225,
       "TeamBPoints": 830.779322,
       "TeamBPointsBefore": 824.597998,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43828",
       "TeamBId": "43832",
       "HomeTeam": {
@@ -22552,7 +22552,7 @@
       "TeamAPointsBefore": 977.574906,
       "TeamBPoints": 837.151593,
       "TeamBPointsBefore": 830.779322,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20000",
       "TeamBId": "43832",
       "HomeTeam": {
@@ -22678,7 +22678,7 @@
       "TeamAPointsBefore": 837.151593,
       "TeamBPoints": 968.073401,
       "TeamBPointsBefore": 971.202635,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43832",
       "TeamBId": "20000",
       "HomeTeam": {
@@ -23182,7 +23182,7 @@
       "TeamAPointsBefore": 1094.097577,
       "TeamBPoints": 822.802184,
       "TeamBPointsBefore": 825.430997,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43833",
       "TeamBId": "20007",
       "HomeTeam": {
@@ -23308,7 +23308,7 @@
       "TeamAPointsBefore": 1096.72639,
       "TeamBPoints": 1010.914839,
       "TeamBPointsBefore": 1015.138408,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43833",
       "TeamBId": "43829",
       "HomeTeam": {
@@ -23802,7 +23802,7 @@
       "TeamAPointsBefore": 1437.375237,
       "TeamBPoints": 1452.374271,
       "TeamBPointsBefore": 1454.958587,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43953",
       "TeamBId": "43834",
       "HomeTeam": {
@@ -23918,7 +23918,7 @@
       "TeamAPointsBefore": 1223.278065,
       "TeamBPoints": 1450.307729,
       "TeamBPointsBefore": 1452.374271,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43904",
       "TeamBId": "43834",
       "HomeTeam": {
@@ -24266,7 +24266,7 @@
       "TeamAPointsBefore": 1421.427596,
       "TeamBPoints": 1596.481634,
       "TeamBPointsBefore": 1594.78386,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43835",
       "TeamBId": "43927",
       "HomeTeam": {
@@ -24382,7 +24382,7 @@
       "TeamAPointsBefore": 1026.105829,
       "TeamBPoints": 1421.538339,
       "TeamBPointsBefore": 1419.729822,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43915",
       "TeamBId": "43835",
       "HomeTeam": {
@@ -24498,7 +24498,7 @@
       "TeamAPointsBefore": 1686.412769,
       "TeamBPoints": 1423.881229,
       "TeamBPointsBefore": 1421.538339,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43879",
       "TeamBId": "43835",
       "HomeTeam": {
@@ -24982,7 +24982,7 @@
       "TeamAPointsBefore": 1059.530429,
       "TeamBPoints": 878.081276,
       "TeamBPointsBefore": 879.751523,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43836",
       "TeamBId": "20008",
       "HomeTeam": {
@@ -25098,7 +25098,7 @@
       "TeamAPointsBefore": 1061.200676,
       "TeamBPoints": 1254.848285,
       "TeamBPointsBefore": 1251.597821,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43836",
       "TeamBId": "43812",
       "HomeTeam": {
@@ -25718,7 +25718,7 @@
       "TeamAPointsBefore": 871.820215,
       "TeamBPoints": 870.806447,
       "TeamBPointsBefore": 875.845061,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43837",
       "TeamBId": "20003",
       "HomeTeam": {
@@ -26333,7 +26333,7 @@
       "TeamAPointsBefore": 1235.820374,
       "TeamBPoints": 1283.051902,
       "TeamBPointsBefore": 1288.556135,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43937",
       "TeamBId": "43838",
       "HomeTeam": {
@@ -26817,7 +26817,7 @@
       "TeamAPointsBefore": 1252.138301,
       "TeamBPoints": 1106.474587,
       "TeamBPointsBefore": 1105.100165,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43839",
       "TeamBId": "43823",
       "HomeTeam": {
@@ -26933,7 +26933,7 @@
       "TeamAPointsBefore": 1254.848285,
       "TeamBPoints": 1250.803064,
       "TeamBPointsBefore": 1250.763879,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43812",
       "TeamBId": "43839",
       "HomeTeam": {
@@ -28798,7 +28798,7 @@
       "TeamAPointsBefore": 1187.960362,
       "TeamBPoints": 1065.236881,
       "TeamBPointsBefore": 1049.491681,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43825",
       "TeamBId": "43842",
       "HomeTeam": {
@@ -29398,7 +29398,7 @@
       "TeamAPointsBefore": 1757.874428,
       "TeamBPoints": 1571.033293,
       "TeamBPointsBefore": 1564.2567,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43960",
       "TeamBId": "43843",
       "HomeTeam": {
@@ -29892,7 +29892,7 @@
       "TeamAPointsBefore": 1263.096811,
       "TeamBPoints": 1171.596379,
       "TeamBPointsBefore": 1170.719266,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43844",
       "TeamBId": "43870",
       "HomeTeam": {
@@ -30008,7 +30008,7 @@
       "TeamAPointsBefore": 1262.219698,
       "TeamBPoints": 1080.824745,
       "TeamBPointsBefore": 1084.180103,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43844",
       "TeamBId": "43851",
       "HomeTeam": {
@@ -30482,7 +30482,7 @@
       "TeamAPointsBefore": 1258.980021,
       "TeamBPoints": 1180.416678,
       "TeamBPointsBefore": 1179.66151,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43845",
       "TeamBId": "43875",
       "HomeTeam": {
@@ -30598,7 +30598,7 @@
       "TeamAPointsBefore": 1258.224853,
       "TeamBPoints": 1152.757527,
       "TeamBPointsBefore": 1146.703618,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43845",
       "TeamBId": "43887",
       "HomeTeam": {
@@ -31702,7 +31702,7 @@
       "TeamAPointsBefore": 1523.28433,
       "TeamBPoints": 1408.541965,
       "TeamBPointsBefore": 1412.494766,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43965",
       "TeamBId": "43847",
       "HomeTeam": {
@@ -31818,7 +31818,7 @@
       "TeamAPointsBefore": 1241.324607,
       "TeamBPoints": 1406.990543,
       "TeamBPointsBefore": 1408.541965,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43937",
       "TeamBId": "43847",
       "HomeTeam": {
@@ -33572,7 +33572,7 @@
       "TeamAPointsBefore": 1366.125478,
       "TeamBPoints": 1505.483338,
       "TeamBPointsBefore": 1508.650488,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43850",
       "TeamBId": "1902465",
       "HomeTeam": {
@@ -33688,7 +33688,7 @@
       "TeamAPointsBefore": 976.869098,
       "TeamBPoints": 1371.10798,
       "TeamBPointsBefore": 1369.292628,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43898",
       "TeamBId": "43850",
       "HomeTeam": {
@@ -34182,7 +34182,7 @@
       "TeamAPointsBefore": 1147.31212,
       "TeamBPoints": 1084.180103,
       "TeamBPointsBefore": 1083.571601,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43887",
       "TeamBId": "43851",
       "HomeTeam": {
@@ -34298,7 +34298,7 @@
       "TeamAPointsBefore": 1262.219698,
       "TeamBPoints": 1080.824745,
       "TeamBPointsBefore": 1084.180103,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43844",
       "TeamBId": "43851",
       "HomeTeam": {
@@ -36138,7 +36138,7 @@
       "TeamAPointsBefore": 1877.322731,
       "TeamBPoints": 1540.869533,
       "TeamBPointsBefore": 1532.975251,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43946",
       "TeamBId": "43854",
       "HomeTeam": {
@@ -36612,7 +36612,7 @@
       "TeamAPointsBefore": 1563.241764,
       "TeamBPoints": 1523.28433,
       "TeamBPointsBefore": 1525.604093,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43855",
       "TeamBId": "43965",
       "HomeTeam": {
@@ -36728,7 +36728,7 @@
       "TeamAPointsBefore": 1762.662016,
       "TeamBPoints": 1562.367246,
       "TeamBPointsBefore": 1565.561527,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43924",
       "TeamBId": "43855",
       "HomeTeam": {
@@ -37832,7 +37832,7 @@
       "TeamAPointsBefore": 1071.546532,
       "TeamBPoints": 1122.488082,
       "TeamBPointsBefore": 1128.027858,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43857",
       "TeamBId": "43868",
       "HomeTeam": {
@@ -37948,7 +37948,7 @@
       "TeamAPointsBefore": 1077.086308,
       "TeamBPoints": 1122.053591,
       "TeamBPointsBefore": 1122.488082,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43857",
       "TeamBId": "43868",
       "HomeTeam": {
@@ -39178,7 +39178,7 @@
       "TeamAPointsBefore": 1615.300338,
       "TeamBPoints": 1159.637808,
       "TeamBPointsBefore": 1160.380685,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43817",
       "TeamBId": "43859",
       "HomeTeam": {
@@ -39642,7 +39642,7 @@
       "TeamAPointsBefore": 1681.028247,
       "TeamBPoints": 1345.227815,
       "TeamBPointsBefore": 1346.311722,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43911",
       "TeamBId": "43860",
       "HomeTeam": {
@@ -39758,7 +39758,7 @@
       "TeamAPointsBefore": 1524.290508,
       "TeamBPoints": 1346.881205,
       "TeamBPointsBefore": 1345.227815,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43974",
       "TeamBId": "43860",
       "HomeTeam": {
@@ -40338,7 +40338,7 @@
       "TeamAPointsBefore": 1362.157683,
       "TeamBPoints": 1295.598845,
       "TeamBPointsBefore": 1300.00536,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43952",
       "TeamBId": "43861",
       "HomeTeam": {
@@ -41432,7 +41432,7 @@
       "TeamAPointsBefore": 1067.132424,
       "TeamBPoints": 1181.143396,
       "TeamBPointsBefore": 1182.230045,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43864",
       "TeamBId": "43863",
       "HomeTeam": {
@@ -41548,7 +41548,7 @@
       "TeamAPointsBefore": 1068.219073,
       "TeamBPoints": 1185.076631,
       "TeamBPointsBefore": 1181.143396,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43864",
       "TeamBId": "43863",
       "HomeTeam": {
@@ -42032,7 +42032,7 @@
       "TeamAPointsBefore": 1067.132424,
       "TeamBPoints": 1181.143396,
       "TeamBPointsBefore": 1182.230045,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43864",
       "TeamBId": "43863",
       "HomeTeam": {
@@ -42148,7 +42148,7 @@
       "TeamAPointsBefore": 1068.219073,
       "TeamBPoints": 1185.076631,
       "TeamBPointsBefore": 1181.143396,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43864",
       "TeamBId": "43863",
       "HomeTeam": {
@@ -42612,7 +42612,7 @@
       "TeamAPointsBefore": 1148.976347,
       "TeamBPoints": 1074.686684,
       "TeamBPointsBefore": 1079.019513,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43881",
       "TeamBId": "43865",
       "HomeTeam": {
@@ -42728,7 +42728,7 @@
       "TeamAPointsBefore": 1074.686684,
       "TeamBPoints": 1147.560535,
       "TeamBPointsBefore": 1153.309176,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43865",
       "TeamBId": "43881",
       "HomeTeam": {
@@ -43918,7 +43918,7 @@
       "TeamAPointsBefore": 1755.86841,
       "TeamBPoints": 1202.689766,
       "TeamBPointsBefore": 1203.76261,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43872",
       "TeamBId": "43867",
       "HomeTeam": {
@@ -44392,7 +44392,7 @@
       "TeamAPointsBefore": 1071.546532,
       "TeamBPoints": 1122.488082,
       "TeamBPointsBefore": 1128.027858,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43857",
       "TeamBId": "43868",
       "HomeTeam": {
@@ -44508,7 +44508,7 @@
       "TeamAPointsBefore": 1077.086308,
       "TeamBPoints": 1122.053591,
       "TeamBPointsBefore": 1122.488082,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43857",
       "TeamBId": "43868",
       "HomeTeam": {
@@ -45118,7 +45118,7 @@
       "TeamAPointsBefore": 1459.125074,
       "TeamBPoints": 1619.58163,
       "TeamBPointsBefore": 1616.043215,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43869",
       "TeamBId": "43817",
       "HomeTeam": {
@@ -45592,7 +45592,7 @@
       "TeamAPointsBefore": 1263.096811,
       "TeamBPoints": 1171.596379,
       "TeamBPointsBefore": 1170.719266,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43844",
       "TeamBId": "43870",
       "HomeTeam": {
@@ -45708,7 +45708,7 @@
       "TeamAPointsBefore": 1180.416678,
       "TeamBPoints": 1176.680994,
       "TeamBPointsBefore": 1171.596379,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43875",
       "TeamBId": "43870",
       "HomeTeam": {
@@ -46812,7 +46812,7 @@
       "TeamAPointsBefore": 1755.86841,
       "TeamBPoints": 1202.689766,
       "TeamBPointsBefore": 1203.76261,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43872",
       "TeamBId": "43867",
       "HomeTeam": {
@@ -46928,7 +46928,7 @@
       "TeamAPointsBefore": 1555.596642,
       "TeamBPoints": 1755.100232,
       "TeamBPointsBefore": 1756.941254,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43961",
       "TeamBId": "43872",
       "HomeTeam": {
@@ -47548,7 +47548,7 @@
       "TeamAPointsBefore": 1151.448115,
       "TeamBPoints": 1218.616571,
       "TeamBPointsBefore": 1224.311107,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43816",
       "TeamBId": "43873",
       "HomeTeam": {
@@ -48622,7 +48622,7 @@
       "TeamAPointsBefore": 1258.980021,
       "TeamBPoints": 1180.416678,
       "TeamBPointsBefore": 1179.66151,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43845",
       "TeamBId": "43875",
       "HomeTeam": {
@@ -48738,7 +48738,7 @@
       "TeamAPointsBefore": 1180.416678,
       "TeamBPoints": 1176.680994,
       "TeamBPointsBefore": 1171.596379,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43875",
       "TeamBId": "43870",
       "HomeTeam": {
@@ -48778,122 +48778,6 @@
         "FootballType": 0
       },
       "Period": 0,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
-      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
-      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
-      "IdGroup": "",
-      "IdMatch": "cwyryvrqtriqz8hbwb6wy3vv8",
-      "IdMatchIfes": "152945",
-      "Date": "2026-03-27T12:30:00+00:00",
-      "LocalDate": "2026-03-27",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 2,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Friendly 2026"
-        }
-      ],
-      "GroupName": [],
-      "StageName": [],
-      "Stadium": null,
-      "Winner": "43876",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43817",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "RI do Irã"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRN",
-        "IdCountry": "IRN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43876",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Nigéria"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NGA",
-        "IdCountry": "NGA",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1611.684756,
-      "TeamAPointsBefore": 1617.024544,
-      "TeamBPoints": 1586.893304,
-      "TeamBPointsBefore": 1581.553516,
-      "PointsVisibility": 1,
-      "TeamAId": "43817",
-      "TeamBId": "43876",
-      "HomeTeam": {
-        "IdTeam": "43817",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "RI do Irã"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRN",
-        "IdCountry": "IRN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43876",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Nigéria"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NGA",
-        "IdCountry": "NGA",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
       "Attendance": 0
     },
     {
@@ -49096,7 +48980,7 @@
       "TeamAPointsBefore": 1585.086373,
       "TeamBPoints": 1117.409716,
       "TeamBPointsBefore": 1118.123833,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43876",
       "TeamBId": "43892",
       "HomeTeam": {
@@ -49222,7 +49106,7 @@
       "TeamAPointsBefore": 1585.80049,
       "TeamBPoints": 1357.840144,
       "TeamBPointsBefore": 1359.317288,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43876",
       "TeamBId": "43910",
       "HomeTeam": {
@@ -49338,7 +49222,7 @@
       "TeamAPointsBefore": 1525.594311,
       "TeamBPoints": 1586.688586,
       "TeamBPointsBefore": 1587.277634,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43962",
       "TeamBId": "43876",
       "HomeTeam": {
@@ -49362,6 +49246,122 @@
       "AwayTeam": {
         "IdTeam": "43876",
         "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Nigéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NGA",
+        "IdCountry": "NGA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "15jreurxnfznovwo6ztrf6al0",
+      "IdMatchIfes": "153103",
+      "Date": "2026-06-10T19:45:00+00:00",
+      "LocalDate": "2026-06-10",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 1,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43963",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43963",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Portugal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
+        "IdCountry": "POR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43876",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Nigéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NGA",
+        "IdCountry": "NGA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1767.849031,
+      "TeamAPointsBefore": 1766.177547,
+      "TeamBPoints": 1585.017102,
+      "TeamBPointsBefore": 1586.688586,
+      "PointsVisibility": 1,
+      "TeamAId": "43963",
+      "TeamBId": "43876",
+      "HomeTeam": {
+        "IdTeam": "43963",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Portugal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
+        "IdCountry": "POR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43876",
+        "Score": 1,
         "IdConfederation": "",
         "TeamName": [
           {
@@ -51072,7 +51072,7 @@
       "TeamAPointsBefore": 1673.126608,
       "TeamBPoints": 1686.412769,
       "TeamBPointsBefore": 1688.988837,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43921",
       "TeamBId": "43879",
       "HomeTeam": {
@@ -51188,7 +51188,7 @@
       "TeamAPointsBefore": 1686.412769,
       "TeamBPoints": 1423.881229,
       "TeamBPointsBefore": 1421.538339,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43879",
       "TeamBId": "43835",
       "HomeTeam": {
@@ -52312,7 +52312,7 @@
       "TeamAPointsBefore": 1148.976347,
       "TeamBPoints": 1074.686684,
       "TeamBPointsBefore": 1079.019513,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43881",
       "TeamBId": "43865",
       "HomeTeam": {
@@ -52428,7 +52428,7 @@
       "TeamAPointsBefore": 1074.686684,
       "TeamBPoints": 1147.560535,
       "TeamBPointsBefore": 1153.309176,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43865",
       "TeamBId": "43881",
       "HomeTeam": {
@@ -53093,132 +53093,6 @@
     {
       "IdCompetition": "400132623",
       "IdSeason": "1z35p4iuhfxxdfaqjwzkqn2fo",
-      "IdStage": "207mir3y73ql1144i13i8xe6s",
-      "IdGroup": "",
-      "IdMatch": "4feup61zbkreoi5lydkx9lqfo",
-      "IdMatchIfes": "147496",
-      "Date": "2025-12-29T16:00:00+00:00",
-      "LocalDate": "2025-12-29",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 2,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 3,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Africa Cup of Nations 2025"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo B"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Primeira fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43883",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43892",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Zimbábue"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ZIM",
-        "IdCountry": "ZIM",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43883",
-        "Score": 3,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "África do Sul"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/RSA",
-        "IdCountry": "RSA",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1113.613422,
-      "TeamAPointsBefore": 1121.962353,
-      "TeamBPoints": 1432.761543,
-      "TeamBPointsBefore": 1424.412612,
-      "PointsVisibility": 1,
-      "TeamAId": "43892",
-      "TeamBId": "43883",
-      "HomeTeam": {
-        "IdTeam": "43892",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Zimbábue"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ZIM",
-        "IdCountry": "ZIM",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43883",
-        "Score": 3,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "África do Sul"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/RSA",
-        "IdCountry": "RSA",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "400132623",
-      "IdSeason": "1z35p4iuhfxxdfaqjwzkqn2fo",
       "IdStage": "1ztmwb2hf7rwgj1gcxm0n9dzo",
       "IdGroup": "",
       "IdMatch": "a35nkmojm1gl98a61w4xustg4",
@@ -53648,7 +53522,7 @@
       "TeamAPointsBefore": 1429.728396,
       "TeamBPoints": 1116.480534,
       "TeamBPointsBefore": 1115.13142,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43883",
       "TeamBId": "43913",
       "HomeTeam": {
@@ -53688,6 +53562,132 @@
         "FootballType": 0
       },
       "Period": 0,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "17",
+      "IdSeason": "285023",
+      "IdStage": "289273",
+      "IdGroup": "",
+      "IdMatch": "400021443",
+      "IdMatchIfes": "151600",
+      "Date": "2026-06-11T19:00:00+00:00",
+      "LocalDate": "2026-06-11",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "98'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Copa do Mundo da FIFA 2026™"
+        }
+      ],
+      "GroupName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Grupo A"
+        }
+      ],
+      "StageName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Primeira fase"
+        }
+      ],
+      "Stadium": null,
+      "Winner": "43911",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43911",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "México"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/MEX",
+        "IdCountry": "MEX",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43883",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "África do Sul"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/RSA",
+        "IdCountry": "RSA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1700.984519,
+      "TeamAPointsBefore": 1687.481759,
+      "TeamBPoints": 1414.876522,
+      "TeamBPointsBefore": 1428.379282,
+      "PointsVisibility": 2,
+      "TeamAId": "43911",
+      "TeamBId": "43883",
+      "HomeTeam": {
+        "IdTeam": "43911",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "México"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/MEX",
+        "IdCountry": "MEX",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43883",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "África do Sul"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/RSA",
+        "IdCountry": "RSA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
       "Attendance": 0
     },
     {
@@ -56012,7 +56012,7 @@
       "TeamAPointsBefore": 1147.31212,
       "TeamBPoints": 1084.180103,
       "TeamBPointsBefore": 1083.571601,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43887",
       "TeamBId": "43851",
       "HomeTeam": {
@@ -56128,7 +56128,7 @@
       "TeamAPointsBefore": 1258.224853,
       "TeamBPoints": 1152.757527,
       "TeamBPointsBefore": 1146.703618,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43845",
       "TeamBId": "43887",
       "HomeTeam": {
@@ -56602,7 +56602,7 @@
       "TeamAPointsBefore": 1593.447673,
       "TeamBPoints": 1479.095457,
       "TeamBPointsBefore": 1483.051871,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43934",
       "TeamBId": "43888",
       "HomeTeam": {
@@ -56718,7 +56718,7 @@
       "TeamAPointsBefore": 1739.545576,
       "TeamBPoints": 1476.405088,
       "TeamBPointsBefore": 1479.095457,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43935",
       "TeamBId": "43888",
       "HomeTeam": {
@@ -58442,7 +58442,7 @@
       "TeamAPointsBefore": 1585.086373,
       "TeamBPoints": 1117.409716,
       "TeamBPointsBefore": 1118.123833,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43876",
       "TeamBId": "43892",
       "HomeTeam": {
@@ -58568,7 +58568,7 @@
       "TeamAPointsBefore": 1117.409716,
       "TeamBPoints": 1087.339923,
       "TeamBPointsBefore": 1089.707157,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43892",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -59188,7 +59188,7 @@
       "TeamAPointsBefore": 1293.083169,
       "TeamBPoints": 875.61115,
       "TeamBPointsBefore": 877.297071,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1895293",
       "TeamBId": "43894",
       "HomeTeam": {
@@ -61058,7 +61058,7 @@
       "TeamAPointsBefore": 976.869098,
       "TeamBPoints": 1371.10798,
       "TeamBPointsBefore": 1369.292628,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43898",
       "TeamBId": "43850",
       "HomeTeam": {
@@ -61522,7 +61522,7 @@
       "TeamAPointsBefore": 1556.482247,
       "TeamBPoints": 1461.208132,
       "TeamBPointsBefore": 1465.342534,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43899",
       "TeamBId": "44005",
       "HomeTeam": {
@@ -61638,7 +61638,7 @@
       "TeamAPointsBefore": 1560.616649,
       "TeamBPoints": 1441.096901,
       "TeamBPointsBefore": 1439.959553,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43899",
       "TeamBId": "43953",
       "HomeTeam": {
@@ -62258,7 +62258,7 @@
       "TeamAPointsBefore": 814.872301,
       "TeamBPoints": 850.061011,
       "TeamBPointsBefore": 855.449528,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1941613",
       "TeamBId": "43900",
       "HomeTeam": {
@@ -62291,132 +62291,6 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CAY",
         "IdCountry": "CAY",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "520",
-      "IdSeason": "288301",
-      "IdStage": "288312",
-      "IdGroup": "",
-      "IdMatch": "400020604",
-      "IdMatchIfes": "149711",
-      "Date": "2025-11-14T02:00:00+00:00",
-      "LocalDate": "2025-11-13",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 1,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias Concacaf da Copa do Mundo 26"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo C"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Fase final"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43908",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43908",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Haiti"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/HAI",
-        "IdCountry": "HAI",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43901",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Costa Rica"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CRC",
-        "IdCountry": "CRC",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1285.714843,
-      "TeamAPointsBefore": 1268.323468,
-      "TeamBPoints": 1466.348745,
-      "TeamBPointsBefore": 1483.74012,
-      "PointsVisibility": 1,
-      "TeamAId": "43908",
-      "TeamBId": "43901",
-      "HomeTeam": {
-        "IdTeam": "43908",
-        "Score": 1,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Haiti"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/HAI",
-        "IdCountry": "HAI",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43901",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Costa Rica"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CRC",
-        "IdCountry": "CRC",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -62858,7 +62732,7 @@
       "TeamAPointsBefore": 1693.089319,
       "TeamBPoints": 1457.00228,
       "TeamBPointsBefore": 1459.903309,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43926",
       "TeamBId": "43901",
       "HomeTeam": {
@@ -62882,6 +62756,122 @@
       "AwayTeam": {
         "IdTeam": "43901",
         "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Costa Rica"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CRC",
+        "IdCountry": "CRC",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "7prufijctb3r9h7xgaqh7lkic",
+      "IdMatchIfes": "152478",
+      "Date": "2026-06-10T21:00:00+00:00",
+      "LocalDate": "2026-06-10",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 3,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43942",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43942",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Inglaterra"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ENG",
+        "IdCountry": "ENG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43901",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Costa Rica"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CRC",
+        "IdCountry": "CRC",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1828.021903,
+      "TeamAPointsBefore": 1827.048678,
+      "TeamBPoints": 1456.029055,
+      "TeamBPointsBefore": 1457.00228,
+      "PointsVisibility": 1,
+      "TeamAId": "43942",
+      "TeamBId": "43901",
+      "HomeTeam": {
+        "IdTeam": "43942",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Inglaterra"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ENG",
+        "IdCountry": "ENG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43901",
+        "Score": 0,
         "IdConfederation": "",
         "TeamName": [
           {
@@ -64088,7 +64078,7 @@
       "TeamAPointsBefore": 1539.143142,
       "TeamBPoints": 1076.498501,
       "TeamBPointsBefore": 1077.954075,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43914",
       "TeamBId": "43903",
       "HomeTeam": {
@@ -64582,7 +64572,7 @@
       "TeamAPointsBefore": 1589.650191,
       "TeamBPoints": 1223.278065,
       "TeamBPointsBefore": 1225.25876,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43822",
       "TeamBId": "43904",
       "HomeTeam": {
@@ -64698,7 +64688,7 @@
       "TeamAPointsBefore": 1223.278065,
       "TeamBPoints": 1450.307729,
       "TeamBPointsBefore": 1452.374271,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43904",
       "TeamBId": "43834",
       "HomeTeam": {
@@ -65298,7 +65288,7 @@
       "TeamAPointsBefore": 1436.630274,
       "TeamBPoints": 981.823973,
       "TeamBPointsBefore": 982.568936,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43953",
       "TeamBId": "43905",
       "HomeTeam": {
@@ -65782,7 +65772,7 @@
       "TeamAPointsBefore": 1243.474984,
       "TeamBPoints": 1505.737856,
       "TeamBPointsBefore": 1503.040808,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43906",
       "TeamBId": "43995",
       "HomeTeam": {
@@ -65898,7 +65888,7 @@
       "TeamAPointsBefore": 1596.481634,
       "TeamBPoints": 1238.74375,
       "TeamBPointsBefore": 1240.777936,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43927",
       "TeamBId": "43906",
       "HomeTeam": {
@@ -67002,7 +66992,7 @@
       "TeamAPointsBefore": 1291.711814,
       "TeamBPoints": 1276.664258,
       "TeamBPointsBefore": 1281.566939,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43908",
       "TeamBId": "43978",
       "HomeTeam": {
@@ -67118,7 +67108,7 @@
       "TeamAPointsBefore": 1455.872645,
       "TeamBPoints": 1293.096585,
       "TeamBPointsBefore": 1296.614495,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43929",
       "TeamBId": "43908",
       "HomeTeam": {
@@ -67728,7 +67718,7 @@
       "TeamAPointsBefore": 1874.814835,
       "TeamBPoints": 1378.970301,
       "TeamBPointsBefore": 1380.273797,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43922",
       "TeamBId": "43909",
       "HomeTeam": {
@@ -68232,7 +68222,7 @@
       "TeamAPointsBefore": 1357.996558,
       "TeamBPoints": 1089.707157,
       "TeamBPointsBefore": 1091.027887,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43910",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -68358,7 +68348,7 @@
       "TeamAPointsBefore": 1585.80049,
       "TeamBPoints": 1357.840144,
       "TeamBPointsBefore": 1359.317288,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43876",
       "TeamBId": "43910",
       "HomeTeam": {
@@ -68398,122 +68388,6 @@
         "FootballType": 0
       },
       "Period": 0,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
-      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
-      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
-      "IdGroup": "",
-      "IdMatch": "99s7co647ap41voq1mxihffo4",
-      "IdMatchIfes": "151479",
-      "Date": "2026-03-29T01:00:00+00:00",
-      "LocalDate": "2026-03-28",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 0,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "en-GB",
-          "Description": "Friendly 2026"
-        }
-      ],
-      "GroupName": [],
-      "StageName": [],
-      "Stadium": null,
-      "Winner": null,
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43911",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "México"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/MEX",
-        "IdCountry": "MEX",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43963",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Portugal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
-        "IdCountry": "POR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1680.505055,
-      "TeamAPointsBefore": 1679.737433,
-      "TeamBPoints": 1759.617254,
-      "TeamBPointsBefore": 1760.384876,
-      "PointsVisibility": 1,
-      "TeamAId": "43911",
-      "TeamBId": "43963",
-      "HomeTeam": {
-        "IdTeam": "43911",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "México"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/MEX",
-        "IdCountry": "MEX",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43963",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Portugal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
-        "IdCountry": "POR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
       "Attendance": 0
     },
     {
@@ -68706,7 +68580,7 @@
       "TeamAPointsBefore": 1681.028247,
       "TeamBPoints": 1345.227815,
       "TeamBPointsBefore": 1346.311722,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43911",
       "TeamBId": "43860",
       "HomeTeam": {
@@ -68822,7 +68696,7 @@
       "TeamAPointsBefore": 1682.112154,
       "TeamBPoints": 1578.655321,
       "TeamBPointsBefore": 1580.674774,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43911",
       "TeamBId": "43976",
       "HomeTeam": {
@@ -68938,7 +68812,7 @@
       "TeamAPointsBefore": 1684.131607,
       "TeamBPoints": 1502.133186,
       "TeamBPointsBefore": 1505.483338,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43911",
       "TeamBId": "1902465",
       "HomeTeam": {
@@ -68971,6 +68845,132 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SRB",
         "IdCountry": "SRB",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "17",
+      "IdSeason": "285023",
+      "IdStage": "289273",
+      "IdGroup": "",
+      "IdMatch": "400021443",
+      "IdMatchIfes": "151600",
+      "Date": "2026-06-11T19:00:00+00:00",
+      "LocalDate": "2026-06-11",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "98'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Copa do Mundo da FIFA 2026™"
+        }
+      ],
+      "GroupName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Grupo A"
+        }
+      ],
+      "StageName": [
+        {
+          "Locale": "pt-BR",
+          "Description": "Primeira fase"
+        }
+      ],
+      "Stadium": null,
+      "Winner": "43911",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43911",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "México"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/MEX",
+        "IdCountry": "MEX",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43883",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "África do Sul"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/RSA",
+        "IdCountry": "RSA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1700.984519,
+      "TeamAPointsBefore": 1687.481759,
+      "TeamBPoints": 1414.876522,
+      "TeamBPointsBefore": 1428.379282,
+      "PointsVisibility": 2,
+      "TeamAId": "43911",
+      "TeamBId": "43883",
+      "HomeTeam": {
+        "IdTeam": "43911",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "México"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/MEX",
+        "IdCountry": "MEX",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43883",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "África do Sul"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/RSA",
+        "IdCountry": "RSA",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -69422,7 +69422,7 @@
       "TeamAPointsBefore": 1429.728396,
       "TeamBPoints": 1116.480534,
       "TeamBPointsBefore": 1115.13142,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43883",
       "TeamBId": "43913",
       "HomeTeam": {
@@ -69538,7 +69538,7 @@
       "TeamAPointsBefore": 1503.503339,
       "TeamBPoints": 1114.634184,
       "TeamBPointsBefore": 1116.480534,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43928",
       "TeamBId": "43913",
       "HomeTeam": {
@@ -69886,7 +69886,7 @@
       "TeamAPointsBefore": 1761.16093,
       "TeamBPoints": 1539.143142,
       "TeamBPointsBefore": 1540.644228,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43924",
       "TeamBId": "43914",
       "HomeTeam": {
@@ -70002,7 +70002,7 @@
       "TeamAPointsBefore": 1539.143142,
       "TeamBPoints": 1076.498501,
       "TeamBPointsBefore": 1077.954075,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43914",
       "TeamBId": "43903",
       "HomeTeam": {
@@ -70118,7 +70118,7 @@
       "TeamAPointsBefore": 1385.772564,
       "TeamBPoints": 1539.155509,
       "TeamBPointsBefore": 1540.598716,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44037",
       "TeamBId": "43914",
       "HomeTeam": {
@@ -70728,7 +70728,7 @@
       "TeamAPointsBefore": 1026.105829,
       "TeamBPoints": 1421.538339,
       "TeamBPointsBefore": 1419.729822,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43915",
       "TeamBId": "43835",
       "HomeTeam": {
@@ -73732,7 +73732,7 @@
       "TeamAPointsBefore": 1588.663904,
       "TeamBPoints": 1221.951833,
       "TeamBPointsBefore": 1222.93812,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43822",
       "TeamBId": "43920",
       "HomeTeam": {
@@ -73848,7 +73848,7 @@
       "TeamAPointsBefore": 1527.237131,
       "TeamBPoints": 1219.58613,
       "TeamBPointsBefore": 1221.951833,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43965",
       "TeamBId": "43920",
       "HomeTeam": {
@@ -74312,7 +74312,7 @@
       "TeamAPointsBefore": 1673.126608,
       "TeamBPoints": 1686.412769,
       "TeamBPointsBefore": 1688.988837,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43921",
       "TeamBId": "43879",
       "HomeTeam": {
@@ -74428,7 +74428,7 @@
       "TeamAPointsBefore": 1675.702676,
       "TeamBPoints": 1735.771984,
       "TeamBPointsBefore": 1731.303408,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43921",
       "TeamBId": "43948",
       "HomeTeam": {
@@ -74892,7 +74892,7 @@
       "TeamAPointsBefore": 1874.814835,
       "TeamBPoints": 1378.970301,
       "TeamBPointsBefore": 1380.273797,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43922",
       "TeamBId": "43909",
       "HomeTeam": {
@@ -75008,7 +75008,7 @@
       "TeamAPointsBefore": 1876.118331,
       "TeamBPoints": 1342.771961,
       "TeamBPointsBefore": 1343.920201,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43922",
       "TeamBId": "43951",
       "HomeTeam": {
@@ -75608,7 +75608,7 @@
       "TeamAPointsBefore": 1329.415509,
       "TeamBPoints": 1503.34027,
       "TeamBPointsBefore": 1499.920138,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43923",
       "TeamBId": "43967",
       "HomeTeam": {
@@ -76072,7 +76072,7 @@
       "TeamAPointsBefore": 1761.16093,
       "TeamBPoints": 1539.143142,
       "TeamBPointsBefore": 1540.644228,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43924",
       "TeamBId": "43914",
       "HomeTeam": {
@@ -76188,7 +76188,7 @@
       "TeamAPointsBefore": 1762.662016,
       "TeamBPoints": 1562.367246,
       "TeamBPointsBefore": 1565.561527,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43924",
       "TeamBId": "43855",
       "HomeTeam": {
@@ -76672,7 +76672,7 @@
       "TeamAPointsBefore": 1763.834406,
       "TeamBPoints": 1452.939983,
       "TeamBPointsBefore": 1455.283124,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43963",
       "TeamBId": "43925",
       "HomeTeam": {
@@ -76788,7 +76788,7 @@
       "TeamAPointsBefore": 1479.684122,
       "TeamBPoints": 1458.196344,
       "TeamBPointsBefore": 1452.939983,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20014",
       "TeamBId": "43925",
       "HomeTeam": {
@@ -77252,7 +77252,7 @@
       "TeamAPointsBefore": 1693.089319,
       "TeamBPoints": 1457.00228,
       "TeamBPointsBefore": 1459.903309,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43926",
       "TeamBId": "43901",
       "HomeTeam": {
@@ -77368,7 +77368,7 @@
       "TeamAPointsBefore": 1695.990348,
       "TeamBPoints": 1387.738222,
       "TeamBPointsBefore": 1390.099732,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43926",
       "TeamBId": "43820",
       "HomeTeam": {
@@ -77832,7 +77832,7 @@
       "TeamAPointsBefore": 1421.427596,
       "TeamBPoints": 1596.481634,
       "TeamBPointsBefore": 1594.78386,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43835",
       "TeamBId": "43927",
       "HomeTeam": {
@@ -77948,7 +77948,7 @@
       "TeamAPointsBefore": 1596.481634,
       "TeamBPoints": 1238.74375,
       "TeamBPointsBefore": 1240.777936,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43927",
       "TeamBId": "43906",
       "HomeTeam": {
@@ -78528,7 +78528,7 @@
       "TeamAPointsBefore": 1503.503339,
       "TeamBPoints": 1114.634184,
       "TeamBPointsBefore": 1116.480534,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43928",
       "TeamBId": "43913",
       "HomeTeam": {
@@ -78992,7 +78992,7 @@
       "TeamAPointsBefore": 1455.872645,
       "TeamBPoints": 1293.096585,
       "TeamBPointsBefore": 1296.614495,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43929",
       "TeamBId": "43908",
       "HomeTeam": {
@@ -79108,7 +79108,7 @@
       "TeamAPointsBefore": 1873.013187,
       "TeamBPoints": 1457.692964,
       "TeamBPointsBefore": 1459.390555,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43969",
       "TeamBId": "43929",
       "HomeTeam": {
@@ -80172,7 +80172,7 @@
       "TeamAPointsBefore": 1468.046323,
       "TeamBPoints": 1605.730921,
       "TeamBPointsBefore": 1601.988409,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43931",
       "TeamBId": "43972",
       "HomeTeam": {
@@ -80288,7 +80288,7 @@
       "TeamAPointsBefore": 1464.303811,
       "TeamBPoints": 1446.279605,
       "TeamBPointsBefore": 1451.153466,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43931",
       "TeamBId": "43818",
       "HomeTeam": {
@@ -80772,7 +80772,7 @@
       "TeamAPointsBefore": 1388.058361,
       "TeamBPoints": 1333.904007,
       "TeamBPointsBefore": 1328.333496,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43932",
       "TeamBId": "43984",
       "HomeTeam": {
@@ -80888,7 +80888,7 @@
       "TeamAPointsBefore": 1382.48785,
       "TeamBPoints": 1232.81815,
       "TeamBPointsBefore": 1226.363534,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43932",
       "TeamBId": "43958",
       "HomeTeam": {
@@ -81372,7 +81372,7 @@
       "TeamAPointsBefore": 1191.416122,
       "TeamBPoints": 1183.038315,
       "TeamBPointsBefore": 1182.957166,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43933",
       "TeamBId": "44027",
       "HomeTeam": {
@@ -81488,7 +81488,7 @@
       "TeamAPointsBefore": 1191.334973,
       "TeamBPoints": 1008.240035,
       "TeamBPointsBefore": 1006.537824,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43933",
       "TeamBId": "44036",
       "HomeTeam": {
@@ -82088,7 +82088,7 @@
       "TeamAPointsBefore": 1593.447673,
       "TeamBPoints": 1479.095457,
       "TeamBPointsBefore": 1483.051871,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43934",
       "TeamBId": "43888",
       "HomeTeam": {
@@ -82562,7 +82562,7 @@
       "TeamAPointsBefore": 1717.066402,
       "TeamBPoints": 1739.545576,
       "TeamBPointsBefore": 1734.714832,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43938",
       "TeamBId": "43935",
       "HomeTeam": {
@@ -82678,7 +82678,7 @@
       "TeamAPointsBefore": 1739.545576,
       "TeamBPoints": 1476.405088,
       "TeamBPointsBefore": 1479.095457,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43935",
       "TeamBId": "43888",
       "HomeTeam": {
@@ -83172,7 +83172,7 @@
       "TeamAPointsBefore": 1278.904375,
       "TeamBPoints": 1300.359299,
       "TeamBPointsBefore": 1295.518644,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43936",
       "TeamBId": "1903356",
       "HomeTeam": {
@@ -83288,7 +83288,7 @@
       "TeamAPointsBefore": 1004.157429,
       "TeamBPoints": 1271.683325,
       "TeamBPointsBefore": 1274.06372,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44036",
       "TeamBId": "43936",
       "HomeTeam": {
@@ -83762,7 +83762,7 @@
       "TeamAPointsBefore": 1235.820374,
       "TeamBPoints": 1283.051902,
       "TeamBPointsBefore": 1288.556135,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43937",
       "TeamBId": "43838",
       "HomeTeam": {
@@ -83878,7 +83878,7 @@
       "TeamAPointsBefore": 1241.324607,
       "TeamBPoints": 1406.990543,
       "TeamBPointsBefore": 1408.541965,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43937",
       "TeamBId": "43847",
       "HomeTeam": {
@@ -84352,7 +84352,7 @@
       "TeamAPointsBefore": 1717.066402,
       "TeamBPoints": 1739.545576,
       "TeamBPointsBefore": 1734.714832,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43938",
       "TeamBId": "43935",
       "HomeTeam": {
@@ -84468,7 +84468,7 @@
       "TeamAPointsBefore": 1712.235658,
       "TeamBPoints": 1441.087158,
       "TeamBPointsBefore": 1443.717072,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43938",
       "TeamBId": "43968",
       "HomeTeam": {
@@ -84932,7 +84932,7 @@
       "TeamAPointsBefore": 1446.439067,
       "TeamBPoints": 1131.056114,
       "TeamBPointsBefore": 1128.334119,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43968",
       "TeamBId": "43939",
       "HomeTeam": {
@@ -85048,7 +85048,7 @@
       "TeamAPointsBefore": 799.89206,
       "TeamBPoints": 1133.247165,
       "TeamBPointsBefore": 1131.056114,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43956",
       "TeamBId": "43939",
       "HomeTeam": {
@@ -85668,7 +85668,7 @@
       "TeamAPointsBefore": 1478.350424,
       "TeamBPoints": 1619.474248,
       "TeamBPointsBefore": 1620.807946,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20014",
       "TeamBId": "43941",
       "HomeTeam": {
@@ -85701,132 +85701,6 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/DEN",
         "IdCountry": "DEN",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "520",
-      "IdSeason": "288329",
-      "IdStage": "288330",
-      "IdGroup": "",
-      "IdMatch": "400019376",
-      "IdMatchIfes": "146510",
-      "Date": "2025-11-13T19:45:00+00:00",
-      "LocalDate": "2025-11-13",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 2,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias da UEFA para a Copa do Mundo da FIFA 26™"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo K"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "1ª fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43942",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43942",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Inglaterra"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ENG",
-        "IdCountry": "ENG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "1902465",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Sérvia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SRB",
-        "IdCountry": "SRB",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1830.024561,
-      "TeamAPointsBefore": 1824.301734,
-      "TeamBPoints": 1502.119268,
-      "TeamBPointsBefore": 1507.842095,
-      "PointsVisibility": 1,
-      "TeamAId": "43942",
-      "TeamBId": "1902465",
-      "HomeTeam": {
-        "IdTeam": "43942",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Inglaterra"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ENG",
-        "IdCountry": "ENG",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "1902465",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Sérvia"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/SRB",
-        "IdCountry": "SRB",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -86268,7 +86142,7 @@
       "TeamAPointsBefore": 1825.965482,
       "TeamBPoints": 1275.581062,
       "TeamBPointsBefore": 1276.664258,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43942",
       "TeamBId": "43978",
       "HomeTeam": {
@@ -86301,6 +86175,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NZL",
         "IdCountry": "NZL",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "7prufijctb3r9h7xgaqh7lkic",
+      "IdMatchIfes": "152478",
+      "Date": "2026-06-10T21:00:00+00:00",
+      "LocalDate": "2026-06-10",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 3,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 0,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43942",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43942",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Inglaterra"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ENG",
+        "IdCountry": "ENG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43901",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Costa Rica"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CRC",
+        "IdCountry": "CRC",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1828.021903,
+      "TeamAPointsBefore": 1827.048678,
+      "TeamBPoints": 1456.029055,
+      "TeamBPointsBefore": 1457.00228,
+      "PointsVisibility": 1,
+      "TeamAId": "43942",
+      "TeamBId": "43901",
+      "HomeTeam": {
+        "IdTeam": "43942",
+        "Score": 3,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Inglaterra"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ENG",
+        "IdCountry": "ENG",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43901",
+        "Score": 0,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Costa Rica"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CRC",
+        "IdCountry": "CRC",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -86762,7 +86752,7 @@
       "TeamAPointsBefore": 1121.103157,
       "TeamBPoints": 1131.984479,
       "TeamBPointsBefore": 1137.138273,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43943",
       "TeamBId": "43944",
       "HomeTeam": {
@@ -86888,7 +86878,7 @@
       "TeamAPointsBefore": 1126.256951,
       "TeamBPoints": 1056.850321,
       "TeamBPointsBefore": 1061.22966,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43943",
       "TeamBId": "43957",
       "HomeTeam": {
@@ -87372,7 +87362,7 @@
       "TeamAPointsBefore": 1121.103157,
       "TeamBPoints": 1131.984479,
       "TeamBPointsBefore": 1137.138273,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43943",
       "TeamBId": "43944",
       "HomeTeam": {
@@ -87498,7 +87488,7 @@
       "TeamAPointsBefore": 1090.261315,
       "TeamBPoints": 1136.585036,
       "TeamBPointsBefore": 1131.984479,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43955",
       "TeamBId": "43944",
       "HomeTeam": {
@@ -87982,7 +87972,7 @@
       "TeamAPointsBefore": 1730.37136,
       "TeamBPoints": 1345.476751,
       "TeamBPointsBefore": 1346.408799,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43948",
       "TeamBId": "43945",
       "HomeTeam": {
@@ -88098,7 +88088,7 @@
       "TeamAPointsBefore": 1500.581454,
       "TeamBPoints": 1341.922408,
       "TeamBPointsBefore": 1345.476751,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43950",
       "TeamBId": "43945",
       "HomeTeam": {
@@ -88572,7 +88562,7 @@
       "TeamAPointsBefore": 1877.322731,
       "TeamBPoints": 1540.869533,
       "TeamBPointsBefore": 1532.975251,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43946",
       "TeamBId": "43854",
       "HomeTeam": {
@@ -88688,7 +88678,7 @@
       "TeamAPointsBefore": 1869.428449,
       "TeamBPoints": 1365.296485,
       "TeamBPointsBefore": 1366.564198,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43946",
       "TeamBId": "43952",
       "HomeTeam": {
@@ -89162,7 +89152,7 @@
       "TeamAPointsBefore": 1350.184155,
       "TeamBPoints": 1450.204168,
       "TeamBPointsBefore": 1451.161007,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43947",
       "TeamBId": "43964",
       "HomeTeam": {
@@ -89278,7 +89268,7 @@
       "TeamAPointsBefore": 1351.140994,
       "TeamBPoints": 1254.406799,
       "TeamBPointsBefore": 1258.527492,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43947",
       "TeamBId": "43808",
       "HomeTeam": {
@@ -89752,7 +89742,7 @@
       "TeamAPointsBefore": 1730.37136,
       "TeamBPoints": 1345.476751,
       "TeamBPointsBefore": 1346.408799,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43948",
       "TeamBId": "43945",
       "HomeTeam": {
@@ -89868,7 +89858,7 @@
       "TeamAPointsBefore": 1675.702676,
       "TeamBPoints": 1735.771984,
       "TeamBPointsBefore": 1731.303408,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43921",
       "TeamBId": "43948",
       "HomeTeam": {
@@ -90342,7 +90332,7 @@
       "TeamAPointsBefore": 1510.113938,
       "TeamBPoints": 1476.148459,
       "TeamBPointsBefore": 1475.819913,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43970",
       "TeamBId": "43949",
       "HomeTeam": {
@@ -90458,7 +90448,7 @@
       "TeamAPointsBefore": 1476.148459,
       "TeamBPoints": 1704.733836,
       "TeamBPointsBefore": 1701.772682,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43949",
       "TeamBId": "43954",
       "HomeTeam": {
@@ -90932,7 +90922,7 @@
       "TeamAPointsBefore": 1500.581454,
       "TeamBPoints": 1341.922408,
       "TeamBPointsBefore": 1345.476751,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43950",
       "TeamBId": "43945",
       "HomeTeam": {
@@ -91048,7 +91038,7 @@
       "TeamAPointsBefore": 1504.135797,
       "TeamBPoints": 1180.780449,
       "TeamBPointsBefore": 1183.038315,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43950",
       "TeamBId": "44027",
       "HomeTeam": {
@@ -91512,7 +91502,7 @@
       "TeamAPointsBefore": 1660.427891,
       "TeamBPoints": 1343.920201,
       "TeamBPointsBefore": 1345.068497,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43819",
       "TeamBId": "43951",
       "HomeTeam": {
@@ -91628,7 +91618,7 @@
       "TeamAPointsBefore": 1876.118331,
       "TeamBPoints": 1342.771961,
       "TeamBPointsBefore": 1343.920201,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43922",
       "TeamBId": "43951",
       "HomeTeam": {
@@ -92112,7 +92102,7 @@
       "TeamAPointsBefore": 1362.157683,
       "TeamBPoints": 1295.598845,
       "TeamBPointsBefore": 1300.00536,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43952",
       "TeamBId": "43861",
       "HomeTeam": {
@@ -92228,7 +92218,7 @@
       "TeamAPointsBefore": 1869.428449,
       "TeamBPoints": 1365.296485,
       "TeamBPointsBefore": 1366.564198,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43946",
       "TeamBId": "43952",
       "HomeTeam": {
@@ -92586,7 +92576,7 @@
       "TeamAPointsBefore": 1436.630274,
       "TeamBPoints": 981.823973,
       "TeamBPointsBefore": 982.568936,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43953",
       "TeamBId": "43905",
       "HomeTeam": {
@@ -92702,7 +92692,7 @@
       "TeamAPointsBefore": 1437.375237,
       "TeamBPoints": 1452.374271,
       "TeamBPointsBefore": 1454.958587,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43953",
       "TeamBId": "43834",
       "HomeTeam": {
@@ -92818,7 +92808,7 @@
       "TeamAPointsBefore": 1560.616649,
       "TeamBPoints": 1441.096901,
       "TeamBPointsBefore": 1439.959553,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43899",
       "TeamBId": "43953",
       "HomeTeam": {
@@ -93312,7 +93302,7 @@
       "TeamAPointsBefore": 1227.765462,
       "TeamBPoints": 1701.772682,
       "TeamBPointsBefore": 1700.370754,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43958",
       "TeamBId": "43954",
       "HomeTeam": {
@@ -93428,7 +93418,7 @@
       "TeamAPointsBefore": 1476.148459,
       "TeamBPoints": 1704.733836,
       "TeamBPointsBefore": 1701.772682,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43949",
       "TeamBId": "43954",
       "HomeTeam": {
@@ -93932,7 +93922,7 @@
       "TeamAPointsBefore": 1058.421622,
       "TeamBPoints": 1090.261315,
       "TeamBPointsBefore": 1090.569353,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43957",
       "TeamBId": "43955",
       "HomeTeam": {
@@ -94058,7 +94048,7 @@
       "TeamAPointsBefore": 1090.261315,
       "TeamBPoints": 1136.585036,
       "TeamBPointsBefore": 1131.984479,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43955",
       "TeamBId": "43944",
       "HomeTeam": {
@@ -94552,7 +94542,7 @@
       "TeamAPointsBefore": 944.705799,
       "TeamBPoints": 799.89206,
       "TeamBPointsBefore": 803.570149,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "20001",
       "TeamBId": "43956",
       "HomeTeam": {
@@ -94668,7 +94658,7 @@
       "TeamAPointsBefore": 799.89206,
       "TeamBPoints": 1133.247165,
       "TeamBPointsBefore": 1131.056114,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43956",
       "TeamBId": "43939",
       "HomeTeam": {
@@ -95152,7 +95142,7 @@
       "TeamAPointsBefore": 1058.421622,
       "TeamBPoints": 1090.261315,
       "TeamBPointsBefore": 1090.569353,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43957",
       "TeamBId": "43955",
       "HomeTeam": {
@@ -95278,7 +95268,7 @@
       "TeamAPointsBefore": 1126.256951,
       "TeamBPoints": 1056.850321,
       "TeamBPointsBefore": 1061.22966,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43943",
       "TeamBId": "43957",
       "HomeTeam": {
@@ -95772,7 +95762,7 @@
       "TeamAPointsBefore": 1227.765462,
       "TeamBPoints": 1701.772682,
       "TeamBPointsBefore": 1700.370754,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43958",
       "TeamBId": "43954",
       "HomeTeam": {
@@ -95888,7 +95878,7 @@
       "TeamAPointsBefore": 1382.48785,
       "TeamBPoints": 1232.81815,
       "TeamBPointsBefore": 1226.363534,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43932",
       "TeamBId": "43958",
       "HomeTeam": {
@@ -96382,7 +96372,7 @@
       "TeamAPointsBefore": 1473.938441,
       "TeamBPoints": 986.390408,
       "TeamBPointsBefore": 987.730586,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44002",
       "TeamBId": "43959",
       "HomeTeam": {
@@ -96498,7 +96488,7 @@
       "TeamAPointsBefore": 1136.6663,
       "TeamBPoints": 992.793497,
       "TeamBPointsBefore": 986.390408,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43994",
       "TeamBId": "43959",
       "HomeTeam": {
@@ -96972,7 +96962,7 @@
       "TeamAPointsBefore": 1757.874428,
       "TeamBPoints": 1571.033293,
       "TeamBPointsBefore": 1564.2567,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43960",
       "TeamBId": "43843",
       "HomeTeam": {
@@ -97088,7 +97078,7 @@
       "TeamAPointsBefore": 1751.097835,
       "TeamBPoints": 1458.734068,
       "TeamBPointsBefore": 1461.208132,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43960",
       "TeamBId": "44005",
       "HomeTeam": {
@@ -97562,7 +97552,7 @@
       "TeamAPointsBefore": 1550.943159,
       "TeamBPoints": 1510.113938,
       "TeamBPointsBefore": 1514.767421,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43961",
       "TeamBId": "43970",
       "HomeTeam": {
@@ -97678,7 +97668,7 @@
       "TeamAPointsBefore": 1555.596642,
       "TeamBPoints": 1755.100232,
       "TeamBPointsBefore": 1756.941254,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43961",
       "TeamBId": "43872",
       "HomeTeam": {
@@ -98172,7 +98162,7 @@
       "TeamAPointsBefore": 1528.003812,
       "TeamBPoints": 1549.287173,
       "TeamBPointsBefore": 1546.877672,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43962",
       "TeamBId": "43973",
       "HomeTeam": {
@@ -98288,7 +98278,7 @@
       "TeamAPointsBefore": 1525.594311,
       "TeamBPoints": 1586.688586,
       "TeamBPointsBefore": 1587.277634,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43962",
       "TeamBId": "43876",
       "HomeTeam": {
@@ -98321,132 +98311,6 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NGA",
         "IdCountry": "NGA",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Period": 10,
-      "Attendance": 0
-    },
-    {
-      "IdCompetition": "520",
-      "IdSeason": "288329",
-      "IdStage": "288330",
-      "IdGroup": "",
-      "IdMatch": "400019302",
-      "IdMatchIfes": "146410",
-      "Date": "2025-11-13T19:45:00+00:00",
-      "LocalDate": "2025-11-13",
-      "MatchDay": "",
-      "MatchStatus": 0,
-      "MatchTime": "0'",
-      "ResultType": 1,
-      "HomeTeamScore": 2,
-      "HomeTeamPenaltyScore": 0,
-      "AwayTeamScore": 0,
-      "AwayTeamPenaltyScore": 0,
-      "CompetitionName": null,
-      "SeasonName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Eliminatórias da UEFA para a Copa do Mundo da FIFA 26™"
-        }
-      ],
-      "GroupName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "Grupo F"
-        }
-      ],
-      "StageName": [
-        {
-          "Locale": "pt-BR",
-          "Description": "1ª fase"
-        }
-      ],
-      "Stadium": null,
-      "Winner": "43953",
-      "Properties": null,
-      "AggregateAwayTeamScore": null,
-      "AggregateHomeTeamScore": null,
-      "MatchNumber": 0,
-      "Home": {
-        "IdTeam": "43953",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "República da Irlanda"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRL",
-        "IdCountry": "IRL",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "Away": {
-        "IdTeam": "43963",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Portugal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
-        "IdCountry": "POR",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "PlaceHolderA": "",
-      "PlaceHolderB": "",
-      "TeamAPoints": 1421.414237,
-      "TeamAPointsBefore": 1401.179273,
-      "TeamBPoints": 1757.766063,
-      "TeamBPointsBefore": 1778.001027,
-      "PointsVisibility": 1,
-      "TeamAId": "43953",
-      "TeamBId": "43963",
-      "HomeTeam": {
-        "IdTeam": "43953",
-        "Score": 2,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "República da Irlanda"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/IRL",
-        "IdCountry": "IRL",
-        "IdAssociation": "",
-        "Gender": 1,
-        "AgeType": 0,
-        "Abbreviation": "",
-        "FootballType": 0
-      },
-      "AwayTeam": {
-        "IdTeam": "43963",
-        "Score": 0,
-        "IdConfederation": "",
-        "TeamName": [
-          {
-            "Locale": "pt-BR",
-            "Description": "Portugal"
-          }
-        ],
-        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
-        "IdCountry": "POR",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -98888,7 +98752,7 @@
       "TeamAPointsBefore": 1763.834406,
       "TeamBPoints": 1452.939983,
       "TeamBPointsBefore": 1455.283124,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43963",
       "TeamBId": "43925",
       "HomeTeam": {
@@ -98921,6 +98785,122 @@
         ],
         "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/CHI",
         "IdCountry": "CHI",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Period": 10,
+      "Attendance": 0
+    },
+    {
+      "IdCompetition": "cesdwwnxbc5fmajgroc0hqzy2",
+      "IdSeason": "dezv8l0fzgcxtejl0dwmy1gyc",
+      "IdStage": "2m1wojm5bt709wu4kugtytxqs",
+      "IdGroup": "",
+      "IdMatch": "15jreurxnfznovwo6ztrf6al0",
+      "IdMatchIfes": "153103",
+      "Date": "2026-06-10T19:45:00+00:00",
+      "LocalDate": "2026-06-10",
+      "MatchDay": "",
+      "MatchStatus": 0,
+      "MatchTime": "0'",
+      "ResultType": 1,
+      "HomeTeamScore": 2,
+      "HomeTeamPenaltyScore": 0,
+      "AwayTeamScore": 1,
+      "AwayTeamPenaltyScore": 0,
+      "CompetitionName": null,
+      "SeasonName": [
+        {
+          "Locale": "en-GB",
+          "Description": "Friendly 2026"
+        }
+      ],
+      "GroupName": [],
+      "StageName": [],
+      "Stadium": null,
+      "Winner": "43963",
+      "Properties": null,
+      "AggregateAwayTeamScore": null,
+      "AggregateHomeTeamScore": null,
+      "MatchNumber": 0,
+      "Home": {
+        "IdTeam": "43963",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Portugal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
+        "IdCountry": "POR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "Away": {
+        "IdTeam": "43876",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Nigéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NGA",
+        "IdCountry": "NGA",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "PlaceHolderA": "",
+      "PlaceHolderB": "",
+      "TeamAPoints": 1767.849031,
+      "TeamAPointsBefore": 1766.177547,
+      "TeamBPoints": 1585.017102,
+      "TeamBPointsBefore": 1586.688586,
+      "PointsVisibility": 1,
+      "TeamAId": "43963",
+      "TeamBId": "43876",
+      "HomeTeam": {
+        "IdTeam": "43963",
+        "Score": 2,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Portugal"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/POR",
+        "IdCountry": "POR",
+        "IdAssociation": "",
+        "Gender": 1,
+        "AgeType": 0,
+        "Abbreviation": "",
+        "FootballType": 0
+      },
+      "AwayTeam": {
+        "IdTeam": "43876",
+        "Score": 1,
+        "IdConfederation": "",
+        "TeamName": [
+          {
+            "Locale": "pt-BR",
+            "Description": "Nigéria"
+          }
+        ],
+        "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NGA",
+        "IdCountry": "NGA",
         "IdAssociation": "",
         "Gender": 1,
         "AgeType": 0,
@@ -99372,7 +99352,7 @@
       "TeamAPointsBefore": 1350.184155,
       "TeamBPoints": 1450.204168,
       "TeamBPointsBefore": 1451.161007,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43947",
       "TeamBId": "43964",
       "HomeTeam": {
@@ -99488,7 +99468,7 @@
       "TeamAPointsBefore": 1450.204168,
       "TeamBPoints": 1516.946629,
       "TeamBPointsBefore": 1522.637118,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43964",
       "TeamBId": "43974",
       "HomeTeam": {
@@ -99836,7 +99816,7 @@
       "TeamAPointsBefore": 1563.241764,
       "TeamBPoints": 1523.28433,
       "TeamBPointsBefore": 1525.604093,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43855",
       "TeamBId": "43965",
       "HomeTeam": {
@@ -99952,7 +99932,7 @@
       "TeamAPointsBefore": 1523.28433,
       "TeamBPoints": 1408.541965,
       "TeamBPointsBefore": 1412.494766,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43965",
       "TeamBId": "43847",
       "HomeTeam": {
@@ -100068,7 +100048,7 @@
       "TeamAPointsBefore": 1527.237131,
       "TeamBPoints": 1219.58613,
       "TeamBPointsBefore": 1221.951833,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43965",
       "TeamBId": "43920",
       "HomeTeam": {
@@ -100542,7 +100522,7 @@
       "TeamAPointsBefore": 726.330601,
       "TeamBPoints": 902.92965,
       "TeamBPointsBefore": 899.532777,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43966",
       "TeamBId": "43809",
       "HomeTeam": {
@@ -100658,7 +100638,7 @@
       "TeamAPointsBefore": 1130.263211,
       "TeamBPoints": 721.201827,
       "TeamBPointsBefore": 722.933728,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43994",
       "TeamBId": "43966",
       "HomeTeam": {
@@ -101132,7 +101112,7 @@
       "TeamAPointsBefore": 1498.350389,
       "TeamBPoints": 1293.083169,
       "TeamBPointsBefore": 1294.652918,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43967",
       "TeamBId": "1895293",
       "HomeTeam": {
@@ -101248,7 +101228,7 @@
       "TeamAPointsBefore": 1329.415509,
       "TeamBPoints": 1503.34027,
       "TeamBPointsBefore": 1499.920138,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43923",
       "TeamBId": "43967",
       "HomeTeam": {
@@ -101722,7 +101702,7 @@
       "TeamAPointsBefore": 1446.439067,
       "TeamBPoints": 1131.056114,
       "TeamBPointsBefore": 1128.334119,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43968",
       "TeamBId": "43939",
       "HomeTeam": {
@@ -101838,7 +101818,7 @@
       "TeamAPointsBefore": 1712.235658,
       "TeamBPoints": 1441.087158,
       "TeamBPointsBefore": 1443.717072,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43938",
       "TeamBId": "43968",
       "HomeTeam": {
@@ -102312,7 +102292,7 @@
       "TeamAPointsBefore": 1876.395199,
       "TeamBPoints": 1451.153466,
       "TeamBPointsBefore": 1447.771454,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43969",
       "TeamBId": "43818",
       "HomeTeam": {
@@ -102428,7 +102408,7 @@
       "TeamAPointsBefore": 1873.013187,
       "TeamBPoints": 1457.692964,
       "TeamBPointsBefore": 1459.390555,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43969",
       "TeamBId": "43929",
       "HomeTeam": {
@@ -102922,7 +102902,7 @@
       "TeamAPointsBefore": 1550.943159,
       "TeamBPoints": 1510.113938,
       "TeamBPointsBefore": 1514.767421,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43961",
       "TeamBId": "43970",
       "HomeTeam": {
@@ -103038,7 +103018,7 @@
       "TeamAPointsBefore": 1510.113938,
       "TeamBPoints": 1476.148459,
       "TeamBPointsBefore": 1475.819913,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43970",
       "TeamBId": "43949",
       "HomeTeam": {
@@ -103512,7 +103492,7 @@
       "TeamAPointsBefore": 1649.39683,
       "TeamBPoints": 1390.099732,
       "TeamBPointsBefore": 1391.4544,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43971",
       "TeamBId": "43820",
       "HomeTeam": {
@@ -103628,7 +103608,7 @@
       "TeamAPointsBefore": 1650.751498,
       "TeamBPoints": 1579.34264,
       "TeamBPointsBefore": 1578.655321,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43971",
       "TeamBId": "43976",
       "HomeTeam": {
@@ -104122,7 +104102,7 @@
       "TeamAPointsBefore": 1599.03767,
       "TeamBPoints": 1369.159317,
       "TeamBPointsBefore": 1372.110056,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43972",
       "TeamBId": "44000",
       "HomeTeam": {
@@ -104238,7 +104218,7 @@
       "TeamAPointsBefore": 1468.046323,
       "TeamBPoints": 1605.730921,
       "TeamBPointsBefore": 1601.988409,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43931",
       "TeamBId": "43972",
       "HomeTeam": {
@@ -104848,7 +104828,7 @@
       "TeamAPointsBefore": 1528.003812,
       "TeamBPoints": 1549.287173,
       "TeamBPointsBefore": 1546.877672,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43962",
       "TeamBId": "43973",
       "HomeTeam": {
@@ -105332,7 +105312,7 @@
       "TeamAPointsBefore": 1524.290508,
       "TeamBPoints": 1346.881205,
       "TeamBPointsBefore": 1345.227815,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43974",
       "TeamBId": "43860",
       "HomeTeam": {
@@ -105448,7 +105428,7 @@
       "TeamAPointsBefore": 1450.204168,
       "TeamBPoints": 1516.946629,
       "TeamBPointsBefore": 1522.637118,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43964",
       "TeamBId": "43974",
       "HomeTeam": {
@@ -105932,7 +105912,7 @@
       "TeamAPointsBefore": 1682.112154,
       "TeamBPoints": 1578.655321,
       "TeamBPointsBefore": 1580.674774,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43911",
       "TeamBId": "43976",
       "HomeTeam": {
@@ -106048,7 +106028,7 @@
       "TeamAPointsBefore": 1650.751498,
       "TeamBPoints": 1579.34264,
       "TeamBPointsBefore": 1578.655321,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43971",
       "TeamBId": "43976",
       "HomeTeam": {
@@ -106542,7 +106522,7 @@
       "TeamAPointsBefore": 997.005704,
       "TeamBPoints": 1024.384218,
       "TeamBPointsBefore": 1029.697455,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43982",
       "TeamBId": "43977",
       "HomeTeam": {
@@ -106658,7 +106638,7 @@
       "TeamAPointsBefore": 1002.318941,
       "TeamBPoints": 1024.172648,
       "TeamBPointsBefore": 1024.384218,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43982",
       "TeamBId": "43977",
       "HomeTeam": {
@@ -107142,7 +107122,7 @@
       "TeamAPointsBefore": 1291.711814,
       "TeamBPoints": 1276.664258,
       "TeamBPointsBefore": 1281.566939,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43908",
       "TeamBId": "43978",
       "HomeTeam": {
@@ -107258,7 +107238,7 @@
       "TeamAPointsBefore": 1825.965482,
       "TeamBPoints": 1275.581062,
       "TeamBPointsBefore": 1276.664258,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43942",
       "TeamBId": "43978",
       "HomeTeam": {
@@ -109637,7 +109617,7 @@
       "TeamAPointsBefore": 997.005704,
       "TeamBPoints": 1024.384218,
       "TeamBPointsBefore": 1029.697455,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43982",
       "TeamBId": "43977",
       "HomeTeam": {
@@ -109753,7 +109733,7 @@
       "TeamAPointsBefore": 1002.318941,
       "TeamBPoints": 1024.172648,
       "TeamBPointsBefore": 1024.384218,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43982",
       "TeamBId": "43977",
       "HomeTeam": {
@@ -110353,7 +110333,7 @@
       "TeamAPointsBefore": 1388.058361,
       "TeamBPoints": 1333.904007,
       "TeamBPointsBefore": 1328.333496,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43932",
       "TeamBId": "43984",
       "HomeTeam": {
@@ -110842,7 +110822,7 @@
       "TeamAPointsBefore": 1191.143092,
       "TeamBPoints": 1244.216499,
       "TeamBPointsBefore": 1244.728802,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43999",
       "TeamBId": "43989",
       "HomeTeam": {
@@ -110958,7 +110938,7 @@
       "TeamAPointsBefore": 1191.655395,
       "TeamBPoints": 1243.713925,
       "TeamBPointsBefore": 1244.216499,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43999",
       "TeamBId": "43989",
       "HomeTeam": {
@@ -111452,7 +111432,7 @@
       "TeamAPointsBefore": 1136.6663,
       "TeamBPoints": 992.793497,
       "TeamBPointsBefore": 986.390408,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43994",
       "TeamBId": "43959",
       "HomeTeam": {
@@ -111568,7 +111548,7 @@
       "TeamAPointsBefore": 1130.263211,
       "TeamBPoints": 721.201827,
       "TeamBPointsBefore": 722.933728,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43994",
       "TeamBId": "43966",
       "HomeTeam": {
@@ -112062,7 +112042,7 @@
       "TeamAPointsBefore": 1501.3824,
       "TeamBPoints": 1317.166862,
       "TeamBPointsBefore": 1318.82527,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43995",
       "TeamBId": "1942535",
       "HomeTeam": {
@@ -112178,7 +112158,7 @@
       "TeamAPointsBefore": 1243.474984,
       "TeamBPoints": 1505.737856,
       "TeamBPointsBefore": 1503.040808,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43906",
       "TeamBId": "43995",
       "HomeTeam": {
@@ -113892,7 +113872,7 @@
       "TeamAPointsBefore": 1191.143092,
       "TeamBPoints": 1244.216499,
       "TeamBPointsBefore": 1244.728802,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43999",
       "TeamBId": "43989",
       "HomeTeam": {
@@ -114008,7 +113988,7 @@
       "TeamAPointsBefore": 1191.655395,
       "TeamBPoints": 1243.713925,
       "TeamBPointsBefore": 1244.216499,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43999",
       "TeamBId": "43989",
       "HomeTeam": {
@@ -114492,7 +114472,7 @@
       "TeamAPointsBefore": 1385.838723,
       "TeamBPoints": 1372.110056,
       "TeamBPointsBefore": 1372.043897,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44037",
       "TeamBId": "44000",
       "HomeTeam": {
@@ -114608,7 +114588,7 @@
       "TeamAPointsBefore": 1599.03767,
       "TeamBPoints": 1369.159317,
       "TeamBPointsBefore": 1372.110056,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43972",
       "TeamBId": "44000",
       "HomeTeam": {
@@ -115092,7 +115072,7 @@
       "TeamAPointsBefore": 1473.938441,
       "TeamBPoints": 986.390408,
       "TeamBPointsBefore": 987.730586,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44002",
       "TeamBId": "43959",
       "HomeTeam": {
@@ -115208,7 +115188,7 @@
       "TeamAPointsBefore": 1475.278619,
       "TeamBPoints": 1301.977191,
       "TeamBPointsBefore": 1300.359299,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44002",
       "TeamBId": "1903356",
       "HomeTeam": {
@@ -115702,7 +115682,7 @@
       "TeamAPointsBefore": 1221.78095,
       "TeamBPoints": 1083.601894,
       "TeamBPointsBefore": 1087.339923,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44003",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -115818,7 +115798,7 @@
       "TeamAPointsBefore": 1225.518979,
       "TeamBPoints": 1084.930775,
       "TeamBPointsBefore": 1083.601894,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44003",
       "TeamBId": "43815",
       "HomeTeam": {
@@ -116942,7 +116922,7 @@
       "TeamAPointsBefore": 1556.482247,
       "TeamBPoints": 1461.208132,
       "TeamBPointsBefore": 1465.342534,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43899",
       "TeamBId": "44005",
       "HomeTeam": {
@@ -117058,7 +117038,7 @@
       "TeamAPointsBefore": 1751.097835,
       "TeamBPoints": 1458.734068,
       "TeamBPointsBefore": 1461.208132,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43960",
       "TeamBId": "44005",
       "HomeTeam": {
@@ -118142,7 +118122,7 @@
       "TeamAPointsBefore": 911.538277,
       "TeamBPoints": 875.845061,
       "TeamBPointsBefore": 880.548088,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44009",
       "TeamBId": "20003",
       "HomeTeam": {
@@ -118258,7 +118238,7 @@
       "TeamAPointsBefore": 916.241304,
       "TeamBPoints": 1024.164346,
       "TeamBPointsBefore": 1030.240953,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44009",
       "TeamBId": "43814",
       "HomeTeam": {
@@ -119372,7 +119352,7 @@
       "TeamAPointsBefore": 1191.416122,
       "TeamBPoints": 1183.038315,
       "TeamBPointsBefore": 1182.957166,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43933",
       "TeamBId": "44027",
       "HomeTeam": {
@@ -119488,7 +119468,7 @@
       "TeamAPointsBefore": 1504.135797,
       "TeamBPoints": 1180.780449,
       "TeamBPointsBefore": 1183.038315,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43950",
       "TeamBId": "44027",
       "HomeTeam": {
@@ -119962,7 +119942,7 @@
       "TeamAPointsBefore": 1004.157429,
       "TeamBPoints": 1271.683325,
       "TeamBPointsBefore": 1274.06372,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44036",
       "TeamBId": "43936",
       "HomeTeam": {
@@ -120078,7 +120058,7 @@
       "TeamAPointsBefore": 1191.334973,
       "TeamBPoints": 1008.240035,
       "TeamBPointsBefore": 1006.537824,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43933",
       "TeamBId": "44036",
       "HomeTeam": {
@@ -120572,7 +120552,7 @@
       "TeamAPointsBefore": 1385.838723,
       "TeamBPoints": 1372.110056,
       "TeamBPointsBefore": 1372.043897,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44037",
       "TeamBId": "44000",
       "HomeTeam": {
@@ -120688,7 +120668,7 @@
       "TeamAPointsBefore": 1385.772564,
       "TeamBPoints": 1539.155509,
       "TeamBPointsBefore": 1540.598716,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44037",
       "TeamBId": "43914",
       "HomeTeam": {
@@ -123828,7 +123808,7 @@
       "TeamAPointsBefore": 825.639984,
       "TeamBPoints": 857.733061,
       "TeamBPointsBefore": 863.09176,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1890334",
       "TeamBId": "43810",
       "HomeTeam": {
@@ -124322,7 +124302,7 @@
       "TeamAPointsBefore": 1498.350389,
       "TeamBPoints": 1293.083169,
       "TeamBPointsBefore": 1294.652918,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43967",
       "TeamBId": "1895293",
       "HomeTeam": {
@@ -124438,7 +124418,7 @@
       "TeamAPointsBefore": 1293.083169,
       "TeamBPoints": 875.61115,
       "TeamBPointsBefore": 877.297071,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1895293",
       "TeamBId": "43894",
       "HomeTeam": {
@@ -125542,7 +125522,7 @@
       "TeamAPointsBefore": 1366.125478,
       "TeamBPoints": 1505.483338,
       "TeamBPointsBefore": 1508.650488,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43850",
       "TeamBId": "1902465",
       "HomeTeam": {
@@ -125658,7 +125638,7 @@
       "TeamAPointsBefore": 1684.131607,
       "TeamBPoints": 1502.133186,
       "TeamBPointsBefore": 1505.483338,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43911",
       "TeamBId": "1902465",
       "HomeTeam": {
@@ -126132,7 +126112,7 @@
       "TeamAPointsBefore": 1278.904375,
       "TeamBPoints": 1300.359299,
       "TeamBPointsBefore": 1295.518644,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43936",
       "TeamBId": "1903356",
       "HomeTeam": {
@@ -126248,7 +126228,7 @@
       "TeamAPointsBefore": 1475.278619,
       "TeamBPoints": 1301.977191,
       "TeamBPointsBefore": 1300.359299,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "44002",
       "TeamBId": "1903356",
       "HomeTeam": {
@@ -127372,7 +127352,7 @@
       "TeamAPointsBefore": 810.14071,
       "TeamBPoints": 777.405734,
       "TeamBPointsBefore": 782.137325,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1941613",
       "TeamBId": "20004",
       "HomeTeam": {
@@ -127488,7 +127468,7 @@
       "TeamAPointsBefore": 814.872301,
       "TeamBPoints": 850.061011,
       "TeamBPointsBefore": 855.449528,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1941613",
       "TeamBId": "43900",
       "HomeTeam": {
@@ -127982,7 +127962,7 @@
       "TeamAPointsBefore": 1501.3824,
       "TeamBPoints": 1317.166862,
       "TeamBPointsBefore": 1318.82527,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "43995",
       "TeamBId": "1942535",
       "HomeTeam": {
@@ -128098,7 +128078,7 @@
       "TeamAPointsBefore": 1317.166862,
       "TeamBPoints": 946.429826,
       "TeamBPointsBefore": 948.383888,
-      "PointsVisibility": 2,
+      "PointsVisibility": 1,
       "TeamAId": "1942535",
       "TeamBId": "20001",
       "HomeTeam": {

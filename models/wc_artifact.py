@@ -97,8 +97,12 @@ def artifact_is_valid(manifest: dict | None = None) -> bool:
     return all(checks.values())
 
 
+# Fingerprints que podem mudar sem invalidar pesos do pickle treinado.
+_RUNTIME_STALE_KEYS = frozenset({"hyperparams", "odds", "fifa", "silver_fingerprint"})
+
+
 def artifact_is_loadable(manifest: dict | None = None) -> bool:
-    """Permite servir pickle quando só hiperparâmetros mudaram (retreino recomendado)."""
+    """Permite servir pickle quando só metadados runtime mudaram (odds, FIFA, hiperparâmetros)."""
     manifest = manifest or read_manifest()
     if not manifest or not _bundle_path().exists():
         return False
@@ -106,7 +110,7 @@ def artifact_is_loadable(manifest: dict | None = None) -> bool:
     stale = [name for name, ok in checks.items() if not ok]
     if not stale:
         return True
-    return stale == ["hyperparams"]
+    return all(name in _RUNTIME_STALE_KEYS for name in stale)
 
 
 def save_artifact(predictor: WcPredictor) -> dict:
@@ -162,9 +166,11 @@ def load_artifact() -> WcPredictor | None:
     if not artifact_is_valid(manifest):
         if not artifact_is_loadable(manifest):
             return None
+        stale = [name for name, ok in _artifact_checks(manifest).items() if not ok]
         logger.warning(
-            "wc_artifact_stale_hyperparams",
-            hint="Execute train-wc --force para alinhar pesos ao hyperparams.json",
+            "wc_artifact_stale_runtime",
+            stale=stale,
+            hint="Pickle servido; execute train-wc --force se fixtures/squads/features mudaram",
         )
     from ingest.fixtures.world_cup import load_wc_fixtures, normalize_fixtures_df
 
@@ -196,6 +202,27 @@ def _touch_manifest_silver_fingerprint(manifest: dict) -> dict:
             encoding="utf-8",
         )
     return manifest
+
+
+def _touch_manifest_runtime_fingerprints(manifest: dict) -> dict:
+    """Atualiza fingerprints voláteis após load (silver, odds, FIFA)."""
+    updated = dict(manifest)
+    changed = False
+    for key, fn in (
+        ("silver_fingerprint", silver_fingerprint),
+        ("odds_fingerprint", _odds_fingerprint),
+        ("fifa_fingerprint", fifa_rankings_fingerprint),
+    ):
+        current = fn()
+        if updated.get(key) != current:
+            updated[key] = current
+            changed = True
+    if changed:
+        _manifest_path().write_text(
+            json.dumps(updated, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    return updated
 
 
 def _log_train_to_mlflow(manifest: dict) -> str | None:
@@ -231,7 +258,7 @@ def load_or_train_wc_predictor(
     if not force:
         loaded = load_artifact()
         if loaded is not None:
-            manifest = _touch_manifest_silver_fingerprint(read_manifest() or {})
+            manifest = _touch_manifest_runtime_fingerprints(read_manifest() or {})
             manifest["loaded_from_cache"] = True
             logger.info("wc_artifact_loaded", created_at=manifest.get("created_at"))
             return loaded, manifest

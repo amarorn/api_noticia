@@ -5,9 +5,9 @@
   "squads_fingerprint": "squads_2026.json:1780473946864491938:144756",
   "hyperparams_fingerprint": "24.0:30.0:0.85:0.2:0.18:10.0:1780931101875058499",
   "fifa_fingerprint": "fifa_rankings_2026.json:1780482950041067352:3863",
-  "odds_fingerprint": "wc_2026_odds.json:1780470584354654295:1024|superbet_odds.json:1780993039783829731:1026",
+  "odds_fingerprint": "wc_2026_odds.json:1781228319598571094:15785|superbet_odds.json:1780993039783829731:1026",
   "baselines_fingerprint": "team_baselines.json:1780470584355706916:68260",
-  "silver_fingerprint": "83a2012ffba411c3",
+  "silver_fingerprint": "3a4267269e521299",
   "hyperparams": {
     "elo_k": 24.0,
     "elo_home_adv": 30.0,

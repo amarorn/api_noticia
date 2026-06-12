@@ -104,6 +104,12 @@ export interface IWcRepository {
     stake?: number;
     oddsPlaced?: number;
   }): Promise<import("@/domain/entities").SuperbetLiveAdvice>;
+  getComboTicket(request: {
+    homeTeam: string;
+    awayTeam: string;
+    bankroll?: number;
+    superbetEventId?: number;
+  }): Promise<import("@/domain/entities").WcComboTicket>;
   simulateMatch(request: {
     homeTeam: string;
     awayTeam: string;

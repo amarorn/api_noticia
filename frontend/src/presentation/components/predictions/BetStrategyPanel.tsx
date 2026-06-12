@@ -66,15 +66,27 @@ export function BetStrategyPanel({ strategy }: BetStrategyPanelProps) {
       {strategy.shields.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="text-[11px] uppercase tracking-wider text-slate-500">Proteções</p>
-          {strategy.shields.map((shield, idx) => (
+          {strategy.shields.map((shield, idx) => {
+            const isHandicapTrap =
+              shield.priority === "alta" &&
+              shield.action === "evitar" &&
+              shield.title.toLowerCase().includes("handicap");
+            return (
             <div
               key={`${shield.action}-${idx}`}
-              className={`rounded-xl border px-3 py-2.5 ${SHIELD_STYLES[shield.priority] ?? SHIELD_STYLES.baixa}`}
+              className={`rounded-xl border px-3 py-2.5 ${
+                isHandicapTrap
+                  ? "border-red-500/45 bg-red-500/12"
+                  : SHIELD_STYLES[shield.priority] ?? SHIELD_STYLES.baixa
+              }`}
             >
-              <p className="text-sm font-medium text-white">{shield.title}</p>
+              <p className={`text-sm font-medium ${isHandicapTrap ? "text-red-100" : "text-white"}`}>
+                {shield.title}
+              </p>
               <p className="mt-1 text-xs text-slate-400">{shield.reason}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

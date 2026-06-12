@@ -14,6 +14,7 @@ import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconArrowLeft, IconChevronRight } from "@/presentation/components/ui/Icons";
 import { BetStrategyPanel } from "@/presentation/components/predictions/BetStrategyPanel";
+import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
 import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
 import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
@@ -431,10 +432,13 @@ export function LiveInPlayPage() {
           {/* ── 4. GUIA RÁPIDO (colapsável) ── */}
           <LivePlainGuide data={data} trackBet={betAnalysisActive} />
 
-          {/* ── 5. ESTRATÉGIA ── */}
+          {/* ── 5. BILHETE COMBO KXL ── */}
+          <ComboTicketPanel homeTeam={data.homeTeam} awayTeam={data.awayTeam} strategy={data.strategy} />
+
+          {/* ── 6. ESTRATÉGIA ── */}
           <BetStrategyPanel strategy={data.strategy} />
 
-          {/* ── 6. MINHA APOSTA / CASHOUT (colapsável) ── */}
+          {/* ── 7. MINHA APOSTA / CASHOUT (colapsável) ── */}
           <section className="rounded-2xl border border-white/8 bg-white/[0.02]">
             <button
               type="button"

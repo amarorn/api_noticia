@@ -1,0 +1,168 @@
+{
+  "event_id": 14000001,
+  "fixture": {
+    "event_name": "México·África do Sul",
+    "utc_date": "2026-06-11T20:00:00Z",
+    "betradar_id": "70000001",
+    "event_tags": "superLive,v2"
+  },
+  "inplay_stats": {
+    "home_team_score": "0",
+    "away_team_score": "0",
+    "minutes": "12",
+    "stoppage_time": null,
+    "home_team_corners": "1",
+    "away_team_corners": "0",
+    "home_team_yellow_cards": "0",
+    "away_team_yellow_cards": "0",
+    "periods": [
+      {"num": 1, "home_team_score": "0", "away_team_score": "0", "type": 1}
+    ]
+  },
+  "inplay_stats_metadata": {
+    "event_status_label": "1H",
+    "status": "STARTED"
+  },
+  "markets": [
+    {
+      "name": "Total de Gols (1º Tempo)",
+      "odds": [
+        {"price": 1.72, "metadata": {"name": "Mais de 0.5", "special_bet_value": "0.5"}},
+        {"price": 2.05, "metadata": {"name": "Menos de 0.5", "special_bet_value": "0.5"}},
+        {"price": 1.45, "metadata": {"name": "Mais de 1.5", "special_bet_value": "1.5"}},
+        {"price": 2.65, "metadata": {"name": "Menos de 1.5", "special_bet_value": "1.5"}},
+        {"price": 1.85, "metadata": {"name": "Mais de 2.5", "special_bet_value": "2.5"}},
+        {"price": 1.92, "metadata": {"name": "Menos de 2.5", "special_bet_value": "2.5"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Total de Cartões Amarelos",
+      "odds": [
+        {"price": 1.70, "metadata": {"name": "Mais de 1.5", "special_bet_value": "1.5"}},
+        {"price": 2.10, "metadata": {"name": "Menos de 1.5", "special_bet_value": "1.5"}},
+        {"price": 1.55, "metadata": {"name": "Mais de 2.5", "special_bet_value": "2.5"}},
+        {"price": 2.35, "metadata": {"name": "Menos de 2.5", "special_bet_value": "2.5"}}
+      ]
+    },
+    {
+      "name": "Total de Gols",
+      "odds": [
+        {"price": 1.40, "metadata": {"name": "Mais de 2.5", "special_bet_value": "2.5"}},
+        {"price": 2.90, "metadata": {"name": "Menos de 2.5", "special_bet_value": "2.5"}},
+        {"price": 1.22, "metadata": {"name": "Mais de 3.5", "special_bet_value": "3.5"}},
+        {"price": 4.10, "metadata": {"name": "Menos de 3.5", "special_bet_value": "3.5"}},
+        {"price": 1.08, "metadata": {"name": "Mais de 4.5", "special_bet_value": "4.5"}},
+        {"price": 7.50, "metadata": {"name": "Menos de 4.5", "special_bet_value": "4.5"}},
+        {"price": 1.03, "metadata": {"name": "Mais de 5.5", "special_bet_value": "5.5"}},
+        {"price": 11.00, "metadata": {"name": "Menos de 5.5", "special_bet_value": "5.5"}}
+      ]
+    },
+    {
+      "name": "México - Total de Chutes",
+      "odds": [
+        {"price": 1.75, "metadata": {"name": "Mais de 8.5", "special_bet_value": "8.5"}},
+        {"price": 2.00, "metadata": {"name": "Menos de 8.5", "special_bet_value": "8.5"}},
+        {"price": 1.45, "metadata": {"name": "Mais de 4.5", "special_bet_value": "4.5"}},
+        {"price": 2.65, "metadata": {"name": "Menos de 4.5", "special_bet_value": "4.5"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Resultado (1X2)",
+      "odds": [
+        {"price": 2.85, "metadata": {"name": "1"}},
+        {"price": 2.10, "metadata": {"name": "X"}},
+        {"price": 4.20, "metadata": {"name": "2"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Total de Gols",
+      "odds": [
+        {"price": 1.55, "metadata": {"name": "Mais de 0.5", "special_bet_value": "0.5"}},
+        {"price": 2.35, "metadata": {"name": "Menos de 0.5", "special_bet_value": "0.5"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Resultado Final",
+      "odds": [
+        {"price": 3.10, "metadata": {"name": "1"}},
+        {"price": 2.00, "metadata": {"name": "X"}},
+        {"price": 3.80, "metadata": {"name": "2"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Resultado Correto",
+      "odds": [
+        {"price": 2.80, "metadata": {"name": "0:0"}},
+        {"price": 4.50, "metadata": {"name": "1:0"}},
+        {"price": 7.00, "metadata": {"name": "0:1"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Número Exato de Gols",
+      "odds": [
+        {"price": 2.40, "metadata": {"name": "0"}},
+        {"price": 2.60, "metadata": {"name": "1"}},
+        {"price": 4.20, "metadata": {"name": "2"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Número Exato de Gols de México",
+      "odds": [
+        {"price": 1.85, "metadata": {"name": "0"}},
+        {"price": 2.70, "metadata": {"name": "1"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Número Exato de Gols de África do Sul",
+      "odds": [
+        {"price": 1.55, "metadata": {"name": "0"}},
+        {"price": 3.10, "metadata": {"name": "1"}}
+      ]
+    },
+    {
+      "name": "1º Tempo - Handicap",
+      "odds": [
+        {"price": 1.90, "metadata": {"name": "México", "special_bet_value": "-0.5"}},
+        {"price": 1.85, "metadata": {"name": "África do Sul", "special_bet_value": "0.5"}}
+      ]
+    },
+    {
+      "name": "2º Tempo - Resultado Final",
+      "odds": [
+        {"price": 2.95, "metadata": {"name": "1"}},
+        {"price": 2.30, "metadata": {"name": "X"}},
+        {"price": 3.40, "metadata": {"name": "2"}}
+      ]
+    },
+    {
+      "name": "2º Tempo - Resultado Correto",
+      "odds": [
+        {"price": 3.20, "metadata": {"name": "0x0"}},
+        {"price": 5.50, "metadata": {"name": "1x0"}}
+      ]
+    },
+    {
+      "name": "2º Tempo - Número Exato de Gols",
+      "odds": [
+        {"price": 2.10, "metadata": {"name": "0"}},
+        {"price": 2.80, "metadata": {"name": "1"}}
+      ]
+    },
+    {
+      "name": "Total de Gols (2º Tempo)",
+      "odds": [
+        {"price": 1.65, "metadata": {"name": "Mais de 0.5", "special_bet_value": "0.5"}},
+        {"price": 2.15, "metadata": {"name": "Menos de 0.5", "special_bet_value": "0.5"}}
+      ]
+    },
+    {
+      "name": "2º Tempo - Handicap",
+      "odds": [
+        {"price": 5.50, "metadata": {"name": "México", "special_bet_value": "-1.5"}},
+        {"price": 1.15, "metadata": {"name": "África do Sul", "special_bet_value": "+1.5"}},
+        {"price": 12.00, "metadata": {"name": "México", "special_bet_value": "-2.5"}},
+        {"price": 1.03, "metadata": {"name": "África do Sul", "special_bet_value": "+2.5"}}
+      ]
+    }
+  ]
+}

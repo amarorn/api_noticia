@@ -1,4 +1,5 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
+import { buildBetReason, TIMING_CONFIG } from "@/presentation/components/predictions/liveBetInsights";
 
 type Tone = "protect" | "bet" | "bet-light" | "wait" | "finished";
 
@@ -54,6 +55,9 @@ interface ActionState {
   tone: Tone;
   headline: string;
   subline: string;
+  whyBet?: string;
+  timing?: string;
+  timingLabel?: string;
   stakeHint?: string;
   showWatchList: boolean;
   directionBadge?: { label: string; colorClass: string };
@@ -123,6 +127,33 @@ function resolveWatchList(data: SuperbetLiveAdvice, threshold: number): WatchIte
   return buildFallbackWatchList(data, threshold);
 }
 
+function buildWhyBet(
+  top: NonNullable<SuperbetLiveAdvice["strategy"]>["opportunities"][number],
+  data: SuperbetLiveAdvice,
+): string {
+  if (top.fundamentacao) {
+    return top.timingReason
+      ? `${top.fundamentacao} ${top.timingReason}`
+      : top.fundamentacao;
+  }
+  return buildBetReason({
+    label: top.label,
+    market: top.market,
+    outcome: top.outcome,
+    modelProb: top.modelProb,
+    impliedProb: top.impliedProb ?? 1 / top.marketOdd,
+    edgePp: top.edgePp,
+    tier: top.tier,
+    rank: top.rank,
+    minute: data.minute,
+    currentScore: data.currentScore ?? undefined,
+    timing: top.timing,
+    timingReason: top.timingReason,
+    confidenceLabel: data.confidence?.label,
+    confidenceScore: data.confidence?.score,
+  });
+}
+
 function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionState {
   if (data.isFinished) {
     return {
@@ -187,39 +218,61 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
   }
 
   // OPORTUNIDADE FORTE — pode apostar com confiança
-  if (top && top.tier === "forte") {
+  if (top && top.tier === "forte" && top.timing !== "aguardar") {
     const stakeHint =
-      top.suggestedStakeValue > 0
+      top.timing === "agora" && top.suggestedStakeValue > 0
         ? `R$ ${top.suggestedStakeValue.toFixed(0)} (${top.suggestedStakePct}% da banca)`
         : undefined;
+    const timingCfg = TIMING_CONFIG[top.timing ?? "monitorar"] ?? TIMING_CONFIG.monitorar;
+    const implied = top.impliedProb ?? 1 / top.marketOdd;
     return {
-      tone: "bet",
-      headline: `APOSTE: ${top.label}`,
-      subline: `Odd ${top.marketOdd.toFixed(2)} · chance real ${(top.modelProb * 100).toFixed(0)}%${
-        avoid.length > 0 ? ` · Cuidado com: ${avoid.join(", ")}` : ""
+      tone: top.timing === "agora" ? "bet" : "bet-light",
+      headline:
+        top.timing === "agora"
+          ? `ENTRAR: ${top.label}`
+          : `MONITORAR: ${top.label}`,
+      subline: `Modelo ${(top.modelProb * 100).toFixed(0)}% vs mercado ${(implied * 100).toFixed(0)}% · edge +${top.edgePp.toFixed(1)} pp${
+        avoid.length > 0 ? ` · Evitar: ${avoid.join(", ")}` : ""
       }`,
+      whyBet: buildWhyBet(top, data),
+      timing: top.timing,
+      timingLabel: timingCfg.label,
       stakeHint,
-      showWatchList: false,
+      showWatchList: top.timing !== "agora",
       directionBadge: resolveDirectionBadge(top.market, top.outcome),
       confidenceWarning: confWarning,
     };
   }
 
-  // OPORTUNIDADE MODERADA — pode apostar, mas com cuidado
-  if (top && top.tier === "moderada") {
+  // OPORTUNIDADE MODERADA
+  if (top && top.tier === "moderada" && top.timing !== "aguardar") {
     const stakeHint =
-      top.suggestedStakeValue > 0
-        ? `R$ ${top.suggestedStakeValue.toFixed(0)} (máx. ${top.suggestedStakePct}% da banca)`
+      top.timing === "agora" && top.suggestedStakeValue > 0
+        ? `R$ ${top.suggestedStakeValue.toFixed(0)} (máx. ${top.suggestedStakePct}%)`
         : undefined;
+    const implied = top.impliedProb ?? 1 / top.marketOdd;
     return {
       tone: "bet-light",
-      headline: `APOSTE COM CUIDADO: ${top.label}`,
-      subline: `Odd ${top.marketOdd.toFixed(2)} · oportunidade boa, mas não perfeita${
-        avoid.length > 0 ? ` · Cuidado com: ${avoid.join(", ")}` : ""
+      headline: `LEITURA SÓLIDA: ${top.label}`,
+      subline: `Probabilidade real ${(top.modelProb * 100).toFixed(0)}% · mercado ${(implied * 100).toFixed(0)}% · +${top.edgePp.toFixed(1)} pp${
+        avoid.length > 0 ? ` · Cuidado: ${avoid.join(", ")}` : ""
       }`,
+      whyBet: buildWhyBet(top, data),
+      timing: top.timing,
       stakeHint,
-      showWatchList: false,
+      showWatchList: true,
       directionBadge: resolveDirectionBadge(top.market, top.outcome),
+      confidenceWarning: confWarning,
+    };
+  }
+
+  if (top && top.timing === "aguardar") {
+    return {
+      tone: "wait",
+      headline: "AGUARDAR — linha ainda não favorece",
+      subline: top.timingReason ?? "O modelo vê valor, mas a odd ainda não abriu o suficiente.",
+      whyBet: buildWhyBet(top, data),
+      showWatchList: true,
       confidenceWarning: confWarning,
     };
   }
@@ -293,6 +346,15 @@ export function LiveActionNowPanel({ data, trackBet }: LiveActionNowPanelProps) 
             </span>
           )}
           <p className="mt-1.5 text-sm text-slate-300">{action.subline}</p>
+
+          {action.whyBet && (
+            <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Fundamentação do modelo
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-300">{action.whyBet}</p>
+            </div>
+          )}
 
           {/* Alerta de confiança baixa nos dados */}
           {action.confidenceWarning && (

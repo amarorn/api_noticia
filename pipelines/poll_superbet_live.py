@@ -147,14 +147,27 @@ def poll_once(
             continue
 
         if not payload.get("is_live"):
-            skipped += 1
-            status = payload.get("status") or "sem stats"
-            msg = (
-                f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
-                f"— não ao vivo ({status})"
-            )
-            details.append(msg)
-            print(msg)
+            if payload.get("is_finished"):
+                fin = payload.get("event_finalize") or {}
+                msg = (
+                    f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+                    f"— encerrado {payload.get('current_score')} "
+                    f"(gold={'ok' if fin else 'já processado'})"
+                )
+                if fin.get("retrain_scheduled"):
+                    msg += " · retreino agendado"
+                details.append(msg)
+                print(msg)
+                captured += 1
+            else:
+                skipped += 1
+                status = payload.get("status") or "sem stats"
+                msg = (
+                    f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+                    f"— não ao vivo ({status})"
+                )
+                details.append(msg)
+                print(msg)
             continue
 
         captured += 1

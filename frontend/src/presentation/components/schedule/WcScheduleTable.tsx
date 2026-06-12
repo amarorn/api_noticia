@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { WcSchedule, WcScheduleMatch } from "@/domain/entities";
-import { IconChevronRight } from "@/presentation/components/ui/Icons";
+import { ComboTicketModal } from "@/presentation/components/predictions/ComboTicketModal";
+import { IconChevronRight, IconWallet } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
+import { isMatchPregame } from "@/presentation/utils/sofascore";
 
 interface WcScheduleTableProps {
   schedule: WcSchedule;
@@ -41,7 +44,17 @@ function buildPredictLink(homeTeam: string, awayTeam: string): string {
   return `/predict?${params.toString()}`;
 }
 
-function MatchRow({ match, index }: { match: WcScheduleMatch; index: number }) {
+function MatchRow({
+  match,
+  index,
+  onOpenCombo,
+}: {
+  match: WcScheduleMatch;
+  index: number;
+  onOpenCombo: (match: WcScheduleMatch) => void;
+}) {
+  const comboAvailable = isMatchPregame(match.kickoff);
+
   return (
     <motion.tr
       initial={{ opacity: 0, x: -8 }}
@@ -73,13 +86,25 @@ function MatchRow({ match, index }: { match: WcScheduleMatch; index: number }) {
         )}
       </td>
       <td className="px-4 py-3.5 text-right">
-        <Link
-          to={buildPredictLink(match.homeTeam, match.awayTeam)}
-          className="inline-flex items-center gap-1 rounded-lg border border-white/8 bg-white/4 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:border-neon-green/30 hover:text-neon-green"
-        >
-          Palpite
-          <IconChevronRight className="h-3 w-3" />
-        </Link>
+        <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:justify-end">
+          {comboAvailable && (
+            <button
+              type="button"
+              onClick={() => onOpenCombo(match)}
+              className="inline-flex items-center gap-1 rounded-lg border border-neon-blue/25 bg-neon-blue/10 px-2.5 py-1.5 text-[11px] font-semibold text-neon-blue transition-colors hover:border-neon-blue/45 hover:bg-neon-blue/15"
+            >
+              <IconWallet className="h-3 w-3" />
+              Bilhete combo
+            </button>
+          )}
+          <Link
+            to={buildPredictLink(match.homeTeam, match.awayTeam)}
+            className="inline-flex items-center gap-1 rounded-lg border border-white/8 bg-white/4 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-neon-green/30 hover:text-neon-green"
+          >
+            Palpite
+            <IconChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
       </td>
     </motion.tr>
   );
@@ -90,6 +115,8 @@ export function WcScheduleTable({
   selectedRound,
   selectedGroup,
 }: WcScheduleTableProps) {
+  const [comboMatch, setComboMatch] = useState<WcScheduleMatch | null>(null);
+
   const filtered = schedule.matches.filter((m) => {
     if (selectedRound !== "all" && m.round !== selectedRound) return false;
     if (selectedGroup !== "all" && m.group !== selectedGroup) return false;
@@ -105,31 +132,44 @@ export function WcScheduleTable({
   }
 
   return (
-    <div className="glass-card overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead>
-            <tr className="border-b border-white/8 bg-white/[0.02] text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              <th className="px-4 py-3">Data</th>
-              <th className="px-4 py-3">Gr.</th>
-              <th className="px-4 py-3">Mandante</th>
-              <th className="px-2 py-3" />
-              <th className="px-4 py-3">Visitante</th>
-              <th className="hidden px-4 py-3 lg:table-cell">Estádio</th>
-              <th className="px-4 py-3 text-right">Ação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((match, i) => (
-              <MatchRow key={match.matchId} match={match} index={i} />
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="glass-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="border-b border-white/8 bg-white/[0.02] text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Gr.</th>
+                <th className="px-4 py-3">Mandante</th>
+                <th className="px-2 py-3" />
+                <th className="px-4 py-3">Visitante</th>
+                <th className="hidden px-4 py-3 lg:table-cell">Estádio</th>
+                <th className="px-4 py-3 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((match, i) => (
+                <MatchRow
+                  key={match.matchId}
+                  match={match}
+                  index={i}
+                  onOpenCombo={setComboMatch}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-white/5 px-4 py-2.5 text-xs text-slate-500">
+          {filtered.length} jogo{filtered.length !== 1 ? "s" : ""} · {schedule.totalMatches} no total
+        </div>
       </div>
-      <div className="border-t border-white/5 px-4 py-2.5 text-xs text-slate-500">
-        {filtered.length} jogo{filtered.length !== 1 ? "s" : ""} · {schedule.totalMatches} no total
-      </div>
-    </div>
+
+      <ComboTicketModal
+        match={comboMatch}
+        open={comboMatch != null}
+        onClose={() => setComboMatch(null)}
+      />
+    </>
   );
 }
 

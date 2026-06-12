@@ -1,119 +1,121 @@
 import { useMemo, useState } from "react";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
-import { formatPercent } from "@/presentation/theme";
+import {
+  MARKET_SECTIONS,
+  VERDICT_CONFIG,
+  type MarketGroup,
+  type MarketSection,
+  type Verdict,
+} from "@/presentation/components/predictions/liveMarketGroups";
+import {
+  buildBetReason,
+  probComparisonLabel,
+  rankLabel,
+  sortByVerdictAndEdge,
+  TIER_CONFIG,
+  type BetTier,
+} from "@/presentation/components/predictions/liveBetInsights";
+import { LiveTopPicks } from "@/presentation/components/predictions/LiveTopPicks";
 
-// ── Barra horizontal de EV ────────────────────────────────────────────────
-// Barra fina no topo do card: preenche do centro para a direita (EV+) ou esquerda (EV−)
-function EvBar({ ev }: { ev: number }) {
-  const MAX_EV = 0.25;
-  const clamped = Math.max(-MAX_EV, Math.min(MAX_EV, ev));
-  const pct = Math.abs(clamped / MAX_EV) * 50; // 0-50% da largura total
-  const isPositive = ev > 0.005;
-  const isNegative = ev < -0.005;
-  const barColor = isPositive
-    ? "bg-neon-green/60"
-    : isNegative
-      ? "bg-red-400/50"
-      : "bg-slate-600/40";
+type MarketScanRow = NonNullable<SuperbetLiveAdvice["strategy"]>["marketScan"][number];
+type Opportunity = NonNullable<SuperbetLiveAdvice["strategy"]>["opportunities"][number];
+
+function EvBar({ modelProb, impliedProb }: { modelProb: number; impliedProb: number }) {
+  const modelPct = Math.min(100, Math.max(0, modelProb * 100));
+  const impliedPct = Math.min(100, Math.max(0, impliedProb * 100));
+  const edge = modelProb - impliedProb;
 
   return (
-    <div className="relative mb-3 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
-      {/* Marcador central (EV = 0) */}
-      <div className="absolute inset-y-0 left-1/2 w-px bg-white/15" />
-      {/* Preenchimento */}
-      <div
-        className={`absolute inset-y-0 rounded-full transition-all duration-500 ${barColor}`}
-        style={
-          isPositive
-            ? { left: "50%", width: `${pct}%` }
-            : { right: "50%", width: `${pct}%` }
-        }
-      />
+    <div className="relative mb-3">
+      <div className="mb-1 flex justify-between text-[10px] text-slate-500">
+        <span>Mercado {impliedPct.toFixed(0)}%</span>
+        <span className={edge > 0 ? "text-neon-green" : "text-slate-500"}>
+          Modelo {modelPct.toFixed(0)}%
+        </span>
+      </div>
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-slate-500/40 transition-all duration-500"
+          style={{ width: `${impliedPct}%` }}
+        />
+        <div
+          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+            edge > 0 ? "bg-neon-green/70" : "bg-red-400/40"
+          }`}
+          style={{ width: `${modelPct}%` }}
+        />
+      </div>
     </div>
   );
 }
 
-type MarketScanRow = NonNullable<SuperbetLiveAdvice["strategy"]>["marketScan"][number];
-type Verdict = "apostar" | "quase" | "sem_valor" | "sem_odds";
-
-interface MarketGroup {
-  id: string;
-  superbetName: string;
-  matchMarket: (market: string) => boolean;
-  note?: string;
-}
-
-const MARKET_GROUPS: MarketGroup[] = [
-  {
-    id: "h2h",
-    superbetName: "Resultado Final",
-    matchMarket: (m) => m === "h2h",
-    note: "Pode suspender ao vivo — use Total ou 2º Gol se sumir.",
+const DIRECTION_CONFIG: Record<
+  string,
+  { label: string; sub: string; bgClass: string; textClass: string }
+> = {
+  btts_yes: {
+    label: "SIM",
+    sub: "Apostar que ambas as equipes marcam",
+    bgClass: "bg-neon-green/15 border-neon-green/30",
+    textClass: "text-neon-green",
   },
-  {
-    id: "next_goal",
-    superbetName: "2º Gol",
-    matchMarket: (m) => m === "next_goal",
+  btts_no: {
+    label: "NÃO",
+    sub: "Apostar que ao menos uma equipe NÃO marca",
+    bgClass: "bg-amber-500/15 border-amber-500/30",
+    textClass: "text-amber-300",
   },
-  {
-    id: "totals",
-    superbetName: "Total de Gols",
-    matchMarket: (m) => m.startsWith("over_") && !m.startsWith("home_") && !m.startsWith("away_") && !m.startsWith("1h_") && !m.startsWith("2h_"),
+  totals_over: {
+    label: "MAIS",
+    sub: "Apostar que sairão MAIS gols que a linha",
+    bgClass: "bg-neon-green/15 border-neon-green/30",
+    textClass: "text-neon-green",
   },
-  {
-    id: "btts",
-    superbetName: "Ambas as Equipes Marcam",
-    matchMarket: (m) => m === "btts",
+  totals_under: {
+    label: "MENOS",
+    sub: "Apostar que sairão MENOS gols que a linha",
+    bgClass: "bg-sky-500/15 border-sky-500/25",
+    textClass: "text-sky-300",
   },
-  {
-    id: "team_totals",
-    superbetName: "Total por Time",
-    matchMarket: (m) => m.startsWith("home_over_") || m.startsWith("away_over_"),
+  next_goal_home: {
+    label: "GOL DA CASA",
+    sub: "Próximo gol marcado pelo time da casa",
+    bgClass: "bg-sky-500/15 border-sky-500/25",
+    textClass: "text-sky-300",
   },
-  {
-    id: "second_half",
-    superbetName: "2º Tempo Gols",
-    matchMarket: (m) => m.startsWith("2h_over_"),
-  },
-  {
-    id: "first_half",
-    superbetName: "1º Tempo Gols",
-    matchMarket: (m) => m.startsWith("1h_over_"),
-  },
-  {
-    id: "combos",
-    superbetName: "Combos",
-    matchMarket: (m) => m.startsWith("combo_"),
-    note: "Mercados combinados: BTTS+Gols, Time+BTTS",
-  },
-];
-
-const VERDICT_CONFIG: Record<Verdict, { label: string; cardClass: string; badgeClass: string; icon: string }> = {
-  apostar: {
-    label: "Apostar",
-    cardClass: "border-neon-green/50 bg-neon-green/[0.07] shadow-[0_0_20px_rgba(0,255,136,0.06)]",
-    badgeClass: "bg-neon-green/20 text-neon-green border border-neon-green/40",
-    icon: "●",
-  },
-  quase: {
-    label: "Quase",
-    cardClass: "border-amber-500/40 bg-amber-500/[0.05]",
-    badgeClass: "bg-amber-500/15 text-amber-300 border border-amber-500/35",
-    icon: "◐",
-  },
-  sem_valor: {
-    label: "Sem valor",
-    cardClass: "border-white/10 bg-white/[0.02]",
-    badgeClass: "bg-white/5 text-slate-400 border border-white/10",
-    icon: "○",
-  },
-  sem_odds: {
-    label: "Sem odds",
-    cardClass: "border-white/6 bg-transparent opacity-60",
-    badgeClass: "bg-white/[0.03] text-slate-600 border border-white/8",
-    icon: "—",
+  next_goal_away: {
+    label: "GOL VISITANTE",
+    sub: "Próximo gol marcado pelo time visitante",
+    bgClass: "bg-violet-500/15 border-violet-500/25",
+    textClass: "text-violet-300",
   },
 };
+
+function DirectionBadge({
+  outcome,
+  groupId,
+  market,
+}: {
+  outcome: string;
+  groupId: string;
+  market?: string;
+}) {
+  let key: string;
+  if (groupId === "totals" || groupId.endsWith("_totals")) {
+    const direction = market?.includes("_over_") || market?.startsWith("over_") ? "over" : "over";
+    key = `totals_${direction}`;
+  } else {
+    key = `${groupId}_${outcome}`;
+  }
+  const cfg = DIRECTION_CONFIG[key];
+  if (!cfg) return null;
+  return (
+    <div className={`mb-2.5 flex items-center gap-2 rounded-xl border px-3 py-2 ${cfg.bgClass}`}>
+      <span className={`text-sm font-extrabold tracking-wider ${cfg.textClass}`}>{cfg.label}</span>
+      <span className="text-[11px] text-slate-400">{cfg.sub}</span>
+    </div>
+  );
+}
 
 function buildFallbackScan(data: SuperbetLiveAdvice): MarketScanRow[] {
   const s = data.inplaySummary;
@@ -178,10 +180,83 @@ function buildFallbackScan(data: SuperbetLiveAdvice): MarketScanRow[] {
     data.nextGoalOdds.away,
   );
 
-  // Novos mercados vindos dos aportes expandidos
+  const hm1 = data.halfMarkets?.["1h"];
+  if (hm1?.h2h) {
+    push("1h_h2h", "1", `1º Tempo — ${data.homeTeam}`, s.probHtHome, hm1.h2h["1"]);
+    push("1h_h2h", "X", "1º Tempo — Empate", s.probHtDraw, hm1.h2h["X"]);
+    push("1h_h2h", "2", `1º Tempo — ${data.awayTeam}`, s.probHtAway, hm1.h2h["2"]);
+  }
+  const hm2 = data.halfMarkets?.["2h"];
+  if (hm2?.h2h) {
+    push("2h_h2h", "1", `2º Tempo — ${data.homeTeam}`, s.probShHome, hm2.h2h["1"]);
+    push("2h_h2h", "X", "2º Tempo — Empate", s.probShDraw, hm2.h2h["X"]);
+    push("2h_h2h", "2", `2º Tempo — ${data.awayTeam}`, s.probShAway, hm2.h2h["2"]);
+  }
+
+  const pushHalfTotals = (
+    period: "1h" | "2h",
+    totals: Record<string, Record<string, number>> | undefined,
+    lineProbs: Record<string, number> | undefined,
+    label: string,
+  ) => {
+    if (!totals || !lineProbs) return;
+    for (const [lineKey, outcomes] of Object.entries(totals)) {
+      const lineNum = lineKey.replace(".", "_");
+      const overProb = lineProbs[`over_${lineNum}`];
+      const underProb = lineProbs[`under_${lineNum}`];
+      for (const [name, odd] of Object.entries(outcomes)) {
+        if (name.toLowerCase().includes("mais") && overProb != null) {
+          push(`${period}_over_${lineNum}`, "yes", `${label}: mais de ${lineKey} gols`, overProb, odd);
+        }
+        if (name.toLowerCase().includes("menos") && underProb != null) {
+          push(`${period}_over_${lineNum}`, "no", `${label}: menos de ${lineKey} gols`, underProb, odd);
+        }
+      }
+    }
+  };
+
+  pushHalfTotals("1h", data.firstHalfTotals, s.htLineProbs, "1º Tempo");
+  pushHalfTotals("2h", data.secondHalfTotals, s.secondHalfLineProbs, "2º Tempo");
+
+  const pushHalfExtras = (
+    period: "1h" | "2h",
+    hm: NonNullable<SuperbetLiveAdvice["halfMarkets"]>[string] | undefined,
+    csProbs: Record<string, number> | undefined,
+    exactTotals: Record<string, number> | undefined,
+    hcapProbs: Record<string, number> | undefined,
+    label: string,
+  ) => {
+    if (!hm) return;
+    for (const [score, odd] of Object.entries(hm.correct_score ?? {})) {
+      const prob = csProbs?.[score];
+      if (prob != null) {
+        push(`${period}_cs_${score.replace("x", "_")}`, "yes", `${label} RC ${score}`, prob, odd);
+      }
+    }
+    for (const [goals, odd] of Object.entries(hm.exact_total ?? {})) {
+      const prob = exactTotals?.[goals];
+      if (prob != null) {
+        const mk = goals.replace("+", "plus");
+        push(`${period}_exact_${mk}`, "yes", `${label} — exatamente ${goals} gols`, prob, odd);
+      }
+    }
+    for (const [line, sides] of Object.entries(hm.handicap ?? {})) {
+      for (const [side, odd] of Object.entries(sides)) {
+        const prob = hcapProbs?.[`${side}_${line}`];
+        if (prob != null && odd < 50) {
+          push(`${period}_hcap_${side}_${line}`, "yes", `${label} handicap ${line}`, prob, odd);
+        }
+      }
+    }
+  };
+
+  pushHalfExtras("1h", hm1, s.htCorrectScores, s.htExactTotals, s.htHandicapProbs, "1º Tempo");
+  pushHalfExtras("2h", hm2, s.shCorrectScores, s.shExactTotals, s.shHandicapProbs, "2º Tempo");
+
   for (const ap of data.aportes) {
-    // Evitar duplicar os que já foram inseridos acima
-    if (["h2h", "btts", "next_goal"].includes(ap.market) && !ap.market.startsWith("combo_")) continue;
+    if (["h2h", "btts", "next_goal"].includes(ap.market) && !ap.market.startsWith("combo_")) {
+      continue;
+    }
     if (ap.market === "over_2_5") continue;
     push(ap.market, ap.outcome, ap.label, ap.modelProb, ap.marketOdd);
   }
@@ -191,13 +266,11 @@ function buildFallbackScan(data: SuperbetLiveAdvice): MarketScanRow[] {
 
 function resolveVerdict(
   best: MarketScanRow | null,
-  threshold: number,
 ): { verdict: Verdict; detail: string; stakeHint?: string } {
   if (!best) {
     return { verdict: "sem_odds", detail: "Superbet não enviou odd neste refresh" };
   }
-  const evPct = best.expectedValue * 100;
-  const gap = threshold * 100 - evPct;
+
   if (best.meetsThreshold) {
     const stakeHint =
       best.suggestedStakeValue > 0
@@ -205,97 +278,20 @@ function resolveVerdict(
         : undefined;
     return {
       verdict: "apostar",
-      detail: `EV +${evPct.toFixed(1)}% · edge ${best.edgePp >= 0 ? "+" : ""}${best.edgePp.toFixed(1)} pp`,
+      detail: `Edge +${best.edgePp.toFixed(1)} pp · modelo acima do mercado`,
       stakeHint,
     };
   }
-  if (best.expectedValue > 0) {
+  if (best.edgePp > 0) {
     return {
       verdict: "quase",
-      detail: `EV +${evPct.toFixed(1)}% · faltam +${gap.toFixed(1)} pp`,
+      detail: `Edge +${best.edgePp.toFixed(1)} pp · aguardar linha abrir mais`,
     };
   }
   return {
     verdict: "sem_valor",
-    detail: `EV ${evPct.toFixed(1)}% · casa acima do modelo`,
+    detail: `Modelo ${(best.modelProb * 100).toFixed(0)}% ≤ mercado ${(best.impliedProb * 100).toFixed(0)}%`,
   };
-}
-
-const DIRECTION_CONFIG: Record<
-  string,
-  { label: string; sub: string; bgClass: string; textClass: string }
-> = {
-  btts_yes: {
-    label: "SIM",
-    sub: "Apostar que ambas as equipes marcam",
-    bgClass: "bg-neon-green/15 border-neon-green/30",
-    textClass: "text-neon-green",
-  },
-  btts_no: {
-    label: "NÃO",
-    sub: "Apostar que ao menos uma equipe NÃO marca",
-    bgClass: "bg-amber-500/15 border-amber-500/30",
-    textClass: "text-amber-300",
-  },
-  totals_over: {
-    label: "MAIS",
-    sub: "Apostar que sairão MAIS gols que a linha",
-    bgClass: "bg-neon-green/15 border-neon-green/30",
-    textClass: "text-neon-green",
-  },
-  totals_under: {
-    label: "MENOS",
-    sub: "Apostar que sairão MENOS gols que a linha",
-    bgClass: "bg-sky-500/15 border-sky-500/25",
-    textClass: "text-sky-300",
-  },
-  next_goal_home: {
-    label: "GOL DA CASA",
-    sub: "Próximo gol marcado pelo time da casa",
-    bgClass: "bg-sky-500/15 border-sky-500/25",
-    textClass: "text-sky-300",
-  },
-  next_goal_away: {
-    label: "GOL VISITANTE",
-    sub: "Próximo gol marcado pelo time visitante",
-    bgClass: "bg-violet-500/15 border-violet-500/25",
-    textClass: "text-violet-300",
-  },
-  next_goal_nogoal: {
-    label: "SEM MAIS GOLS",
-    sub: "Sem mais gols no jogo",
-    bgClass: "bg-slate-500/15 border-slate-500/20",
-    textClass: "text-slate-400",
-  },
-};
-
-function DirectionBadge({
-  outcome,
-  groupId,
-  market,
-}: {
-  outcome: string;
-  groupId: string;
-  market?: string;
-}) {
-  let key: string;
-  if (groupId === "totals") {
-    // Market é tipo "over_2_5" ou "under_2_5"
-    const direction = market?.startsWith("under_") ? "under" : "over";
-    key = `totals_${direction}`;
-  } else {
-    key = `${groupId}_${outcome}`;
-  }
-  const cfg = DIRECTION_CONFIG[key];
-  if (!cfg) return null;
-  return (
-    <div className={`mb-2.5 flex items-center gap-2 rounded-xl border px-3 py-2 ${cfg.bgClass}`}>
-      <span className={`text-sm font-extrabold tracking-wider ${cfg.textClass}`}>
-        {cfg.label}
-      </span>
-      <span className="text-[11px] text-slate-400">{cfg.sub}</span>
-    </div>
-  );
 }
 
 interface MarketCardProps {
@@ -305,45 +301,110 @@ interface MarketCardProps {
   detail: string;
   stakeHint?: string;
   alternatives: MarketScanRow[];
-  threshold: number;
+  matchedOpp?: Opportunity;
+  minute: number;
+  currentScore: string;
+  confidence?: SuperbetLiveAdvice["confidence"];
 }
 
-function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: MarketCardProps) {
-  const cfg = VERDICT_CONFIG[verdict];
+function MarketCard({
+  group,
+  best,
+  verdict,
+  detail,
+  stakeHint,
+  alternatives,
+  matchedOpp,
+  minute,
+  currentScore,
+  confidence,
+}: MarketCardProps) {
+  const isTopPick = matchedOpp != null && matchedOpp.rank <= 3;
+  const tier = (matchedOpp?.tier as BetTier) ?? (verdict === "apostar" ? "leve" : undefined);
+  const tierCfg = tier ? TIER_CONFIG[tier] : null;
+
+  const cfg =
+    isTopPick && tierCfg
+      ? { ...VERDICT_CONFIG.apostar, cardClass: tierCfg.cardClass, badgeClass: tierCfg.badgeClass }
+      : VERDICT_CONFIG[verdict];
+
+  const showDirection =
+    group.id === "totals" ||
+    group.id === "btts" ||
+    group.id === "next_goal" ||
+    group.id.endsWith("_totals");
+
+  const whyReason =
+    best && (verdict === "apostar" || isTopPick)
+      ? buildBetReason({
+          label: best.label,
+          market: best.market,
+          outcome: best.outcome,
+          modelProb: best.modelProb,
+          impliedProb: best.impliedProb,
+          edgePp: best.edgePp,
+          tier: matchedOpp?.tier,
+          rank: matchedOpp?.rank,
+          minute,
+          currentScore,
+          timing: matchedOpp?.timing,
+          timingReason: matchedOpp?.timingReason,
+          fundamentacao: matchedOpp?.fundamentacao,
+          confidenceLabel: confidence?.label,
+          confidenceScore: confidence?.score,
+        })
+      : null;
 
   return (
-    <div className={`rounded-2xl border p-4 transition-all ${cfg.cardClass}`}>
-      <div className="mb-3 flex items-start justify-between gap-2">
+    <article
+      className={`relative overflow-hidden rounded-2xl border p-4 transition-all ${cfg.cardClass}`}
+    >
+      {isTopPick && matchedOpp?.rank === 1 && (
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-neon-green/10 blur-xl"
+          aria-hidden
+        />
+      )}
+
+      <div className="relative mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-white">{group.superbetName}</p>
           {group.note && <p className="mt-0.5 text-[10px] text-slate-500">{group.note}</p>}
         </div>
-        <span
-          className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${cfg.badgeClass}`}
-        >
-          {cfg.icon} {cfg.label}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {matchedOpp && (
+            <span
+              className={`rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                matchedOpp.rank === 1
+                  ? "border-neon-green/50 bg-neon-green/20 text-neon-green"
+                  : "border-white/15 bg-white/5 text-slate-400"
+              }`}
+            >
+              {rankLabel(matchedOpp.rank)}
+            </span>
+          )}
+          <span
+            className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${cfg.badgeClass}`}
+          >
+            {VERDICT_CONFIG[verdict].icon}{" "}
+            {tierCfg && verdict === "apostar" ? tierCfg.label : VERDICT_CONFIG[verdict].label}
+          </span>
+        </div>
       </div>
 
       {best ? (
         <>
-          {/* Barra de EV no topo */}
-          <EvBar ev={best.expectedValue} />
-          {/* Badge de direção para totais, BTTS e próximo gol */}
-          {(group.id === "totals" || group.id === "btts" || group.id === "next_goal") && (
+          <EvBar modelProb={best.modelProb} impliedProb={best.impliedProb} />
+          {showDirection && (
             <DirectionBadge outcome={best.outcome} groupId={group.id} market={best.market} />
           )}
           <p className="truncate text-sm font-medium text-slate-200" title={best.label}>
             {best.label}
           </p>
-          <div className="mt-1.5 flex items-baseline gap-3">
-            <span className="font-mono text-lg font-bold text-white">
-              {best.marketOdd.toFixed(2)}
-            </span>
-            <span className="text-xs text-slate-400">
-              Modelo {formatPercent(best.modelProb)}
-            </span>
-          </div>
+          <p className="mt-1.5 font-mono text-xs text-slate-400">
+            {probComparisonLabel(best.modelProb, best.impliedProb)}
+          </p>
+          <p className="mt-0.5 text-[10px] text-slate-600">Odd ref. {best.marketOdd.toFixed(2)}</p>
           <p
             className={`mt-1.5 text-xs ${
               verdict === "apostar"
@@ -355,8 +416,24 @@ function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: M
           >
             {detail}
           </p>
+
+          {whyReason && (
+            <div
+              className={`mt-2.5 rounded-xl border px-3 py-2 ${
+                isTopPick
+                  ? "border-neon-green/20 bg-neon-green/[0.06]"
+                  : "border-white/8 bg-white/[0.03]"
+              }`}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Fundamentação do modelo
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{whyReason}</p>
+            </div>
+          )}
+
           {stakeHint && (
-            <p className="mt-1.5 rounded-lg bg-neon-green/10 px-2.5 py-1.5 text-xs font-semibold text-neon-green">
+            <p className="mt-2 rounded-lg bg-neon-green/10 px-2.5 py-1.5 text-xs font-semibold text-neon-green">
               Stake sugerido: {stakeHint}
             </p>
           )}
@@ -364,7 +441,10 @@ function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: M
             <p className="mt-2 text-[10px] text-slate-600">
               Alternativas:{" "}
               {alternatives
-                .map((a) => `${a.label.split(" ").slice(-2).join(" ")} EV ${(a.expectedValue * 100).toFixed(0)}%`)
+                .map(
+                  (a) =>
+                    `${a.label.split(" ").slice(-2).join(" ")} EV ${(a.expectedValue * 100).toFixed(0)}%`,
+                )
                 .join(" · ")}
             </p>
           )}
@@ -372,28 +452,36 @@ function MarketCard({ group, best, verdict, detail, stakeHint, alternatives }: M
       ) : (
         <p className="text-xs text-slate-600">{detail}</p>
       )}
-    </div>
+    </article>
   );
 }
 
-interface LiveMarketCardsProps {
-  data: SuperbetLiveAdvice;
+interface SectionCards {
+  section: MarketSection;
+  cards: Array<{
+    group: MarketGroup;
+    best: MarketScanRow | null;
+    verdict: Verdict;
+    detail: string;
+    stakeHint?: string;
+    alternatives: MarketScanRow[];
+    matchedOpp?: Opportunity;
+  }>;
 }
 
-export function LiveMarketCards({ data }: LiveMarketCardsProps) {
-  const [showExtra, setShowExtra] = useState(false);
-  const threshold = data.strategy?.minEdgeThreshold ?? 0.04;
+function buildSectionCards(
+  scan: MarketScanRow[],
+  data: SuperbetLiveAdvice,
+): SectionCards[] {
+  const oppByKey = new Map(
+    (data.strategy?.opportunities ?? []).map((o) => [`${o.market}:${o.outcome}`, o]),
+  );
+  const oppByMarket = new Map(
+    (data.strategy?.opportunities ?? []).map((o) => [o.market, o]),
+  );
 
-  const cards = useMemo(() => {
-    const scan =
-      (data.strategy?.marketScan?.length ?? 0) > 0
-        ? data.strategy!.marketScan
-        : buildFallbackScan(data);
-    const oppByKey = new Map(
-      (data.strategy?.opportunities ?? []).map((o) => [`${o.market}:${o.outcome}`, o]),
-    );
-
-    return MARKET_GROUPS.map((group) => {
+  return MARKET_SECTIONS.flatMap((section) => {
+    const cards = section.groups.map((group) => {
       const rows = scan.filter((row) => group.matchMarket(row.market));
       if (rows.length === 0) {
         return {
@@ -403,11 +491,13 @@ export function LiveMarketCards({ data }: LiveMarketCardsProps) {
           detail: "Mercado não disponível para este evento",
           stakeHint: undefined as string | undefined,
           alternatives: [] as MarketScanRow[],
+          matchedOpp: undefined as Opportunity | undefined,
         };
       }
       const best = rows.reduce((a, b) => (a.expectedValue > b.expectedValue ? a : b));
-      const opp = oppByKey.get(`${best.market}:${best.outcome}`);
-      const resolved = resolveVerdict(best, threshold);
+      const opp =
+        oppByKey.get(`${best.market}:${best.outcome}`) ?? oppByMarket.get(best.market);
+      const resolved = resolveVerdict(best);
       if (opp && resolved.verdict === "apostar" && opp.suggestedStakeValue > 0) {
         resolved.stakeHint = `R$ ${opp.suggestedStakeValue.toFixed(0)} · ${opp.suggestedStakePct}% da banca`;
       }
@@ -416,29 +506,109 @@ export function LiveMarketCards({ data }: LiveMarketCardsProps) {
         best,
         ...resolved,
         alternatives: rows.filter((r) => r !== best).slice(0, 2),
+        matchedOpp: opp,
       };
     });
-  }, [data, threshold]);
 
-  const apostarCount = cards.filter((c) => c.verdict === "apostar").length;
+    const sortedCards = sortByVerdictAndEdge(cards);
+
+    const hasHalfData =
+      section.id === "1h"
+        ? Boolean(
+            data.analysisCoverage?.firstHalf ||
+              data.halfMarkets?.["1h"] ||
+              data.firstHalfTotals ||
+              (data.inplaySummary.probHtHome != null && data.isLive),
+          )
+        : section.id === "2h"
+          ? Boolean(
+              data.analysisCoverage?.secondHalf ||
+                data.halfMarkets?.["2h"] ||
+                data.secondHalfTotals ||
+                (data.inplaySummary.probShHome != null && data.isLive),
+            )
+          : true;
+
+    const hasScanRows = sortedCards.some((c) => c.best != null);
+    const showLiveHalf = data.isLive && !data.isFinished && section.id !== "core";
+    if (section.id !== "core" && !hasHalfData && !hasScanRows && !showLiveHalf) {
+      return [];
+    }
+
+    return [{ section, cards: sortedCards }];
+  });
+}
+
+interface LiveMarketCardsProps {
+  data: SuperbetLiveAdvice;
+}
+
+export function LiveMarketCards({ data }: LiveMarketCardsProps) {
+  const [showExtra, setShowExtra] = useState(false);
+
+  const hcapAlert = data.strategy?.shields?.find(
+    (s) =>
+      s.priority === "alta" &&
+      s.action === "evitar" &&
+      s.title.toLowerCase().includes("handicap agressivo"),
+  );
+
+  const sections = useMemo(() => {
+    const scan =
+      (data.strategy?.marketScan?.length ?? 0) > 0
+        ? data.strategy!.marketScan
+        : buildFallbackScan(data);
+    return buildSectionCards(scan, data);
+  }, [data]);
+
+  const allCards = sections.flatMap((s) => s.cards);
+  const apostarCount = allCards.filter((c) => c.verdict === "apostar").length;
+  const hasTopPicks = (data.strategy?.opportunities?.length ?? 0) > 0;
 
   return (
     <div>
+      <LiveTopPicks data={data} />
+
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-white">Mercados ao vivo</h2>
+          <h2 className="text-sm font-semibold text-white">
+            {hasTopPicks ? "Todos os mercados" : "Mercados ao vivo"}
+          </h2>
           <p className="text-[11px] text-slate-500">
             {apostarCount > 0
-              ? `${apostarCount} mercado${apostarCount > 1 ? "s" : ""} com sinal verde`
-              : "Nenhum mercado com sinal verde neste momento"}{" "}
-            · limiar EV +{(threshold * 100).toFixed(0)}%
+              ? `${apostarCount} mercado${apostarCount > 1 ? "s" : ""} com edge do modelo · ordenados por probabilidade real`
+              : "Nenhum mercado com edge suficiente neste momento"}{" "}
+            · mínimo +{((data.strategy?.minEdgeThreshold ?? 0.04) * 100).toFixed(0)} pp implícito
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {cards.map((card) => (
-          <MarketCard key={card.group.id} threshold={threshold} {...card} />
+      <div className="space-y-6">
+        {sections.map(({ section, cards }) => (
+          <div key={section.id}>
+            {section.id !== "core" && (
+              <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                {section.title}
+              </h3>
+            )}
+            {section.id === "2h" && hcapAlert && (
+              <div className="mb-2.5 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2.5">
+                <p className="text-xs font-semibold text-red-200">{hcapAlert.title}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{hcapAlert.reason}</p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {cards.map((card) => (
+                <MarketCard
+                  key={card.group.id}
+                  minute={data.minute}
+                  currentScore={data.currentScore ?? "0x0"}
+                  confidence={data.confidence}
+                  {...card}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -452,8 +622,8 @@ export function LiveMarketCards({ data }: LiveMarketCardsProps) {
         </button>
         {showExtra && (
           <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
-            Handicap asiático, resultado correto, último gol, janelas de tempo,
-            ímpar/par, método do gol — fora do modelo in-play atual.
+            Escanteios, cartões, último gol, janelas de 5/10/15 min, ímpar/par e método do gol ainda
+            não entram no modelo in-play.
           </p>
         )}
       </div>

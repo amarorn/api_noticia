@@ -1,0 +1,105 @@
+{
+  "event_id": 13338421,
+  "home_team": "Club Ada Jaen",
+  "away_team": "Comerciantes Unidos",
+  "event_name": "Club Ada Jaen·Comerciantes Unidos",
+  "utc_date": "2026-06-11T20:00:00Z",
+  "betradar_id": "71664990",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 77,
+    "stoppage_time": null,
+    "home_corners": 5,
+    "away_corners": 3,
+    "home_yellow_cards": 3,
+    "away_yellow_cards": 2,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.28,
+    "X": 4.2,
+    "2": 12.0
+  },
+  "h2h_implied": {
+    "1": 0.708502024291498,
+    "X": 0.21592442645074222,
+    "2": 0.07557354925775978
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.92,
+      "Menos de 1.5": 1.75
+    },
+    "2.5": {
+      "Mais de 2.5": 5.0,
+      "Menos de 2.5": 1.08
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.4768392370572208,
+      "Menos de 1.5": 0.5231607629427794
+    },
+    "2.5": {
+      "Mais de 2.5": 0.17763157894736845,
+      "Menos de 2.5": 0.8223684210526316
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {
+    "yes": 2.75,
+    "no": 1.38
+  },
+  "next_goal_odds": {
+    "home": 4.2,
+    "away": 3.1
+  },
+  "generosity_probs": {
+    "home": 0.743396,
+    "away": 0.053984
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 3.4,
+        "Menos de 1.5": 1.2
+      },
+      "2.5": {
+        "Mais de 2.5": 12.0
+      }
+    },
+    "away": {
+      "0.5": {
+        "Mais de 0.5": 2.65,
+        "Menos de 0.5": 1.35
+      },
+      "1.5": {
+        "Mais de 1.5": 8.0
+      },
+      "2.5": {
+        "Mais de 2.5": 20.0
+      }
+    }
+  },
+  "first_half_totals": {
+    "1.5-80": {
+      "Primeiros 80 min - Mais de 1.5": 6.75,
+      "Primeiros 80 min - Menos de 1.5": 1.05
+    },
+    "1.5-85": {
+      "Primeiros 85 min - Mais de 1.5": 3.6,
+      "Primeiros 85 min - Menos de 1.5": 1.22
+    }
+  },
+  "second_half_totals": {},
+  "half_markets": {},
+  "raw_market_count": 16,
+  "captured_at": "2026-06-11T21:39:46.680389+00:00"
+}

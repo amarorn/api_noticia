@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "bets": [
+    {
+      "id": "auto_1781223502994",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "1",
+          "target_value": null
+        },
+        {
+          "market": "h2h",
+          "outcome": "2",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 6.5,
+      "potential_return": 97.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T21:18:23.016958",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781223503025",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Mais de 8.5",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.2,
+      "potential_return": 44.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T21:18:23.027249",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781225134281",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "1",
+          "target_value": null
+        },
+        {
+          "market": "h2h",
+          "outcome": "2",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 6.5,
+      "potential_return": 97.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T21:45:34.649217",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781225134651",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Mais de 8.5",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.2,
+      "potential_return": 44.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T21:45:34.653902",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781231649328",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "totals",
+          "outcome": "under",
+          "target_value": "1"
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 4.75,
+      "potential_return": 71.25,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T23:34:09.629241",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781231649631",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "1",
+          "target_value": null
+        },
+        {
+          "market": "h2h",
+          "outcome": "2",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 6.5,
+      "potential_return": 97.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T23:34:09.634246",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781231649636",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Mais de 8.5",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.2,
+      "potential_return": 44.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T23:34:09.638399",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781231649640",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "totals_3.5",
+          "outcome": "under",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 1.26,
+      "potential_return": 18.9,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T23:34:09.645111",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781231649648",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "totals",
+          "outcome": "under",
+          "target_value": "1"
+        }
+      ],
+      "stake": 10.0,
+      "odds_placed": 1.6,
+      "potential_return": 16.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T23:34:09.650024",
+      "superbet_event_id": null,
+      "user_id": null
+    }
+  ]
+}

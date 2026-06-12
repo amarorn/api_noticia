@@ -26,6 +26,7 @@ import {
   GetSuperbetLiveUseCase,
   GetSuperbetLiveAdviceUseCase,
   GetSuperbetEventUseCase,
+  GetWcComboTicketUseCase,
   PredictWcCornersUseCase,
   PredictWcInPlayUseCase,
   PredictWcMatchUseCase,
@@ -54,6 +55,7 @@ export const getWcFriendliesUseCase = new GetWcFriendliesUseCase(wcRepository);
 export const getSuperbetLiveUseCase = new GetSuperbetLiveUseCase(wcRepository);
 export const getSuperbetLiveAdviceUseCase = new GetSuperbetLiveAdviceUseCase(wcRepository);
 export const getSuperbetEventUseCase = new GetSuperbetEventUseCase(wcRepository);
+export const getWcComboTicketUseCase = new GetWcComboTicketUseCase(wcRepository);
 export const simulateWcMatchUseCase = new SimulateWcMatchUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
 export const getUserOpenBetsUseCase = new GetUserOpenBetsUseCase(wcRepository);
