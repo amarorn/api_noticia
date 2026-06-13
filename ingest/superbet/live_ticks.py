@@ -43,6 +43,17 @@ _TICK_COLUMNS: dict[str, str] = {
     "top_aporte_outcome": "string",
     "top_aporte_ev": "float64",
     "raw_market_count": "Int64",
+    "home_corners": "Int64",
+    "away_corners": "Int64",
+    "home_red_cards": "Int64",
+    "away_red_cards": "Int64",
+    "n_sofascore_events": "Int64",
+    "home_xg": "float64",
+    "away_xg": "float64",
+    "home_possession_pct": "float64",
+    "away_possession_pct": "float64",
+    "ens_prob_final_home": "float64",
+    "ens_prob_l1_delta": "float64",
     "captured_at": "datetime64[ns, UTC]",
 }
 
@@ -101,12 +112,14 @@ def append_live_tick(
     snapshot: dict[str, Any],
     inplay: dict[str, Any],
     advice: dict[str, Any],
+    tick_extra: dict[str, Any] | None = None,
 ) -> Path | None:
     inplay_stats = snapshot.get("inplay") or {}
     h2h = snapshot.get("h2h_odds") or {}
     cashout = advice.get("cashout") or {}
     aportes = advice.get("aportes") or []
     top_aporte = aportes[0] if aportes else {}
+    shadow = inplay.get("ensemble_shadow") or {}
 
     row = {
         "event_id": event_id,
@@ -133,9 +146,13 @@ def append_live_tick(
         "top_aporte_outcome": top_aporte.get("outcome"),
         "top_aporte_ev": top_aporte.get("expected_value"),
         "raw_market_count": snapshot.get("raw_market_count"),
+        "home_corners": inplay_stats.get("home_corners"),
+        "away_corners": inplay_stats.get("away_corners"),
         "captured_at": snapshot.get("captured_at")
         or datetime.now(timezone.utc).isoformat(),
     }
+    if tick_extra:
+        row.update(tick_extra)
 
     path = live_ticks_path()
     new_df = _normalize_tick_df(pd.DataFrame([row]))

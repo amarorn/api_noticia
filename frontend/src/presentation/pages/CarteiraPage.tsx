@@ -7,6 +7,7 @@ import {
 } from "@/infrastructure/repositories/walletRepository";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
+import { WalletSyncBanner } from "@/presentation/components/wallet/WalletSyncBanner";
 
 const DEFAULT_USER = "jamarorn";
 
@@ -122,7 +123,11 @@ function CsvDropzone({
             Arraste o CSV de transações Superbet
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            ou clique para selecionar · usuário: <span className="font-mono">{userId}</span>
+            ou salve em{" "}
+            <span className="font-mono text-slate-400">
+              data/lake/inbox/wallet/{userId}/
+            </span>{" "}
+            · usuário: <span className="font-mono">{userId}</span>
           </div>
         </div>
       )}
@@ -702,6 +707,12 @@ export function CarteiraPage() {
     queryFn: () => walletRepository.getModelErrors(userId),
   });
 
+  const syncQ = useQuery({
+    queryKey: ["wallet-sync-status", userId],
+    queryFn: () => walletRepository.getSyncStatus(userId),
+    refetchOnWindowFocus: true,
+  });
+
   const reconcileMut = useMutation({
     mutationFn: () => walletRepository.reconcile(userId),
     onSuccess: () => {
@@ -712,7 +723,15 @@ export function CarteiraPage() {
 
   const onUploaded = () => {
     queryClient.invalidateQueries({ queryKey: ["wallet-summary", userId] });
+    queryClient.invalidateQueries({ queryKey: ["wallet-sync-status", userId] });
     reconcileMut.mutate();
+  };
+
+  const onInboxSynced = () => {
+    queryClient.invalidateQueries({ queryKey: ["wallet-sync-status", userId] });
+    queryClient.invalidateQueries({ queryKey: ["wallet-summary", userId] });
+    queryClient.invalidateQueries({ queryKey: ["wallet-reconciliation", userId] });
+    queryClient.invalidateQueries({ queryKey: ["wallet-errors", userId] });
   };
 
   return (
@@ -738,6 +757,10 @@ export function CarteiraPage() {
             {reconcileMut.isPending ? "Reconciliando..." : "Reconciliar com snapshots"}
           </button>
         </div>
+
+        {syncQ.data && (
+          <WalletSyncBanner status={syncQ.data} onImportSuccess={onInboxSynced} />
+        )}
 
         <CsvDropzone userId={userId} onUploaded={onUploaded} />
 

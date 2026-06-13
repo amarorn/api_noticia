@@ -10,8 +10,12 @@ from pydantic import BaseModel
 
 from config import settings
 
-_USER_BETS_FILE = Path(settings.lake_root) / "user_open_bets.json"
-_SETTLED_BETS_FILE = Path(settings.lake_root) / "user_settled_bets.json"
+def _user_bets_file() -> Path:
+    return Path(settings.lake_root) / "user_open_bets.json"
+
+
+def _settled_bets_file() -> Path:
+    return Path(settings.lake_root) / "user_settled_bets.json"
 
 
 class PickData(BaseModel):
@@ -43,14 +47,16 @@ class UserOpenBet(BaseModel):
 
 
 def _load_store() -> dict[str, Any]:
-    if not _USER_BETS_FILE.exists():
+    path = _user_bets_file()
+    if not path.exists():
         return {"version": 1, "bets": []}
-    return json.loads(_USER_BETS_FILE.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _save_store(store: dict[str, Any]) -> None:
-    _USER_BETS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    _USER_BETS_FILE.write_text(json.dumps(store, ensure_ascii=False, indent=2), encoding="utf-8")
+    path = _user_bets_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(store, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def add_open_bet(ub_kwargs: dict[str, Any]) -> UserOpenBet:
@@ -85,6 +91,27 @@ def update_bet_status(bet_id: str, status: str) -> bool:
             _save_store(store)
             return True
     return False
+
+
+def move_open_to_settled(bet_id: str, settled_fields: dict[str, Any]) -> SettledBet | None:
+    """Remove aposta aberta e registra em ``user_settled_bets.json``."""
+    store = _load_store()
+    bet_dict: dict[str, Any] | None = None
+    remaining = []
+    for b in store.get("bets", []):
+        if b.get("id") == bet_id:
+            bet_dict = b
+        else:
+            remaining.append(b)
+    if not bet_dict:
+        return None
+
+    store["bets"] = remaining
+    _save_store(store)
+
+    payload = {**bet_dict, **settled_fields}
+    payload.setdefault("placed_at", bet_dict.get("captured_at", ""))
+    return add_settled_bet(payload)
 
 
 def get_bets_for_event(
@@ -163,14 +190,16 @@ class SettledBet(BaseModel):
 
 
 def _load_settled_store() -> dict[str, Any]:
-    if not _SETTLED_BETS_FILE.exists():
+    path = _settled_bets_file()
+    if not path.exists():
         return {"version": 1, "bets": []}
-    return json.loads(_SETTLED_BETS_FILE.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _save_settled_store(store: dict[str, Any]) -> None:
-    _SETTLED_BETS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    _SETTLED_BETS_FILE.write_text(
+    path = _settled_bets_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
         json.dumps(store, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 

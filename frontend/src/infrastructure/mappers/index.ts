@@ -172,6 +172,14 @@ interface ApiWcPrediction {
   context: string;
   h2h_summary: string;
   model_breakdown: ApiModelBreakdown;
+  max_prob_outcome?: string | null;
+  max_prob?: number | null;
+  prob_margin?: number | null;
+  uncertainty?: string | null;
+  pick_reason?: string | null;
+  actual_score?: string | null;
+  actual_outcome?: string | null;
+  prediction_hit?: boolean | null;
 }
 
 interface ApiWcRound {
@@ -429,6 +437,14 @@ function mapWcPrediction(raw: ApiWcPrediction): WcPrediction {
     context: raw.context,
     h2hSummary: raw.h2h_summary,
     modelBreakdown: mapModelBreakdown(raw.model_breakdown),
+    maxProbOutcome: raw.max_prob_outcome ? mapOutcome(raw.max_prob_outcome) : null,
+    maxProb: raw.max_prob ?? null,
+    probMargin: raw.prob_margin ?? null,
+    uncertainty: (raw.uncertainty as WcPrediction["uncertainty"]) ?? null,
+    pickReason: (raw.pick_reason as WcPrediction["pickReason"]) ?? null,
+    actualScore: raw.actual_score ?? null,
+    actualOutcome: raw.actual_outcome ? mapOutcome(raw.actual_outcome) : null,
+    predictionHit: raw.prediction_hit ?? null,
   };
 }
 
@@ -498,6 +514,11 @@ interface ApiWcScheduleMatch {
   kickoff: string | null;
   venue: string | null;
   city: string | null;
+  prediction?: "1" | "X" | "2" | null;
+  confidence?: number | null;
+  prob_home?: number | null;
+  prob_draw?: number | null;
+  prob_away?: number | null;
 }
 
 interface ApiWcSchedule {
@@ -508,6 +529,11 @@ interface ApiWcSchedule {
   matchdays: number[];
   matches: ApiWcScheduleMatch[];
   total_matches: number;
+  predictions_summary?: {
+    loaded: number;
+    distribution: Record<string, number>;
+    draws: number;
+  } | null;
 }
 
 function mapWcScheduleMatch(raw: ApiWcScheduleMatch): WcScheduleMatch {
@@ -521,6 +547,11 @@ function mapWcScheduleMatch(raw: ApiWcScheduleMatch): WcScheduleMatch {
     kickoff: raw.kickoff,
     venue: raw.venue,
     city: raw.city,
+    prediction: raw.prediction ?? null,
+    confidence: raw.confidence ?? null,
+    probHome: raw.prob_home ?? null,
+    probDraw: raw.prob_draw ?? null,
+    probAway: raw.prob_away ?? null,
   };
 }
 
@@ -665,6 +696,13 @@ export function mapWcSchedule(raw: ApiWcSchedule): WcSchedule {
     matchdays: raw.matchdays,
     matches: raw.matches.map(mapWcScheduleMatch),
     totalMatches: raw.total_matches,
+    predictionsSummary: raw.predictions_summary
+      ? {
+          loaded: raw.predictions_summary.loaded,
+          distribution: raw.predictions_summary.distribution,
+          draws: raw.predictions_summary.draws,
+        }
+      : null,
   };
 }
 
@@ -761,6 +799,8 @@ export function mapWcGroupStandings(raw: {
   competition: string;
   simulated: boolean;
   note: string;
+  as_of: string;
+  n_real_results: number;
   groups: {
     group: string;
     standings: {
@@ -774,6 +814,9 @@ export function mapWcGroupStandings(raw: {
       ga: number;
       gd: number;
       points: number;
+      real_points: number;
+      real_played: number;
+      real_gd: number;
     }[];
   }[];
 }): WcGroupStandings {
@@ -782,9 +825,16 @@ export function mapWcGroupStandings(raw: {
     competition: raw.competition,
     simulated: raw.simulated,
     note: raw.note,
+    asOf: raw.as_of,
+    nRealResults: raw.n_real_results,
     groups: raw.groups.map((g) => ({
       group: g.group,
-      standings: g.standings.map((r) => ({ ...r })),
+      standings: g.standings.map((r) => ({
+        ...r,
+        realPoints: r.real_points ?? 0,
+        realPlayed: r.real_played ?? 0,
+        realGd: r.real_gd ?? 0,
+      })),
     })),
   };
 }
@@ -1019,6 +1069,7 @@ interface ApiSuperbetLiveAdvice {
     reason: string;
   } | null;
   hedge_report?: Record<string, unknown> | null;
+  against_model_alerts?: Array<Record<string, unknown>> | null;
   half_markets?: Record<string, Record<string, unknown>>;
   first_half_totals?: Record<string, Record<string, number>>;
   second_half_totals?: Record<string, Record<string, number>>;
@@ -1282,6 +1333,30 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
         }
       : null,
     hedgeReport: (raw.hedge_report as SuperbetLiveAdvice["hedgeReport"]) ?? null,
+    againstModelAlerts: ((raw.against_model_alerts as Array<Record<string, unknown>>) ?? []).map(
+      (a) => ({
+        betId: a.bet_id != null ? String(a.bet_id) : null,
+        market: String(a.market ?? "h2h"),
+        betOutcome: mapOutcome(String(a.bet_outcome ?? "X")),
+        betOutcomeLabel: String(a.bet_outcome_label ?? ""),
+        stake: Number(a.stake ?? 0),
+        oddsPlaced: a.odds_placed != null ? Number(a.odds_placed) : null,
+        pregamePalpite: mapOutcome(String(a.pregame_palpite ?? "X")),
+        pregameProb: Number(a.pregame_prob ?? 0),
+        pregameUncertainty: a.pregame_uncertainty != null ? String(a.pregame_uncertainty) : null,
+        inplayPalpite: mapOutcome(String(a.inplay_palpite ?? "X")),
+        inplayProb: Number(a.inplay_prob ?? 0),
+        inplayProbs: {
+          "1": Number((a.inplay_probs as Record<string, number> | undefined)?.["1"] ?? 0),
+          X: Number((a.inplay_probs as Record<string, number> | undefined)?.X ?? 0),
+          "2": Number((a.inplay_probs as Record<string, number> | undefined)?.["2"] ?? 0),
+        },
+        severity: (String(a.severity ?? "medium") as "critical" | "high" | "medium"),
+        againstPregame: Boolean(a.against_pregame),
+        againstInplay: Boolean(a.against_inplay),
+        message: String(a.message ?? ""),
+      }),
+    ),
   };
 }
 

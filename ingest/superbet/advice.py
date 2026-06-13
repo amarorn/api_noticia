@@ -11,6 +11,8 @@ from ingest.superbet.client import SuperbetClient, SuperbetClientError
 from ingest.superbet.live_ticks import append_live_tick
 from ingest.superbet.parser import SuperbetEventSnapshot
 from ingest.superbet.store import save_event_snapshot
+from config import settings
+from models.wc_against_model import build_against_model_alerts
 from models.wc_bet_advice import UserBetInput, build_bet_advice_report
 from models.wc_bet_strategy import build_bet_strategy_report
 from models.wc_hedge_advisor import advise_open_bets, hedge_report_to_dict
@@ -53,6 +55,45 @@ def _build_hedge_report(
     except Exception as exc:
         logger.warning("Erro ao construir hedge_report: %s", exc)
         return None
+
+
+def _build_against_model_alerts(
+    *,
+    predictor: Any,
+    inplay_dict: dict[str, Any],
+    home_team: str,
+    away_team: str,
+    phase: str,
+    user_bet: UserBetInput | None,
+) -> list[dict[str, Any]]:
+    """Alertas vermelhos quando apostas 1X2 divergem do palpite pré-jogo / ao vivo."""
+    try:
+        from api.user_bets_store import get_bets_for_event
+
+        pre = predictor.predict(home_team, away_team, phase=phase)
+        pregame_probs = {"1": pre.prob_home, "X": pre.prob_draw, "2": pre.prob_away}
+        open_bets = get_bets_for_event(home_team, away_team, status="open")
+        user_bet_dict = None
+        if user_bet is not None:
+            user_bet_dict = {
+                "market": user_bet.market,
+                "outcome": user_bet.outcome,
+                "stake": user_bet.stake,
+                "odds_placed": user_bet.odds_placed,
+            }
+        return build_against_model_alerts(
+            open_bets=open_bets,
+            inplay=inplay_dict,
+            pregame_prediction=pre.prediction,
+            pregame_probs=pregame_probs,
+            home_team=home_team,
+            away_team=away_team,
+            phase=phase,
+            user_bet=user_bet_dict,
+        )
+    except Exception as exc:
+        logger.warning("Erro ao construir against_model_alerts: %s", exc)
+        return []
 
 
 def _build_trend_report(
@@ -120,8 +161,29 @@ def run_live_advice(
         status = None
         period_label = None
 
-    # --- Momentum: escanteios como proxy de pressão ao vivo ---
+    # --- Momentum: escanteios + eventos Sofascore ao vivo ---
     momentum_events: list[dict] = []
+    sofascore_event_id: int | None = None
+    live_stats: dict[str, float | None] = {}
+    if snapshot.inplay and settings.inplay_use_sofascore_live:
+        try:
+            from datetime import UTC, datetime
+
+            from ingest.sofascore.live_momentum import enrich_momentum_from_sofascore
+            from ingest.sofascore.live_stats import fetch_live_match_stats
+
+            ss_events, sofascore_event_id = enrich_momentum_from_sofascore(
+                home,
+                away,
+                match_date=datetime.now(UTC).date(),
+                save_bronze=True,
+            )
+            momentum_events.extend(ss_events)
+            if sofascore_event_id:
+                live_stats = fetch_live_match_stats(sofascore_event_id)
+        except Exception as exc:
+            logger.warning("sofascore_momentum_falha event_id=%s: %s", event_id, exc)
+
     if snapshot.inplay:
         ip = snapshot.inplay
         for _ in range(ip.home_corners):
@@ -130,6 +192,7 @@ def run_live_advice(
                 "minute": minute,
                 "team": "home",
                 "detail": "escanteio",
+                "source": "superbet",
             })
         for _ in range(ip.away_corners):
             momentum_events.append({
@@ -137,7 +200,25 @@ def run_live_advice(
                 "minute": minute,
                 "team": "away",
                 "detail": "escanteio",
+                "source": "superbet",
             })
+
+    ip_stats = snapshot.inplay
+    tick_extra = {
+        "home_corners": ip_stats.home_corners if ip_stats else 0,
+        "away_corners": ip_stats.away_corners if ip_stats else 0,
+        "home_red_cards": sum(
+            1 for e in momentum_events if e.get("event_type") == "red_card" and e.get("team") == "home"
+        ),
+        "away_red_cards": sum(
+            1 for e in momentum_events if e.get("event_type") == "red_card" and e.get("team") == "away"
+        ),
+        "n_sofascore_events": sum(1 for e in momentum_events if e.get("source") == "sofascore"),
+        "home_xg": live_stats.get("home_xg"),
+        "away_xg": live_stats.get("away_xg"),
+        "home_possession_pct": live_stats.get("home_possession_pct"),
+        "away_possession_pct": live_stats.get("away_possession_pct"),
+    }
 
     from models.wc_market_shrinkage import market_probs_from_h2h_implied
 
@@ -160,6 +241,9 @@ def run_live_advice(
         market_probs=market_probs,
     )
     inplay_dict = result.to_dict()
+    shadow = inplay_dict.get("ensemble_shadow") or {}
+    tick_extra["ens_prob_final_home"] = shadow.get("prob_final_home")
+    tick_extra["ens_prob_l1_delta"] = shadow.get("prob_l1_delta")
     report = build_bet_advice_report(
         home_team=home,
         away_team=away,
@@ -179,6 +263,7 @@ def run_live_advice(
                 snapshot=snapshot_dict,
                 inplay=inplay_dict,
                 advice=report,
+                tick_extra=tick_extra,
             )
         except Exception as exc:
             logger.warning("Falha ao gravar live_ticks parquet (event_id=%s): %s", event_id, exc)
@@ -221,6 +306,8 @@ def run_live_advice(
         "status": status,
         "is_finished": is_finished,
         "is_live": snapshot.is_live and not is_finished,
+        "sofascore_event_id": sofascore_event_id,
+        "n_momentum_events": len(momentum_events),
         "event_finalize": finalize_info,
         "cashout": report.get("cashout"),
         "aportes": report.get("aportes", []),
@@ -291,6 +378,14 @@ def run_live_advice(
             minute=minute,
             home_team=home,
             away_team=away,
+        ),
+        "against_model_alerts": _build_against_model_alerts(
+            predictor=predictor,
+            inplay_dict=inplay_dict,
+            home_team=home,
+            away_team=away,
+            phase=phase,
+            user_bet=user_bet,
         ),
         "trend_report": _build_trend_report(
             event_id=event_id,

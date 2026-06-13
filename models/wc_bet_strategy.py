@@ -381,6 +381,28 @@ def build_bet_strategy_report(
             ),
         })
 
+    if minute >= settings.live_block_minute:
+        shields.insert(0, {
+            "action": "evitar",
+            "priority": "alta",
+            "title": "Janela fechada para aportes",
+            "reason": (
+                f"Após {settings.live_block_minute}' só cash-out. "
+                "Hit rate histórico ~0% nesta faixa."
+            ),
+        })
+    elif minute >= settings.live_midgame_strict_minute:
+        shields.insert(0, {
+            "action": "aguardar",
+            "priority": "alta",
+            "title": "2º tempo — edge elevado",
+            "reason": (
+                f"A partir de {settings.live_midgame_strict_minute}' exigimos "
+                f"≥{settings.live_midgame_min_edge_pp:.0f} pp de vantagem. "
+                "Prefira apostas no 1º tempo ou cash-out."
+            ),
+        })
+
     if minute >= 75:
         shields.append({
             "action": "fase_tardia",
@@ -468,6 +490,16 @@ def build_bet_strategy_report(
 
 
 def _wait_reason(all_edges: list[dict[str, Any]], threshold: float, minute: int) -> str:
+    if minute >= settings.live_block_minute:
+        return (
+            f"Após {settings.live_block_minute}' não recomendamos novos aportes — "
+            "só cash-out ou aguardar. Volatilidade e hit rate caem no histórico."
+        )
+    if minute >= settings.live_midgame_strict_minute:
+        return (
+            f"2º tempo ({minute}') — exigimos edge ≥{settings.live_midgame_min_edge_pp:.0f} pp "
+            f"e EV ×{settings.live_midgame_ev_multiplier:.1f}. Monitore; evite entradas impulsivas."
+        )
     if not all_edges:
         return (
             "A Superbet ainda não trouxe odds nos mercados que analisamos (1X2, totais, BTTS). "

@@ -40,6 +40,7 @@ class FeedbackRetrainResult:
 
     n_feedback_examples: int
     n_synthetic_examples: int
+    n_tick_examples: int
     brier_old: float
     brier_new: float
     brier_delta: float
@@ -173,16 +174,25 @@ def retrain_with_feedback(
     """
     log.info("feedback_retrain_started", user_id=user_id)
 
-    # 1. Carregar feedback
+    # 1. Carregar feedback (CSV reconciliado)
     X_fb, y_fb = build_feedback_features(user_id, min_confidence=min_confidence)
     n_fb = len(X_fb)
-    log.info("feedback_examples_loaded", n=n_fb)
 
-    if n_fb == 0:
+    # 1b. Exemplos de ticks ao vivo com placar final (gold)
+    from pipelines.inplay_synthetic_feedback import build_synthetic_gbm_from_match_states
+
+    X_ms, y_ms = build_synthetic_gbm_from_match_states()
+    n_ms = len(X_ms)
+
+    log.info("feedback_examples_loaded", n_feedback=n_fb, n_ticks=n_ms)
+
+    min_ticks = settings.inplay_synthetic_min_examples
+    if n_fb == 0 and n_ms < min_ticks:
         log.warning("feedback_retrain_skipped_no_data")
         return FeedbackRetrainResult(
             n_feedback_examples=0,
             n_synthetic_examples=0,
+            n_tick_examples=n_ms,
             brier_old=0.0,
             brier_new=0.0,
             brier_delta=0.0,
@@ -190,6 +200,16 @@ def retrain_with_feedback(
             artifact_path=None,
             timestamp=datetime.now().isoformat(),
         )
+
+    # Holdout: feedback real ou 20% dos ticks
+    if n_fb > 0:
+        X_hold, y_hold = X_fb, y_fb
+    else:
+        split = max(1, int(n_ms * 0.2))
+        X_hold, y_hold = X_ms[-split:], y_ms[-split:]
+        X_ms, y_ms = X_ms[:-split], y_ms[:-split]
+        n_ms = len(X_ms)
+        log.info("feedback_holdout_from_ticks", n_holdout=len(X_hold))
 
     # 2. Carregar dataset sintético existente
     from pipelines.wc_inplay_gbm_train import build_gbm_dataset
@@ -201,6 +221,7 @@ def retrain_with_feedback(
         return FeedbackRetrainResult(
             n_feedback_examples=n_fb,
             n_synthetic_examples=0,
+            n_tick_examples=n_ms,
             brier_old=0.0,
             brier_new=0.0,
             brier_delta=0.0,
@@ -209,7 +230,6 @@ def retrain_with_feedback(
             timestamp=datetime.now().isoformat(),
         )
 
-    # Subsample sintético para velocidade
     if len(timeline) > 5000:
         timeline = timeline.sample(n=5000, random_state=seed)
 
@@ -217,17 +237,26 @@ def retrain_with_feedback(
     n_syn = len(X_syn)
     log.info("synthetic_examples_loaded", n=n_syn)
 
-    # 3. Combinar com pesos
-    X_combined = np.vstack([X_syn, X_fb])
-    y_combined = np.concatenate([y_syn, y_fb])
-    weights = np.concatenate([
-        np.ones(n_syn),
-        np.full(n_fb, feedback_weight),
-    ])
+    tick_weight = settings.inplay_synthetic_tick_weight
+    parts_x: list[np.ndarray] = [X_syn]
+    parts_y: list[np.ndarray] = [y_syn]
+    parts_w: list[np.ndarray] = [np.ones(n_syn)]
+    if n_ms > 0:
+        parts_x.append(X_ms)
+        parts_y.append(y_ms)
+        parts_w.append(np.full(n_ms, tick_weight))
+    if n_fb > 0:
+        parts_x.append(X_fb)
+        parts_y.append(y_fb)
+        parts_w.append(np.full(n_fb, feedback_weight))
 
-    # 4. Avaliar modelo atual no holdout (= feedback)
+    X_combined = np.vstack(parts_x)
+    y_combined = np.concatenate(parts_y)
+    weights = np.concatenate(parts_w)
+
+    # 4. Avaliar modelo atual no holdout
     old_model = InPlayGBMModel.load()
-    brier_old = evaluate_brier(old_model, X_fb, y_fb) if old_model.is_fitted else 1.0
+    brier_old = evaluate_brier(old_model, X_hold, y_hold) if old_model.is_fitted else 1.0
     log.info("brier_old_baseline", brier=brier_old)
 
     # 5. Treinar novo modelo
@@ -248,13 +277,15 @@ def retrain_with_feedback(
             "n_jobs": -1,
         }
         new_model._model = lgb.LGBMClassifier(**params)
-        new_model._model.fit(X_combined, y_combined, sample_weight=weights)
+        X_train_df = InPlayGBMModel._features_to_frame(X_combined)
+        new_model._model.fit(X_train_df, y_combined, sample_weight=weights)
         new_model._fitted = True
     except Exception as exc:
         log.error("feedback_retrain_fit_failed", error=str(exc))
         return FeedbackRetrainResult(
             n_feedback_examples=n_fb,
             n_synthetic_examples=n_syn,
+            n_tick_examples=n_ms,
             brier_old=brier_old,
             brier_new=brier_old,
             brier_delta=0.0,
@@ -263,8 +294,8 @@ def retrain_with_feedback(
             timestamp=datetime.now().isoformat(),
         )
 
-    # 6. Avaliar novo modelo no mesmo feedback
-    brier_new = evaluate_brier(new_model, X_fb, y_fb)
+    # 6. Avaliar novo modelo no holdout
+    brier_new = evaluate_brier(new_model, X_hold, y_hold)
     delta = brier_old - brier_new
     accepted = delta >= accept_threshold
 
@@ -295,6 +326,7 @@ def retrain_with_feedback(
             "user_id": user_id,
             "n_feedback": n_fb,
             "n_synthetic": n_syn,
+            "n_ticks": n_ms,
             "feedback_weight": feedback_weight,
             "brier_old": brier_old,
             "brier_new": brier_new,
@@ -307,6 +339,7 @@ def retrain_with_feedback(
     return FeedbackRetrainResult(
         n_feedback_examples=n_fb,
         n_synthetic_examples=n_syn,
+        n_tick_examples=n_ms,
         brier_old=brier_old,
         brier_new=brier_new,
         brier_delta=delta,

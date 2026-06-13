@@ -23,6 +23,40 @@ function TeamAvatar({ name }: { name: string }) {
   return <TeamFlag team={name} size={40} rounded="md" />;
 }
 
+function UncertaintyBadge({ level }: { level: "alta" | "media" | "baixa" }) {
+  const styles = {
+    alta: { bg: "bg-amber-500/15", text: "text-amber-300", label: "Incerteza alta" },
+    media: { bg: "bg-sky-500/15", text: "text-sky-300", label: "Incerteza média" },
+    baixa: { bg: "bg-neon-green/10", text: "text-neon-green", label: "Incerteza baixa" },
+  } as const;
+  const s = styles[level];
+  return (
+    <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${s.bg} ${s.text}`}>
+      {s.label}
+    </span>
+  );
+}
+
+function ResultBadge({
+  actualScore,
+  predictionHit,
+}: {
+  actualScore: string;
+  predictionHit: boolean | null;
+}) {
+  const hit = predictionHit === true;
+  const miss = predictionHit === false;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="rounded-md bg-white/8 px-2 py-0.5 text-[10px] font-bold text-slate-300">
+        Real: {actualScore.replace("x", "×")}
+      </span>
+      {hit && <span className="text-[10px] font-bold text-neon-green">✓ acertou</span>}
+      {miss && <span className="text-[10px] font-bold text-red-400">✗ errou</span>}
+    </div>
+  );
+}
+
 export function MatchCard({ prediction, index = 0, compact = false, group }: MatchCardProps) {
   const winner = predictedWinner(
     prediction.prediction,
@@ -32,6 +66,10 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
   const winnerColor = outcomeColors[prediction.prediction];
   const homeColor = outcomeColors["1"];
   const awayColor = outcomeColors["2"];
+  const showDrawNote =
+    prediction.pickReason === "empate_equilibrio" &&
+    prediction.maxProbOutcome &&
+    prediction.maxProbOutcome !== "X";
 
   return (
     <motion.article
@@ -62,13 +100,33 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
               {group}
             </span>
           )}
+          {prediction.uncertainty && (
+            <UncertaintyBadge level={prediction.uncertainty} />
+          )}
           <span className="text-sm font-bold" style={{ color: winnerColor }}>{winner}</span>
         </div>
         <ConfidenceBadge
           confidence={prediction.confidence}
           prediction={prediction.prediction}
+          label="Prob. palpite"
         />
       </div>
+
+      {prediction.actualScore && (
+        <div className="relative border-b border-white/5 px-4 py-2">
+          <ResultBadge
+            actualScore={prediction.actualScore}
+            predictionHit={prediction.predictionHit ?? null}
+          />
+        </div>
+      )}
+
+      {showDrawNote && (
+        <p className="relative px-4 pt-2 text-[11px] leading-snug text-slate-400">
+          Empate escolhido por equilíbrio (P({prediction.maxProbOutcome})=
+          {formatPercent(prediction.maxProb ?? 0)} vs P(X)={formatPercent(prediction.confidence)}).
+        </p>
+      )}
 
       {/* Times */}
       <div className="relative flex items-center justify-between gap-2 px-4 py-4">
@@ -127,7 +185,7 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
             </div>
           </div>
 
-          <ConfidenceBar confidence={prediction.confidence} />
+          <ConfidenceBar confidence={prediction.confidence} label="Probabilidade do palpite" />
 
           <p className="line-clamp-1 text-xs text-slate-500">{prediction.h2hSummary}</p>
         </div>

@@ -847,10 +847,21 @@ def advise_aportes(
     minute: int = 0,
     confidence_score: float = 1.0,
 ) -> list[AporteAdvice]:
+    if live and minute >= settings.live_block_minute:
+        return []
+
     threshold = _effective_min_edge(min_edge=min_edge, live=live)
+    min_edge_pp = settings.live_min_edge_pp
+
+    if live and minute >= settings.live_midgame_strict_minute:
+        threshold *= settings.live_midgame_ev_multiplier
+        min_edge_pp = max(min_edge_pp, settings.live_midgame_min_edge_pp)
+
     # ── Guarda de fim de jogo: exigir EV muito maior após minuto 85 ──
     if minute > settings.live_max_minute_full_advice:
         threshold *= settings.live_late_game_ev_multiplier
+        min_edge_pp = max(min_edge_pp, settings.live_late_game_min_edge_pp)
+
     bankroll = bankroll or 1000.0
     out: list[AporteAdvice] = []
 
@@ -858,7 +869,6 @@ def advise_aportes(
     if confidence_score < 0.25:
         return []
 
-    min_edge_pp = settings.live_min_edge_pp
     if confidence_score < 0.5:
         min_edge_pp = max(min_edge_pp, 8.0)
 

@@ -1,0 +1,95 @@
+{
+  "generated_at": "2026-06-12T19:13:39.089033+00:00",
+  "user_id": "jamarorn",
+  "period": {
+    "start": "2026-06-05",
+    "end": "2026-06-12",
+    "days": 7
+  },
+  "operational": {
+    "pnl_total": -507.57,
+    "roi": -0.1664,
+    "hit_rate": 0.4458,
+    "n_bets_placed": 255,
+    "total_staked": 3050.4,
+    "week_pnl": -652.57,
+    "week_staked": 3195.4,
+    "week_bets": 264
+  },
+  "reconciliation": {
+    "n_pairs": 243,
+    "n_high_confidence": 93,
+    "match_rate_0_5": 0.407,
+    "brier_avg": 0.6797,
+    "pnl_reconciled": -648.57,
+    "hit_rate": 0.444
+  },
+  "model": {
+    "run_id": "20260612T155537Z",
+    "timestamp": "2026-06-12T15:55:37.309775+00:00",
+    "wc_brier": 0.1836,
+    "inplay_brier_model": 0.0773,
+    "inplay_brier_market": 0.1063,
+    "inplay_delta": -0.029
+  },
+  "wc_draw_picks": {
+    "n_matches": 72,
+    "n_draw": 14,
+    "n_home": 47,
+    "n_away": 11
+  },
+  "filter_backtest": {
+    "user_id": "jamarorn",
+    "n_reconciled": 243,
+    "n_with_minute": 99,
+    "recommended_filter": "block_midgame",
+    "baseline_hit_rate": 0.2727,
+    "best_filter_hit_rate": 0.6,
+    "hit_rate_delta_pp": 32.7,
+    "scenarios": [
+      {
+        "name": "baseline",
+        "label": "Todas reconciliadas (com minuto)",
+        "n_bets": 99,
+        "hit_rate": 0.2727,
+        "pnl": -250.5,
+        "excluded": 0
+      },
+      {
+        "name": "block_midgame",
+        "label": "Excluir ≥45'",
+        "n_bets": 15,
+        "hit_rate": 0.6,
+        "pnl": -42.75,
+        "excluded": 84
+      },
+      {
+        "name": "block_late",
+        "label": "Excluir ≥88'",
+        "n_bets": 87,
+        "hit_rate": 0.3103,
+        "pnl": -130.5,
+        "excluded": 12
+      },
+      {
+        "name": "only_first_half",
+        "label": "Só 0–30'",
+        "n_bets": 9,
+        "hit_rate": 0.3333,
+        "pnl": -46.05,
+        "excluded": 90
+      }
+    ]
+  },
+  "wallet_sync": {
+    "stale": false,
+    "days_since_upload": 2.99,
+    "n_pending_csv": 0
+  },
+  "health": {
+    "model_beats_market_inplay": true,
+    "csv_sync_ok": true,
+    "reconciliation_on_track": false,
+    "filter_improves_hit_rate": true
+  }
+}

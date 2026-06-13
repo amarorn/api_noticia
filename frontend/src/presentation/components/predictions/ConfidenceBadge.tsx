@@ -10,9 +10,10 @@ import {
 interface ConfidenceBadgeProps {
   confidence: number;
   prediction: OutcomeLabel;
+  label?: string;
 }
 
-export function ConfidenceBadge({ confidence, prediction }: ConfidenceBadgeProps) {
+export function ConfidenceBadge({ confidence, prediction, label = "Confiança" }: ConfidenceBadgeProps) {
   const level = confidenceLevel(confidence);
   const color = confidenceColor(level);
 
@@ -29,7 +30,7 @@ export function ConfidenceBadge({ confidence, prediction }: ConfidenceBadgeProps
         {prediction}
       </div>
       <div>
-        <p className="text-xs uppercase tracking-wider text-slate-500">Confiança</p>
+        <p className="text-xs uppercase tracking-wider text-slate-500">{label}</p>
         <p className="text-lg font-bold" style={{ color }}>
           {formatPercent(confidence)}
         </p>
@@ -41,16 +42,17 @@ export function ConfidenceBadge({ confidence, prediction }: ConfidenceBadgeProps
 
 interface ConfidenceBarProps {
   confidence: number;
+  label?: string;
 }
 
-export function ConfidenceBar({ confidence }: ConfidenceBarProps) {
+export function ConfidenceBar({ confidence, label = "Confiança do modelo" }: ConfidenceBarProps) {
   const level = confidenceLevel(confidence);
   const color = confidenceColor(level);
 
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs text-slate-500">
-        <span>Confiança do modelo</span>
+        <span>{label}</span>
         <span style={{ color }}>{formatPercent(confidence)}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-white/5">

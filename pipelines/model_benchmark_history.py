@@ -309,6 +309,28 @@ def run_model_benchmark(
     }
 
 
+def _fill_walkforward_from_report(metrics: dict[str, Any]) -> None:
+    """Preenche walkforward ausente a partir do relatório salvo."""
+    wf = metrics.get("wc_walkforward") or {}
+    if wf.get("mean_accuracy") is not None:
+        return
+    wf_path = settings.lake_root / "reports" / "wc_walkforward_report.json"
+    if not wf_path.exists():
+        return
+    data = json.loads(wf_path.read_text(encoding="utf-8"))
+    summary = data.get("summary") or {}
+    wf.update(
+        {
+            "editions_evaluated": data.get("editions_evaluated"),
+            "mean_accuracy": _round4(summary.get("mean_accuracy")),
+            "mean_brier": _round4(summary.get("mean_brier")),
+            "worst_brier_season": summary.get("worst_brier_season"),
+            "best_brier_season": summary.get("best_brier_season"),
+        }
+    )
+    metrics["wc_walkforward"] = wf
+
+
 def history_with_deltas() -> dict[str, Any]:
     """Histórico enriquecido com delta vs snapshot anterior."""
     history = load_history()
@@ -343,6 +365,8 @@ def history_with_deltas() -> dict[str, Any]:
         enriched.append(row)
 
     latest = enriched[-1] if enriched else None
+    if latest:
+        _fill_walkforward_from_report(latest.setdefault("metrics", {}))
     return {
         "updated_at": history.get("updated_at"),
         "latest": latest,

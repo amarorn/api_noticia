@@ -14,7 +14,9 @@
       padding: 16px;
     }
     h1 { font-size: 14px; font-weight: 700; color: #00ff88; margin-bottom: 4px; }
-    p.sub { font-size: 11px; color: #94a3b8; margin-bottom: 12px; }
+    p.sub { font-size: 11px; color: #94a3b8; margin-bottom: 12px; line-height: 1.45; }
+    .hint { color: #64748b; font-size: 10px; }
+    .last-run { font-size: 10px; color: #64748b; margin-top: 8px; min-height: 14px; }
     .field { margin-bottom: 10px; }
     label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
     input {
@@ -58,17 +60,25 @@
 </head>
 <body>
   <h1>Bolão AI — Captura</h1>
-  <p class="sub">Extrai apostas da Superbet e envia para o painel ao vivo.</p>
+  <p class="sub">Extrai apostas da Superbet e envia para o painel ao vivo.<br>
+  <span class="hint">Pode fechar esta janela durante a captura — você receberá uma notificação.</span></p>
 
   <div class="field">
     <label for="apiKey">API Key (opcional)</label>
     <input id="apiKey" type="password" placeholder="Cole sua API key do Bolão AI">
   </div>
 
+  <div class="field">
+    <label for="userId">Usuário carteira</label>
+    <input id="userId" type="text" placeholder="jamarorn" value="jamarorn">
+  </div>
+
   <button id="captureBtn">Capturar apostas abertas</button>
   <button id="captureSettledBtn" style="margin-top:6px; background: linear-gradient(135deg, #818cf8, #6366f1);">Capturar finalizadas (historico)</button>
+  <button id="captureWalletBtn" style="margin-top:6px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color:#0f172a;">Enviar extrato carteira → API</button>
 
   <div id="status" class="status"></div>
+  <div id="lastRun" class="last-run"></div>
   <div id="betsList"></div>
 
   <script src="popup.js"></script>

@@ -108,6 +108,12 @@ export function DashboardPage() {
     return counts;
   }, [round1Query.data, round2Query.data, round3Query.data]);
 
+  const finishedStats = useMemo(() => {
+    const finished = allPredictions.filter((p) => p.actualScore);
+    const hits = finished.filter((p) => p.predictionHit === true).length;
+    return { total: finished.length, hits };
+  }, [allPredictions]);
+
   const valueQuery = useQuery({
     queryKey: ["wc-value"],
     queryFn: () => getValueBetsUseCase.execute(),
@@ -180,6 +186,33 @@ export function DashboardPage() {
       />
 
       <QuickActions />
+
+      <section className="glass-card space-y-2 p-4 text-sm text-slate-300">
+        <p className="font-semibold text-white">Como ler estes palpites</p>
+        <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-slate-400">
+          <li>
+            <strong className="text-slate-300">Prob. palpite</strong> é a chance estimada do
+            resultado escolhido (1/X/2), não garantia de acerto.
+          </li>
+          <li>
+            Jogos com <strong className="text-amber-300">incerteza alta</strong> são equilibrados —
+            evite apostas grandes (ex.: margem &lt; 8 pp).
+          </li>
+          <li>
+            Palpite <strong className="text-sky-300">X por equilíbrio</strong> pode aparecer mesmo
+            quando casa/fora têm probabilidade ligeiramente maior.
+          </li>
+          {finishedStats.total > 0 && (
+            <li>
+              Jogos já realizados nesta tela:{" "}
+              <strong className="text-neon-green">
+                {finishedStats.hits}/{finishedStats.total} acertos
+              </strong>{" "}
+              ({((finishedStats.hits / finishedStats.total) * 100).toFixed(0)}%).
+            </li>
+          )}
+        </ul>
+      </section>
 
       <section className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

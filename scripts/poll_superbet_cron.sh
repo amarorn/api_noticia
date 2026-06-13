@@ -48,6 +48,10 @@ LOG_FILE="${LOG_DIR}/poll_superbet.log"
 
   ARGS=(--no-train --max-events "${POLL_MAX_EVENTS}" --phase "${POLL_PHASE}")
 
+  if [[ "${POLL_WC_COPA:-false}" == "true" ]]; then
+    ARGS+=(--wc-copa)
+  fi
+
   if [[ -n "${POLL_EVENT_IDS:-}" ]]; then
     ARGS+=(--event-ids "${POLL_EVENT_IDS}")
   else

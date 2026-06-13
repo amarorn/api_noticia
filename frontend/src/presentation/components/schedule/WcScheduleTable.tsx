@@ -6,6 +6,7 @@ import { ComboTicketModal } from "@/presentation/components/predictions/ComboTic
 import { IconChevronRight, IconWallet } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { isMatchPregame } from "@/presentation/utils/sofascore";
+import { formatPercent, outcomeColors, predictedWinner } from "@/presentation/theme";
 
 interface WcScheduleTableProps {
   schedule: WcSchedule;
@@ -44,6 +45,44 @@ function buildPredictLink(homeTeam: string, awayTeam: string): string {
   return `/predict?${params.toString()}`;
 }
 
+function SchedulePredictionBadge({ match }: { match: WcScheduleMatch }) {
+  if (!match.prediction) {
+    return <span className="text-xs text-slate-600">—</span>;
+  }
+
+  const color = outcomeColors[match.prediction];
+  const label =
+    match.prediction === "X"
+      ? "Empate"
+      : predictedWinner(match.prediction, match.homeTeam, match.awayTeam);
+
+  const title = [
+    match.confidence != null ? `Confiança ${formatPercent(match.confidence)}` : null,
+    match.probHome != null
+      ? `1 ${formatPercent(match.probHome)} · X ${formatPercent(match.probDraw ?? 0)} · 2 ${formatPercent(match.probAway ?? 0)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <span
+      title={title}
+      className="inline-flex min-w-[4.5rem] flex-col items-center rounded-lg border px-2 py-1 text-center"
+      style={{
+        borderColor: `${color}40`,
+        backgroundColor: `${color}12`,
+        color,
+      }}
+    >
+      <span className="text-sm font-black leading-none">{match.prediction}</span>
+      <span className="mt-0.5 max-w-[7rem] truncate text-[10px] font-medium opacity-90">
+        {label}
+      </span>
+    </span>
+  );
+}
+
 function MatchRow({
   match,
   index,
@@ -78,6 +117,9 @@ function MatchRow({
       </td>
       <td className="px-4 py-3.5">
         <TeamCell name={match.awayTeam} />
+      </td>
+      <td className="hidden px-3 py-3.5 text-center md:table-cell">
+        <SchedulePredictionBadge match={match} />
       </td>
       <td className="hidden px-4 py-3.5 text-xs text-slate-500 lg:table-cell">
         <span className="block truncate">{match.venue ?? "—"}</span>
@@ -143,6 +185,7 @@ export function WcScheduleTable({
                 <th className="px-4 py-3">Mandante</th>
                 <th className="px-2 py-3" />
                 <th className="px-4 py-3">Visitante</th>
+                <th className="hidden px-3 py-3 text-center md:table-cell">Palpite</th>
                 <th className="hidden px-4 py-3 lg:table-cell">Estádio</th>
                 <th className="px-4 py-3 text-right">Ação</th>
               </tr>
@@ -161,6 +204,13 @@ export function WcScheduleTable({
         </div>
         <div className="border-t border-white/5 px-4 py-2.5 text-xs text-slate-500">
           {filtered.length} jogo{filtered.length !== 1 ? "s" : ""} · {schedule.totalMatches} no total
+          {schedule.predictionsSummary && schedule.predictionsSummary.draws > 0 ? (
+            <span className="ml-2 text-neon-blue">
+              · {schedule.predictionsSummary.draws} empate
+              {schedule.predictionsSummary.draws !== 1 ? "s" : ""} previsto
+              {schedule.predictionsSummary.draws !== 1 ? "s" : ""}
+            </span>
+          ) : null}
         </div>
       </div>
 

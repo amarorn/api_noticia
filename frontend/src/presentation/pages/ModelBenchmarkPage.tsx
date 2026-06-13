@@ -28,6 +28,21 @@ interface BenchmarkHistoryResponse {
   summary_labels: Record<string, string>;
 }
 
+interface EnsembleStatusResponse {
+  mode: "shadow" | "canary" | "production";
+  ready_for_production: boolean;
+  shadow_mode_active: boolean;
+  n_feedback_high_confidence: number;
+  n_reconcile_pairs: number;
+  n_tick_examples: number;
+  inplay_delta_brier: number | null;
+  feedback_gbm_accepted: boolean;
+  checks: Record<string, boolean>;
+  missing: string[];
+  recommendation: string;
+  assessed_at: string;
+}
+
 function formatTs(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
@@ -113,6 +128,11 @@ export function ModelBenchmarkPage() {
     queryFn: () => apiFetch<BenchmarkHistoryResponse>("/worldcup/benchmarks/history"),
   });
 
+  const { data: ensemble } = useQuery({
+    queryKey: ["inplay-ensemble-status"],
+    queryFn: () => apiFetch<EnsembleStatusResponse>("/worldcup/inplay/ensemble-status"),
+  });
+
   const latest = data?.latest;
   const m = latest?.metrics;
   const d = latest?.deltas ?? {};
@@ -135,6 +155,51 @@ export function ModelBenchmarkPage() {
         </div>
       ) : (
         <>
+          {ensemble ? (
+            <section
+              className={`mb-6 rounded-xl border p-4 ${
+                ensemble.ready_for_production
+                  ? "border-emerald-500/40 bg-emerald-500/10"
+                  : ensemble.mode === "canary"
+                    ? "border-yellow-500/40 bg-yellow-500/10"
+                    : "border-border/60 bg-surface-elevated/40"
+              }`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted">Ensemble in-play (GBM)</p>
+                  <p className="mt-1 text-lg font-semibold capitalize text-foreground">
+                    Modo {ensemble.mode}
+                    {ensemble.shadow_mode_active ? " · shadow ativo" : " · produção"}
+                  </p>
+                  <p className="mt-2 text-sm text-muted">{ensemble.recommendation}</p>
+                </div>
+                <div className="grid gap-2 text-sm sm:grid-cols-3">
+                  <div>
+                    <span className="text-muted">Alta conf.</span>
+                    <p className="font-medium">
+                      {ensemble.n_feedback_high_confidence} / 500
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted">Ticks rotulados</span>
+                    <p className="font-medium">{ensemble.n_tick_examples}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted">Δ Brier in-play</span>
+                    <p className="font-medium">{formatNum(ensemble.inplay_delta_brier)}</p>
+                  </div>
+                </div>
+              </div>
+              {data?.latest?.metrics?.wc_walkforward?.mean_accuracy != null ? (
+                <p className="mt-3 text-xs text-muted">
+                  Walkforward WC: {formatPct(data.latest.metrics.wc_walkforward.mean_accuracy as number)}{" "}
+                  · Brier {formatNum(data.latest.metrics.wc_walkforward.mean_brier as number)}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
           {latest && m ? (
             <section className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <SummaryCard

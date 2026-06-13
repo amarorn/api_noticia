@@ -108,6 +108,7 @@ def live_events_as_dicts(event_id: int) -> list[dict]:
             "minute": e.minute,
             "team": e.team,
             "detail": e.detail,
+            "source": "sofascore",
         }
         for e in events
     ]

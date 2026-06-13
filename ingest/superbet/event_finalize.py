@@ -127,6 +127,16 @@ def _run_retrain_pipeline(event_id: int, user_id: str) -> dict[str, Any]:
     """Retreina modelos in-play após jogo encerrado."""
     result: dict[str, Any] = {"event_id": event_id, "steps": {}}
 
+    if settings.wallet_inbox_enabled:
+        try:
+            from ingest.user_transactions.wallet_inbox import scan_inbox
+
+            inbox = scan_inbox(user_id, reconcile=False)
+            result["steps"]["wallet_inbox"] = inbox.to_dict()
+        except Exception as exc:
+            logger.warning("wallet inbox pós-jogo falhou: %s", exc)
+            result["steps"]["wallet_inbox"] = {"error": str(exc)}
+
     # Reconciliar carteira (se houver transações bronze)
     try:
         from pipelines.user_bet_reconciliation import reconcile_user_transactions, save_reconciliation
@@ -247,6 +257,35 @@ def maybe_finalize_finished_event(
         advice=advice,
     )
 
+    try:
+        from pipelines.inplay_match_states import upsert_match_states
+
+        silver_path = upsert_match_states(event_ids=[event_id])
+        entry_silver = str(silver_path)
+    except Exception as exc:
+        logger.warning("silver match_states falhou: %s", exc)
+        entry_silver = None
+
+    settle_summary = None
+    ip = snapshot.inplay
+    if settings.superbet_finalize_settle_open_bets and ip is not None:
+        try:
+            from models.open_bet_settle import settle_open_bets_for_event
+
+            hs = ip.home_score if ip.home_score is not None else 0
+            as_ = ip.away_score if ip.away_score is not None else 0
+            settle_summary = settle_open_bets_for_event(
+                event_id=event_id,
+                home_team=snapshot.home_team,
+                away_team=snapshot.away_team,
+                home_score=int(hs),
+                away_score=int(as_),
+                final_score=inplay.get("current_score"),
+            )
+        except Exception as exc:
+            logger.warning("settle open bets falhou: %s", exc)
+            settle_summary = {"error": str(exc)}
+
     odds_path = None
     if snapshot.h2h_odds:
         try:
@@ -264,6 +303,17 @@ def maybe_finalize_finished_event(
         "final_score": inplay.get("current_score"),
         "finalized_at": datetime.now(UTC).isoformat(),
         "gold_path": str(gold_path),
+        "silver_match_states": entry_silver,
+        "settle_open_bets": (
+            {
+                "n_matched": settle_summary.n_matched,
+                "n_settled": settle_summary.n_settled,
+                "n_skipped": settle_summary.n_skipped,
+                "settled_ids": settle_summary.settled_ids,
+            }
+            if settle_summary and hasattr(settle_summary, "n_settled")
+            else settle_summary
+        ),
         "odds_path": str(odds_path) if odds_path else None,
         "retrain_scheduled": settings.superbet_finalize_retrain,
     }

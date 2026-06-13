@@ -1,6 +1,6 @@
 /**
  * Popup da extensão Bolão AI — Captura Superbet.
- * Gerencia captura de apostas abertas e exibe status.
+ * Dispara capturas via background (continua com popup fechado) e exibe último resultado.
  */
 (function () {
   "use strict";
@@ -8,240 +8,225 @@
   const apiKeyInput = document.getElementById("apiKey");
   const captureBtn = document.getElementById("captureBtn");
   const captureSettledBtn = document.getElementById("captureSettledBtn");
+  const captureWalletBtn = document.getElementById("captureWalletBtn");
+  const userIdInput = document.getElementById("userId");
   const statusDiv = document.getElementById("status");
   const betsList = document.getElementById("betsList");
+  const lastRunDiv = document.getElementById("lastRun");
 
-  // Carregar API key salva
-  chrome.storage.local.get(["bolao_api_key"], (items) => {
+  const KIND_LABEL = { open: "abertas", settled: "finalizadas", wallet: "extrato" };
+
+  chrome.storage.local.get(["bolao_api_key", "bolao_user_id"], (items) => {
     if (items.bolao_api_key) apiKeyInput.value = items.bolao_api_key;
+    if (items.bolao_user_id) userIdInput.value = items.bolao_user_id;
   });
 
-  // Salvar API key ao alterar
   apiKeyInput.addEventListener("change", () => {
     chrome.storage.local.set({ bolao_api_key: apiKeyInput.value.trim() });
+  });
+  userIdInput.addEventListener("change", () => {
+    chrome.storage.local.set({ bolao_user_id: userIdInput.value.trim() || "jamarorn" });
   });
 
   function setStatus(text, cls) {
     statusDiv.textContent = text;
-    statusDiv.className = `status ${cls}`;
+    statusDiv.className = `status ${cls || ""}`;
   }
 
-  /**
-   * Verifica se o content script está ativo na aba, e injeta se necessário.
-   */
-  async function ensureContentScript(tabId) {
-    return new Promise((resolve) => {
-      chrome.tabs.sendMessage(tabId, { type: "PING" }, (response) => {
-        if (chrome.runtime.lastError || !response?.ok) {
-          // Content script não está ativo — injetar via scripting API
-          chrome.scripting.executeScript(
-            {
-              target: { tabId },
-              files: ["content_script.js"],
-            },
-            () => {
-              if (chrome.runtime.lastError) {
-                resolve({ ok: false, error: chrome.runtime.lastError.message });
-              } else {
-                // Aguardar um momento para o script carregar
-                setTimeout(() => resolve({ ok: true, injected: true }), 300);
-              }
-            }
-          );
-        } else {
-          resolve({ ok: true, injected: false });
-        }
+  function formatWhen(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       });
-    });
+    } catch {
+      return iso;
+    }
   }
 
-  captureBtn.addEventListener("click", async () => {
-    captureBtn.disabled = true;
-    setStatus("Verificando aba...", "warn");
-    betsList.innerHTML = "";
+  function renderLastCapture(record) {
+    if (!record) {
+      lastRunDiv.textContent = "";
+      return;
+    }
+    const kind = KIND_LABEL[record.kind] || record.kind;
+    let extra = "";
+    if (record.kind === "open" && record.summary?.tickets_on_page != null) {
+      extra = ` · ${record.summary.tickets_on_page} bilhete(s) na página`;
+    }
+    lastRunDiv.textContent = `Última captura (${kind}): ${formatWhen(record.finishedAt)}${extra}`;
+    setStatus(record.message, record.status);
+    renderBetList(record);
+  }
 
-    // Obter aba ativa
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) {
-      setStatus("Nenhuma aba ativa encontrada.", "err");
-      captureBtn.disabled = false;
+  function renderBetList(record) {
+    if (!record?.bets?.length) {
+      betsList.innerHTML = "";
       return;
     }
 
-    // Verificar domínio (superbet.com, superbet.com.br, superbet.bet.br)
-    const url = tab.url || "";
-    const isSuperbet = /superbet\.(com|com\.br|bet\.br)/i.test(url);
-    if (!isSuperbet) {
-      setStatus(
-        "Abra a página 'Minhas Apostas' na Superbet e tente novamente.\nURL atual: " +
-          url.slice(0, 50),
-        "err"
-      );
-      captureBtn.disabled = false;
-      return;
-    }
-
-    // Garantir que content script está injetado
-    const inject = await ensureContentScript(tab.id);
-    if (!inject.ok) {
-      setStatus("Falha ao injetar script: " + (inject.error || "permissão negada"), "err");
-      captureBtn.disabled = false;
-      return;
-    }
-
-    setStatus("Escaneando apostas abertas...", "warn");
-
-    // Pedir scan ao content script
-    chrome.tabs.sendMessage(tab.id, { type: "SCAN_BETS" }, (response) => {
-      captureBtn.disabled = false;
-
-      if (chrome.runtime.lastError) {
-        setStatus(
-          "Erro de comunicação: " + chrome.runtime.lastError.message +
-          "\nTente recarregar a página da Superbet.",
-          "err"
-        );
-        return;
-      }
-
-      if (!response || !response.bets) {
-        setStatus(
-          "Nenhuma resposta do content script.\nRecarregue a página da Superbet.",
-          "err"
-        );
-        return;
-      }
-
-      const { bets, results } = response;
-      if (bets.length === 0) {
-        setStatus(
-          "Nenhuma aposta aberta encontrada na página.\n" +
-          "Certifique-se de estar em 'Minhas Apostas' com apostas ativas.",
-          "warn"
-        );
-        return;
-      }
-
-      // Exibir resultados
-      const okCount = (results || []).filter((r) => r.ok).length;
-      const failCount = bets.length - okCount;
-
-      if (failCount === 0) {
-        setStatus(`✓ ${bets.length} aposta(s) capturada(s) e enviada(s) com sucesso!`, "ok");
-      } else if (okCount > 0) {
-        setStatus(
-          `${okCount}/${bets.length} enviadas. ${failCount} falharam (API offline?).`,
-          "warn"
-        );
-      } else {
-        setStatus(
-          `${bets.length} aposta(s) encontrada(s), mas falha ao enviar.\nVerifique se a API está rodando.`,
-          "err"
-        );
-      }
-
-      // Listar apostas
-      betsList.innerHTML = bets
+    if (record.kind === "open") {
+      betsList.innerHTML = record.bets
         .map((b) => {
-          const status = b.is_live ? "🟢 AO VIVO" : "⏸ Pré-jogo";
+          const live = b.is_live ? "🟢 AO VIVO" : "⏸ Pré-jogo";
+          const r = b.send;
+          let sendTag = "";
+          if (r?.ok) sendTag = ' <span style="color:#00ff88">✓ enviada</span>';
+          else if (r?.skipped) sendTag = ` <span style="color:#fbbf24">⚠ ${r.error}</span>`;
+          else if (r) sendTag = ` <span style="color:#f87171">✗ ${r.error || "erro API"}</span>`;
           return `
             <div class="bet-item">
               <strong>${b.event_name || "—"}</strong><br>
-              <span>${status} · ${b.picks.length} pick(s) · Stake R$ ${b.stake.toFixed(2)}</span>
-              ${b.cashout_value ? `<br><span style="color:#fbbf24">Cash-out: R$ ${b.cashout_value.toFixed(2)}</span>` : ""}
+              <span>${live} · ${b.picks_count} pick(s) · Stake R$ ${Number(b.stake).toFixed(2)}${sendTag}</span>
+              ${b.cashout_value ? `<br><span style="color:#fbbf24">Cash-out: R$ ${Number(b.cashout_value).toFixed(2)}</span>` : ""}
             </div>`;
         })
         .join("");
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Capturar apostas finalizadas (tab "Finalizado")
-  // ═══════════════════════════════════════════════════════════════════════
-  captureSettledBtn.addEventListener("click", async () => {
-    captureSettledBtn.disabled = true;
-    captureBtn.disabled = true;
-    setStatus("Verificando aba...", "warn");
-    betsList.innerHTML = "";
-
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) {
-      setStatus("Nenhuma aba ativa encontrada.", "err");
-      captureSettledBtn.disabled = false;
-      captureBtn.disabled = false;
       return;
     }
 
-    const url = tab.url || "";
-    const isSuperbet = /superbet\.(com|com\.br|bet\.br)/i.test(url);
-    if (!isSuperbet) {
-      setStatus(
-        "Abra 'Minhas Apostas > Finalizados' na Superbet.\nURL atual: " + url.slice(0, 50),
-        "err"
-      );
-      captureSettledBtn.disabled = false;
-      captureBtn.disabled = false;
-      return;
-    }
-
-    const inject = await ensureContentScript(tab.id);
-    if (!inject.ok) {
-      setStatus("Falha ao injetar script: " + (inject.error || "permissão negada"), "err");
-      captureSettledBtn.disabled = false;
-      captureBtn.disabled = false;
-      return;
-    }
-
-    setStatus("Escaneando apostas finalizadas...", "warn");
-
-    chrome.tabs.sendMessage(tab.id, { type: "CAPTURE_SETTLED_BETS" }, (response) => {
-      captureSettledBtn.disabled = false;
-      captureBtn.disabled = false;
-
-      if (chrome.runtime.lastError) {
-        setStatus("Erro: " + chrome.runtime.lastError.message, "err");
-        return;
-      }
-
-      if (!response || !response.bets) {
-        setStatus("Sem resposta do content script.\nRecarregue a página.", "err");
-        return;
-      }
-
-      const { bets, result } = response;
-      if (bets.length === 0) {
-        setStatus(
-          "Nenhuma aposta finalizada encontrada.\n" +
-          "Navegue para a aba 'Finalizados' em Minhas Apostas.",
-          "warn"
-        );
-        return;
-      }
-
-      const added = result?.data?.added ?? bets.length;
-      if (result?.ok !== false) {
-        setStatus(`✓ ${bets.length} aposta(s) finalizada(s) capturada(s)! (${added} novas)`, "ok");
-      } else {
-        setStatus(
-          `${bets.length} encontrada(s), mas falha ao enviar.\n${result.error || "API offline?"}`,
-          "err"
-        );
-      }
-
-      // Listar
+    if (record.kind === "settled") {
       const icons = { won: "✅", lost: "❌", cashout: "💰", void: "⏹️" };
-      betsList.innerHTML = bets
+      betsList.innerHTML = record.bets
         .map((b) => {
           const icon = icons[b.result] || "❓";
           const profitClass = b.profit >= 0 ? "color:#00ff88" : "color:#f87171";
           return `
             <div class="bet-item">
               <strong>${icon} ${b.event_name || "—"}</strong><br>
-              <span>${b.result.toUpperCase()} · Stake R$ ${b.stake.toFixed(2)} · <span style="${profitClass}">Lucro R$ ${b.profit.toFixed(2)}</span></span>
+              <span>${(b.result || "").toUpperCase()} · Stake R$ ${Number(b.stake).toFixed(2)} · <span style="${profitClass}">Lucro R$ ${Number(b.profit).toFixed(2)}</span></span>
               ${b.final_score ? `<br><span>Placar: ${b.final_score}</span>` : ""}
             </div>`;
         })
         .join("");
-    });
+      return;
+    }
+
+    if (record.kind === "wallet") {
+      betsList.innerHTML = record.bets
+        .map(
+          (r) =>
+            `<div class="bet-item"><strong>${r.event_name}</strong><br><span>${r.datetime || ""} · R$ ${Number(r.stake).toFixed(2)}</span></div>`
+        )
+        .join("");
+    }
+  }
+
+  function setButtonsDisabled(disabled) {
+    captureBtn.disabled = disabled;
+    captureSettledBtn.disabled = disabled;
+    captureWalletBtn.disabled = disabled;
+  }
+
+  function showProgress(progress) {
+    if (!progress) return;
+    const kind = KIND_LABEL[progress.kind] || progress.kind;
+    setStatus(
+      `Captura (${kind}) em andamento…\nPode fechar esta janela — avisaremos quando terminar.`,
+      "warn"
+    );
+    setButtonsDisabled(true);
+  }
+
+  chrome.storage.local.get(["bolao_last_capture", "bolao_capture_in_progress"], (items) => {
+    if (items.bolao_capture_in_progress) {
+      showProgress(items.bolao_capture_in_progress);
+    } else if (items.bolao_last_capture) {
+      renderLastCapture(items.bolao_last_capture);
+    }
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+    if (changes.bolao_capture_in_progress) {
+      const p = changes.bolao_capture_in_progress.newValue;
+      if (p) showProgress(p);
+      else setButtonsDisabled(false);
+    }
+    if (changes.bolao_last_capture?.newValue) {
+      renderLastCapture(changes.bolao_last_capture.newValue);
+      setButtonsDisabled(false);
+    }
+  });
+
+  async function getSuperbetTab() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return { error: "Nenhuma aba ativa encontrada." };
+    const url = tab.url || "";
+    if (!/superbet\.(com|com\.br|bet\.br)/i.test(url)) {
+      return {
+        error:
+          "Abra a Superbet (Minhas Apostas ou Carteira).\nURL atual: " + url.slice(0, 55),
+      };
+    }
+    return { tab };
+  }
+
+  function startBackgroundCapture(type, tabId, extra = {}) {
+    const apiKey = apiKeyInput.value.trim();
+    if (apiKey) chrome.storage.local.set({ bolao_api_key: apiKey });
+
+    const msgType = {
+      open: "START_CAPTURE_OPEN",
+      settled: "START_CAPTURE_SETTLED",
+      wallet: "START_CAPTURE_WALLET",
+    }[type];
+
+    chrome.runtime.sendMessage(
+      {
+        type: msgType,
+        tabId,
+        apiKey,
+        userId: extra.userId,
+      },
+      () => {
+        /* resultado via storage + notificação — popup pode estar fechado */
+        if (chrome.runtime.lastError) {
+          setStatus("Erro ao iniciar: " + chrome.runtime.lastError.message, "err");
+          setButtonsDisabled(false);
+        }
+      }
+    );
+  }
+
+  captureBtn.addEventListener("click", async () => {
+    betsList.innerHTML = "";
+    const { tab, error } = await getSuperbetTab();
+    if (error) {
+      setStatus(error, "err");
+      return;
+    }
+    setStatus("Iniciando captura de apostas abertas…", "warn");
+    setButtonsDisabled(true);
+    startBackgroundCapture("open", tab.id);
+  });
+
+  captureSettledBtn.addEventListener("click", async () => {
+    betsList.innerHTML = "";
+    const { tab, error } = await getSuperbetTab();
+    if (error) {
+      setStatus(error, "err");
+      return;
+    }
+    setStatus("Iniciando captura de finalizadas…", "warn");
+    setButtonsDisabled(true);
+    startBackgroundCapture("settled", tab.id);
+  });
+
+  captureWalletBtn.addEventListener("click", async () => {
+    betsList.innerHTML = "";
+    const { tab, error } = await getSuperbetTab();
+    if (error) {
+      setStatus(error, "err");
+      return;
+    }
+    const userId = userIdInput.value.trim() || "jamarorn";
+    chrome.storage.local.set({ bolao_user_id: userId });
+    setStatus("Iniciando envio do extrato…", "warn");
+    setButtonsDisabled(true);
+    startBackgroundCapture("wallet", tab.id, { userId });
   });
 })();

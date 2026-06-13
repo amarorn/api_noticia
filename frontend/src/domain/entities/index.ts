@@ -272,6 +272,14 @@ export interface WcPrediction {
   context: string;
   h2hSummary: string;
   modelBreakdown: ModelBreakdown;
+  maxProbOutcome?: OutcomeLabel | null;
+  maxProb?: number | null;
+  probMargin?: number | null;
+  uncertainty?: "alta" | "media" | "baixa" | null;
+  pickReason?: "argmax" | "empate_equilibrio" | null;
+  actualScore?: string | null;
+  actualOutcome?: OutcomeLabel | null;
+  predictionHit?: boolean | null;
 }
 
 export interface WcRound {
@@ -297,6 +305,17 @@ export interface WcScheduleMatch {
   kickoff: string | null;
   venue: string | null;
   city: string | null;
+  prediction?: "1" | "X" | "2" | null;
+  confidence?: number | null;
+  probHome?: number | null;
+  probDraw?: number | null;
+  probAway?: number | null;
+}
+
+export interface WcSchedulePredictionsSummary {
+  loaded: number;
+  distribution: Record<string, number>;
+  draws: number;
 }
 
 export interface WcSchedule {
@@ -307,6 +326,7 @@ export interface WcSchedule {
   matchdays: number[];
   matches: WcScheduleMatch[];
   totalMatches: number;
+  predictionsSummary?: WcSchedulePredictionsSummary | null;
 }
 
 export interface WcFriendlyMatch {
@@ -689,6 +709,24 @@ export interface SuperbetLiveAdvice {
     overall_action: string;
     summary: string;
   } | null;
+  againstModelAlerts: Array<{
+    betId: string | null;
+    market: string;
+    betOutcome: OutcomeLabel;
+    betOutcomeLabel: string;
+    stake: number;
+    oddsPlaced: number | null;
+    pregamePalpite: OutcomeLabel;
+    pregameProb: number;
+    pregameUncertainty: string | null;
+    inplayPalpite: OutcomeLabel;
+    inplayProb: number;
+    inplayProbs: Record<OutcomeLabel, number>;
+    severity: "critical" | "high" | "medium";
+    againstPregame: boolean;
+    againstInplay: boolean;
+    message: string;
+  }>;
 }
 
 /** Bilhete combo KXL (pré-jogo ou in-play via strategy.comboTicket). */
@@ -799,6 +837,9 @@ export interface WcGroupStandingRow {
   ga: number;
   gd: number;
   points: number;
+  realPoints: number;
+  realPlayed: number;
+  realGd: number;
 }
 
 export interface WcGroupStandingsBlock {
@@ -811,6 +852,8 @@ export interface WcGroupStandings {
   competition: string;
   simulated: boolean;
   note: string;
+  asOf: string;
+  nRealResults: number;
   groups: WcGroupStandingsBlock[];
 }
 

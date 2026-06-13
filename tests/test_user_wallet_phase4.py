@@ -163,6 +163,30 @@ class TestFindSnapshotForBet:
         assert result.snapshot is snap
         assert result.confidence > 0.9
 
+    def test_preferred_event_id_boost(self):
+        snap_a = SnapshotRef(
+            event_id=111,
+            path=__import__("pathlib").Path("/tmp/a.json"),
+            timestamp=datetime(2026, 6, 9, 22, 30, 0),
+            home_team="Brasil",
+            away_team="Argentina",
+            is_live=True,
+        )
+        snap_b = SnapshotRef(
+            event_id=222,
+            path=__import__("pathlib").Path("/tmp/b.json"),
+            timestamp=datetime(2026, 6, 9, 22, 31, 0),
+            home_team="França",
+            away_team="Alemanha",
+            is_live=True,
+        )
+        bet_at = datetime(2026, 6, 9, 19, 30, 30)
+        plain = find_snapshot_for_bet(bet_at, [snap_a, snap_b])
+        scoped = find_snapshot_for_bet(bet_at, [snap_a, snap_b], preferred_event_id=222)
+        assert plain.matched and scoped.matched
+        assert scoped.snapshot.event_id == 222
+        assert scoped.confidence >= plain.confidence
+
     def test_no_match_outside_window(self):
         snap = SnapshotRef(
             event_id=123,

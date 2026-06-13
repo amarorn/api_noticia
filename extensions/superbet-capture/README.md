@@ -33,6 +33,23 @@
 
 5. **Pronto!** A extensão aparece no canto do navegador.
 
+## v1.3 — Captura em background + notificação
+
+- A captura roda no **service worker** — continua mesmo se você fechar o popup.
+- Ao terminar, aparece **notificação do Chrome** com o resumo (ex: `4/5 enviadas`).
+- A **última captura** fica salva — reabra o popup para ver o detalhe por aposta.
+
+Recarregue a extensão em `chrome://extensions/` após atualizar.
+
+## v1.2 — Extrato carteira
+
+1. Abra **Carteira → Histórico de transações** na Superbet
+2. Clique em **Enviar extrato carteira → API**
+3. Informe o **Usuário carteira** (ex: `jamarorn`)
+4. CSV enviado + reconcile automático → atualiza `/carteira`
+
+Recarregue a extensão em `chrome://extensions/` após atualizar o código.
+
 ## Uso
 
 1. Acesse **Minhas Apostas** na Superbet.

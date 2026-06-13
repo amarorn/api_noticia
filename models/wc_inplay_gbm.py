@@ -28,8 +28,10 @@ from __future__ import annotations
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 from config import settings
@@ -98,6 +100,24 @@ class InPlayGBMModel:
     def is_fitted(self) -> bool:
         return self._fitted
 
+    @staticmethod
+    def _features_to_frame(
+        X: NDArray[np.float64] | dict[str, float] | pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Converte features para DataFrame nomeado (evita warning do sklearn/LGBM)."""
+        if isinstance(X, pd.DataFrame):
+            return X.reindex(columns=GBM_FEATURES, fill_value=0.0)
+        if isinstance(X, dict):
+            row = {f: float(X.get(f, 0.0)) for f in GBM_FEATURES}
+            return pd.DataFrame([row], columns=GBM_FEATURES)
+        arr = np.asarray(X, dtype=np.float64)
+        if arr.ndim == 1:
+            arr = arr.reshape(1, -1)
+        if arr.shape[1] != len(GBM_FEATURES):
+            msg = f"Esperado {len(GBM_FEATURES)} features, recebido {arr.shape[1]}"
+            raise ValueError(msg)
+        return pd.DataFrame(arr, columns=GBM_FEATURES)
+
     def fit(
         self,
         X: NDArray[np.float64],
@@ -146,13 +166,15 @@ class InPlayGBMModel:
 
         self._model = lgb.LGBMClassifier(**params)
 
-        callbacks = []
+        X_df = self._features_to_frame(X)
         eval_set = None
         if eval_X is not None and eval_y is not None:
-            eval_set = [(eval_X, eval_y)]
+            eval_set = [(self._features_to_frame(eval_X), eval_y)]
 
+        callbacks = []
         self._model.fit(
-            X, y,
+            X_df,
+            y,
             eval_set=eval_set,
             callbacks=callbacks,
         )
@@ -161,14 +183,14 @@ class InPlayGBMModel:
         # Métricas básicas no treino
         from sklearn.metrics import log_loss, accuracy_score
 
-        y_pred = self._model.predict_proba(X)
+        y_pred = self._model.predict_proba(X_df)
         metrics = {
             "train_logloss": float(log_loss(y, y_pred)),
             "train_accuracy": float(accuracy_score(y, y_pred.argmax(axis=1))),
         }
 
         if eval_X is not None and eval_y is not None:
-            y_eval_pred = self._model.predict_proba(eval_X)
+            y_eval_pred = self._model.predict_proba(self._features_to_frame(eval_X))
             metrics["val_logloss"] = float(log_loss(eval_y, y_eval_pred))
             metrics["val_accuracy"] = float(accuracy_score(
                 eval_y, y_eval_pred.argmax(axis=1)
@@ -188,7 +210,8 @@ class InPlayGBMModel:
         if not self._fitted or self._model is None:
             raise RuntimeError("Modelo GBM não treinado. Chame fit() primeiro.")
 
-        probs = self._model.predict_proba(X)
+        X_df = self._features_to_frame(X)
+        probs = self._model.predict_proba(X_df)
         results = []
         for row in probs:
             results.append(GBMInPlayPrediction(
@@ -209,8 +232,7 @@ class InPlayGBMModel:
         Returns:
             GBMInPlayPrediction.
         """
-        X = np.array([[features.get(f, 0.0) for f in GBM_FEATURES]])
-        return self.predict(X)[0]
+        return self.predict(self._features_to_frame(features))[0]
 
     def feature_importance(self) -> dict[str, float]:
         """Importância das features (gain)."""

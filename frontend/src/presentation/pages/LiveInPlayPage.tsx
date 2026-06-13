@@ -26,6 +26,8 @@ import {
 import { LivePlainGuide } from "@/presentation/components/predictions/LivePlainGuide";
 import { LiveScoreHeatmap } from "@/presentation/components/predictions/LiveScoreHeatmap";
 import LiveHedgeAlert from "@/presentation/components/predictions/LiveHedgeAlert";
+import LiveAgainstModelAlert from "@/presentation/components/predictions/LiveAgainstModelAlert";
+import { draftAgainstModelAlert, normalizeH2hOutcome } from "@/presentation/utils/againstModelBet";
 
 const POLL_MS = 15_000;
 const SCORE_POLL_MS = 10_000;
@@ -218,6 +220,28 @@ export function LiveInPlayPage() {
         query.state.data?.isFinished ? false : POLL_MS,
     })),
   });
+
+  const draftAgainstAlert = useMemo(() => {
+    if (!data || !showBetForm || betDraft.market !== "h2h") return null;
+    const normalized = normalizeH2hOutcome(betDraft.outcome);
+    const apiAlert = data.againstModelAlerts?.find((a) => a.betOutcome === normalized);
+    if (apiAlert) return apiAlert;
+    const pregame = data.againstModelAlerts?.[0]
+      ? {
+          palpite: data.againstModelAlerts[0].pregamePalpite,
+          prob: data.againstModelAlerts[0].pregameProb,
+        }
+      : null;
+    return draftAgainstModelAlert(betDraft, data, pregame);
+  }, [data, showBetForm, betDraft]);
+
+  const againstModelAlerts = useMemo(() => {
+    const fromApi = data?.againstModelAlerts ?? [];
+    if (draftAgainstAlert && !fromApi.some((a) => a.message === draftAgainstAlert.message)) {
+      return [draftAgainstAlert, ...fromApi];
+    }
+    return fromApi;
+  }, [data?.againstModelAlerts, draftAgainstAlert]);
 
   const matchLink = useMemo(() => {
     if (!data) return null;
@@ -414,6 +438,9 @@ export function LiveInPlayPage() {
 
           {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
+
+          {/* ── 2a. ALERTA — aposta contra palpite do modelo ── */}
+          <LiveAgainstModelAlert alerts={againstModelAlerts} />
 
           {/* ── 2b. ALERTA DE HEDGE (apostas do usuário) ── */}
           <LiveHedgeAlert report={data?.hedgeReport ?? null} />

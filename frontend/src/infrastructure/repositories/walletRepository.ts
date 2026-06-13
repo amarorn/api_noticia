@@ -7,6 +7,8 @@
  *  POST /user/transactions/reconcile    — gera silver
  *  GET  /user/transactions/reconciliation — tabela paginada
  *  GET  /user/transactions/model-errors — heatmap
+ *  GET  /user/wallet/sync-status        — inbox / CSV desatualizado
+ *  POST /user/wallet/import-inbox        — importa CSVs da pasta inbox
  */
 import { apiFetch } from "../api/client";
 
@@ -108,6 +110,39 @@ export interface UploadResponse {
   file_path: string;
 }
 
+export interface WalletSyncStatus {
+  user_id: string;
+  inbox_dir: string;
+  pending_csv_files: string[];
+  n_pending: number;
+  last_upload_at: string | null;
+  days_since_upload: number | null;
+  n_uploads: number;
+  stale: boolean;
+  stale_threshold_days: number;
+  inbox_enabled: boolean;
+}
+
+export interface WalletInboxImportResult {
+  user_id: string;
+  scanned_at: string;
+  n_imported: number;
+  n_skipped: number;
+  imports: Array<{
+    file_path: string;
+    upload_id: string | null;
+    n_rows: number;
+    imported: boolean;
+    skipped: boolean;
+    reason: string | null;
+  }>;
+  reconciliation: {
+    n_pairs?: number;
+    n_high_confidence?: number;
+    error?: string;
+  } | null;
+}
+
 export const walletRepository = {
   async upload(file: File, userId: string): Promise<UploadResponse> {
     const form = new FormData();
@@ -163,6 +198,19 @@ export const walletRepository = {
   getModelErrors(userId: string): Promise<ModelErrors> {
     return apiFetch<ModelErrors>(
       `/user/transactions/model-errors?user_id=${encodeURIComponent(userId)}`,
+    );
+  },
+
+  getSyncStatus(userId: string): Promise<WalletSyncStatus> {
+    return apiFetch<WalletSyncStatus>(
+      `/user/wallet/sync-status?user_id=${encodeURIComponent(userId)}`,
+    );
+  },
+
+  importInbox(userId: string): Promise<WalletInboxImportResult> {
+    return apiFetch<WalletInboxImportResult>(
+      `/user/wallet/import-inbox?user_id=${encodeURIComponent(userId)}`,
+      { method: "POST" },
     );
   },
 };

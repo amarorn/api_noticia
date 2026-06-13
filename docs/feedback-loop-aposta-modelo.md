@@ -20,6 +20,11 @@ CSV Superbet → POST /user/transactions/upload
 # Upload via CLI
 upload-user-csv --file extrato.csv --user jamarorn
 
+# Inbox semi-automática (exporte CSV na Superbet → salve na pasta)
+# data/lake/inbox/wallet/jamarorn/extrato.csv
+watch-wallet-csv --user jamarorn
+./scripts/watch-wallet-cron.sh jamarorn
+
 # Reconciliar + validar
 validate-inplay-phase4 --user jamarorn --csv extrato.csv --json
 

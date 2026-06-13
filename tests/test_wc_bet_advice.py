@@ -122,3 +122,17 @@ def test_advise_aportes_includes_half_markets_when_edge():
     )
     half_markets = {a.market for a in aportes if a.market.startswith(("1h_", "2h_"))}
     assert half_markets
+
+
+def test_advise_aportes_blocked_after_cutoff():
+    inplay = {
+        "current_score": "1x1",
+        "prob_final_home": 0.40,
+        "prob_final_draw": 0.35,
+        "prob_final_away": 0.25,
+        "final_line_probs": {"over_2_5": 0.55},
+        "combo_markets": {},
+        "btts_final": 0.6,
+    }
+    aportes = advise_aportes(inplay, None, live=True, minute=90, confidence_score=1.0)
+    assert aportes == []

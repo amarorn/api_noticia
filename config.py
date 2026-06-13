@@ -82,24 +82,40 @@ class Settings(BaseSettings):
     wc_rho_max: float = 0.05
     wc_rho_step: float = 0.005
     wc_draw_prob_floor: float = 0.18
+    wc_draw_pick_min_prob: float = 0.26
+    wc_draw_balance_gap: float = 0.18
+    wc_draw_competitive_margin: float = 0.035
     wc_mc_simulations: int = 5000
     # Fase 1 in-play (docs/specs/spec-fase-1-quickwins-inplay.md)
     inplay_use_nhpp: bool = True
     inplay_use_market_shrinkage: bool = True
     inplay_momentum_on_remaining: bool = True
     inplay_score_lambda_adjust: bool = False
+    inplay_score_lambda_adjust_with_sofascore: bool = True
     inplay_use_calibrated_coefficients: bool = True
     inplay_use_calibrated_nhpp: bool = False
     inplay_use_ensemble: bool = True
     inplay_ensemble_hawkes: bool = True
     inplay_ensemble_gbm: bool = True
     inplay_ensemble_shadow_mode: bool = True
+    inplay_ensemble_ab_log_ticks: bool = True
+    inplay_ensemble_min_feedback_hi: int = 150
+    inplay_ensemble_prod_feedback_hi: int = 500
+    inplay_ensemble_min_tick_examples: int = 150
+    inplay_ensemble_min_inplay_delta: float = 0.015
     # Fase 4 — carteira / feedback loop (docs/specs/spec-fase-4-feedback-loop.md)
     wallet_dashboard_enabled: bool = True
+    wallet_reconcile_window_sec: int = 300
+    wallet_inbox_enabled: bool = True
+    wallet_inbox_dir: str = "inbox/wallet"
+    wallet_inbox_auto_reconcile: bool = True
+    wallet_inbox_stale_days: int = 7
+    inplay_synthetic_tick_weight: float = 2.0
+    inplay_synthetic_min_examples: int = 50
     lgn_min_samples: int = 30
     lgn_bootstrap_samples: int = 2000
     ev_min_edge: float = 0.03
-    live_ev_min_edge: float = 0.04
+    live_ev_min_edge: float = 0.055
     coase_bookmaker_margin: float = 0.05
     coase_transaction_cost: float = 0.0
     # Finalização automática Superbet (salvar gold + retreino in-play)
@@ -110,11 +126,22 @@ class Settings(BaseSettings):
     superbet_finalize_retrain_feedback: bool = True
     superbet_finalize_retrain_coefficients: bool = False
     superbet_finalize_min_confidence: float = 0.7
+    superbet_finalize_settle_open_bets: bool = True
+    # Poll contínuo Superbet (seleções / Copa)
+    superbet_poll_wc_enabled: bool = True
+    superbet_poll_interval_sec: int = 120
+    superbet_poll_wc_phase: str = "group"
+    inplay_use_sofascore_live: bool = True
     # ── Guardas de qualidade de aposta ──
     live_min_market_odd: float = 1.25  # nunca recomendar abaixo desta odd
-    live_min_edge_pp: float = 5.0  # mínimo 5pp de edge (model_prob - implied_prob)
+    live_min_edge_pp: float = 7.0  # mínimo 7pp de edge (model_prob - implied_prob)
+    live_midgame_strict_minute: int = 45  # após 45' hit rate cai no histórico reconciliado
+    live_midgame_ev_multiplier: float = 1.75
+    live_midgame_min_edge_pp: float = 10.0
     live_max_minute_full_advice: int = 85  # após este minuto, exigir EV muito alto
     live_late_game_ev_multiplier: float = 3.0  # multiplicador do threshold no fim de jogo
+    live_late_game_min_edge_pp: float = 12.0
+    live_block_minute: int = 88  # sem novos aportes (só cash-out)
     dixit_sigma: float = 2.0
     mlflow_tracking_uri: str = "sqlite:///./mlflow.db"
     mlflow_experiment_wc: str = "api-noticia/wc-benchmark"

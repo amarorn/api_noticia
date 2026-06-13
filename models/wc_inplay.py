@@ -110,9 +110,10 @@ class InPlayResult:
     btts_final: float
     n_simulations: int
     features: Any = None
+    ensemble_shadow: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "home_team": self.home_team,
             "away_team": self.away_team,
             "current_score": f"{self.home_score}x{self.away_score}",
@@ -157,6 +158,27 @@ class InPlayResult:
             "btts_final": round(self.btts_final, 4),
             "n_simulations": self.n_simulations,
         }
+        if self.ensemble_shadow:
+            payload["ensemble_shadow"] = self.ensemble_shadow
+        return payload
+
+
+def _ensemble_shadow_summary(poisson: "InPlayResult", ensemble: "InPlayResult") -> dict[str, Any]:
+    """Métricas A/B Poisson vs stack ensemble (shadow)."""
+    l1 = (
+        abs(poisson.prob_final_home - ensemble.prob_final_home)
+        + abs(poisson.prob_final_draw - ensemble.prob_final_draw)
+        + abs(poisson.prob_final_away - ensemble.prob_final_away)
+    )
+    return {
+        "prob_final_home": round(ensemble.prob_final_home, 4),
+        "prob_final_draw": round(ensemble.prob_final_draw, 4),
+        "prob_final_away": round(ensemble.prob_final_away, 4),
+        "poisson_prob_final_home": round(poisson.prob_final_home, 4),
+        "poisson_prob_final_draw": round(poisson.prob_final_draw, 4),
+        "poisson_prob_final_away": round(poisson.prob_final_away, 4),
+        "prob_l1_delta": round(l1, 4),
+    }
 
 
 def _team_final_lines(final_h: np.ndarray, final_a: np.ndarray) -> dict[str, float]:
@@ -405,6 +427,21 @@ def _half_market_probs(
     }
 
 
+def _has_sofascore_momentum(momentum_events: list[dict] | None) -> bool:
+    if not momentum_events:
+        return False
+    return any(e.get("source") == "sofascore" for e in momentum_events)
+
+
+def _use_score_lambda_adjust(momentum_events: list[dict] | None) -> bool:
+    """Ajuste por placar: global ou só quando há eventos Sofascore ao vivo."""
+    if settings.inplay_score_lambda_adjust:
+        return True
+    if settings.inplay_score_lambda_adjust_with_sofascore:
+        return _has_sofascore_momentum(momentum_events)
+    return False
+
+
 def simulate_inplay(
     *,
     home_team: str,
@@ -460,9 +497,9 @@ def simulate_inplay(
             match_minutes=match_minutes,
         )
 
-    # Ajuste legado em λ_full (desligado por padrão — Fase 1a usa momentum em λ_remaining)
+    # Ajuste legado em λ_full (desligado globalmente; ativo com Sofascore live)
     score_diff = home_score - away_score  # positivo = casa vence
-    if settings.inplay_score_lambda_adjust and score_diff != 0:
+    if _use_score_lambda_adjust(momentum_events) and score_diff != 0:
         deficit_factors = {1: 0.90, 2: 0.65, 3: 0.45, 4: 0.30}
         surplus_factors = {1: 1.08, 2: 1.18, 3: 1.25, 4: 1.30}
         abs_diff = min(abs(score_diff), 4)
@@ -762,8 +799,22 @@ def inplay_from_predictor(
     )
 
     use_ensemble = settings.inplay_use_ensemble and not settings.inplay_ensemble_shadow_mode
-    if use_ensemble and minute > 0:
+    shadow_ab = (
+        settings.inplay_use_ensemble
+        and settings.inplay_ensemble_shadow_mode
+        and minute > 0
+    )
+
+    if use_ensemble:
         result = simulate_inplay_ensemble(**sim_kwargs)
+    elif shadow_ab:
+        poisson = simulate_inplay(**sim_kwargs)
+        try:
+            ensemble = simulate_inplay_ensemble(**sim_kwargs)
+            poisson.ensemble_shadow = _ensemble_shadow_summary(poisson, ensemble)
+        except Exception:
+            poisson.ensemble_shadow = None
+        result = poisson
     else:
         result = simulate_inplay(**sim_kwargs)
 

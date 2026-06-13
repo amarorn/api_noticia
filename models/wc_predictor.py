@@ -15,6 +15,7 @@ from models.wc_draw_model import (
     apply_two_stage_probs,
     build_draw_training_rows,
     draw_features_to_vector,
+    resolve_wc_outcome,
 )
 from pipelines.wc_stats import group_pressure_from_features
 from pipelines.wc_baselines import (
@@ -27,6 +28,7 @@ from pipelines.wc_kxl_collision import (
     format_collision_context,
 )
 from config import settings
+from schemas.national_teams import normalize_national_team
 from models.wc_monte_carlo import simulate_match_mc
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_sofascore_features import (
@@ -291,6 +293,8 @@ class WcPredictor:
         season: int | None = None,
         group_name: str | None = None,
     ) -> WcPrediction:
+        home_team = normalize_national_team(home_team)
+        away_team = normalize_national_team(away_team)
         cutoff = before_date or datetime.now(timezone.utc)
         features = build_match_features(
             self.fixtures,
@@ -402,7 +406,7 @@ class WcPredictor:
             prob_home, prob_draw, prob_away = cal_probs["1"], cal_probs["X"], cal_probs["2"]
 
         probs = {"1": prob_home, "X": prob_draw, "2": prob_away}
-        prediction = max(probs, key=probs.get)  # type: ignore[assignment]
+        prediction = resolve_wc_outcome(probs, phase=phase)  # type: ignore[assignment]
         confidence = probs[prediction]
 
         h2h_summary = (

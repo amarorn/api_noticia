@@ -6,6 +6,8 @@
 (function () {
   "use strict";
 
+  const TICKET_RE = /\b([A-Z0-9]{3,}-[A-Z0-9]{4,})\b/;
+
   /**
    * Converte texto de valor (R$ 15,00) → número.
    */
@@ -43,6 +45,47 @@
     return m ? m[1] : null;
   }
 
+  function classifyPick(marketRaw, pickRaw) {
+    let market = "other";
+    let outcome = pickRaw;
+
+    if (/Resultado Final|Match Result|1X2|Vencedor|Winner|Moneyline/i.test(marketRaw)) {
+      market = "h2h";
+      if (/^1$/.test(pickRaw)) outcome = "home";
+      else if (/^2$/.test(pickRaw)) outcome = "away";
+      else if (/^X$/i.test(pickRaw) || /empate/i.test(pickRaw)) outcome = "draw";
+      else if (/^1X$/i.test(pickRaw)) outcome = "home_or_draw";
+      else if (/^X2$/i.test(pickRaw)) outcome = "draw_or_away";
+      else if (/^12$/i.test(pickRaw)) outcome = "home_or_away";
+    } else if (/Total de Gols|Over.*Under|Total Goals|Gols/i.test(marketRaw)) {
+      const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
+      const valMatch = pickRaw.match(/([\d.]+)/);
+      market = valMatch ? `totals_${valMatch[1]}` : "totals";
+      outcome = isOver ? "over" : "under";
+    } else if (/Ambas.*Marcam|Both.*Score|BTTS/i.test(marketRaw)) {
+      market = "btts";
+      outcome = /Sim|Yes/i.test(pickRaw) ? "yes" : "no";
+    } else if (/Próximo Gol|Next Goal/i.test(marketRaw)) {
+      market = "next_goal";
+    } else if (/Handicap|Handicap Asiático/i.test(marketRaw)) {
+      market = "handicap";
+    } else if (/Dupla\s*Chance/i.test(marketRaw)) {
+      market = "double_chance";
+    }
+
+    return { market, outcome };
+  }
+
+  function pushParsedPick(picks, marketRaw, pickRaw, oddPlaced, rawLine) {
+    const { market, outcome } = classifyPick(marketRaw, pickRaw);
+    picks.push({
+      market,
+      outcome,
+      odd_placed: oddPlaced,
+      raw: rawLine || `${marketRaw} — ${pickRaw}`,
+    });
+  }
+
   /**
    * Extrai dados de um card de aposta da Superbet.
    */
@@ -50,15 +93,23 @@
     const text = card.innerText || card.textContent || "";
     const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
 
-    // Equipes: primeira linha com separador
+    // Equipes / evento (jogo ao vivo ou longo prazo)
     let eventName = "";
     let homeTeam = "";
     let awayTeam = "";
     for (const line of lines) {
+      if (/Longo\s*Prazo|Outright|Vencedor.*Copa/i.test(line)) {
+        eventName = line;
+        homeTeam = "Longo Prazo";
+        awayTeam = "Copa 2026";
+        break;
+      }
       for (const sep of ["·", "—", " - ", " vs ", " x ", " X "]) {
         if (line.includes(sep)) {
           const parts = line.split(sep);
           if (parts.length >= 2 && parts[0].length > 1 && parts[1].length > 1) {
+            // Ignorar linhas de mercado tipo "Handicap - ..."
+            if (/^Handicap|^Total|^Grupo|^Ambas/i.test(parts[0])) continue;
             homeTeam = parts[0].trim();
             awayTeam = parts[1].trim();
             eventName = line;
@@ -76,64 +127,69 @@
     const isLive = /AO VIVO|LIVE|Em andamento/i.test(text);
     const isOpen = !/(Concluído|Encerrado|Ganhou|Perdeu|Cashed Out|Cancelad)/i.test(text);
 
-    // Mercado e palpite — formato Superbet: "Mercado — Pick @ Odd"
+    // Mercado e palpite — formatos Superbet
     const picks = [];
     for (const line of lines) {
-      // Formato "Mercado — Pick @ Odd" (ex: "Resultado Final — 2 @ 30.00")
       const mSuperbet = line.match(/(.+?)\s*[—–-]\s*(.+?)\s*@\s*([\d.,]+)/);
       if (mSuperbet) {
-        const marketRaw = mSuperbet[1].trim();
-        const pickRaw = mSuperbet[2].trim();
-        const oddPlaced = parseFloat(mSuperbet[3].replace(",", "."));
-
-        let market = "other";
-        let outcome = pickRaw;
-
-        if (/Resultado Final|Match Result|1X2/i.test(marketRaw)) {
-          market = "h2h";
-          if (/^1$/.test(pickRaw)) outcome = "home";
-          else if (/^2$/.test(pickRaw)) outcome = "away";
-          else if (/^X$/i.test(pickRaw)) outcome = "draw";
-        } else if (/Total de Gols|Over.*Under|Total Goals/i.test(marketRaw)) {
-          const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
-          const valMatch = pickRaw.match(/([\d.]+)/);
-          market = "totals";
-          outcome = isOver ? "over" : "under";
-          if (valMatch) market = `totals_${valMatch[1]}`;
-        } else if (/Ambas.*Marcam|Both.*Score|BTTS/i.test(marketRaw)) {
-          market = "btts";
-          outcome = /Sim|Yes/i.test(pickRaw) ? "yes" : "no";
-        } else if (/Próximo Gol|Next Goal/i.test(marketRaw)) {
-          market = "next_goal";
-        } else if (/Vencedor|Winner|Moneyline/i.test(marketRaw)) {
-          market = "h2h";
-          // Tentar deduzir se é home ou away pelo nome
-          if (homeTeam && pickRaw.toLowerCase().includes(homeTeam.toLowerCase().split(" ")[0])) {
-            outcome = "home";
-          } else {
-            outcome = "away";
-          }
-        }
-
-        picks.push({ market, outcome, odd_placed: oddPlaced, raw: line });
+        pushParsedPick(
+          picks,
+          mSuperbet[1].trim(),
+          mSuperbet[2].trim(),
+          parseFloat(mSuperbet[3].replace(",", ".")),
+          line
+        );
         continue;
       }
 
-      // Fallback: formatos antigos
+      const mEndAt = line.match(/^(.+?)\s*@\s*([\d.,]+)$/);
+      if (mEndAt && !/^ODDS/i.test(mEndAt[1])) {
+        const left = mEndAt[1].trim();
+        const oddPlaced = parseFloat(mEndAt[2].replace(",", "."));
+        const dash = left.match(/^(.+?)\s*[—–-]\s*(.+)$/);
+        if (dash) {
+          pushParsedPick(picks, dash[1].trim(), dash[2].trim(), oddPlaced, line);
+        } else if (/^[12X]$|^1X$|^X2$|^12$/i.test(left)) {
+          pushParsedPick(picks, "Resultado Final", left, oddPlaced, line);
+        } else {
+          pushParsedPick(picks, "Mercado", left, oddPlaced, line);
+        }
+        continue;
+      }
+
       if (/Resultado Final|Match Result|1X2/i.test(line)) {
-        const m = line.match(/[–\-:]\s*([1X2])/i);
-        picks.push({ market: "h2h", outcome: m ? m[1] : "1" });
+        const m = line.match(/[–\-:]\s*([1X2]|1X|X2|12)/i);
+        if (m) picks.push({ market: "h2h", outcome: m[1], raw: line });
       } else if (/Ambas.*Marcam|Both.*Score|BTTS/i.test(line)) {
         const yes = /Sim|Yes/i.test(line);
-        picks.push({ market: "btts", outcome: yes ? "yes" : "no" });
+        picks.push({ market: "btts", outcome: yes ? "yes" : "no", raw: line });
       } else if (/Total de Gols|Over\/Under|Total Goals/i.test(line)) {
         const more = /Mais|Over|Acima/i.test(line);
         const valMatch = line.match(/([\d.]+)/);
         picks.push({
-          market: "totals",
+          market: valMatch ? `totals_${valMatch[1]}` : "totals",
           outcome: more ? "over" : "under",
           target_value: valMatch ? valMatch[1] : "2.5",
+          raw: line,
         });
+      }
+    }
+
+    // Palpite em linha anterior ao "@ odd" isolado
+    if (picks.length === 0) {
+      for (let i = 0; i < lines.length; i++) {
+        const mAt = lines[i].match(/^@\s*([\d.,]+)$/);
+        if (!mAt || i === 0) continue;
+        const pickRaw = lines[i - 1];
+        const marketRaw = i > 1 ? lines[i - 2] : "Mercado";
+        if (/APOSTA|ODDS|GANHO|Cashout|AO VIVO/i.test(pickRaw)) continue;
+        pushParsedPick(
+          picks,
+          marketRaw,
+          pickRaw,
+          parseFloat(mAt[1].replace(",", ".")),
+          `${marketRaw} / ${pickRaw} @ ${mAt[1]}`
+        );
       }
     }
 
@@ -183,6 +239,76 @@
         if (val > 0) { potentialReturn = val; break; }
       }
     }
+    if (!potentialReturn && stake && totalOdd) {
+      potentialReturn = +(stake * totalOdd).toFixed(2);
+    }
+
+    // Fallback: linha só com palpite @ odd (sem nome de mercado)
+    if (picks.length === 0) {
+      for (const line of lines) {
+        const mAt = line.match(/^([1X2]|Sim|Não|Yes|No|1X|X2|12)\s*@\s*([\d.,]+)/i);
+        if (mAt) {
+          pushParsedPick(
+            picks,
+            "Resultado Final",
+            mAt[1].trim(),
+            parseFloat(mAt[2].replace(",", ".")),
+            line
+          );
+          if (!totalOdd) totalOdd = parseFloat(mAt[2].replace(",", "."));
+          break;
+        }
+      }
+    }
+
+    // Último recurso: qualquer @ odd no card → mercado genérico (melhor que 0 picks)
+    if (picks.length === 0 && totalOdd > 1) {
+      for (const line of lines) {
+        if (/APOSTA|ODDS TOTAIS|GANHO|Cashout/i.test(line)) continue;
+        const gm = line.match(/@\s*([\d.,]+)/);
+        if (gm) {
+          pushParsedPick(picks, "Mercado", line.split("@")[0].trim() || "palpite", totalOdd, line);
+          break;
+        }
+      }
+    }
+
+    // Handicap, grupos WC (longo prazo) e pernas de combo
+    for (const line of lines) {
+      if (/^Handicap/i.test(line)) {
+        const pickPart = line.replace(/^Handicap:?\s*/i, "").trim();
+        if (pickPart && !picks.some((p) => p.raw === line)) {
+          pushParsedPick(picks, "Handicap", pickPart, totalOdd || 0, line);
+        }
+        continue;
+      }
+      if (
+        /Grupo\s+[A-L]\b|Classifica(?:ç|c)ão|classificar|Vencedor do Grupo/i.test(line) &&
+        !/APOSTA|ODDS|GANHO|Cashout|AO VIVO|Longo Prazo|SuperMúltipla/i.test(line) &&
+        line.length > 8 &&
+        line.length < 120
+      ) {
+        if (!picks.some((p) => p.raw === line)) {
+          pushParsedPick(picks, "outright", line.trim(), 0, line);
+        }
+      }
+    }
+
+    const comboMore = text.match(/\+\s*(\d+)\s*(more|mais)\s*sele/i);
+    if (comboMore && picks.length > 0) {
+      picks.push({
+        market: "combo",
+        outcome: `legs_${comboMore[1]}`,
+        raw: comboMore[0],
+      });
+    }
+
+    if (!eventName && picks.length > 0) {
+      eventName = (picks[0].raw || "Aposta").slice(0, 80);
+      homeTeam = homeTeam || "Aposta";
+      awayTeam = awayTeam || "Superbet";
+    }
+
     if (!potentialReturn && stake && totalOdd) {
       potentialReturn = +(stake * totalOdd).toFixed(2);
     }
@@ -240,38 +366,166 @@
 
   /**
    * Sobe na árvore DOM a partir de um elemento até encontrar o container do card.
-   * Critério: contém "APOSTA" E "ODDS" no textContent, e tem apenas 1 botão Cashout.
+   * Guarda o candidato mais interno com exatamente 1 botão Cashout.
    */
   function findCardContainer(startEl) {
     let el = startEl;
-    for (let i = 0; i < 20 && el && el !== document.body; i++) {
+    let best = null;
+    for (let i = 0; i < 25 && el && el !== document.body; i++) {
       const text = el.textContent || "";
       const hasAposta = /APOSTA/i.test(text);
       const hasOdds = /ODDS/i.test(text);
       if (hasAposta && hasOdds) {
-        // Verificar se é card individual (não container de múltiplos cards)
         const cashoutBtns = el.querySelectorAll('button, [role="button"], a');
         const cashoutCount = Array.from(cashoutBtns).filter(
           (b) => /cashout/i.test(b.textContent || "")
         ).length;
-        if (cashoutCount === 1) return el;
-        // Se tem mais de 1 cashout, subimos demais — usar o candidato anterior
-        if (cashoutCount > 1) return null;
+        if (cashoutCount === 1) {
+          best = el;
+        } else if (cashoutCount > 1 && best) {
+          return best;
+        }
       }
       el = el.parentElement;
     }
-    return null;
+    return best;
+  }
+
+  /**
+   * Verifica se um elemento parece um card individual de aposta aberta.
+   */
+  function isBetCardElement(el) {
+    if (!el || el === document.body) return false;
+    const text = el.innerText || "";
+    if (!/\bAPOSTA\b/i.test(text)) return false;
+    if (!/ODDS/i.test(text)) return false;
+    if (!/(GANHO|Cashout|Cash.?out|indisponível)/i.test(text)) return false;
+    if (/(Ganhou|Perdeu|Encerrado|Concluído|SACADO)/i.test(text)) return false;
+    const hasTeamSep = /[—–·]/.test(text);
+    const isOutright =
+      /Longo\s*Prazo|Copa do Mundo 2026|SuperMúltipla|SuperMultipla|Grupo\s+[A-L]\b/i.test(text);
+    const isHandicapCombo = /Handicap/i.test(text);
+    if (!hasTeamSep && !isOutright && !isHandicapCombo) return false;
+    const h = el.offsetHeight || 0;
+    if (h < 65 || h > 950) return false;
+    const apostaLabels = (text.match(/\bAPOSTA\b/gi) || []).length;
+    return apostaLabels >= 1 && apostaLabels <= 6;
+  }
+
+  /**
+   * Lista containers com scroll (a lista de apostas costuma ser interna, não a página).
+   */
+  function findScrollableContainers() {
+    const out = new Set();
+    out.add(document.scrollingElement || document.documentElement);
+    for (const el of document.querySelectorAll("*")) {
+      const style = getComputedStyle(el);
+      const oy = style.overflowY;
+      if ((oy === "auto" || oy === "scroll" || oy === "overlay") && el.scrollHeight > el.clientHeight + 30) {
+        out.add(el);
+      }
+    }
+    return Array.from(out).sort((a, b) => b.scrollHeight - a.scrollHeight);
+  }
+
+  /**
+   * Rola todos os containers scrolláveis + janela para lazy-load.
+   */
+  async function scrollToLoadAllBets() {
+    const containers = findScrollableContainers();
+    console.info(`[Bolão AI] Containers scrolláveis: ${containers.length}`);
+
+    for (const container of containers) {
+      let lastPos = -1;
+      let stable = 0;
+      const step = Math.max(280, (container.clientHeight || window.innerHeight) * 0.85);
+
+      for (let i = 0; i < 55; i++) {
+        if (container === document.documentElement || container === document.body) {
+          window.scrollBy(0, step);
+        } else {
+          container.scrollTop += step;
+        }
+        await new Promise((r) => setTimeout(r, 180));
+        const pos =
+          container === document.documentElement || container === document.body
+            ? window.scrollY
+            : container.scrollTop;
+        if (pos === lastPos) {
+          stable += 1;
+          if (stable >= 2) break;
+        } else {
+          stable = 0;
+          lastPos = pos;
+        }
+      }
+
+      if (container === document.documentElement || container === document.body) {
+        window.scrollTo(0, 0);
+      } else {
+        container.scrollTop = 0;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 350));
+  }
+
+  function collectAllTicketCodesOnPage() {
+    const codes = new Set();
+    const re = new RegExp(TICKET_RE.source, "g");
+    const bodyText = document.body.innerText || "";
+    let m;
+    while ((m = re.exec(bodyText)) !== null) codes.add(m[1]);
+    return Array.from(codes);
+  }
+
+  function findCardByTicket(ticketCode) {
+    let best = null;
+    let bestH = Infinity;
+    for (const el of document.querySelectorAll("div, article, section, li")) {
+      const t = el.innerText || "";
+      if (!t.includes(ticketCode)) continue;
+      if (!isBetCardElement(el)) continue;
+      const h = el.offsetHeight || 9999;
+      if (h < bestH) {
+        best = el;
+        bestH = h;
+      }
+    }
+    return best;
+  }
+
+  function findOpenBetCardsWithoutCashout() {
+    const found = [];
+    for (const el of document.querySelectorAll("div, article, section, li")) {
+      if (!isBetCardElement(el)) continue;
+      const btns = el.querySelectorAll('button, [role="button"], a');
+      const cashoutCount = Array.from(btns).filter((b) =>
+        /cashout/i.test(b.textContent || "")
+      ).length;
+      if (cashoutCount === 0) found.push(el);
+    }
+    return found.filter(
+      (el) => !found.some((other) => other !== el && el.contains(other))
+    );
   }
 
   /**
    * Escaneia a página e extrai todas as apostas abertas.
    * Usa múltiplas estratégias para encontrar cards de aposta.
    */
-  function scanOpenBets() {
+  async function scanOpenBets() {
+    await scrollToLoadAllBets();
+
     let elements = [];
+    const seenCards = new Set();
+
+    function addCard(card) {
+      if (!card || seenCards.has(card)) return;
+      seenCards.add(card);
+      elements.push(card);
+    }
 
     // ─── Estratégia 1: Botões de Cashout como âncora ───
-    // Cada aposta aberta tem exatamente um botão "Cashout X,XX R$"
     const allButtons = document.querySelectorAll('button, [role="button"], a');
     const cashoutBtns = Array.from(allButtons).filter(
       (btn) => /cashout/i.test(btn.textContent || "")
@@ -279,30 +533,22 @@
     console.info(`[Bolão AI] Encontrados ${cashoutBtns.length} botões de Cashout`);
 
     for (const btn of cashoutBtns) {
-      const card = findCardContainer(btn);
-      if (card && !elements.includes(card)) {
-        elements.push(card);
-      }
+      addCard(findCardContainer(btn));
     }
 
     // ─── Estratégia 2: Elementos com "AO VIVO" badge ───
-    if (elements.length === 0) {
-      const allEls = document.querySelectorAll("*");
-      const liveMarkers = Array.from(allEls).filter((el) => {
-        const t = el.textContent || "";
-        return el.children.length === 0 && /AO VIVO/i.test(t) && t.length < 20;
-      });
-      console.info(`[Bolão AI] Encontrados ${liveMarkers.length} badges AO VIVO`);
-      for (const marker of liveMarkers) {
-        const card = findCardContainer(marker);
-        if (card && !elements.includes(card)) {
-          elements.push(card);
-        }
-      }
+    const allEls = document.querySelectorAll("*");
+    const liveMarkers = Array.from(allEls).filter((el) => {
+      const t = el.textContent || "";
+      return el.children.length === 0 && /AO VIVO/i.test(t) && t.length < 20;
+    });
+    console.info(`[Bolão AI] Encontrados ${liveMarkers.length} badges AO VIVO`);
+    for (const marker of liveMarkers) {
+      addCard(findCardContainer(marker));
     }
 
     // ─── Estratégia 3: Busca por textContent combinado ───
-    if (elements.length === 0) {
+    if (elements.length < cashoutBtns.length) {
       const allDivs = document.querySelectorAll("div, section, article");
       for (const div of allDivs) {
         const text = div.textContent || "";
@@ -310,48 +556,78 @@
         if (!/ODDS/i.test(text)) continue;
         if (!/GANHO/i.test(text)) continue;
         if (!/Cashout/i.test(text)) continue;
-        // Contar quantos Cashout tem (para saber se é card individual ou lista)
         const btns = div.querySelectorAll('button, [role="button"], a');
         const cCount = Array.from(btns).filter(
           (b) => /cashout/i.test(b.textContent || "")
         ).length;
         if (cCount === 1) {
-          elements.push(div);
+          addCard(div);
         }
       }
-      // Remover ancestrais (manter o mais interno)
       elements = elements.filter(
         (el) => !elements.some((other) => other !== el && el.contains(other))
       );
     }
 
-    // ─── Estratégia 4: Último recurso — qualquer div com padrão monetário ───
-    if (elements.length === 0) {
-      const allDivs = document.querySelectorAll("div");
-      const candidates = [];
-      for (const div of allDivs) {
-        const text = div.textContent || "";
-        // Precisa ter: valor R$, ODDS ou @, e algo parecido com time
-        const hasValue = /\d+[.,]\d{2}\s*R\$/i.test(text);
-        const hasOddOrAt = /@\s*[\d.]+|ODDS/i.test(text);
-        const hasSep = /[—–]/.test(text);
-        const h = div.offsetHeight || 0;
-        if (hasValue && hasOddOrAt && hasSep && h > 100 && h < 450) {
-          candidates.push(div);
-        }
-      }
-      elements = candidates.filter(
-        (el) => !candidates.some((other) => other !== el && el.contains(other))
-      );
+    // ─── Estratégia 4: Código de ticket visível ───
+    const ticketCodes = collectAllTicketCodesOnPage();
+    console.info(`[Bolão AI] Tickets visíveis na página: ${ticketCodes.length}`, ticketCodes);
+    for (const code of ticketCodes) {
+      addCard(findCardByTicket(code));
     }
+
+    // ─── Estratégia 5: Cards abertos sem botão Cashout (pré-jogo / cashout indisponível) ───
+    const noCashout = findOpenBetCardsWithoutCashout();
+    console.info(`[Bolão AI] Cards sem cashout: ${noCashout.length}`);
+    for (const card of noCashout) addCard(card);
+
+    // ─── Estratégia 6: Longo prazo / SuperMúltipla ───
+    for (const el of document.querySelectorAll("div, article, section, li")) {
+      const t = el.innerText || "";
+      if (!/Longo\s*Prazo|SuperMúltipla|SuperMultipla/i.test(t)) continue;
+      if (isBetCardElement(el)) addCard(el);
+    }
+
+    // Remover cards ancestrais (manter o mais específico)
+    elements = elements.filter(
+      (el) => !elements.some((other) => other !== el && el.contains(other))
+    );
 
     console.info(`[Bolão AI] scanOpenBets: ${elements.length} card(s) encontrado(s)`);
     if (elements.length > 0) {
       console.info("[Bolão AI] Primeiro card textContent:", elements[0].textContent?.slice(0, 200));
     }
-    const bets = elements.map(parseBetCard).filter((b) => b.is_open && b.stake > 0);
-    console.info(`[Bolão AI] Apostas válidas após parse: ${bets.length}`, bets);
-    return bets;
+
+    const parsed = elements.map(parseBetCard).filter((b) => b.is_open && b.stake > 0);
+
+    // Deduplicar — mesma stake+odd em eventos diferentes são apostas distintas
+    const byTicket = new Map();
+    for (const b of parsed) {
+      const pickKey = (b.picks || []).map((p) => p.raw || p.outcome).join("|");
+      const key =
+        b.ticket_code ||
+        `${b.event_name}|${b.stake}|${b.odds_placed}|${pickKey}|${b.potential_return}`;
+      if (!byTicket.has(key)) byTicket.set(key, b);
+    }
+    const bets = Array.from(byTicket.values());
+
+    const debug = {
+      cashout_buttons: cashoutBtns.length,
+      live_badges: liveMarkers.length,
+      tickets_on_page: ticketCodes.length,
+      cards_no_cashout: noCashout.length,
+      cards_found: elements.length,
+      bets_parsed: bets.length,
+    };
+    console.info(`[Bolão AI] Apostas válidas após parse: ${bets.length}`, bets, debug);
+
+    if (ticketCodes.length > bets.length) {
+      console.warn(
+        `[Bolão AI] Faltam ${ticketCodes.length - bets.length} bilhete(s): role a lista de apostas na Superbet e capture de novo.`
+      );
+    }
+
+    return { bets, debug };
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -563,6 +839,94 @@
   }
 
   /**
+   * Escaneia página de carteira/extrato e monta CSV no formato Superbet.
+   */
+  function scanWalletTransactions() {
+    const rows = [];
+    const seen = new Set();
+    const txKeywords = [
+      "bilhete colocado",
+      "bilhete confirmado",
+      "valor ganhado",
+      "depósito",
+      "saque",
+      "reembolso",
+      "cancelamento",
+    ];
+
+    function addRow(datetime, type, amount, game) {
+      const key = `${datetime}|${type}|${amount}|${game}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push({ datetime, type, amount, game: game || "UNKNOWN" });
+    }
+
+    // Estratégia 1: linhas de tabela HTML
+    document.querySelectorAll("tr").forEach((tr) => {
+      const text = (tr.innerText || "").replace(/\s+/g, " ").trim();
+      if (!text || text.length < 10) return;
+      const dt = text.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)/);
+      if (!dt) return;
+      const lower = text.toLowerCase();
+      const type = txKeywords.find((k) => lower.includes(k));
+      if (!type) return;
+      const amounts = [...text.matchAll(/([\d]+[.,]\d{2})/g)].map((m) => parseMoney(m[1]));
+      const amount = amounts.length ? amounts[0] : 0;
+      const gameMatch = text.match(/(me-[A-Z0-9-]+|INPLAY[^\s,]*)/i);
+      addRow(dt[1], type, amount, gameMatch ? gameMatch[1] : "UNKNOWN");
+    });
+
+    // Estratégia 2: blocos de texto sequencial
+    if (rows.length === 0) {
+      const lines = (document.body.innerText || "").split("\n").map((l) => l.trim()).filter(Boolean);
+      for (let i = 0; i < lines.length; i++) {
+        const dt = lines[i].match(/^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?)/);
+        if (!dt) continue;
+        let type = null;
+        let amount = null;
+        let game = "UNKNOWN";
+        for (let j = i; j < Math.min(i + 6, lines.length); j++) {
+          const lower = lines[j].toLowerCase();
+          if (!type) type = txKeywords.find((k) => lower.includes(k)) || null;
+          if (amount === null) {
+            const m = lines[j].match(/R?\$?\s*([\d.,]+)/);
+            if (m) amount = parseMoney(m[1]);
+          }
+          if (/me-|INPLAY/i.test(lines[j])) game = lines[j].slice(0, 80);
+        }
+        if (type && amount !== null) addRow(dt[1], type, amount, game);
+      }
+    }
+
+    console.info(`[Bolão AI] scanWalletTransactions: ${rows.length} linha(s)`);
+    return rows;
+  }
+
+  function buildWalletCsv(rows) {
+    const header =
+      "DataHoraDaTransação,Transação,Método de Pagamento,Valor,SaldoEmDinheiro,SaldoEmDinheiroAnterior,SaldoBônus,SaldoBônusAnterior,NomeDoJogo";
+    const body = rows
+      .map((r) => `${r.datetime},${r.type},,${r.amount.toFixed(2)},,,,,${r.game}`)
+      .join("\n");
+    return `Dados da carteira — Bolão AI extension\n${header}\n${body}\n`;
+  }
+
+  function sendWalletCsvViaBackground(csvText, apiKey, userId) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { type: "API_UPLOAD_WALLET_CSV", csvText, apiKey, userId },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ ok: false, error: chrome.runtime.lastError.message });
+          } else {
+            resolve(response || { ok: false, error: "Sem resposta do background" });
+          }
+        }
+      );
+    });
+  }
+
+  /**
    * Envia apostas finalizadas para a API via background.
    */
   function sendSettledBetsViaBackground(bets, apiKey) {
@@ -580,23 +944,66 @@
     });
   }
 
+  function validateBetPayload(bet) {
+    const issues = [];
+    if (!bet.picks || bet.picks.length === 0) {
+      issues.push("palpite não reconhecido (0 picks)");
+    }
+    if (!bet.odds_placed || bet.odds_placed <= 1) {
+      issues.push(`odd inválida (${bet.odds_placed || 0})`);
+    }
+    if (!bet.potential_return || bet.potential_return <= 0) {
+      issues.push("retorno potencial ausente");
+    }
+    if ((!bet.home_team || !bet.away_team) && !bet.event_name) {
+      issues.push("evento não identificado");
+    }
+    return issues;
+  }
+
+  function normalizeBetPayload(bet) {
+    const event = bet.event_name || "Aposta Superbet";
+    return {
+      ...bet,
+      event_name: event,
+      home_team: bet.home_team || event.split(/[—–·-]/)[0]?.trim() || "Aposta",
+      away_team: bet.away_team || event.split(/[—–·-]/)[1]?.trim() || "Superbet",
+    };
+  }
+
   /**
    * Envia uma aposta para a API via background service worker.
    */
   function sendViaBackground(bet, apiKey) {
     return new Promise((resolve) => {
+      const issues = validateBetPayload(bet);
+      if (issues.length) {
+        resolve({
+          ok: false,
+          skipped: true,
+          error: issues.join("; "),
+          status: 0,
+        });
+        return;
+      }
+
+      const normalized = normalizeBetPayload(bet);
       const payload = {
-        id: bet.ticket_code || `auto_${Date.now()}`,
-        superbet_event_id: bet.superbet_event_id,
-        event_name: bet.event_name,
-        home_team: bet.home_team,
-        away_team: bet.away_team,
-        picks: bet.picks,
-        stake: bet.stake,
-        odds_placed: bet.odds_placed,
-        potential_return: bet.potential_return,
-        cashout_value: bet.cashout_value,
-        ticket_code: bet.ticket_code,
+        id: normalized.ticket_code || `auto_${Date.now()}`,
+        superbet_event_id: normalized.superbet_event_id,
+        event_name: normalized.event_name,
+        home_team: normalized.home_team,
+        away_team: normalized.away_team,
+        picks: normalized.picks.map((p) => ({
+          market: p.market,
+          outcome: p.outcome,
+          target_value: p.target_value || null,
+        })),
+        stake: normalized.stake,
+        odds_placed: normalized.odds_placed,
+        potential_return: normalized.potential_return,
+        cashout_value: normalized.cashout_value,
+        ticket_code: normalized.ticket_code,
         source: "superbet_extension",
       };
       chrome.runtime.sendMessage(
@@ -617,34 +1024,63 @@
    */
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.type === "SCAN_BETS") {
-      const bets = scanOpenBets();
-      // Enviar cada aposta para a API via background
-      chrome.storage.local.get(["bolao_api_key"], async (items) => {
-        const apiKey = items.bolao_api_key || "";
+      (async () => {
+        const { bets, debug } = await scanOpenBets();
+        const apiKey =
+          request.apiKey ||
+          (await new Promise((resolve) => {
+            chrome.storage.local.get(["bolao_api_key"], (items) => {
+              resolve(items.bolao_api_key || "");
+            });
+          }));
         const results = [];
         for (const bet of bets) {
           const r = await sendViaBackground(bet, apiKey);
-          results.push({ ticket: bet.ticket_code, ...r });
+          results.push({ ticket: bet.ticket_code, event: bet.event_name, ...r });
         }
-        sendResponse({ bets, results });
-      });
+        sendResponse({ bets, results, debug });
+      })();
       return true; // async response
     }
     if (request.type === "GET_BETS") {
-      sendResponse({ bets: scanOpenBets() });
+      (async () => {
+        const out = await scanOpenBets();
+        sendResponse(out);
+      })();
+      return true;
+    }
+    if (request.type === "CAPTURE_WALLET_CSV") {
+      const rows = scanWalletTransactions();
+      if (rows.length === 0) {
+        sendResponse({ rows: [], csv: "", result: { ok: false, error: "Nenhuma transação encontrada" } });
+        return true;
+      }
+      const csv = buildWalletCsv(rows);
+      chrome.storage.local.get(["bolao_api_key", "bolao_user_id"], async (items) => {
+        const apiKey = items.bolao_api_key || request.apiKey || "";
+        const userId = items.bolao_user_id || request.userId || "jamarorn";
+        const result = await sendWalletCsvViaBackground(csv, apiKey, userId);
+        sendResponse({ rows, csv, result });
+      });
       return true;
     }
     if (request.type === "CAPTURE_SETTLED_BETS") {
-      const bets = scanSettledBets();
-      chrome.storage.local.get(["bolao_api_key"], async (items) => {
-        const apiKey = items.bolao_api_key || "";
+      (async () => {
+        const bets = scanSettledBets();
+        const apiKey =
+          request.apiKey ||
+          (await new Promise((resolve) => {
+            chrome.storage.local.get(["bolao_api_key"], (items) => {
+              resolve(items.bolao_api_key || "");
+            });
+          }));
         if (bets.length === 0) {
           sendResponse({ bets: [], result: { ok: true, added: 0 } });
           return;
         }
         const result = await sendSettledBetsViaBackground(bets, apiKey);
         sendResponse({ bets, result });
-      });
+      })();
       return true; // async response
     }
     if (request.type === "PING") {

@@ -63,7 +63,11 @@ export function SchedulePage() {
     <PageTransition>
       <PageHeader
         title="Tabela de jogos"
-        subtitle={`${schedule.competition} · ${schedule.totalMatches} jogos na fase de grupos`}
+        subtitle={
+          schedule.predictionsSummary
+            ? `${schedule.competition} · ${schedule.totalMatches} jogos · ${schedule.predictionsSummary.draws} empates previstos`
+            : `${schedule.competition} · ${schedule.totalMatches} jogos na fase de grupos`
+        }
       />
 
       <section className="mb-8 space-y-3">

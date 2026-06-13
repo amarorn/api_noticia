@@ -14,6 +14,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
+from config import settings
 from functools import lru_cache
 
 from ingest.fifa.teams import FIFA_COUNTRY_CODES
@@ -270,6 +271,11 @@ def main() -> int:
         help="Com --auto: só seleções/amistosos (ignora clubes no feed ao vivo)",
     )
     parser.add_argument(
+        "--wc-copa",
+        action="store_true",
+        help="Atalho: --auto --filter-international --phase group (Copa/amistosos seleções)",
+    )
+    parser.add_argument(
         "--interval",
         type=int,
         default=0,
@@ -290,6 +296,14 @@ def main() -> int:
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Logs detalhados")
     args = parser.parse_args()
+
+    if args.wc_copa:
+        args.auto = True
+        args.filter_international = True
+        if args.phase == "friendly":
+            args.phase = settings.superbet_poll_wc_phase
+        if args.interval == 0 and settings.superbet_poll_interval_sec > 0:
+            args.interval = settings.superbet_poll_interval_sec
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARNING)
 

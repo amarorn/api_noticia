@@ -1,0 +1,12 @@
+{
+  "version": "20260612T180756",
+  "user_id": "jamarorn",
+  "n_feedback": 148,
+  "n_synthetic": 5000,
+  "n_ticks": 174,
+  "feedback_weight": 3.0,
+  "brier_old": 0.5036042256921468,
+  "brier_new": 0.0377818155953073,
+  "brier_delta": 0.4658224100968395,
+  "min_confidence": 0.7
+}

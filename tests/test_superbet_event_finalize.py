@@ -87,3 +87,39 @@ def test_finalize_idempotent(tmp_path, mock_snapshot):
         assert second is not None
         assert is_event_finalized(12512380)
         enqueue.assert_called_once()
+
+
+def test_finalize_settles_open_bets(tmp_path, mock_snapshot):
+    with (
+        patch("ingest.superbet.event_finalize.settings") as mock_settings,
+        patch("ingest.superbet.event_finalize.merge_snapshot_into_odds_file") as merge,
+        patch("ingest.superbet.event_finalize._enqueue_retrain"),
+        patch("models.open_bet_settle.settle_open_bets_for_event") as settle,
+    ):
+        mock_settings.lake_root = tmp_path / "lake"
+        mock_settings.gold_path = tmp_path / "lake" / "gold"
+        mock_settings.bronze_path = tmp_path / "lake" / "bronze"
+        mock_settings.superbet_finalize_enabled = True
+        mock_settings.superbet_finalize_retrain = False
+        mock_settings.superbet_finalize_settle_open_bets = True
+
+        merge.return_value = tmp_path / "odds.json"
+        settle.return_value = {"settled": 1}
+
+        result = maybe_finalize_finished_event(
+            event_id=12512380,
+            snapshot=mock_snapshot,
+            inplay={"current_score": "2x1"},
+            advice={"aportes": []},
+            is_finished=True,
+        )
+
+        assert result is not None
+        settle.assert_called_once_with(
+            event_id=12512380,
+            home_team="Coreia do Sul",
+            away_team="República Tcheca",
+            home_score=2,
+            away_score=1,
+            final_score="2x1",
+        )

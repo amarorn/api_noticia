@@ -3,7 +3,7 @@ import json
 import threading
 from contextlib import asynccontextmanager
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -41,7 +41,12 @@ from pipelines.silver import load_silver
 from pipelines.wc_squads import get_squad_by_team, list_squad_teams, load_wc_squads
 from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
 from pipelines.wc_group_pressure import lookup_2026_group
-from pipelines.wc_group_standings import build_group_standings
+from pipelines.wc_group_standings import (
+    build_group_standings,
+    build_group_standings_from_results,
+    load_wc_group_results,
+    merge_real_into_simulated,
+)
 from schemas.national_teams import normalize_national_team
 from schemas.user_bet import SettledBetsBatchRequest, UserOpenBetRequest
 
@@ -421,6 +426,9 @@ class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
     btts_odds: dict[str, float] = Field(default_factory=dict)
     next_goal_odds: dict[str, float] = Field(default_factory=dict)
     analysis_coverage: dict[str, bool | list[str]] | None = None
+    hedge_report: dict | None = None
+    against_model_alerts: list[dict] = Field(default_factory=list)
+    trend_report: dict | None = None
 
 
 class WcSuperbetLiveEventResponse(BaseModel):
@@ -526,6 +534,14 @@ class WcPredictionResponse(BaseModel):
     context: str
     h2h_summary: str
     model_breakdown: WcModelBreakdown
+    max_prob_outcome: str | None = None
+    max_prob: float | None = None
+    prob_margin: float | None = None
+    uncertainty: str | None = None
+    pick_reason: str | None = None
+    actual_score: str | None = None
+    actual_outcome: str | None = None
+    prediction_hit: bool | None = None
 
 
 class WcSimulationScore(BaseModel):
@@ -598,6 +614,9 @@ class WcGroupStandingRow(BaseModel):
     ga: int
     gd: int
     points: int
+    real_points: int = 0
+    real_played: int = 0
+    real_gd: int = 0
 
 
 class WcGroupStandingsBlock(BaseModel):
@@ -610,6 +629,8 @@ class WcGroupStandingsResponse(BaseModel):
     competition: str
     simulated: bool = True
     note: str
+    as_of: str
+    n_real_results: int = 0
     groups: list[WcGroupStandingsBlock]
 
 
@@ -868,8 +889,23 @@ def _breakdown_to_response(breakdown: dict) -> WcModelBreakdown:
     )
 
 
-def _wc_prediction_to_response(pred: "WcPrediction") -> WcPredictionResponse:
+def _wc_prediction_to_response(
+    pred: "WcPrediction",
+    *,
+    actual_score: str | None = None,
+    actual_outcome: str | None = None,
+) -> WcPredictionResponse:
+    from models.wc_prediction_meta import build_prediction_metadata
+
     breakdown = pred.model_breakdown
+    meta = build_prediction_metadata(
+        {"1": pred.prob_home, "X": pred.prob_draw, "2": pred.prob_away},
+        pred.prediction,
+    )
+    prediction_hit = None
+    if actual_outcome is not None:
+        prediction_hit = pred.prediction == actual_outcome
+
     return WcPredictionResponse(
         home_team=pred.home_team,
         away_team=pred.away_team,
@@ -883,6 +919,14 @@ def _wc_prediction_to_response(pred: "WcPrediction") -> WcPredictionResponse:
         context=pred.context,
         h2h_summary=pred.h2h_summary,
         model_breakdown=_breakdown_to_response(breakdown),
+        max_prob_outcome=meta["max_prob_outcome"],
+        max_prob=meta["max_prob"],
+        prob_margin=meta["prob_margin"],
+        uncertainty=meta["uncertainty"],
+        pick_reason=meta["pick_reason"],
+        actual_score=actual_score,
+        actual_outcome=actual_outcome,
+        prediction_hit=prediction_hit,
     )
 
 
@@ -1697,6 +1741,25 @@ def get_user_bet_performance():
 # ---------------------------------------------------------------------------
 
 
+@app.get("/user/wallet/sync-status", response_model=dict)
+def get_wallet_sync_status(user_id: str = Query("default")):
+    """Status da inbox CSV e último upload (banner de carteira desatualizada)."""
+    from ingest.user_transactions.wallet_inbox import get_wallet_sync_status as _status
+
+    return _status(user_id)
+
+
+@app.post("/user/wallet/import-inbox", response_model=dict)
+def import_wallet_inbox(user_id: str = Query("default")):
+    """Importa CSVs pendentes na inbox e reconcilia."""
+    from ingest.user_transactions.wallet_inbox import scan_inbox
+
+    if not settings.wallet_inbox_enabled:
+        raise HTTPException(status_code=503, detail="Wallet inbox desabilitada")
+    outcome = scan_inbox(user_id, reconcile=True)
+    return outcome.to_dict()
+
+
 @app.post("/user/transactions/upload", response_model=dict)
 async def upload_user_transactions(
     user_id: str = Query("default", description="ID do usuário dono do CSV"),
@@ -1997,6 +2060,47 @@ def worldcup_simulate(req: WcPredictRequest):
     )
 
 
+def _load_finished_match_results(round_data: dict) -> dict[tuple[str, str], dict[str, Any]]:
+    """Placares reais indexados por (mandante, visitante) normalizados."""
+    from models.wc_prediction_meta import outcome_from_score
+    from schemas.national_teams import normalize_national_team
+
+    index: dict[tuple[str, str], dict[str, Any]] = {}
+
+    for row in load_wc_group_results(round_data):
+        home = normalize_national_team(row["home_team"])
+        away = normalize_national_team(row["away_team"])
+        hs, as_ = int(row["home_score"]), int(row["away_score"])
+        index[(home, away)] = {
+            "actual_score": f"{hs}x{as_}",
+            "actual_outcome": outcome_from_score(hs, as_),
+        }
+
+    registry_path = settings.lake_root / "artifacts" / "superbet_finalized_events.json"
+    if registry_path.exists():
+        try:
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            for entry in registry.get("events", {}).values():
+                home = normalize_national_team(str(entry.get("home_team", "")))
+                away = normalize_national_team(str(entry.get("away_team", "")))
+                if not home or not away:
+                    continue
+                score_raw = str(entry.get("final_score", "")).replace(":", "x")
+                if "x" not in score_raw:
+                    continue
+                parts = score_raw.split("x", 1)
+                hs, as_ = int(parts[0]), int(parts[1])
+                key = (home, away)
+                index[key] = {
+                    "actual_score": f"{hs}x{as_}",
+                    "actual_outcome": outcome_from_score(hs, as_),
+                }
+        except (json.JSONDecodeError, OSError, ValueError):
+            pass
+
+    return index
+
+
 def _build_wc_round_predictions(
     predictor: "WcPredictor",
     round_data: dict,
@@ -2011,17 +2115,24 @@ def _build_wc_round_predictions(
 
     predictions: list[WcPredictionResponse] = []
     dirty = False
+    finished = _load_finished_match_results(round_data)
 
     for match in matches:
         home = normalize_national_team(match["home_team"])
         away = normalize_national_team(match["away_team"])
         match_phase = match.get("phase", phase_default)
         key = cache.match_key(home, away, match_phase)
+        actual = finished.get((home, away))
 
         cached = cache.get_cached(key)
-        if cached is not None:
+        if cached is not None and actual is None:
             predictions.append(WcPredictionResponse(**cached))
             continue
+        if cached is not None and actual is not None:
+            cached_actual = cached.get("actual_score")
+            if cached_actual == actual.get("actual_score"):
+                predictions.append(WcPredictionResponse(**cached))
+                continue
 
         try:
             pred = predictor.predict(
@@ -2031,7 +2142,11 @@ def _build_wc_round_predictions(
                 season=round_data.get("season", 2026),
                 group_name=match.get("group"),
             )
-            resp = _wc_prediction_to_response(pred)
+            resp = _wc_prediction_to_response(
+                pred,
+                actual_score=actual.get("actual_score") if actual else None,
+                actual_outcome=actual.get("actual_outcome") if actual else None,
+            )
             cache.set_cached(key, resp.model_dump())
             predictions.append(resp)
             dirty = True
@@ -2104,11 +2219,21 @@ def worldcup_group_standings():
 
     groups_meta = round_data.get("groups", [])
     blocks = build_group_standings(groups_meta, pred_rows)
+    real_results = load_wc_group_results(round_data)
+    real_blocks = build_group_standings_from_results(groups_meta, real_results)
+    blocks = merge_real_into_simulated(blocks, real_blocks)
+    as_of = datetime.now(UTC).date().isoformat()
+    note = (
+        "Pts: projeção do modelo (3 rodadas). Pts R: placares reais até "
+        f"{as_of} ({len(real_results)} jogos disputados)."
+    )
     return WcGroupStandingsResponse(
         season=int(round_data.get("season", 2026)),
         competition=round_data.get("competition", "Copa do Mundo FIFA 2026"),
         simulated=True,
-        note="Pontos simulados pelos palpites do modelo (3 vitória, 1 empate, 0 derrota).",
+        note=note,
+        as_of=as_of,
+        n_real_results=len(real_results),
         groups=[WcGroupStandingsBlock(**block) for block in blocks],
     )
 
@@ -2342,6 +2467,16 @@ def worldcup_benchmark_history():
             detail="Histórico ausente. Execute: run-model-benchmark --seed-only",
         )
     return payload
+
+
+@app.get("/worldcup/inplay/ensemble-status")
+def worldcup_inplay_ensemble_status(
+    user_id: str = Query(default="jamarorn", description="ID do usuário (reconciliação CSV)"),
+):
+    """Prontidão do ensemble GBM (shadow → produção)."""
+    from pipelines.inplay_ensemble_readiness import assess_ensemble_readiness
+
+    return assess_ensemble_readiness(user_id).to_dict()
 
 
 def _run_wc_retrain_background(*, enable_mlflow: bool = False) -> None:
