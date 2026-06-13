@@ -1,0 +1,89 @@
+{
+  "event_id": 13367914,
+  "home_team": "Gold Coast United Sub-23",
+  "away_team": "Brisbane City Sub-23",
+  "event_name": "Gold Coast United Sub-23·Brisbane City Sub-23",
+  "utc_date": "2026-06-13T03:00:00Z",
+  "betradar_id": "71576094",
+  "is_live": true,
+  "inplay": {
+    "home_score": 4,
+    "away_score": 1,
+    "minute": 90,
+    "stoppage_time": null,
+    "home_corners": 2,
+    "away_corners": 9,
+    "home_yellow_cards": 3,
+    "away_yellow_cards": 1,
+    "ht_home_score": 1,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "X": 50.0,
+    "2": 50.0
+  },
+  "h2h_implied": {
+    "X": 0.5,
+    "2": 0.5
+  },
+  "totals": {
+    "5.5": {
+      "Mais de 5.5": 2.65,
+      "Menos de 5.5": 1.35
+    },
+    "6.5": {
+      "Mais de 6.5": 8.5
+    }
+  },
+  "totals_implied": {
+    "5.5": {
+      "Mais de 5.5": 0.3375,
+      "Menos de 5.5": 0.6624999999999999
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 4.8e-05
+  },
+  "team_totals": {
+    "home": {
+      "4.5": {
+        "Mais de 4.5": 4.3,
+        "Menos de 4.5": 1.12
+      },
+      "5.5": {
+        "Mais de 5.5": 17.0
+      }
+    },
+    "away": {
+      "1.5": {
+        "Mais de 1.5": 4.05,
+        "Menos de 1.5": 1.14
+      },
+      "2.5": {
+        "Mais de 2.5": 17.0
+      }
+    }
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "yellow_cards": {},
+  "first_half_yellow_cards": {},
+  "team_shots": {
+    "home": {},
+    "away": {}
+  },
+  "half_markets": {},
+  "raw_market_count": 9,
+  "captured_at": "2026-06-13T04:46:17.702116+00:00"
+}

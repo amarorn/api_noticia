@@ -1,0 +1,96 @@
+{
+  "event_id": 13367914,
+  "home_team": "Gold Coast United Sub-23",
+  "away_team": "Brisbane City Sub-23",
+  "event_name": "Gold Coast United Sub-23·Brisbane City Sub-23",
+  "utc_date": "2026-06-13T03:00:00Z",
+  "betradar_id": "71576094",
+  "is_live": true,
+  "inplay": {
+    "home_score": 3,
+    "away_score": 1,
+    "minute": 85,
+    "stoppage_time": null,
+    "home_corners": 2,
+    "away_corners": 8,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 1,
+    "ht_home_score": 1,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.02,
+    "X": 15.0,
+    "2": 50.0
+  },
+  "h2h_implied": {
+    "1": 0.9187798603454613,
+    "X": 0.06247703050349137,
+    "2": 0.01874310915104741
+  },
+  "totals": {
+    "4.5": {
+      "Mais de 4.5": 2.35,
+      "Menos de 4.5": 1.47
+    },
+    "5.5": {
+      "Mais de 5.5": 7.0,
+      "Menos de 5.5": 1.02
+    }
+  },
+  "totals_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.38481675392670156,
+      "Menos de 4.5": 0.6151832460732984
+    },
+    "5.5": {
+      "Mais de 5.5": 0.12718204488778054,
+      "Menos de 5.5": 0.8728179551122194
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 7.25,
+    "away": 3.2
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.004859
+  },
+  "team_totals": {
+    "home": {
+      "3.5": {
+        "Mais de 3.5": 5.75,
+        "Menos de 3.5": 1.05
+      },
+      "4.5": {
+        "Mais de 4.5": 22.0
+      }
+    },
+    "away": {
+      "1.5": {
+        "Mais de 1.5": 2.85,
+        "Menos de 1.5": 1.3
+      },
+      "2.5": {
+        "Mais de 2.5": 9.25
+      }
+    }
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "yellow_cards": {},
+  "first_half_yellow_cards": {},
+  "team_shots": {
+    "home": {},
+    "away": {}
+  },
+  "half_markets": {},
+  "raw_market_count": 11,
+  "captured_at": "2026-06-13T04:40:18.930323+00:00"
+}

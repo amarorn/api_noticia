@@ -112,6 +112,52 @@
         },
         "completed_at": "2026-06-12T21:08:03.356179+00:00"
       }
+    },
+    "13367914": {
+      "event_id": 13367914,
+      "home_team": "Gold Coast United Sub-23",
+      "away_team": "Brisbane City Sub-23",
+      "final_score": "4x1",
+      "finalized_at": "2026-06-13T04:50:54.171733+00:00",
+      "gold_path": "data/lake/gold/superbet/events/13367914/final.json",
+      "silver_match_states": "data/lake/silver/inplay/match_states.parquet",
+      "settle_open_bets": {
+        "n_matched": 0,
+        "n_settled": 0,
+        "n_skipped": 0,
+        "settled_ids": []
+      },
+      "odds_path": null,
+      "retrain_scheduled": true,
+      "retrain": {
+        "event_id": 13367914,
+        "steps": {
+          "wallet_inbox": {
+            "user_id": "jamarorn",
+            "scanned_at": "2026-06-13T04:50:54.200411+00:00",
+            "n_imported": 0,
+            "n_skipped": 0,
+            "imports": [],
+            "reconciliation": null
+          },
+          "reconciliation": {
+            "n_pairs": 324,
+            "path": "data/lake/silver/bet_reconciliation/reconciliation_jamarorn.parquet"
+          },
+          "feedback_gbm": {
+            "accepted": true,
+            "n_feedback": 148,
+            "brier_delta": 0.33187334358037524,
+            "artifact": "data/lake/artifacts/inplay_gbm_feedback_v20260613T015127.pkl"
+          },
+          "gbm": {
+            "val_logloss": 0.4443440852837797,
+            "val_accuracy": 0.8757409940720474,
+            "n_train": 15660
+          }
+        },
+        "completed_at": "2026-06-13T04:51:42.510178+00:00"
+      }
     }
   }
 }
