@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-06-12T15:55:37.244589+00:00",
+  "live_ticks": {
+    "n_events": 40,
+    "n_ticks": 914,
+    "brier_modelo": 0.07734,
+    "brier_mercado": 0.10629,
+    "delta_brier": -0.02895,
+    "accuracy_modelo": 0.8523,
+    "brier_by_minute_bucket": {
+      "0-15": {
+        "brier": 0.20563,
+        "n": 27
+      },
+      "15-30": {
+        "brier": 0.07499,
+        "n": 58
+      },
+      "30-45": {
+        "brier": 0.10379,
+        "n": 251
+      },
+      "45-60": {
+        "brier": 0.09871,
+        "n": 158
+      },
+      "60-75": {
+        "brier": 0.09028,
+        "n": 163
+      },
+      "75-90": {
+        "brier": 0.01419,
+        "n": 218
+      },
+      "90+": {
+        "brier": 0.03419,
+        "n": 39
+      }
+    }
+  },
+  "reconciliation": {
+    "user_id": "jamarorn",
+    "n_bets": 243,
+    "n_matched": 99,
+    "n_high_confidence": 93,
+    "match_rate": 0.407,
+    "high_confidence_rate": 0.383,
+    "hit_rate": 0.273,
+    "pnl": -250.5,
+    "brier_avg": 0.67973
+  }
+}

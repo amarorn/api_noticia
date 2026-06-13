@@ -111,6 +111,12 @@ export const navGroups: NavGroup[] = [
         description: "ROI e analise de apostas",
       },
       {
+        to: "/modelos",
+        label: "Modelos",
+        Icon: IconZap,
+        description: "Benchmark e evolução",
+      },
+      {
         to: "/carteira",
         label: "Carteira",
         Icon: IconWallet,

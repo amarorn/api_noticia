@@ -2330,6 +2330,20 @@ def worldcup_walkforward():
     return json.loads(report_path.read_text(encoding="utf-8"))
 
 
+@app.get("/worldcup/benchmarks/history")
+def worldcup_benchmark_history():
+    """Histórico de evolução dos modelos (WC, in-play, reconciliação)."""
+    from pipelines.model_benchmark_history import history_with_deltas
+
+    payload = history_with_deltas()
+    if not payload.get("snapshots"):
+        raise HTTPException(
+            status_code=404,
+            detail="Histórico ausente. Execute: run-model-benchmark --seed-only",
+        )
+    return payload
+
+
 def _run_wc_retrain_background(*, enable_mlflow: bool = False) -> None:
     global _wc_predictor, _wc_artifact_meta, _wc_models_ready, _wc_train_thread
     from models.wc_artifact import load_or_train_wc_predictor

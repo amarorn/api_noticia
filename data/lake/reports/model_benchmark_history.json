@@ -1,0 +1,191 @@
+{
+  "updated_at": "2026-06-12T15:55:37.311278+00:00",
+  "snapshots": [
+    {
+      "run_id": "20260606T192317Z",
+      "timestamp": "2026-06-06T19:23:17.011388+00:00",
+      "source": "wc_benchmark",
+      "metrics": {
+        "wc_pregame": {
+          "eval_season": 2022,
+          "eval_samples": 515,
+          "benchmark_best_model": "ensemble_blend_linear",
+          "benchmark_accuracy": 0.5689,
+          "benchmark_brier": 0.1831,
+          "benchmark_log_loss": 0.936,
+          "artifact_created_at": "2026-06-12T05:46:10.373420+00:00",
+          "artifact_holdout_accuracy": 0.6094,
+          "artifact_brier": 0.1822,
+          "ensemble_dixon_coles": 0.0,
+          "ensemble_logistic": 1.0,
+          "fixture_rows": 9176
+        },
+        "wc_walkforward": {
+          "editions_evaluated": null,
+          "mean_accuracy": null,
+          "mean_brier": null,
+          "worst_brier_season": null,
+          "best_brier_season": null
+        },
+        "inplay": {
+          "live_brier_modelo": null,
+          "live_brier_mercado": null,
+          "live_delta_brier": null,
+          "live_accuracy": null,
+          "n_live_events": null,
+          "n_live_ticks": null,
+          "walkforward_brier": null,
+          "walkforward_baseline_brier": 0.1245,
+          "coefficients_trained_at": "2026-06-12T04:34:33.962309+00:00"
+        },
+        "reconciliation": {
+          "n_bets": null,
+          "hit_rate": null,
+          "pnl": null,
+          "brier_avg": null
+        }
+      }
+    },
+    {
+      "run_id": "20260612T121531Z",
+      "timestamp": "2026-06-12T12:15:31.529381+00:00",
+      "source": "full_improvement",
+      "metrics": {
+        "wc_pregame": {
+          "eval_season": null,
+          "eval_samples": null,
+          "benchmark_best_model": null,
+          "benchmark_accuracy": null,
+          "benchmark_brier": null,
+          "benchmark_log_loss": null,
+          "artifact_created_at": "2026-06-12T05:46:10.373420+00:00",
+          "artifact_holdout_accuracy": 0.6094,
+          "artifact_brier": 0.1822,
+          "ensemble_dixon_coles": 0.0,
+          "ensemble_logistic": 1.0,
+          "fixture_rows": 9176
+        },
+        "wc_walkforward": {
+          "editions_evaluated": 6,
+          "mean_accuracy": 0.5965,
+          "mean_brier": 0.1732,
+          "worst_brier_season": 2026,
+          "best_brier_season": 2027
+        },
+        "inplay": {
+          "live_brier_modelo": 0.0781,
+          "live_brier_mercado": 0.1077,
+          "live_delta_brier": -0.0296,
+          "live_accuracy": 0.8508,
+          "n_live_events": 39,
+          "n_live_ticks": 905,
+          "walkforward_brier": 0.1237,
+          "walkforward_baseline_brier": 0.1245,
+          "coefficients_trained_at": "2026-06-12T04:34:33.962309+00:00",
+          "tune_holdout_brier": 0.123,
+          "tune_gain": 0.0015
+        },
+        "reconciliation": {
+          "n_bets": 243,
+          "hit_rate": 0.273,
+          "pnl": -250.5,
+          "brier_avg": 0.6797
+        },
+        "gbm": {
+          "val_accuracy": 0.8769,
+          "val_logloss": 0.4125
+        }
+      }
+    },
+    {
+      "run_id": "20260612T154622Z",
+      "timestamp": "2026-06-12T15:46:22.205926+00:00",
+      "source": "run-model-benchmark",
+      "metrics": {
+        "wc_pregame": {
+          "eval_season": null,
+          "eval_samples": null,
+          "benchmark_best_model": null,
+          "benchmark_accuracy": null,
+          "benchmark_brier": null,
+          "benchmark_log_loss": null,
+          "artifact_created_at": "2026-06-12T05:46:10.373420+00:00",
+          "artifact_holdout_accuracy": 0.6094,
+          "artifact_brier": 0.1822,
+          "ensemble_dixon_coles": 0.0,
+          "ensemble_logistic": 1.0,
+          "fixture_rows": 9176
+        },
+        "wc_walkforward": {
+          "editions_evaluated": null,
+          "mean_accuracy": null,
+          "mean_brier": null,
+          "worst_brier_season": null,
+          "best_brier_season": null
+        },
+        "inplay": {
+          "live_brier_modelo": 0.0773,
+          "live_brier_mercado": 0.1063,
+          "live_delta_brier": -0.029,
+          "live_accuracy": 0.8523,
+          "n_live_events": 40,
+          "n_live_ticks": 914,
+          "walkforward_brier": null,
+          "walkforward_baseline_brier": 0.1245,
+          "coefficients_trained_at": "2026-06-12T04:34:33.962309+00:00"
+        },
+        "reconciliation": {
+          "n_bets": 243,
+          "hit_rate": 0.273,
+          "pnl": -250.5,
+          "brier_avg": 0.6797
+        }
+      }
+    },
+    {
+      "run_id": "20260612T155537Z",
+      "timestamp": "2026-06-12T15:55:37.309775+00:00",
+      "source": "run-model-benchmark",
+      "metrics": {
+        "wc_pregame": {
+          "eval_season": 2022,
+          "eval_samples": 966,
+          "benchmark_best_model": "ensemble_blend_linear",
+          "benchmark_accuracy": 0.5611,
+          "benchmark_brier": 0.1836,
+          "benchmark_log_loss": 0.9424,
+          "artifact_created_at": "2026-06-12T05:46:10.373420+00:00",
+          "artifact_holdout_accuracy": 0.6094,
+          "artifact_brier": 0.1822,
+          "ensemble_dixon_coles": 0.0,
+          "ensemble_logistic": 1.0,
+          "fixture_rows": 9176
+        },
+        "wc_walkforward": {
+          "editions_evaluated": null,
+          "mean_accuracy": null,
+          "mean_brier": null,
+          "worst_brier_season": null,
+          "best_brier_season": null
+        },
+        "inplay": {
+          "live_brier_modelo": 0.0773,
+          "live_brier_mercado": 0.1063,
+          "live_delta_brier": -0.029,
+          "live_accuracy": 0.8523,
+          "n_live_events": 40,
+          "n_live_ticks": 914,
+          "walkforward_brier": null,
+          "walkforward_baseline_brier": 0.1245,
+          "coefficients_trained_at": "2026-06-12T04:34:33.962309+00:00"
+        },
+        "reconciliation": {
+          "n_bets": 243,
+          "hit_rate": 0.273,
+          "pnl": -250.5,
+          "brier_avg": 0.6797
+        }
+      }
+    }
+  ]
+}
