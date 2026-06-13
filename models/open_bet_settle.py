@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+from models.bet_market_infer import infer_other_market
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +39,22 @@ def _parse_line(market: str, target_value: str | None) -> float | None:
     return None
 
 
+def _normalize_pick(
+    market: str,
+    outcome: str,
+    target_value: str | None,
+) -> tuple[str, str, str | None]:
+    """Normaliza mercado legado ``other`` para forma avaliável."""
+    market_l = (market or "").lower()
+    if market_l != "other":
+        return market_l, (outcome or "").lower(), target_value
+
+    inferred = infer_other_market(outcome, target_value)
+    if inferred:
+        return inferred
+    return market_l, (outcome or "").lower(), target_value
+
+
 def evaluate_pick(
     *,
     market: str,
@@ -44,11 +62,13 @@ def evaluate_pick(
     target_value: str | None,
     home_score: int,
     away_score: int,
+    home_corners: int | None = None,
+    away_corners: int | None = None,
 ) -> bool | None:
     """Avalia se um palpite ganhou. ``None`` = não avaliável (ex.: próximo gol)."""
-    market = (market or "").lower()
-    outcome = (outcome or "").lower()
-    total = home_score + away_score
+    market, outcome, target_value = _normalize_pick(market, outcome, target_value)
+    total_goals = home_score + away_score
+    total_corners = (home_corners or 0) + (away_corners or 0)
 
     if market == "h2h":
         if outcome in ("home", "1"):
@@ -64,9 +84,39 @@ def evaluate_pick(
         if line is None:
             line = 2.5
         if outcome == "over":
-            return total > line
+            return total_goals > line
         if outcome == "under":
-            return total < line
+            return total_goals < line
+        return None
+
+    if market == "corners_total":
+        line = _parse_line(market, target_value)
+        if line is None:
+            return None
+        if home_corners is None and away_corners is None:
+            return None
+        if outcome == "over":
+            return total_corners > line
+        if outcome == "under":
+            return total_corners < line
+        return None
+
+    if market == "odd_even_goals":
+        is_even = total_goals % 2 == 0
+        if outcome in ("even", "par"):
+            return is_even
+        if outcome in ("odd", "impar", "ímpar"):
+            return not is_even
+        return None
+
+    if market == "odd_even_corners":
+        if home_corners is None and away_corners is None:
+            return None
+        is_even = total_corners % 2 == 0
+        if outcome in ("even", "par"):
+            return is_even
+        if outcome in ("odd", "impar", "ímpar"):
+            return not is_even
         return None
 
     if market == "btts":
@@ -87,6 +137,9 @@ def evaluate_bet_picks(
     picks: list[dict[str, Any]],
     home_score: int,
     away_score: int,
+    *,
+    home_corners: int | None = None,
+    away_corners: int | None = None,
 ) -> bool | None:
     """Combo: todos os palpites precisam ganhar. ``None`` se algum não for avaliável."""
     if not picks:
@@ -98,6 +151,8 @@ def evaluate_bet_picks(
             target_value=pick.get("target_value"),
             home_score=home_score,
             away_score=away_score,
+            home_corners=home_corners,
+            away_corners=away_corners,
         )
         if won is None:
             return None
@@ -121,6 +176,8 @@ def settle_open_bets_for_event(
     home_score: int,
     away_score: int,
     final_score: str | None = None,
+    home_corners: int | None = None,
+    away_corners: int | None = None,
 ) -> SettleEventResult:
     """Move apostas abertas do evento para ``user_settled_bets.json``."""
     from api.user_bets_store import get_bets_for_event, move_open_to_settled
@@ -148,7 +205,13 @@ def settle_open_bets_for_event(
     for bet in open_bets:
         bet_id = bet.get("id") or ""
         picks = bet.get("picks") or []
-        won = evaluate_bet_picks(picks, home_score, away_score)
+        won = evaluate_bet_picks(
+            picks,
+            home_score,
+            away_score,
+            home_corners=home_corners,
+            away_corners=away_corners,
+        )
         if won is None:
             result.n_skipped += 1
             result.skipped.append(

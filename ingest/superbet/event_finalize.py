@@ -281,10 +281,27 @@ def maybe_finalize_finished_event(
                 home_score=int(hs),
                 away_score=int(as_),
                 final_score=inplay.get("current_score"),
+                home_corners=ip.home_corners,
+                away_corners=ip.away_corners,
             )
         except Exception as exc:
             logger.warning("settle open bets falhou: %s", exc)
             settle_summary = {"error": str(exc)}
+
+    wc_sync = None
+    if ip is not None:
+        try:
+            from pipelines.sync_wc_group_results import sync_single_wc_result
+
+            wc_sync = sync_single_wc_result(
+                snapshot.home_team,
+                snapshot.away_team,
+                int(ip.home_score or 0),
+                int(ip.away_score or 0),
+            )
+        except Exception as exc:
+            logger.warning("sync wc_2026 placar falhou: %s", exc)
+            wc_sync = {"updated": False, "error": str(exc)}
 
     odds_path = None
     if snapshot.h2h_odds:
@@ -314,6 +331,7 @@ def maybe_finalize_finished_event(
             if settle_summary and hasattr(settle_summary, "n_settled")
             else settle_summary
         ),
+        "wc_result_sync": wc_sync,
         "odds_path": str(odds_path) if odds_path else None,
         "retrain_scheduled": settings.superbet_finalize_retrain,
     }

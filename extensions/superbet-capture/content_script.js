@@ -62,6 +62,21 @@
       const valMatch = pickRaw.match(/([\d.]+)/);
       market = valMatch ? `totals_${valMatch[1]}` : "totals";
       outcome = isOver ? "over" : "under";
+    } else if (/Escanteio|Corner/i.test(marketRaw)) {
+      const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
+      const valMatch = pickRaw.match(/([\d.,]+)/);
+      market = "corners_total";
+      outcome = isOver ? "over" : "under";
+      if (valMatch) {
+        return {
+          market,
+          outcome,
+          target_value: valMatch[1].replace(",", "."),
+        };
+      }
+    } else if (/Par.*Ímpar|Odd.*Even|Par\/Ímpar/i.test(marketRaw)) {
+      market = /Escanteio|Corner/i.test(marketRaw) ? "odd_even_corners" : "odd_even_goals";
+      outcome = /Ímpar|Impar|Odd/i.test(pickRaw) && !/^Par$/i.test(pickRaw.trim()) ? "odd" : "even";
     } else if (/Ambas.*Marcam|Both.*Score|BTTS/i.test(marketRaw)) {
       market = "btts";
       outcome = /Sim|Yes/i.test(pickRaw) ? "yes" : "no";
@@ -77,13 +92,19 @@
   }
 
   function pushParsedPick(picks, marketRaw, pickRaw, oddPlaced, rawLine) {
-    const { market, outcome } = classifyPick(marketRaw, pickRaw);
-    picks.push({
+    const classified = classifyPick(marketRaw, pickRaw);
+    const market = classified.market;
+    const outcome = classified.outcome;
+    const pick = {
       market,
       outcome,
       odd_placed: oddPlaced,
       raw: rawLine || `${marketRaw} — ${pickRaw}`,
-    });
+    };
+    if (classified.target_value) {
+      pick.target_value = classified.target_value;
+    }
+    picks.push(pick);
   }
 
   /**
@@ -348,6 +369,13 @@
       }
     }
 
+    let liveMinute = null;
+    const minuteMatch = text.match(/(?:^|\s)(\d{1,3})\s*[''′](?:\s|$)/m);
+    if (minuteMatch) {
+      const m = parseInt(minuteMatch[1], 10);
+      if (Number.isFinite(m) && m >= 0 && m <= 120) liveMinute = m;
+    }
+
     return {
       event_name: eventName || `${homeTeam} · ${awayTeam}`,
       home_team: homeTeam,
@@ -361,6 +389,7 @@
       superbet_event_id: superbetEventId,
       is_live: isLive,
       is_open: isOpen,
+      live_minute: liveMinute,
     };
   }
 
@@ -971,6 +1000,65 @@
     };
   }
 
+  function betFingerprint(bet) {
+    const normalized = normalizeBetPayload(bet);
+    const pick = normalized.picks?.[0] || {};
+    const eventKey =
+      normalized.superbet_event_id ||
+      `${normalized.home_team}|${normalized.away_team}`.toLowerCase();
+    return `${eventKey}::${pick.market || ""}::${String(pick.outcome || "").toLowerCase()}`;
+  }
+
+  function fetchOpenBetsViaBackground(apiKey) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: "API_GET_OPEN_BETS", apiKey }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve([]);
+          return;
+        }
+        resolve(response?.data?.bets || []);
+      });
+    });
+  }
+
+  function dedupeOpenBetsViaBackground(apiKey) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: "API_DEDUPE_OPEN_BETS", apiKey }, (response) => {
+        resolve(response || { ok: false });
+      });
+    });
+  }
+
+  function resolveGuardrailResponse(response) {
+    if (response?.ok) return response;
+    if (response?.status !== 409) return response;
+
+    const code = response.detail?.code || response.data?.detail?.code;
+    const message =
+      response.detail?.message ||
+      response.data?.detail?.message ||
+      response.error ||
+      "Regra P0 bloqueou o cadastro";
+
+    if (code === "duplicate_market") {
+      return {
+        ...response,
+        ok: true,
+        skipped: true,
+        guardrail: code,
+        error: message,
+      };
+    }
+
+    return {
+      ...response,
+      ok: false,
+      skipped: true,
+      guardrail: code || "guardrail",
+      error: message,
+    };
+  }
+
   /**
    * Envia uma aposta para a API via background service worker.
    */
@@ -1005,6 +1093,7 @@
         cashout_value: normalized.cashout_value,
         ticket_code: normalized.ticket_code,
         source: "superbet_extension",
+        minute: normalized.live_minute ?? null,
       };
       chrome.runtime.sendMessage(
         { type: "API_POST_OPEN_BET", payload, apiKey },
@@ -1012,7 +1101,9 @@
           if (chrome.runtime.lastError) {
             resolve({ ok: false, error: chrome.runtime.lastError.message });
           } else {
-            resolve(response || { ok: false, error: "Sem resposta do background" });
+            resolve(
+              resolveGuardrailResponse(response || { ok: false, error: "Sem resposta do background" })
+            );
           }
         }
       );
@@ -1033,9 +1124,35 @@
               resolve(items.bolao_api_key || "");
             });
           }));
+
+        await dedupeOpenBetsViaBackground(apiKey);
+        const existing = await fetchOpenBetsViaBackground(apiKey);
+        const seen = new Set(
+          existing.map((b) => {
+            const pick = b.picks?.[0] || {};
+            const eventKey =
+              b.superbet_event_id || `${b.home_team}|${b.away_team}`.toLowerCase();
+            return `${eventKey}::${pick.market || ""}::${String(pick.outcome || "").toLowerCase()}`;
+          })
+        );
+
         const results = [];
         for (const bet of bets) {
+          const fp = betFingerprint(bet);
+          if (seen.has(fp)) {
+            results.push({
+              ticket: bet.ticket_code,
+              event: bet.event_name,
+              ok: true,
+              skipped: true,
+              guardrail: "duplicate_local",
+              error: "Aposta já cadastrada (mesmo mercado/jogo)",
+              status: 0,
+            });
+            continue;
+          }
           const r = await sendViaBackground(bet, apiKey);
+          if (r.ok && !r.skipped) seen.add(fp);
           results.push({ ticket: bet.ticket_code, event: bet.event_name, ...r });
         }
         sendResponse({ bets, results, debug });

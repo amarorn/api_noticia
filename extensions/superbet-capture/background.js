@@ -20,12 +20,12 @@ async function apiFetch(path, options = {}) {
         else if (Array.isArray(detail)) {
           errorMsg = detail.map((d) => d.msg || JSON.stringify(d)).join("; ");
         } else if (detail && typeof detail === "object") {
-          errorMsg = JSON.stringify(detail);
+          errorMsg = detail.message || detail.msg || JSON.stringify(detail);
         } else {
           errorMsg = data.message || `HTTP ${resp.status}`;
         }
       }
-      return { ok: resp.ok, status: resp.status, data, error: errorMsg };
+      return { ok: resp.ok, status: resp.status, data, error: errorMsg, detail: typeof detail === "object" ? detail : null };
     } catch (err) {
       lastError = err;
     }
@@ -347,6 +347,15 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === "API_GET_OPEN_BETS") {
     const { apiKey } = request;
     apiFetch("/user/open-bets", {
+      headers: apiKey ? { "X-API-Key": apiKey } : {},
+    }).then(sendResponse);
+    return true;
+  }
+
+  if (request.type === "API_DEDUPE_OPEN_BETS") {
+    const { apiKey } = request;
+    apiFetch("/user/open-bets/dedupe", {
+      method: "POST",
       headers: apiKey ? { "X-API-Key": apiKey } : {},
     }).then(sendResponse);
     return true;

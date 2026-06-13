@@ -130,3 +130,81 @@ class TestCombo:
         ]
         assert evaluate_bet_picks(picks, 2, 1)
         assert not evaluate_bet_picks(picks, 2, 0)
+
+
+class TestOtherMarkets:
+    def test_corners_under_legacy_other(self):
+        assert evaluate_pick(
+            market="other",
+            outcome="Menos de 15.5",
+            target_value=None,
+            home_score=1,
+            away_score=1,
+            home_corners=9,
+            away_corners=4,
+        )
+
+    def test_corners_over_loses(self):
+        assert not evaluate_pick(
+            market="other",
+            outcome="Mais de 16.5",
+            target_value=None,
+            home_score=1,
+            away_score=1,
+            home_corners=9,
+            away_corners=4,
+        )
+
+    def test_odd_even_goals(self):
+        assert evaluate_pick(
+            market="odd_even_goals",
+            outcome="even",
+            target_value=None,
+            home_score=1,
+            away_score=1,
+            home_corners=0,
+            away_corners=0,
+        )
+
+    def test_settle_corners_bet(self, tmp_path, monkeypatch):
+        from config import settings as s
+
+        monkeypatch.setattr(s, "lake_root", tmp_path)
+
+        open_path = tmp_path / "user_open_bets.json"
+        open_path.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "bets": [
+                        {
+                            "id": "corners1",
+                            "event_name": "Canadá · Bósnia",
+                            "home_team": "Canadá",
+                            "away_team": "Bósnia e Herzegovina",
+                            "picks": [{"market": "other", "outcome": "Menos de 15.5"}],
+                            "stake": 10.0,
+                            "odds_placed": 1.8,
+                            "potential_return": 18.0,
+                            "status": "open",
+                            "superbet_event_id": 12512390,
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = settle_open_bets_for_event(
+            event_id=12512390,
+            home_team="Canadá",
+            away_team="Bósnia e Herzegovina",
+            home_score=1,
+            away_score=1,
+            home_corners=9,
+            away_corners=4,
+        )
+        assert result.n_settled == 1
+        settled = json.loads((tmp_path / "user_settled_bets.json").read_text(encoding="utf-8"))
+        assert settled["bets"][0]["result"] == "won"
+

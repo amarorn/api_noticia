@@ -1685,6 +1685,19 @@ def register_open_bet(req: UserOpenBetRequest):
     }
 
 
+@app.post("/user/open-bets/dedupe", response_model=dict)
+def dedupe_user_open_bets():
+    """Remove apostas abertas duplicadas (mesmo evento + mercado + palpite)."""
+    from api.user_bets_store import dedupe_open_bets_store, list_open_bets
+
+    stats = dedupe_open_bets_store()
+    return {
+        "message": "Deduplicação concluída",
+        **stats,
+        "open_bets_count": len(list_open_bets()),
+    }
+
+
 @app.get("/user/open-bets", response_model=dict)
 def list_user_open_bets():
     """Lista apostas abertas do usuário."""

@@ -404,6 +404,51 @@ def sync_wc_group_results(
     )
 
 
+def sync_single_wc_result(
+    home_team: str,
+    away_team: str,
+    home_score: int,
+    away_score: int,
+    *,
+    round_file: Path = DEFAULT_ROUND_FILE,
+) -> dict[str, Any]:
+    """Atualiza placar de um jogo da fase de grupos em ``wc_2026.json``."""
+    if not round_file.exists():
+        return {"updated": False, "reason": "round_file_missing"}
+
+    home = normalize_national_team(home_team)
+    away = normalize_national_team(away_team)
+    round_data = load_round_file(round_file)
+    schedule = _schedule_index(round_data)
+    if (home, away) not in schedule:
+        return {"updated": False, "reason": "not_in_schedule", "home_team": home, "away_team": away}
+
+    upd = ResultUpdate(
+        home_team=home,
+        away_team=away,
+        home_score=home_score,
+        away_score=away_score,
+        source="superbet",
+    )
+    round_data, unchanged = apply_updates(round_data, [upd])
+    if unchanged >= 1:
+        return {
+            "updated": False,
+            "reason": "unchanged",
+            "home_team": home,
+            "away_team": away,
+        }
+
+    save_round_file(round_file, round_data, backup=True)
+    return {
+        "updated": True,
+        "home_team": home,
+        "away_team": away,
+        "score": f"{home_score}x{away_score}",
+        "round_file": str(round_file),
+    }
+
+
 def write_example_csv(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
