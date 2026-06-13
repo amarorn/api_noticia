@@ -48,7 +48,7 @@ from pipelines.wc_group_standings import (
     merge_real_into_simulated,
 )
 from schemas.national_teams import normalize_national_team
-from schemas.user_bet import SettledBetsBatchRequest, UserOpenBetRequest
+from schemas.user_bet import CheckAgainstModelRequest, SettledBetsBatchRequest, UserOpenBetRequest
 
 WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 
@@ -1682,6 +1682,30 @@ def register_open_bet(req: UserOpenBetRequest):
         "stake": ub.stake,
         "odds_placed": ub.odds_placed,
         "open_bets_count": len(list_open_bets()),
+    }
+
+
+@app.post("/user/bets/check-against-model", response_model=dict)
+def check_bet_against_model(req: CheckAgainstModelRequest):
+    """Retorna alerta se palpite 1X2 diverge do modelo pré-jogo e/ou ao vivo."""
+    from models.wc_against_model import check_single_bet_against_model
+
+    predictor = _get_wc_predictor()
+    alert = check_single_bet_against_model(
+        predictor=predictor,
+        market=req.market,
+        outcome=req.outcome,
+        home_team=req.home_team,
+        away_team=req.away_team,
+        superbet_event_id=req.superbet_event_id,
+        phase=req.phase,
+        stake=req.stake,
+        odds_placed=req.odds_placed,
+    )
+    return {
+        "against_model": alert is not None,
+        "alert": alert,
+        "message": alert["message"] if alert else "Palpite alinhado ao modelo",
     }
 
 

@@ -1029,6 +1029,39 @@
     });
   }
 
+  function checkAgainstModelViaBackground(bet, apiKey) {
+    const pick = bet.picks?.[0];
+    if (!pick || pick.market !== "h2h") {
+      return Promise.resolve(null);
+    }
+    const normalized = normalizeBetPayload(bet);
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        {
+          type: "API_CHECK_AGAINST_MODEL",
+          apiKey,
+          payload: {
+            market: "h2h",
+            outcome: pick.outcome,
+            home_team: normalized.home_team,
+            away_team: normalized.away_team,
+            superbet_event_id: normalized.superbet_event_id,
+            stake: normalized.stake,
+            odds_placed: normalized.odds_placed,
+            phase: "friendly",
+          },
+        },
+        (response) => {
+          if (chrome.runtime.lastError || !response?.ok) {
+            resolve(null);
+            return;
+          }
+          resolve(response.data?.alert || null);
+        }
+      );
+    });
+  }
+
   function resolveGuardrailResponse(response) {
     if (response?.ok) return response;
     if (response?.status !== 409) return response;
@@ -1062,49 +1095,56 @@
   /**
    * Envia uma aposta para a API via background service worker.
    */
-  function sendViaBackground(bet, apiKey) {
-    return new Promise((resolve) => {
-      const issues = validateBetPayload(bet);
-      if (issues.length) {
-        resolve({
-          ok: false,
-          skipped: true,
-          error: issues.join("; "),
-          status: 0,
-        });
-        return;
-      }
-
-      const normalized = normalizeBetPayload(bet);
-      const payload = {
-        id: normalized.ticket_code || `auto_${Date.now()}`,
-        superbet_event_id: normalized.superbet_event_id,
-        event_name: normalized.event_name,
-        home_team: normalized.home_team,
-        away_team: normalized.away_team,
-        picks: normalized.picks.map((p) => ({
-          market: p.market,
-          outcome: p.outcome,
-          target_value: p.target_value || null,
-        })),
-        stake: normalized.stake,
-        odds_placed: normalized.odds_placed,
-        potential_return: normalized.potential_return,
-        cashout_value: normalized.cashout_value,
-        ticket_code: normalized.ticket_code,
-        source: "superbet_extension",
-        minute: normalized.live_minute ?? null,
+  async function sendViaBackground(bet, apiKey) {
+    const issues = validateBetPayload(bet);
+    if (issues.length) {
+      return {
+        ok: false,
+        skipped: true,
+        error: issues.join("; "),
+        status: 0,
       };
+    }
+
+    const normalized = normalizeBetPayload(bet);
+    const againstModelAlert = await checkAgainstModelViaBackground(normalized, apiKey);
+
+    const payload = {
+      id: normalized.ticket_code || `auto_${Date.now()}`,
+      superbet_event_id: normalized.superbet_event_id,
+      event_name: normalized.event_name,
+      home_team: normalized.home_team,
+      away_team: normalized.away_team,
+      picks: normalized.picks.map((p) => ({
+        market: p.market,
+        outcome: p.outcome,
+        target_value: p.target_value || null,
+      })),
+      stake: normalized.stake,
+      odds_placed: normalized.odds_placed,
+      potential_return: normalized.potential_return,
+      cashout_value: normalized.cashout_value,
+      ticket_code: normalized.ticket_code,
+      source: "superbet_extension",
+      minute: normalized.live_minute ?? null,
+    };
+
+    return new Promise((resolve) => {
       chrome.runtime.sendMessage(
         { type: "API_POST_OPEN_BET", payload, apiKey },
         (response) => {
           if (chrome.runtime.lastError) {
             resolve({ ok: false, error: chrome.runtime.lastError.message });
-          } else {
-            resolve(
-              resolveGuardrailResponse(response || { ok: false, error: "Sem resposta do background" })
-            );
+            return;
           }
+          const base = resolveGuardrailResponse(
+            response || { ok: false, error: "Sem resposta do background" }
+          );
+          if (againstModelAlert) {
+            base.against_model_alert = againstModelAlert;
+            base.against_model = true;
+          }
+          resolve(base);
         }
       );
     });
@@ -1137,6 +1177,7 @@
         );
 
         const results = [];
+        let againstModelCount = 0;
         for (const bet of bets) {
           const fp = betFingerprint(bet);
           if (seen.has(fp)) {
@@ -1152,10 +1193,18 @@
             continue;
           }
           const r = await sendViaBackground(bet, apiKey);
+          if (r.against_model_alert) againstModelCount += 1;
           if (r.ok && !r.skipped) seen.add(fp);
           results.push({ ticket: bet.ticket_code, event: bet.event_name, ...r });
         }
-        sendResponse({ bets, results, debug });
+        if (againstModelCount > 0) {
+          chrome.runtime.sendMessage({
+            type: "SHOW_AGAINST_MODEL_NOTIFICATION",
+            count: againstModelCount,
+            message: `${againstModelCount} aposta(s) 1X2 contra o palpite do modelo`,
+          });
+        }
+        sendResponse({ bets, results, debug, against_model_count: againstModelCount });
       })();
       return true; // async response
     }
@@ -1208,4 +1257,118 @@
   });
 
   console.info("[Bolão AI] Content script carregado. Página:", location.href);
+
+  // ── P2: alerta contra palpite na página do evento (bet slip) ──
+  function extractEventIdFromUrl() {
+    const m = location.pathname.match(/\/(?:event|evento)\/(\d+)/i);
+    if (m) return parseInt(m[1], 10);
+    const q = new URLSearchParams(location.search).get("eventId");
+    return q ? parseInt(q, 10) : null;
+  }
+
+  function extractH2hOutcomeFromBetSlip() {
+    const roots = document.querySelectorAll(
+      '[class*="betslip" i], [class*="bet-slip" i], [class*="Betslip" i], [data-qa*="betslip" i]'
+    );
+    const scanRoots = roots.length ? [...roots] : [document.body];
+    for (const root of scanRoots) {
+      const text = root.innerText || "";
+      if (!/APOSTAR|Fazer aposta|Confirmar|Cupom/i.test(text)) continue;
+
+      const lineMatch = text.match(
+        /Resultado Final[^\n]*?[—–-]\s*([^\n@]+?)\s*@/i
+      );
+      if (lineMatch) {
+        const classified = classifyPick("Resultado Final", lineMatch[1].trim());
+        if (classified.market === "h2h") return classified.outcome;
+      }
+
+      for (const line of text.split("\n")) {
+        const trimmed = line.trim();
+        if (/^Resultado Final/i.test(trimmed)) {
+          const m = trimmed.match(/[—–-]\s*([1X2]|Empate)/i);
+          if (m) {
+            const classified = classifyPick("Resultado Final", m[1]);
+            if (classified.market === "h2h") return classified.outcome;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function renderAgainstModelBanner(alert) {
+    const existing = document.getElementById("bolao-ai-against-banner");
+    if (!alert) {
+      existing?.remove();
+      return;
+    }
+    let el = existing;
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "bolao-ai-against-banner";
+      el.setAttribute("role", "alert");
+      el.style.cssText =
+        "position:fixed;top:0;left:0;right:0;z-index:2147483647;padding:14px 18px;" +
+        "background:linear-gradient(180deg,#991b1b,#7f1d1d);color:#fff;" +
+        "font:700 14px/1.45 system-ui,-apple-system,sans-serif;" +
+        "box-shadow:0 6px 24px rgba(0,0,0,.45);border-bottom:2px solid #fca5a5;";
+      document.body.prepend(el);
+    }
+    el.textContent = `⛔ Bolão AI — APOSTA CONTRA O MODELO: ${alert.message}`;
+  }
+
+  let _slipCheckKey = "";
+  let _slipNotifiedKey = "";
+
+  function pollBetSlipAgainstModel() {
+    const eventId = extractEventIdFromUrl();
+    const outcome = extractH2hOutcomeFromBetSlip();
+    if (!eventId || !outcome) {
+      _slipCheckKey = "";
+      renderAgainstModelBanner(null);
+      return;
+    }
+
+    const checkKey = `${eventId}:${outcome}`;
+    if (checkKey === _slipCheckKey) return;
+    _slipCheckKey = checkKey;
+
+    chrome.storage.local.get(["bolao_api_key"], (items) => {
+      const apiKey = items.bolao_api_key || "";
+      chrome.runtime.sendMessage(
+        {
+          type: "API_CHECK_AGAINST_MODEL",
+          apiKey,
+          payload: {
+            market: "h2h",
+            outcome,
+            superbet_event_id: eventId,
+            phase: "friendly",
+          },
+        },
+        (response) => {
+          const alert = response?.data?.alert;
+          renderAgainstModelBanner(alert);
+          if (
+            alert &&
+            (alert.severity === "critical" || alert.severity === "high") &&
+            _slipNotifiedKey !== checkKey
+          ) {
+            _slipNotifiedKey = checkKey;
+            chrome.runtime.sendMessage({
+              type: "SHOW_AGAINST_MODEL_NOTIFICATION",
+              count: 1,
+              message: alert.message,
+            });
+          }
+        }
+      );
+    });
+  }
+
+  if (extractEventIdFromUrl()) {
+    setInterval(pollBetSlipAgainstModel, 4000);
+    setTimeout(pollBetSlipAgainstModel, 1200);
+  }
 })();

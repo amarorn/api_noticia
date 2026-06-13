@@ -77,10 +77,16 @@
           if (r?.ok) sendTag = ' <span style="color:#00ff88">✓ enviada</span>';
           else if (r?.skipped) sendTag = ` <span style="color:#fbbf24">⚠ ${r.error}</span>`;
           else if (r) sendTag = ` <span style="color:#f87171">✗ ${r.error || "erro API"}</span>`;
+          const againstTag = b.against_model
+            ? `<br><span style="color:#f87171;font-weight:600">⛔ Contra modelo: ${b.against_model.message || ""}</span>`
+            : r?.against_model_alert
+              ? `<br><span style="color:#f87171;font-weight:600">⛔ ${r.against_model_alert.message || ""}</span>`
+              : "";
           return `
             <div class="bet-item">
               <strong>${b.event_name || "—"}</strong><br>
               <span>${live} · ${b.picks_count} pick(s) · Stake R$ ${Number(b.stake).toFixed(2)}${sendTag}</span>
+              ${againstTag}
               ${b.cashout_value ? `<br><span style="color:#fbbf24">Cash-out: R$ ${Number(b.cashout_value).toFixed(2)}</span>` : ""}
             </div>`;
         })

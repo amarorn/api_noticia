@@ -1,7 +1,11 @@
 """Testes de alertas contra o palpite do modelo."""
 from __future__ import annotations
 
-from models.wc_against_model import build_against_model_alerts, normalize_h2h_outcome
+from models.wc_against_model import (
+    build_against_model_alerts,
+    check_single_bet_against_model,
+    normalize_h2h_outcome,
+)
 
 
 def test_normalize_h2h_outcome():
@@ -35,6 +39,29 @@ def test_build_against_model_alerts_critical():
     assert alerts[0]["bet_outcome"] == "2"
     assert alerts[0]["against_pregame"] is True
     assert alerts[0]["against_inplay"] is True
+
+
+def test_check_single_bet_against_model_without_live():
+    class FakePred:
+        prediction = "X"
+
+        def predict(self, home, away, phase="friendly"):
+            return type(
+                "R",
+                (),
+                {"prediction": "X", "prob_home": 0.33, "prob_draw": 0.34, "prob_away": 0.33},
+            )()
+
+    alert = check_single_bet_against_model(
+        predictor=FakePred(),
+        market="h2h",
+        outcome="2",
+        home_team="Canadá",
+        away_team="Bósnia",
+    )
+    assert alert is not None
+    assert alert["bet_outcome"] == "2"
+    assert alert["against_pregame"] is True
 
 
 def test_build_against_model_alerts_none_when_aligned():

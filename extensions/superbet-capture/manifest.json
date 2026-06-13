@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Bolão AI — Captura Superbet",
-  "version": "1.3.2",
-  "description": "Extrai apostas e extrato da carteira Superbet → Bolão AI (ao vivo + /carteira).",
+  "version": "1.4.0",
+  "description": "Extrai apostas Superbet → Bolão AI; alerta vermelho se 1X2 contra o modelo.",
   "permissions": ["activeTab", "storage", "notifications", "scripting"],
   "host_permissions": [
     "https://superbet.com/*",

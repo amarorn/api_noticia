@@ -127,6 +127,7 @@ function serializeOpenCapture(bets, results, summary, debug) {
       is_live: b.is_live,
       cashout_value: b.cashout_value,
       send: results[i] || null,
+      against_model: results[i]?.against_model_alert || null,
     })),
   };
 }
@@ -153,6 +154,10 @@ async function runOpenBetsCapture(tabId, apiKey) {
     let message = summary.message;
     if (debug?.tickets_on_page && debug.tickets_on_page > bets.length) {
       message += ` (${debug.tickets_on_page} bilhetes visíveis — role a lista se faltarem)`;
+    }
+    const againstCount = (results || []).filter((r) => r.against_model_alert).length;
+    if (againstCount > 0) {
+      message += ` · ${againstCount} contra o modelo!`;
     }
     summary.message = message;
     const record = serializeOpenCapture(bets, results, summary, debug);
@@ -358,6 +363,28 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       method: "POST",
       headers: apiKey ? { "X-API-Key": apiKey } : {},
     }).then(sendResponse);
+    return true;
+  }
+
+  if (request.type === "API_CHECK_AGAINST_MODEL") {
+    const { payload, apiKey } = request;
+    apiFetch("/user/bets/check-against-model", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiKey ? { "X-API-Key": apiKey } : {}),
+      },
+      body: JSON.stringify(payload),
+    }).then(sendResponse);
+    return true;
+  }
+
+  if (request.type === "SHOW_AGAINST_MODEL_NOTIFICATION") {
+    showNotification(
+      "⛔ Bolão AI — contra o palpite",
+      request.message || "Aposta 1X2 diverge do modelo"
+    );
+    sendResponse({ ok: true });
     return true;
   }
 

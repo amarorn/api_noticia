@@ -55,6 +55,19 @@ class UserOpenBetResponse(BaseModel):
     message: str = "ok"
 
 
+class CheckAgainstModelRequest(BaseModel):
+    """Verifica se um palpite 1X2 diverge do modelo (extensão / pré-cadastro)."""
+
+    market: str = Field(..., description="Tipo de mercado (apenas h2h suportado)")
+    outcome: str = Field(..., description="Palpite: 1|X|2|home|away|draw")
+    home_team: str | None = Field(None, description="Mandante (opcional se superbet_event_id)")
+    away_team: str | None = Field(None, description="Visitante (opcional se superbet_event_id)")
+    superbet_event_id: int | None = Field(None, description="ID Superbet para resolver times + in-play")
+    phase: str = Field("friendly", description="Fase WC para o predictor")
+    stake: float = Field(0, ge=0)
+    odds_placed: float = Field(0, ge=0)
+
+
 class SettledBetInput(BaseModel):
     """Payload de uma aposta liquidada capturada pela extensão."""
 

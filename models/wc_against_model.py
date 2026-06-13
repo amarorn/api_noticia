@@ -157,7 +157,93 @@ def build_against_model_alerts(
     return alerts
 
 
+def check_single_bet_against_model(
+    *,
+    predictor: Any,
+    market: str,
+    outcome: str,
+    home_team: str | None = None,
+    away_team: str | None = None,
+    superbet_event_id: int | None = None,
+    phase: str = "friendly",
+    stake: float = 0.0,
+    odds_placed: float = 0.0,
+) -> dict[str, Any] | None:
+    """Verifica um palpite isolado contra pré-jogo e in-play (extensão / UI)."""
+    from schemas.national_teams import normalize_national_team
+
+    if str(market or "").lower() != "h2h":
+        return None
+    norm = normalize_h2h_outcome(outcome)
+    if norm is None:
+        return None
+
+    home = normalize_national_team(home_team) if home_team else ""
+    away = normalize_national_team(away_team) if away_team else ""
+
+    inplay_dict: dict[str, Any] | None = None
+    if superbet_event_id:
+        try:
+            from ingest.superbet.client import SuperbetClient
+            from models.wc_inplay import inplay_from_predictor
+
+            snap = SuperbetClient().fetch_event(superbet_event_id)
+            home = normalize_national_team(snap.home_team)
+            away = normalize_national_team(snap.away_team)
+            if snap.inplay:
+                ip = snap.inplay
+                result = inplay_from_predictor(
+                    predictor,
+                    home_team=home,
+                    away_team=away,
+                    home_score=ip.home_score,
+                    away_score=ip.away_score,
+                    minute=ip.minute,
+                    phase=phase,
+                    is_neutral=True,
+                    ht_home_score=ip.ht_home_score,
+                    ht_away_score=ip.ht_away_score,
+                    home_corners=ip.home_corners,
+                    away_corners=ip.away_corners,
+                )
+                inplay_dict = result.to_dict()
+        except Exception:
+            pass
+
+    if not home or not away:
+        return None
+
+    pre = predictor.predict(home, away, phase=phase)
+    pregame_probs = {"1": pre.prob_home, "X": pre.prob_draw, "2": pre.prob_away}
+
+    if inplay_dict is None:
+        inplay_dict = {
+            "prob_final_home": pregame_probs["1"],
+            "prob_final_draw": pregame_probs["X"],
+            "prob_final_away": pregame_probs["2"],
+        }
+
+    alerts = build_against_model_alerts(
+        open_bets=[
+            {
+                "id": None,
+                "stake": stake,
+                "odds_placed": odds_placed,
+                "picks": [{"market": "h2h", "outcome": norm}],
+            }
+        ],
+        inplay=inplay_dict,
+        pregame_prediction=pre.prediction,
+        pregame_probs=pregame_probs,
+        home_team=home,
+        away_team=away,
+        phase=phase,
+    )
+    return alerts[0] if alerts else None
+
+
 __all__ = [
     "build_against_model_alerts",
+    "check_single_bet_against_model",
     "normalize_h2h_outcome",
 ]
