@@ -27,6 +27,7 @@ import { LivePlainGuide } from "@/presentation/components/predictions/LivePlainG
 import { LiveScoreHeatmap } from "@/presentation/components/predictions/LiveScoreHeatmap";
 import LiveHedgeAlert from "@/presentation/components/predictions/LiveHedgeAlert";
 import LiveAgainstModelAlert from "@/presentation/components/predictions/LiveAgainstModelAlert";
+import { LiveP0GuardBanner } from "@/presentation/components/predictions/LiveP0GuardBanner";
 import { draftAgainstModelAlert, normalizeH2hOutcome } from "@/presentation/utils/againstModelBet";
 
 const POLL_MS = 15_000;
@@ -70,6 +71,21 @@ function formatCapturedAt(iso: string | null): string {
   } catch {
     return iso;
   }
+}
+
+function betMarketKey(bet: Pick<RegisteredBetEntry, "market" | "outcome">): string {
+  const outcome =
+    bet.market === "h2h" ? normalizeH2hOutcome(bet.outcome) : bet.outcome.toLowerCase();
+  return `${bet.market}:${outcome}`;
+}
+
+function hasDuplicateMarket(
+  bets: RegisteredBetEntry[],
+  draft: BetDraft,
+  excludeId?: string,
+): boolean {
+  const key = betMarketKey(draft);
+  return bets.some((b) => b.id !== excludeId && betMarketKey(b) === key);
 }
 
 function formatOddsLine(odds: Record<string, number>): string {
@@ -182,8 +198,13 @@ export function LiveInPlayPage() {
 
   const displayBets = apiBets.length > 0 ? apiBets : registeredBets;
 
-  const showBetForm = trackBet && formMode != null;
-  const canAddBet = trackBet && displayBets.length < MAX_OPEN_BETS && formMode === null;
+  const blockNewBets = Boolean(data?.betGuardrails?.blockNewBets);
+  const showBetForm = trackBet && formMode != null && !blockNewBets;
+  const canAddBet =
+    trackBet &&
+    !blockNewBets &&
+    displayBets.length < MAX_OPEN_BETS &&
+    formMode === null;
   const betAnalysisActive =
     trackBet && displayBets.some((b) => b.autoMonitor && formMode !== b.id);
 
@@ -439,7 +460,10 @@ export function LiveInPlayPage() {
           {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
 
-          {/* ── 2a. ALERTA — aposta contra palpite do modelo ── */}
+          {/* ── 2a. REGRAS P0 ── */}
+          <LiveP0GuardBanner guardrails={data.betGuardrails} />
+
+          {/* ── 2b. ALERTA — aposta contra palpite do modelo ── */}
           <LiveAgainstModelAlert alerts={againstModelAlerts} />
 
           {/* ── 2b. ALERTA DE HEDGE (apostas do usuário) ── */}
@@ -544,6 +568,14 @@ export function LiveInPlayPage() {
                     Tenho aposta aberta
                   </label>
                 </div>
+
+                {trackBet && blockNewBets && (
+                  <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                    Cadastro de novas apostas desativado após{" "}
+                    {data.betGuardrails?.blockMinute ?? 45}&apos;. Use o monitor de cash-out
+                    nos bilhetes já abertos.
+                  </p>
+                )}
 
                 {trackBet && displayBets.length > 0 && (
                   <div className="mb-4 space-y-6">
@@ -689,8 +721,25 @@ export function LiveInPlayPage() {
                       />
                     </label>
                     <div className="mb-4 flex flex-wrap items-center gap-3">
+                      {hasDuplicateMarket(
+                        displayBets,
+                        betDraft,
+                        typeof formMode === "string" && formMode !== "add" ? formMode : undefined,
+                      ) && (
+                        <p className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                          Já existe bilhete neste mercado/palpite. Regra P0: máximo 1 por
+                          mercado.
+                        </p>
+                      )}
                       <button
                         type="button"
+                        disabled={hasDuplicateMarket(
+                          displayBets,
+                          betDraft,
+                          typeof formMode === "string" && formMode !== "add"
+                            ? formMode
+                            : undefined,
+                        )}
                         onClick={() => {
                           if (formMode === "add") {
                             setRegisteredBets((prev) =>
@@ -721,7 +770,7 @@ export function LiveInPlayPage() {
                           }
                           setFormMode(null);
                         }}
-                        className="rounded-lg border border-neon-green/40 bg-neon-green/15 px-4 py-2 text-sm font-semibold text-neon-green transition-colors hover:bg-neon-green/25"
+                        className="rounded-lg border border-neon-green/40 bg-neon-green/15 px-4 py-2 text-sm font-semibold text-neon-green transition-colors hover:bg-neon-green/25 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {formMode === "add" ? "Cadastrar e monitorar" : "Salvar alterações"}
                       </button>

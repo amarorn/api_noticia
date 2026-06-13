@@ -141,7 +141,9 @@ class Settings(BaseSettings):
     live_max_minute_full_advice: int = 85  # após este minuto, exigir EV muito alto
     live_late_game_ev_multiplier: float = 3.0  # multiplicador do threshold no fim de jogo
     live_late_game_min_edge_pp: float = 12.0
-    live_block_minute: int = 88  # sem novos aportes (só cash-out)
+    live_block_minute: int = 45  # P0: sem novos aportes após 45' (hit rate histórico)
+    bet_guardrails_enabled: bool = True
+    bet_one_per_market_enabled: bool = True
     dixit_sigma: float = 2.0
     mlflow_tracking_uri: str = "sqlite:///./mlflow.db"
     mlflow_experiment_wc: str = "api-noticia/wc-benchmark"

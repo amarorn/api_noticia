@@ -297,6 +297,25 @@ def run_live_advice(
         )
     overround = h2h_overround(snapshot.h2h_odds)
 
+    pre = predictor.predict(home, away, phase=phase)
+    pregame_probs = {"1": pre.prob_home, "X": pre.prob_draw, "2": pre.prob_away}
+    inplay_probs = {
+        "1": float(inplay_dict.get("prob_final_home") or 0),
+        "X": float(inplay_dict.get("prob_final_draw") or 0),
+        "2": float(inplay_dict.get("prob_final_away") or 0),
+    }
+    from models.bet_guardrails import build_bet_guardrails_payload
+
+    bet_guardrails = build_bet_guardrails_payload(
+        minute=minute,
+        pregame_prediction=pre.prediction,
+        pregame_probs=pregame_probs,
+        inplay_probs=inplay_probs,
+    )
+    aportes_out = report.get("aportes", [])
+    if minute >= settings.live_block_minute:
+        aportes_out = []
+
     return {
         "home_team": home,
         "away_team": away,
@@ -310,7 +329,7 @@ def run_live_advice(
         "n_momentum_events": len(momentum_events),
         "event_finalize": finalize_info,
         "cashout": report.get("cashout"),
-        "aportes": report.get("aportes", []),
+        "aportes": aportes_out,
         "inplay_summary": {
             "prob_final_home": inplay_dict.get("prob_final_home"),
             "prob_final_draw": inplay_dict.get("prob_final_draw"),
@@ -387,6 +406,7 @@ def run_live_advice(
             phase=phase,
             user_bet=user_bet,
         ),
+        "bet_guardrails": bet_guardrails,
         "trend_report": _build_trend_report(
             event_id=event_id,
             home_team=home,

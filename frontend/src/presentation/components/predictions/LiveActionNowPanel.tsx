@@ -164,6 +164,18 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
     };
   }
 
+  const guardrails = data.betGuardrails;
+  if (guardrails?.blockNewBets && !trackBet) {
+    return {
+      tone: "protect",
+      headline: `NÃO APOSTE — janela fechada após ${guardrails.blockMinute}'`,
+      subline:
+        guardrails.blockReason ??
+        "Novos aportes desativados. Monitore bilhetes abertos ou faça cash-out.",
+      showWatchList: false,
+    };
+  }
+
   const conf = data.confidence;
   const confWarning =
     conf && conf.score < 0.3

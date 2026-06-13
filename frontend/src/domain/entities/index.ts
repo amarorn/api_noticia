@@ -727,6 +727,17 @@ export interface SuperbetLiveAdvice {
     againstInplay: boolean;
     message: string;
   }>;
+  betGuardrails: {
+    enabled: boolean;
+    blockNewBets: boolean;
+    blockMinute: number;
+    blockReason: string | null;
+    oneBetPerMarket: boolean;
+    pregamePalpite: OutcomeLabel | null;
+    pregameProb: number | null;
+    inplayPalpite: OutcomeLabel | null;
+    inplayProb: number | null;
+  } | null;
 }
 
 /** Bilhete combo KXL (pré-jogo ou in-play via strategy.comboTicket). */

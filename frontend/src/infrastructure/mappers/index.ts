@@ -1070,6 +1070,7 @@ interface ApiSuperbetLiveAdvice {
   } | null;
   hedge_report?: Record<string, unknown> | null;
   against_model_alerts?: Array<Record<string, unknown>> | null;
+  bet_guardrails?: Record<string, unknown> | null;
   half_markets?: Record<string, Record<string, unknown>>;
   first_half_totals?: Record<string, Record<string, number>>;
   second_half_totals?: Record<string, Record<string, number>>;
@@ -1357,6 +1358,32 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
         message: String(a.message ?? ""),
       }),
     ),
+    betGuardrails: raw.bet_guardrails
+      ? {
+          enabled: Boolean(raw.bet_guardrails.enabled),
+          blockNewBets: Boolean(raw.bet_guardrails.block_new_bets),
+          blockMinute: Number(raw.bet_guardrails.block_minute ?? 45),
+          blockReason:
+            raw.bet_guardrails.block_reason != null
+              ? String(raw.bet_guardrails.block_reason)
+              : null,
+          oneBetPerMarket: Boolean(raw.bet_guardrails.one_bet_per_market),
+          pregamePalpite: raw.bet_guardrails.pregame_palpite
+            ? mapOutcome(String(raw.bet_guardrails.pregame_palpite))
+            : null,
+          pregameProb:
+            raw.bet_guardrails.pregame_prob != null
+              ? Number(raw.bet_guardrails.pregame_prob)
+              : null,
+          inplayPalpite: raw.bet_guardrails.inplay_palpite
+            ? mapOutcome(String(raw.bet_guardrails.inplay_palpite))
+            : null,
+          inplayProb:
+            raw.bet_guardrails.inplay_prob != null
+              ? Number(raw.bet_guardrails.inplay_prob)
+              : null,
+        }
+      : null,
   };
 }
 

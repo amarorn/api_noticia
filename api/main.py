@@ -1628,28 +1628,52 @@ def register_open_bet(req: UserOpenBetRequest):
     """Recebe apostas abertas capturadas da Superbet (extensão ou script)."""
     import uuid
 
-    from api.user_bets_store import add_open_bet
+    from fastapi import HTTPException
+
+    from api.user_bets_store import add_open_bet, list_open_bets
+    from models.bet_guardrails import BetGuardrailError
 
     bet_id = req.id or str(uuid.uuid4())
     pick_dicts = [p.model_dump() for p in req.picks]
-    ub = add_open_bet(
-        {
-            "id": bet_id,
-            "superbet_event_id": req.superbet_event_id,
-            "event_name": req.event_name,
-            "home_team": req.home_team,
-            "away_team": req.away_team,
-            "picks": pick_dicts,
-            "stake": req.stake,
-            "odds_placed": req.odds_placed,
-            "potential_return": req.potential_return,
-            "cashout_value": req.cashout_value,
-            "ticket_code": req.ticket_code,
-            "status": "open",
-            "source": req.source,
-            "captured_at": req.captured_at or __import__("datetime", fromlist=["datetime"]).datetime.now().isoformat(),
-        }
-    )
+
+    minute = req.minute
+    if minute is None and req.superbet_event_id:
+        try:
+            from ingest.superbet.client import SuperbetClient
+
+            snap = SuperbetClient().fetch_event(req.superbet_event_id)
+            if snap.inplay:
+                minute = snap.inplay.minute
+        except Exception:
+            pass
+
+    try:
+        ub = add_open_bet(
+            {
+                "id": bet_id,
+                "superbet_event_id": req.superbet_event_id,
+                "event_name": req.event_name,
+                "home_team": req.home_team,
+                "away_team": req.away_team,
+                "picks": pick_dicts,
+                "stake": req.stake,
+                "odds_placed": req.odds_placed,
+                "potential_return": req.potential_return,
+                "cashout_value": req.cashout_value,
+                "ticket_code": req.ticket_code,
+                "status": "open",
+                "source": req.source,
+                "captured_at": req.captured_at
+                or __import__("datetime", fromlist=["datetime"]).datetime.now().isoformat(),
+            },
+            minute=minute,
+        )
+    except BetGuardrailError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
+
     return {
         "id": ub.id,
         "message": "Aposta cadastrada com sucesso",
@@ -1657,6 +1681,7 @@ def register_open_bet(req: UserOpenBetRequest):
         "picks_count": len(ub.picks),
         "stake": ub.stake,
         "odds_placed": ub.odds_placed,
+        "open_bets_count": len(list_open_bets()),
     }
 
 

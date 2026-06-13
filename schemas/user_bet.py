@@ -31,6 +31,12 @@ class UserOpenBetRequest(BaseModel):
     ticket_code: str | None = Field(None, description="Código do bilhete na Superbet (ex: 892P-1YINSZ)")
     source: str = Field("extension", description="Origem: extension | manual")
     captured_at: str | None = Field(None, description="ISO timestamp de quando a aposta foi capturada")
+    minute: int | None = Field(
+        None,
+        ge=0,
+        le=120,
+        description="Minuto do jogo no momento do cadastro (para guardrails P0)",
+    )
 
     @model_validator(mode="after")
     def _check_combo_odds(self) -> "UserOpenBetRequest":

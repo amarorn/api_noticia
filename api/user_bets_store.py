@@ -59,12 +59,85 @@ def _save_store(store: dict[str, Any]) -> None:
     path.write_text(json.dumps(store, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def add_open_bet(ub_kwargs: dict[str, Any]) -> UserOpenBet:
+def add_open_bet(
+    ub_kwargs: dict[str, Any],
+    *,
+    minute: int | None = None,
+    skip_guardrails: bool = False,
+) -> UserOpenBet:
+    from models.bet_guardrails import validate_register_open_bet
+
+    if not skip_guardrails:
+        store = _load_store()
+        picks = ub_kwargs.get("picks") or []
+        validate_register_open_bet(
+            existing_bets=store.get("bets", []),
+            superbet_event_id=ub_kwargs.get("superbet_event_id"),
+            home_team=str(ub_kwargs.get("home_team", "")),
+            away_team=str(ub_kwargs.get("away_team", "")),
+            picks=picks,
+            bet_id=ub_kwargs.get("id"),
+            minute=minute,
+        )
+
     store = _load_store()
     ub = UserOpenBet(**ub_kwargs)
     store["bets"].append(ub.model_dump(mode="json"))
     _save_store(store)
     return ub
+
+
+def dedupe_open_bets_store() -> dict[str, int]:
+    """Remove apostas abertas duplicadas (mesmo evento + mercado + palpite).
+
+    Mantém o registro com ``ticket_code``; senão o ``captured_at`` mais recente.
+    """
+    from models.bet_guardrails import bet_market_fingerprint
+
+    store = _load_store()
+    bets: list[dict[str, Any]] = store.get("bets", [])
+    open_indices: list[int] = [i for i, b in enumerate(bets) if b.get("status") == "open"]
+    if not open_indices:
+        return {"before": len(bets), "after": len(bets), "removed": 0}
+
+    best_by_key: dict[tuple[Any, ...], int] = {}
+    for idx in open_indices:
+        b = bets[idx]
+        picks = b.get("picks") or []
+        if not picks:
+            continue
+        pk = picks[0]
+        key = bet_market_fingerprint(
+            superbet_event_id=b.get("superbet_event_id"),
+            home_team=str(b.get("home_team", "")),
+            away_team=str(b.get("away_team", "")),
+            market=str(pk.get("market", "")),
+            outcome=str(pk.get("outcome", "")),
+        )
+        prev_idx = best_by_key.get(key)
+        if prev_idx is None:
+            best_by_key[key] = idx
+            continue
+        prev = bets[prev_idx]
+        prev_score = (1 if prev.get("ticket_code") else 0, str(prev.get("captured_at", "")))
+        cur_score = (1 if b.get("ticket_code") else 0, str(b.get("captured_at", "")))
+        if cur_score > prev_score:
+            best_by_key[key] = idx
+
+    keep_open = set(best_by_key.values())
+    removed = 0
+    new_bets: list[dict[str, Any]] = []
+    for i, b in enumerate(bets):
+        if b.get("status") == "open" and i not in keep_open:
+            removed += 1
+            continue
+        new_bets.append(b)
+
+    if removed:
+        store["bets"] = new_bets
+        _save_store(store)
+
+    return {"before": len(bets), "after": len(new_bets), "removed": removed}
 
 
 def list_open_bets(user_id: str | None = None) -> list[UserOpenBet]:

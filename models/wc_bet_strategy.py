@@ -288,59 +288,64 @@ def build_bet_strategy_report(
         }
 
     opportunities: list[dict[str, Any]] = []
+    block_new = minute >= settings.live_block_minute
     decay = _time_decay_confidence(minute)
     effective_threshold = threshold / decay if decay > 0 else threshold
-    for rank, a in enumerate(aportes, start=1):
-        tier = _tier_by_edge(a.edge_pp, min_edge_pp)
-        stake_pct = a.suggested_stake_pct
-        if tier == "leve":
-            stake_pct = round(min(stake_pct, 1.5), 2)
-        if minute >= 80:
-            stake_pct = round(stake_pct * 0.6, 2)
-        elif minute >= 75:
-            stake_pct = round(stake_pct * 0.8, 2)
+    if not block_new:
+        for rank, a in enumerate(aportes, start=1):
+            tier = _tier_by_edge(a.edge_pp, min_edge_pp)
+            stake_pct = a.suggested_stake_pct
+            if tier == "leve":
+                stake_pct = round(min(stake_pct, 1.5), 2)
+            if minute >= 80:
+                stake_pct = round(stake_pct * 0.6, 2)
+            elif minute >= 75:
+                stake_pct = round(stake_pct * 0.8, 2)
 
-        timing = assess_bet_timing(
-            event_id=event_id,
-            market=a.market,
-            outcome=a.outcome,
-            model_prob=a.model_prob,
-            implied_prob=a.implied_prob,
-        )
-        fundamentacao = build_fundamentacao(
-            confidence=confidence,
-            market=a.market,
-            model_prob=a.model_prob,
-            implied_prob=a.implied_prob,
-            edge_pp=a.edge_pp,
-            minute=minute,
-        )
-        opportunities.append({
-            "rank": rank,
-            "market": a.market,
-            "outcome": a.outcome,
-            "label": a.label,
-            "tier": tier,
-            "model_prob": a.model_prob,
-            "market_odd": a.market_odd,
-            "implied_prob": a.implied_prob,
-            "expected_value": a.expected_value,
-            "edge_pp": a.edge_pp,
-            "suggested_stake_pct": stake_pct,
-            "suggested_stake_value": round(bankroll * stake_pct / 100, 2),
-            "action": a.action,
-            "timing": timing["timing"],
-            "timing_reason": timing["timing_reason"],
-            "fundamentacao": fundamentacao,
-        })
+            timing = assess_bet_timing(
+                event_id=event_id,
+                market=a.market,
+                outcome=a.outcome,
+                model_prob=a.model_prob,
+                implied_prob=a.implied_prob,
+            )
+            fundamentacao = build_fundamentacao(
+                confidence=confidence,
+                market=a.market,
+                model_prob=a.model_prob,
+                implied_prob=a.implied_prob,
+                edge_pp=a.edge_pp,
+                minute=minute,
+            )
+            opportunities.append({
+                "rank": rank,
+                "market": a.market,
+                "outcome": a.outcome,
+                "label": a.label,
+                "tier": tier,
+                "model_prob": a.model_prob,
+                "market_odd": a.market_odd,
+                "implied_prob": a.implied_prob,
+                "expected_value": a.expected_value,
+                "edge_pp": a.edge_pp,
+                "suggested_stake_pct": stake_pct,
+                "suggested_stake_value": round(bankroll * stake_pct / 100, 2),
+                "action": a.action,
+                "timing": timing["timing"],
+                "timing_reason": timing["timing_reason"],
+                "fundamentacao": fundamentacao,
+            })
 
     strong_ops = sum(1 for o in opportunities if o["tier"] in {"forte", "moderada"})
-    posture = _posture(
-        cashout_action=cashout["action"] if cashout else None,
-        strong_ops=strong_ops,
-        minute=minute,
-        remaining_ev=remaining_ev,
-    )
+    if block_new:
+        posture = "defensivo"
+    else:
+        posture = _posture(
+            cashout_action=cashout["action"] if cashout else None,
+            strong_ops=strong_ops,
+            minute=minute,
+            remaining_ev=remaining_ev,
+        )
 
     total_exposure_pct = round(sum(o["suggested_stake_pct"] for o in opportunities[:3]), 2)
     max_new_exposure_pct = min(5.0, total_exposure_pct) if posture != "defensivo" else min(2.0, total_exposure_pct)
