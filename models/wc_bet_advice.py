@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from config import settings
-from config import settings
+from models.inplay_market_period import is_market_blocked_by_minute
 from models.economics import coase_effective_min_edge, live_effective_min_edge
 from models.ev_value import evaluate_outcome
 from models.wc_trend_confidence import assess_prediction_confidence
@@ -60,12 +60,17 @@ class AporteAdvice:
 
 
 _INPLAY_HALF_CFG: dict[str, dict[str, Any]] = {
+    "ft": {
+        "handicap": "ft_handicap_probs",
+        "asian_handicap": "ft_asian_handicap_probs",
+    },
     "1h": {
         "correct_scores": "ht_correct_scores",
         "exact_totals": "ht_exact_totals",
         "exact_team_home": "ht_home_exact",
         "exact_team_away": "ht_away_exact",
         "handicap": "ht_handicap_probs",
+        "asian_handicap": "ht_asian_handicap_probs",
         "h2h_probs": {"1": "prob_ht_home", "X": "prob_ht_draw", "2": "prob_ht_away"},
     },
     "2h": {
@@ -74,11 +79,12 @@ _INPLAY_HALF_CFG: dict[str, dict[str, Any]] = {
         "exact_team_home": "sh_home_exact",
         "exact_team_away": "sh_away_exact",
         "handicap": "sh_handicap_probs",
+        "asian_handicap": "sh_asian_handicap_probs",
         "h2h_probs": {"1": "prob_sh_home", "X": "prob_sh_draw", "2": "prob_sh_away"},
     },
 }
 
-_HCAP_MARKET_RE = re.compile(r"^(1h|2h)_hcap_(home|away)_(.+)$")
+_HCAP_MARKET_RE = re.compile(r"^(ft|1h|2h)_(hcap|ah)_(home|away)_(.+)$")
 
 
 def handicap_line_from_key(line_key: str) -> float | None:
@@ -99,14 +105,16 @@ def handicap_line_from_key(line_key: str) -> float | None:
 
 
 def parse_period_handicap_market(market: str) -> tuple[str, str, float] | None:
-    """Retorna (periodo, lado, linha) para mercados 1h/2h_hcap_*."""
+    """Retorna (periodo, lado, linha) para mercados ft/1h/2h_hcap_* ou *_ah_*."""
     match = _HCAP_MARKET_RE.match(market)
     if not match:
         return None
-    line = handicap_line_from_key(match.group(3))
+    if match.group(2) == "ah":
+        return None
+    line = handicap_line_from_key(match.group(4))
     if line is None:
         return None
-    return match.group(1), match.group(2), line
+    return match.group(1), match.group(3), line
 
 
 def _score_from_inplay(inplay: dict[str, Any]) -> tuple[int, int]:
@@ -149,6 +157,8 @@ def is_aggressive_leading_handicap(
 
 
 def _half_period_from_market(market: str) -> str | None:
+    if market.startswith("ft_"):
+        return "ft"
     if market.startswith("1h_"):
         return "1h"
     if market.startswith("2h_"):
@@ -206,6 +216,17 @@ def _prob_from_half_market(inplay: dict[str, Any], market: str, outcome: str) ->
         side, line = parts
         return inplay.get(cfg["handicap"], {}).get(f"{side}_{line}")
 
+    if suffix.startswith("ah_"):
+        rest = suffix[len("ah_") :]
+        parts = rest.split("_", 1)
+        if len(parts) != 2:
+            return None
+        side, line = parts
+        ah_key = cfg.get("asian_handicap")
+        if not ah_key:
+            return None
+        return inplay.get(ah_key, {}).get(f"{side}_{line}")
+
     return None
 
 
@@ -253,7 +274,22 @@ def _market_odd_half(
         side, line = parts
         return period_markets.get("handicap", {}).get(line, {}).get(side)
 
+    if suffix.startswith("ah_"):
+        rest = suffix[len("ah_") :]
+        parts = rest.split("_", 1)
+        if len(parts) != 2:
+            return None
+        side, line = parts
+        return period_markets.get("asian_handicap", {}).get(line, {}).get(side)
+
     return None
+
+
+def _format_handicap_line_label(line_key: str) -> str:
+    val = handicap_line_from_key(line_key)
+    if val is None:
+        return line_key.replace("m", "-").replace("p", "+").replace("_", ".")
+    return f"{val:+.1f}"
 
 
 def _half_aporte_specs(
@@ -267,15 +303,18 @@ def _half_aporte_specs(
         return []
     half_markets = getattr(snapshot, "half_markets", None) or {}
     specs: list[tuple[str, str, str, Callable[[], float | None]]] = []
-    period_labels = {"1h": "1º Tempo", "2h": "2º Tempo"}
+    period_labels = {"ft": "Jogo", "1h": "1º Tempo", "2h": "2º Tempo"}
     h2h_labels = {"1": home_team, "X": "Empate", "2": away_team}
 
     for period, period_label in period_labels.items():
         pm = half_markets.get(period, {})
-        cfg = _INPLAY_HALF_CFG[period]
+        if not pm:
+            continue
+        cfg = _INPLAY_HALF_CFG.get(period, {})
 
+        h2h_probs = cfg.get("h2h_probs") or {}
         for code in pm.get("h2h", {}):
-            prob_key = cfg["h2h_probs"].get(code)
+            prob_key = h2h_probs.get(code)
             if not prob_key:
                 continue
             specs.append((
@@ -291,7 +330,7 @@ def _half_aporte_specs(
                 market_key,
                 "yes",
                 f"{period_label} RC {score}",
-                lambda s=score, c=cfg: inplay.get(c["correct_scores"], {}).get(s),
+                lambda s=score, c=cfg: inplay.get(c.get("correct_scores", ""), {}).get(s),
             ))
 
         for goals in pm.get("exact_total", {}):
@@ -299,7 +338,7 @@ def _half_aporte_specs(
                 f"{period}_exact_{_exact_market_suffix(goals)}",
                 "yes",
                 f"{period_label} — exatamente {goals} gols",
-                lambda g=goals, c=cfg: inplay.get(c["exact_totals"], {}).get(g),
+                lambda g=goals, c=cfg: inplay.get(c.get("exact_totals", ""), {}).get(g),
             ))
 
         for goals in pm.get("exact_team_home", {}):
@@ -307,7 +346,7 @@ def _half_aporte_specs(
                 f"{period}_exact_home_{_exact_market_suffix(goals)}",
                 "yes",
                 f"{period_label} — {home_team} exatamente {goals} gols",
-                lambda g=goals, c=cfg: inplay.get(c["exact_team_home"], {}).get(g),
+                lambda g=goals, c=cfg: inplay.get(c.get("exact_team_home", ""), {}).get(g),
             ))
 
         for goals in pm.get("exact_team_away", {}):
@@ -315,17 +354,33 @@ def _half_aporte_specs(
                 f"{period}_exact_away_{_exact_market_suffix(goals)}",
                 "yes",
                 f"{period_label} — {away_team} exatamente {goals} gols",
-                lambda g=goals, c=cfg: inplay.get(c["exact_team_away"], {}).get(g),
+                lambda g=goals, c=cfg: inplay.get(c.get("exact_team_away", ""), {}).get(g),
             ))
 
+        hcap_cfg = cfg.get("handicap")
         for line, sides in pm.get("handicap", {}).items():
+            if not hcap_cfg:
+                continue
             for side in sides:
                 team_name = home_team if side == "home" else away_team
                 specs.append((
                     f"{period}_hcap_{side}_{line}",
                     "yes",
-                    f"{period_label} — {team_name} handicap {line.replace('m', '-').replace('p', '+').replace('_', '.')}",
-                    lambda s=side, lk=line, c=cfg: inplay.get(c["handicap"], {}).get(f"{s}_{lk}"),
+                    f"{period_label} — {team_name} handicap {_format_handicap_line_label(line)}",
+                    lambda s=side, lk=line, ck=hcap_cfg: inplay.get(ck, {}).get(f"{s}_{lk}"),
+                ))
+
+        ah_cfg = cfg.get("asian_handicap")
+        for line, sides in pm.get("asian_handicap", {}).items():
+            if not ah_cfg:
+                continue
+            for side in sides:
+                team_name = home_team if side == "home" else away_team
+                specs.append((
+                    f"{period}_ah_{side}_{line}",
+                    "yes",
+                    f"{period_label} — {team_name} AH {_format_handicap_line_label(line)}",
+                    lambda s=side, lk=line, ck=ah_cfg: inplay.get(ck, {}).get(f"{s}_{lk}"),
                 ))
 
     return specs
@@ -485,6 +540,22 @@ def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: st
     half_odd = _market_odd_half(snapshot, market, outcome)
     if half_odd is not None:
         return half_odd
+    if market.startswith("corners_over_"):
+        line = market.replace("corners_over_", "").replace("_", ".")
+        prices = (snapshot.corners or {}).get(line) or {}
+        for name, price in prices.items():
+            if outcome in {"yes", "sim"} and "mais" in name.lower():
+                return price
+            if outcome in {"no", "não", "nao"} and "menos" in name.lower():
+                return price
+    if market.startswith("cards_over_"):
+        line = market.replace("cards_over_", "").replace("_", ".")
+        prices = (snapshot.yellow_cards or {}).get(line) or {}
+        for name, price in prices.items():
+            if outcome in {"yes", "sim"} and "mais" in name.lower():
+                return price
+            if outcome in {"no", "não", "nao"} and "menos" in name.lower():
+                return price
     return None
 
 
@@ -682,8 +753,8 @@ def _aporte_candidates(
             if under_prob is not None:
                 specs.append((f"2h_over_{line_num}", "no", f"2º Tempo: menos de {line_key} gols", lambda p=under_prob: p))
 
-    # --- 1º Tempo (linhas disponíveis) ---
-    if snapshot:
+    # --- 1º Tempo (linhas disponíveis) — só durante o 1T ---
+    if snapshot and minute <= 45:
         for line_key in snapshot.first_half_totals:
             line_num = line_key.replace(".", "_")
             over_prob = ht_lp.get(f"over_{line_num}")
@@ -692,6 +763,51 @@ def _aporte_candidates(
                 specs.append((f"1h_over_{line_num}", "yes", f"1º Tempo: mais de {line_key} gols", lambda p=over_prob: p))
             if under_prob is not None:
                 specs.append((f"1h_over_{line_num}", "no", f"1º Tempo: menos de {line_key} gols", lambda p=under_prob: p))
+
+    # --- Escanteios FT (pós-intervalo, modelo HT-adjust) ---
+    corner_lp = inplay.get("corner_line_probs") or {}
+    if snapshot and minute > 45:
+        for line_key in snapshot.corners:
+            line_num = line_key.replace(".", "_")
+            over_prob = corner_lp.get(f"over_{line_num}")
+            under_prob = corner_lp.get(f"under_{line_num}")
+            if over_prob is not None:
+                specs.append((
+                    f"corners_over_{line_num}",
+                    "yes",
+                    f"Escanteios: mais de {line_key}",
+                    lambda p=over_prob: p,
+                ))
+            if under_prob is not None:
+                specs.append((
+                    f"corners_over_{line_num}",
+                    "no",
+                    f"Escanteios: menos de {line_key}",
+                    lambda p=under_prob: p,
+                ))
+
+    # --- Cartões amarelos FT (pós-intervalo) ---
+    card_lp = inplay.get("card_line_probs") or {}
+    if snapshot and minute > 45:
+        for line_key in snapshot.yellow_cards:
+            line_num = line_key.replace(".", "_")
+            over_prob = card_lp.get(f"over_{line_num}")
+            under_prob = card_lp.get(f"under_{line_num}")
+            if over_prob is not None:
+                specs.append((
+                    f"cards_over_{line_num}",
+                    "yes",
+                    f"Cartões: mais de {line_key}",
+                    lambda p=over_prob: p,
+                ))
+            if under_prob is not None:
+                specs.append((
+                    f"cards_over_{line_num}",
+                    "no",
+                    f"Cartões: menos de {line_key}",
+                    lambda p=under_prob: p,
+                ))
+
 
     # --- Combos ---
     combo_map = {
@@ -847,9 +963,6 @@ def advise_aportes(
     minute: int = 0,
     confidence_score: float = 1.0,
 ) -> list[AporteAdvice]:
-    if live and minute >= settings.live_block_minute:
-        return []
-
     threshold = _effective_min_edge(min_edge=min_edge, live=live)
     min_edge_pp = settings.live_min_edge_pp
 
@@ -870,7 +983,10 @@ def advise_aportes(
         return []
 
     if confidence_score < 0.5:
-        min_edge_pp = max(min_edge_pp, 8.0)
+        min_edge_pp = max(min_edge_pp, 10.0)
+
+    def _needs_high_confidence(market: str) -> bool:
+        return "_ah_" in market or "_hcap_" in market or market.startswith("corners_") or market.startswith("cards_")
 
     for market, outcome, label, prob, odd in _aporte_candidates(
         inplay,
@@ -879,8 +995,12 @@ def advise_aportes(
         away_team=away_team,
         minute=minute,
     ):
+        if live and is_market_blocked_by_minute(market, minute):
+            continue
         # Filtro de confiança: sem dados suficientes, não recomendar H2H
         if market == "h2h" and not allow_h2h:
+            continue
+        if confidence_score < 0.5 and _needs_high_confidence(market):
             continue
         # Filtro de sanidade: odds suspeitas (provavelmente desatualizadas)
         hp = _house_prob(snapshot, market, outcome)

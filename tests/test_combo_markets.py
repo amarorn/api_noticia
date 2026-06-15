@@ -48,8 +48,32 @@ def test_enrich_leg_goals_1h_from_fixture(mexico_snapshot):
     assert out["expected_value"] > 0
 
 
+def test_enrich_leg_team_shots_from_fixture(mexico_snapshot):
+    leg = {
+        "stat": "shots",
+        "period": "full_time",
+        "direction": "under",
+        "line": 8.5,
+        "entity": "team",
+        "team_side": "home",
+        "hit_rate": 0.9,
+        "hits": 9,
+        "total": 10,
+        "label": "test",
+        "pattern_ref": "test",
+    }
+    out = enrich_leg_with_superbet(leg, mexico_snapshot)
+    assert out.get("superbet_market") == "México - Total de Chutes"
+    assert out["available_on_book"] is True
+    assert out["superbet_pick"] == "Menos de 8.5"
+
+
 def test_combo_ticket_enriched_with_combo_odd(mexico_snapshot):
     ticket = build_combo_ticket("Mexico", "South Africa", snapshot=mexico_snapshot)
     assert ticket.get("combo_odd") is not None or ticket["book_coverage"]["main_available"] >= 0
     if ticket.get("combo_odd"):
         assert ticket["combo_ev"] is not None
+    assert any(
+        "Criar Aposta Superbet use só as 2 pernas principais" in note
+        for note in ticket["strategy_notes"]
+    )

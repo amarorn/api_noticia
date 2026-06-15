@@ -12,6 +12,8 @@ import type {
   WcSquadsIndex,
   UserOpenBetsList,
 } from "@/domain/entities";
+import type { ComboProposalContext } from "@/application/dtos/comboProposal";
+import { buildProposalApiBody } from "@/presentation/utils/comboProposalPayload";
 import type { WcPredictRequestDto } from "../dtos";
 
 export class GetWcRoundUseCase {
@@ -134,7 +136,7 @@ export class GetWcFriendliesUseCase {
 export class GetSuperbetLiveUseCase {
   constructor(private readonly repository: IWcRepository) {}
 
-  execute(dto?: { sportId?: number; allSports?: boolean }) {
+  execute(dto?: { sportId?: number; allSports?: boolean; rank?: boolean }) {
     return this.repository.getSuperbetLive(dto);
   }
 }
@@ -150,6 +152,7 @@ export class GetSuperbetLiveAdviceUseCase {
     outcome?: string;
     stake?: number;
     oddsPlaced?: number;
+    fast?: boolean;
   }) {
     return this.repository.getSuperbetLiveAdvice(dto);
   }
@@ -196,5 +199,13 @@ export class GetUserOpenBetsUseCase {
 
   execute(): Promise<UserOpenBetsList> {
     return this.repository.getUserOpenBets();
+  }
+}
+
+export class RegisterComboProposalUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(proposal: ComboProposalContext) {
+    return this.repository.registerComboProposal(buildProposalApiBody(proposal));
   }
 }

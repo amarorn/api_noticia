@@ -122,7 +122,11 @@
       "phase": "group",
       "kickoff": "2026-06-11T13:00:00-06:00",
       "venue": "Mexico City Stadium",
-      "city": "Cidade do México"
+      "city": "Cidade do México",
+      "home_score": 2,
+      "away_score": 0,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "A-r1-coreia-do-su-republica-tc",
@@ -144,7 +148,11 @@
       "phase": "group",
       "kickoff": "2026-06-12T15:00:00-04:00",
       "venue": "Toronto Stadium",
-      "city": "Toronto"
+      "city": "Toronto",
+      "home_score": 1,
+      "away_score": 1,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "D-r1-estados-unid-paraguai",
@@ -166,7 +174,11 @@
       "phase": "group",
       "kickoff": "2026-06-13T21:00:00-04:00",
       "venue": "Boston Stadium",
-      "city": "Foxborough"
+      "city": "Foxborough",
+      "home_score": 0,
+      "away_score": 1,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "D-r1-australia-turquia",
@@ -177,7 +189,11 @@
       "phase": "group",
       "kickoff": "2026-06-13T21:00:00-07:00",
       "venue": "BC Place Vancouver",
-      "city": "Vancouver"
+      "city": "Vancouver",
+      "home_score": 2,
+      "away_score": 0,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "C-r1-brasil-marrocos",
@@ -188,7 +204,11 @@
       "phase": "group",
       "kickoff": "2026-06-13T18:00:00-04:00",
       "venue": "New York New Jersey Stadium",
-      "city": "East Rutherford"
+      "city": "East Rutherford",
+      "home_score": 1,
+      "away_score": 1,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "B-r1-catar-suica",
@@ -199,7 +219,11 @@
       "phase": "group",
       "kickoff": "2026-06-13T12:00:00-07:00",
       "venue": "San Francisco Bay Area Stadium",
-      "city": "Santa Clara"
+      "city": "Santa Clara",
+      "home_score": 1,
+      "away_score": 1,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "E-r1-costa-do-mar-equador",
@@ -210,7 +234,11 @@
       "phase": "group",
       "kickoff": "2026-06-14T19:00:00-04:00",
       "venue": "Philadelphia Stadium",
-      "city": "Filadélfia"
+      "city": "Filadélfia",
+      "home_score": 1,
+      "away_score": 0,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "E-r1-alemanha-curacau",
@@ -221,7 +249,11 @@
       "phase": "group",
       "kickoff": "2026-06-14T12:00:00-05:00",
       "venue": "Houston Stadium",
-      "city": "Houston"
+      "city": "Houston",
+      "home_score": 7,
+      "away_score": 1,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "F-r1-holanda-japao",
@@ -232,7 +264,11 @@
       "phase": "group",
       "kickoff": "2026-06-14T15:00:00-05:00",
       "venue": "Dallas Stadium",
-      "city": "Arlington"
+      "city": "Arlington",
+      "home_score": 2,
+      "away_score": 2,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "F-r1-suecia-tunisia",
@@ -243,7 +279,11 @@
       "phase": "group",
       "kickoff": "2026-06-14T20:00:00-06:00",
       "venue": "Estadio Monterrey",
-      "city": "Monterrey"
+      "city": "Monterrey",
+      "home_score": 5,
+      "away_score": 1,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
     },
     {
       "id": "H-r1-arabia-saudi-uruguai",
@@ -905,5 +945,6 @@
       "venue": "Atlanta Stadium",
       "city": "Atlanta"
     }
-  ]
+  ],
+  "results_synced_at": "2026-06-15T04:21:39.187344+00:00"
 }

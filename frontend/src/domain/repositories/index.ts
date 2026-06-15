@@ -90,6 +90,7 @@ export interface IWcRepository {
   getSuperbetLive(request?: {
     sportId?: number;
     allSports?: boolean;
+    rank?: boolean;
   }): Promise<import("@/domain/entities").SuperbetLiveFeed>;
   getSuperbetEvent(request: {
     eventId: number;
@@ -103,6 +104,7 @@ export interface IWcRepository {
     outcome?: string;
     stake?: number;
     oddsPlaced?: number;
+    fast?: boolean;
   }): Promise<import("@/domain/entities").SuperbetLiveAdvice>;
   getComboTicket(request: {
     homeTeam: string;
@@ -119,6 +121,9 @@ export interface IWcRepository {
     sofascoreEventId?: number;
   }): Promise<import("@/domain/entities").WcSimulation>;
   getUserOpenBets(): Promise<import("@/domain/entities").UserOpenBetsList>;
+  registerComboProposal(
+    body: import("@/application/dtos/comboProposal").ComboProposalApiBody,
+  ): Promise<import("@/application/dtos/comboProposal").RegisterComboProposalResult>;
 }
 
 export interface IBrasileiraoRepository {

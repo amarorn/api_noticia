@@ -130,6 +130,10 @@ def _build_trend_report(
         return None
 
 
+from ingest.superbet.live_stats_payload import build_live_stats_payload
+from ingest.superbet.live_advice_cache import advice_cache_key, run_with_advice_cache
+
+
 def run_live_advice(
     event_id: int,
     predictor: Any,
@@ -139,7 +143,9 @@ def run_live_advice(
     user_bet: UserBetInput | None = None,
     save_bronze: bool = True,
     save_tick: bool = True,
+    use_sofascore_live: bool | None = None,
     client: SuperbetClient | None = None,
+    fast: bool = False,
 ) -> dict[str, Any]:
     superbet_client = client or SuperbetClient()
     snapshot = superbet_client.fetch_event(event_id)
@@ -161,28 +167,102 @@ def run_live_advice(
         status = None
         period_label = None
 
+    cache_key = advice_cache_key(
+        event_id=event_id,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        bankroll=bankroll,
+        fast=fast,
+        phase=phase,
+    )
+
+    def _compute() -> dict[str, Any]:
+        return _build_live_advice_payload(
+            event_id=event_id,
+            predictor=predictor,
+            snapshot=snapshot,
+            home=home,
+            away=away,
+            home_score=home_score,
+            away_score=away_score,
+            minute=minute,
+            ht_h=ht_h,
+            ht_a=ht_a,
+            status=status,
+            period_label=period_label,
+            phase=phase,
+            bankroll=bankroll,
+            user_bet=user_bet,
+            save_tick=save_tick,
+            use_sofascore_live=use_sofascore_live,
+            fast=fast,
+        )
+
+    return run_with_advice_cache(cache_key, _compute, fast=fast)
+
+
+def _build_live_advice_payload(
+    *,
+    event_id: int,
+    predictor: Any,
+    snapshot: SuperbetEventSnapshot,
+    home: str,
+    away: str,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    ht_h: int | None,
+    ht_a: int | None,
+    status: str | None,
+    period_label: str | None,
+    phase: str,
+    bankroll: float,
+    user_bet: UserBetInput | None,
+    save_tick: bool,
+    use_sofascore_live: bool | None,
+    fast: bool,
+) -> dict[str, Any]:
     # --- Momentum: escanteios + eventos Sofascore ao vivo ---
     momentum_events: list[dict] = []
     sofascore_event_id: int | None = None
     live_stats: dict[str, float | None] = {}
-    if snapshot.inplay and settings.inplay_use_sofascore_live:
-        try:
-            from datetime import UTC, datetime
+    sofascore_skipped: str | None = None
+    sofascore_live = (
+        settings.inplay_use_sofascore_live if use_sofascore_live is None else use_sofascore_live
+    )
+    if snapshot.inplay and sofascore_live and not fast:
+        from ingest.sofascore.client import SofascoreClient
 
-            from ingest.sofascore.live_momentum import enrich_momentum_from_sofascore
-            from ingest.sofascore.live_stats import fetch_live_match_stats
-
-            ss_events, sofascore_event_id = enrich_momentum_from_sofascore(
-                home,
-                away,
-                match_date=datetime.now(UTC).date(),
-                save_bronze=True,
+        if SofascoreClient.is_globally_blocked():
+            remaining = int(SofascoreClient.waf_cooldown_remaining_sec())
+            sofascore_skipped = (
+                f"Sofascore em cooldown ({remaining}s) — usando dados Superbet e estimativa de posse."
             )
-            momentum_events.extend(ss_events)
-            if sofascore_event_id:
-                live_stats = fetch_live_match_stats(sofascore_event_id)
-        except Exception as exc:
-            logger.warning("sofascore_momentum_falha event_id=%s: %s", event_id, exc)
+            logger.info("sofascore_skip_cooldown event_id=%s remaining_sec=%s", event_id, remaining)
+        else:
+            try:
+                from datetime import UTC, datetime
+
+                from ingest.sofascore.live_momentum import enrich_momentum_from_sofascore
+                from ingest.sofascore.live_stats import fetch_live_match_stats
+
+                ss_events, sofascore_event_id = enrich_momentum_from_sofascore(
+                    home,
+                    away,
+                    match_date=datetime.now(UTC).date(),
+                    save_bronze=True,
+                    waf_max_retries=settings.inplay_sofascore_waf_max_retries,
+                )
+                momentum_events.extend(ss_events)
+                if sofascore_event_id:
+                    live_stats = fetch_live_match_stats(
+                        sofascore_event_id,
+                        waf_max_retries=settings.inplay_sofascore_waf_max_retries,
+                    )
+            except Exception as exc:
+                logger.warning("sofascore_momentum_falha event_id=%s: %s", event_id, exc)
+                sofascore_skipped = "Sofascore indisponível — posse estimada por escanteios."
 
     if snapshot.inplay:
         ip = snapshot.inplay
@@ -221,8 +301,12 @@ def run_live_advice(
     }
 
     from models.wc_market_shrinkage import market_probs_from_h2h_implied
+    from ingest.superbet.halftime_snapshot import load_or_freeze_halftime
+    from models.wc_halftime_adjust import build_halftime_report
 
     market_probs = market_probs_from_h2h_implied(snapshot.h2h_implied)
+
+    halftime_stats = load_or_freeze_halftime(event_id, snapshot) if snapshot.inplay else None
 
     result = inplay_from_predictor(
         predictor,
@@ -239,8 +323,43 @@ def run_live_advice(
         home_corners=ip.home_corners if snapshot.inplay else 0,
         away_corners=ip.away_corners if snapshot.inplay else 0,
         market_probs=market_probs,
+        halftime_stats=halftime_stats,
+        n_simulations=settings.inplay_fast_mc_simulations if fast else None,
+        use_ensemble=False if fast else None,
     )
     inplay_dict = result.to_dict()
+
+    if fast:
+        ht_report = None
+    else:
+        corner_lambda_home: float | None = None
+        corner_lambda_away: float | None = None
+        if halftime_stats is not None:
+            try:
+                from models.corners_predictor import CornersPredictor
+
+                cp = CornersPredictor(fixtures_df=predictor.fixtures)
+                corner_pred = cp.predict(home, away, phase=phase)
+                corner_lambda_home = corner_pred.factors.lambda_home
+                corner_lambda_away = corner_pred.factors.lambda_away
+            except Exception:
+                pass
+
+        halftime_report_obj = build_halftime_report(
+            halftime_stats,
+            lambda_full_home=result.lambda_full_home,
+            lambda_full_away=result.lambda_full_away,
+            corner_lambda_home=corner_lambda_home,
+            corner_lambda_away=corner_lambda_away,
+            corner_lines=tuple(float(k) for k in snapshot.corners.keys()) if snapshot.corners else None,
+            card_lines=tuple(float(k) for k in snapshot.yellow_cards.keys()) if snapshot.yellow_cards else None,
+        )
+        if halftime_report_obj is not None:
+            ht_report = halftime_report_obj.to_dict()
+            inplay_dict["corner_line_probs"] = ht_report.get("corner_line_probs") or {}
+            inplay_dict["card_line_probs"] = ht_report.get("card_line_probs") or {}
+        else:
+            ht_report = None
     shadow = inplay_dict.get("ensemble_shadow") or {}
     tick_extra["ens_prob_final_home"] = shadow.get("prob_final_home")
     tick_extra["ens_prob_l1_delta"] = shadow.get("prob_l1_delta")
@@ -270,13 +389,15 @@ def run_live_advice(
 
     is_finished = str(status or "").upper() in _FINISHED_STATUSES
 
-    finalize_info = maybe_finalize_finished_event(
-        event_id=event_id,
-        snapshot=snapshot,
-        inplay=inplay_dict,
-        advice=report,
-        is_finished=is_finished,
-    )
+    finalize_info = None
+    if not fast:
+        finalize_info = maybe_finalize_finished_event(
+            event_id=event_id,
+            snapshot=snapshot,
+            inplay=inplay_dict,
+            advice=report,
+            is_finished=is_finished,
+        )
 
     model_h2h = {
         "1": float(inplay_dict.get("prob_final_home") or 0),
@@ -297,24 +418,62 @@ def run_live_advice(
         )
     overround = h2h_overround(snapshot.h2h_odds)
 
-    pre = predictor.predict(home, away, phase=phase)
-    pregame_probs = {"1": pre.prob_home, "X": pre.prob_draw, "2": pre.prob_away}
     inplay_probs = {
         "1": float(inplay_dict.get("prob_final_home") or 0),
         "X": float(inplay_dict.get("prob_final_draw") or 0),
         "2": float(inplay_dict.get("prob_final_away") or 0),
     }
+    if fast:
+        from models.wc_draw_model import resolve_wc_outcome
+
+        pregame_prediction = resolve_wc_outcome(inplay_probs, phase=phase)
+        pregame_probs = inplay_probs
+    else:
+        pre = predictor.predict(home, away, phase=phase)
+        pregame_probs = {"1": pre.prob_home, "X": pre.prob_draw, "2": pre.prob_away}
+        pregame_prediction = pre.prediction
     from models.bet_guardrails import build_bet_guardrails_payload
 
     bet_guardrails = build_bet_guardrails_payload(
         minute=minute,
-        pregame_prediction=pre.prediction,
+        pregame_prediction=pregame_prediction,
         pregame_probs=pregame_probs,
         inplay_probs=inplay_probs,
     )
     aportes_out = report.get("aportes", [])
-    if minute >= settings.live_block_minute:
-        aportes_out = []
+
+    strategy_report = build_bet_strategy_report(
+        home_team=home,
+        away_team=away,
+        inplay=inplay_dict,
+        snapshot=snapshot,
+        benchmark=benchmark,
+        user_bet=user_bet,
+        minute=minute,
+        bankroll=bankroll,
+        h2h_overround=overround,
+        confidence=report.get("confidence"),
+        event_id=event_id,
+        fast=fast,
+    )
+
+    half_tickets = None
+    from models.wc_inplay_half_tickets import build_inplay_half_tickets
+
+    half_tickets = build_inplay_half_tickets(
+        strategy_report.get("market_scan") or [],
+        minute=minute,
+        bankroll=bankroll,
+    )
+
+    from models.wc_viable_2h_markets import build_viable_2h_markets
+
+    viable_2h_markets = build_viable_2h_markets(
+        strategy_report.get("market_scan") or [],
+        minute=minute,
+        match_minutes=inplay_dict.get("match_minutes") or 90,
+        remaining_fraction=inplay_dict.get("remaining_fraction"),
+    )
 
     return {
         "home_team": home,
@@ -345,6 +504,7 @@ def run_live_advice(
             "prob_next_goal_home": inplay_dict.get("prob_next_goal_home"),
             "prob_next_goal_away": inplay_dict.get("prob_next_goal_away"),
             "prob_no_more_goals": inplay_dict.get("prob_no_more_goals"),
+            "top_final_scores": inplay_dict.get("top_final_scores"),
             "ht_correct_scores": inplay_dict.get("ht_correct_scores"),
             "sh_correct_scores": inplay_dict.get("sh_correct_scores"),
             "ht_exact_totals": inplay_dict.get("ht_exact_totals"),
@@ -353,6 +513,11 @@ def run_live_advice(
             "second_half_line_probs": inplay_dict.get("second_half_line_probs"),
             "ht_handicap_probs": inplay_dict.get("ht_handicap_probs"),
             "sh_handicap_probs": inplay_dict.get("sh_handicap_probs"),
+            "ft_handicap_probs": inplay_dict.get("ft_handicap_probs"),
+            "ft_asian_handicap_probs": inplay_dict.get("ft_asian_handicap_probs"),
+            "corner_line_probs": inplay_dict.get("corner_line_probs"),
+            "card_line_probs": inplay_dict.get("card_line_probs"),
+            "halftime_adjustment": inplay_dict.get("halftime_adjustment"),
         },
         "half_markets": snapshot.half_markets,
         "first_half_totals": snapshot.first_half_totals,
@@ -364,19 +529,9 @@ def run_live_advice(
         "generosity_probs": snapshot.generosity_probs,
         "confidence": report.get("confidence"),
         "market_benchmark": benchmark,
-        "strategy": build_bet_strategy_report(
-            home_team=home,
-            away_team=away,
-            inplay=inplay_dict,
-            snapshot=snapshot,
-            benchmark=benchmark,
-            user_bet=user_bet,
-            minute=minute,
-            bankroll=bankroll,
-            h2h_overround=overround,
-            confidence=report.get("confidence"),
-            event_id=event_id,
-        ),
+        "strategy": strategy_report,
+        "half_tickets": half_tickets,
+        "viable_2h_markets": viable_2h_markets,
         "captured_at": snapshot.captured_at,
         "betradar_id": snapshot.betradar_id,
         "raw_market_count": snapshot.raw_market_count,
@@ -390,15 +545,23 @@ def run_live_advice(
             "combos": list(snapshot.combo_markets.keys()),
             "first_half": bool(snapshot.half_markets.get("1h") or snapshot.first_half_totals),
             "second_half": bool(snapshot.half_markets.get("2h") or snapshot.second_half_totals),
+            "halftime_adjust": bool(ht_report and ht_report.get("applied")),
+            "corners": bool(snapshot.corners),
+            "yellow_cards": bool(snapshot.yellow_cards),
         },
-        "hedge_report": _build_hedge_report(
+        "halftime_report": ht_report,
+        "hedge_report": None
+        if fast
+        else _build_hedge_report(
             inplay_dict=inplay_dict,
             snapshot=snapshot,
             minute=minute,
             home_team=home,
             away_team=away,
         ),
-        "against_model_alerts": _build_against_model_alerts(
+        "against_model_alerts": []
+        if fast
+        else _build_against_model_alerts(
             predictor=predictor,
             inplay_dict=inplay_dict,
             home_team=home,
@@ -407,11 +570,22 @@ def run_live_advice(
             user_bet=user_bet,
         ),
         "bet_guardrails": bet_guardrails,
-        "trend_report": _build_trend_report(
+        "trend_report": None
+        if fast
+        else _build_trend_report(
             event_id=event_id,
             home_team=home,
             away_team=away,
             event_snapshot_raw=snapshot_dict,
+        ),
+        "live_stats": build_live_stats_payload(
+            snapshot=snapshot,
+            live_stats=live_stats,
+            tick_extra=tick_extra,
+            sofascore_event_id=sofascore_event_id,
+            sofascore_skipped=sofascore_skipped,
+            prob_next_goal_home=float(inplay_dict.get("prob_next_goal_home") or 0),
+            prob_next_goal_away=float(inplay_dict.get("prob_next_goal_away") or 0),
         ),
     }
 

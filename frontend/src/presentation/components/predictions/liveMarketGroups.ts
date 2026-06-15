@@ -87,6 +87,22 @@ export const MARKET_SECTIONS: MarketSection[] = [
   { id: "core", title: "Jogo completo", groups: CORE_MARKET_GROUPS },
   { id: "1h", title: "1º Tempo", groups: halfGroups("1h", "1º Tempo") },
   { id: "2h", title: "2º Tempo", groups: halfGroups("2h", "2º Tempo") },
+  {
+    id: "props",
+    title: "Escanteios e cartões",
+    groups: [
+      {
+        id: "corners",
+        superbetName: "Total de Escanteios",
+        matchMarket: (m) => m.startsWith("corners_over_"),
+      },
+      {
+        id: "cards",
+        superbetName: "Cartões amarelos",
+        matchMarket: (m) => m.startsWith("cards_over_"),
+      },
+    ],
+  },
 ];
 
 export type Verdict = "apostar" | "quase" | "sem_valor" | "sem_odds";

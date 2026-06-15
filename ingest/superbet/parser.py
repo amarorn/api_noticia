@@ -100,6 +100,7 @@ class SuperbetEventSnapshot:
     yellow_cards: dict[str, dict[str, float]]
     first_half_yellow_cards: dict[str, dict[str, float]]
     team_shots: dict[str, dict[str, dict[str, float]]]
+    team_shots_on_target: dict[str, dict[str, dict[str, float]]]
     half_markets: dict[str, dict[str, Any]]
     raw_market_count: int
     captured_at: str
@@ -143,6 +144,7 @@ class SuperbetEventSnapshot:
             "yellow_cards": self.yellow_cards,
             "first_half_yellow_cards": self.first_half_yellow_cards,
             "team_shots": self.team_shots,
+            "team_shots_on_target": self.team_shots_on_target,
             "half_markets": self.half_markets,
             "raw_market_count": self.raw_market_count,
             "captured_at": self.captured_at,
@@ -409,6 +411,22 @@ def _exact_team_side(name: str, home_team: str, away_team: str) -> str | None:
     return None
 
 
+def _classify_ft_market(name: str) -> str | None:
+    """Mercados de handicap do jogo inteiro (sem 1T/2T no nome)."""
+    if _period_from_market_name(name):
+        return None
+    lower = name.lower()
+    if re.search(r"handicap\s*3\s*-?\s*way|3-way|3way", lower):
+        return None
+    if "empate anula" in lower or "draw no bet" in lower:
+        return None
+    if "asiático" in lower or "asiatico" in lower:
+        return "asian_handicap"
+    if "handicap" in lower:
+        return "handicap"
+    return None
+
+
 def _classify_half_market(name: str, home_team: str, away_team: str) -> tuple[str | None, str | None]:
     period = _period_from_market_name(name)
     if not period:
@@ -417,6 +435,8 @@ def _classify_half_market(name: str, home_team: str, away_team: str) -> tuple[st
     if " ou " in lower and "resultado" in lower:
         return period, None
     if "handicap" in lower:
+        if "asiático" in lower or "asiatico" in lower:
+            return period, "asian_handicap"
         return period, "handicap"
     if "resultado correto" in lower:
         return period, "correct_score"
@@ -464,8 +484,16 @@ def _find_prop_total_market(
     """Localiza mercado Over/Under por linha (gols, cartões, chutes)."""
     stat_keywords: dict[str, tuple[str, ...]] = {
         "goals": ("total de gols",),
-        "yellow_cards": ("cartões amarelos", "cartoes amarelos", "cartão amarelo", "cartao amarelo"),
+        "yellow_cards": (
+            "cartões amarelos",
+            "cartoes amarelos",
+            "cartão amarelo",
+            "cartao amarelo",
+            "total de cartões",
+            "total de cartoes",
+        ),
         "shots": ("total de chutes", "chutes totais"),
+        "shots_on_target": ("chutes no gol", "chutes a gol", "chutes ao gol"),
         "corners": ("total de escanteios", "escanteios"),
     }
     keywords = stat_keywords.get(stat, ())
@@ -483,6 +511,13 @@ def _find_prop_total_market(
             continue
         if stat == "shots" and ("a gol" in lower or "no gol" in lower):
             continue
+        if stat == "shots_on_target" and not any(k in lower for k in ("no gol", "a gol", "ao gol")):
+            continue
+        if stat == "yellow_cards":
+            if "vermelh" in lower:
+                continue
+            if any(x in lower for x in ("1x2", "handicap", "exato", "equipe com", "1° cartão", "1º cartão")):
+                continue
         market_period = _period_from_market_name(name)
         if period == "1h" and market_period != "1h":
             continue
@@ -503,6 +538,13 @@ def _find_prop_total_market(
             if home_l and home_l in lower and "total de gols" in lower:
                 continue
             if away_l and away_l in lower and "total de gols" in lower:
+                continue
+        elif stat == "yellow_cards" and not team_l:
+            if home_l and home_l in lower:
+                continue
+            if away_l and away_l in lower:
+                continue
+            if re.search(r"total de cart(õ|o)es de\s", lower):
                 continue
         return market
     return None
@@ -592,17 +634,42 @@ def _extract_half_markets(
             extracted = _extract_half_exact(market)
         elif mtype == "handicap":
             extracted = _extract_half_handicap(market, home_team, away_team)
+        elif mtype == "asian_handicap":
+            extracted = _extract_half_handicap(market, home_team, away_team)
         else:
             continue
         if not extracted:
             continue
-        if mtype == "handicap":
-            target = bucket.setdefault("handicap", {})
+        if mtype in {"handicap", "asian_handicap"}:
+            bucket_key = "asian_handicap" if mtype == "asian_handicap" else "handicap"
+            target = bucket.setdefault(bucket_key, {})
             for lk, sides in extracted.items():
                 target.setdefault(lk, {}).update(sides)
         else:
             bucket.setdefault(mtype, {}).update(extracted)
     return {k: v for k, v in result.items() if v}
+
+
+def _extract_ft_markets(
+    markets: list[dict],
+    home_team: str,
+    away_team: str,
+) -> dict[str, Any]:
+    """Handicap europeu e asiático do jogo inteiro."""
+    bucket: dict[str, Any] = {}
+    for market in markets:
+        name = str(market.get("name") or "")
+        mtype = _classify_ft_market(name)
+        if not mtype:
+            continue
+        extracted = _extract_half_handicap(market, home_team, away_team)
+        if not extracted:
+            continue
+        bucket_key = "asian_handicap" if mtype == "asian_handicap" else "handicap"
+        target = bucket.setdefault(bucket_key, {})
+        for lk, sides in extracted.items():
+            target.setdefault(lk, {}).update(sides)
+    return bucket
 
 
 def _extract_h2h_odds(markets: list[dict]) -> dict[str, float]:
@@ -712,6 +779,13 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         home_total_mkt = _find_market(markets, f"Total de Gols - {home_team}")
     if home_total_mkt:
         team_totals["home"] = _extract_line_odds(home_total_mkt)
+    if not team_totals["home"]:
+        alt = _find_prop_total_market(
+            markets, stat="goals", period="ft", team=home_team,
+            home_team=home_team, away_team=away_team,
+        )
+        if alt:
+            team_totals["home"] = _extract_line_odds(alt)
     away_total_mkt = _find_market(markets, f"{away_team} - Total de Gols")
     if not away_total_mkt:
         away_total_mkt = _find_market(markets, "Total de Gols - Time Visitante")
@@ -719,6 +793,13 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         away_total_mkt = _find_market(markets, f"Total de Gols - {away_team}")
     if away_total_mkt:
         team_totals["away"] = _extract_line_odds(away_total_mkt)
+    if not team_totals["away"]:
+        alt = _find_prop_total_market(
+            markets, stat="goals", period="ft", team=away_team,
+            home_team=home_team, away_team=away_team,
+        )
+        if alt:
+            team_totals["away"] = _extract_line_odds(alt)
 
     # Total 1º Tempo e 2º Tempo
     first_half_totals = _extract_line_odds(
@@ -736,6 +817,9 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
     if not second_half_totals:
         second_half_totals = _extract_line_odds(_find_period_total_goals(markets, "2h") or {})
     half_markets = _extract_half_markets(markets, home_team, away_team)
+    ft_markets = _extract_ft_markets(markets, home_team, away_team)
+    if ft_markets:
+        half_markets["ft"] = ft_markets
 
     yellow_cards = _extract_line_odds(
         _find_prop_total_market(markets, stat="yellow_cards", period="ft") or {}
@@ -754,6 +838,28 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
     )
     if away_shots_mkt:
         team_shots["away"] = _extract_line_odds(away_shots_mkt)
+
+    team_shots_on_target: dict[str, dict[str, dict[str, float]]] = {"home": {}, "away": {}}
+    home_sot_mkt = _find_prop_total_market(
+        markets,
+        stat="shots_on_target",
+        period="ft",
+        team=home_team,
+        home_team=home_team,
+        away_team=away_team,
+    )
+    if home_sot_mkt:
+        team_shots_on_target["home"] = _extract_line_odds(home_sot_mkt)
+    away_sot_mkt = _find_prop_total_market(
+        markets,
+        stat="shots_on_target",
+        period="ft",
+        team=away_team,
+        home_team=home_team,
+        away_team=away_team,
+    )
+    if away_sot_mkt:
+        team_shots_on_target["away"] = _extract_line_odds(away_sot_mkt)
 
     return SuperbetEventSnapshot(
         event_id=int(ev.get("event_id") or fixture.get("event_id") or 0),
@@ -780,6 +886,7 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         yellow_cards=yellow_cards,
         first_half_yellow_cards=first_half_yellow_cards,
         team_shots=team_shots,
+        team_shots_on_target=team_shots_on_target,
         half_markets=half_markets,
         raw_market_count=len(markets),
         captured_at=datetime.now(timezone.utc).isoformat(),

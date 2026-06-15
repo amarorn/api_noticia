@@ -1,7 +1,7 @@
 """Mercados in-play condicionados ao placar e minuto (Poisson + Monte Carlo)."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -109,8 +109,13 @@ class InPlayResult:
     combo_markets: dict[str, float]
     btts_final: float
     n_simulations: int
+    ft_handicap_probs: dict[str, float] = field(default_factory=dict)
+    ft_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
+    ht_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
+    sh_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
     features: Any = None
     ensemble_shadow: dict[str, Any] | None = None
+    halftime_adjustment: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = {
@@ -153,6 +158,10 @@ class InPlayResult:
             "sh_away_exact": {k: round(v, 4) for k, v in self.sh_away_exact.items()},
             "ht_handicap_probs": {k: round(v, 4) for k, v in self.ht_handicap_probs.items()},
             "sh_handicap_probs": {k: round(v, 4) for k, v in self.sh_handicap_probs.items()},
+            "ft_handicap_probs": {k: round(v, 4) for k, v in self.ft_handicap_probs.items()},
+            "ft_asian_handicap_probs": {k: round(v, 4) for k, v in self.ft_asian_handicap_probs.items()},
+            "ht_asian_handicap_probs": {k: round(v, 4) for k, v in self.ht_asian_handicap_probs.items()},
+            "sh_asian_handicap_probs": {k: round(v, 4) for k, v in self.sh_asian_handicap_probs.items()},
             "top_ht_ft": self.top_ht_ft,
             "combo_markets": {k: round(v, 4) for k, v in self.combo_markets.items()},
             "btts_final": round(self.btts_final, 4),
@@ -160,6 +169,8 @@ class InPlayResult:
         }
         if self.ensemble_shadow:
             payload["ensemble_shadow"] = self.ensemble_shadow
+        if self.halftime_adjustment:
+            payload["halftime_adjustment"] = self.halftime_adjustment
         return payload
 
 
@@ -346,7 +357,71 @@ def _top_ht_ft(ht_h: np.ndarray, ht_a: np.ndarray, final_h: np.ndarray, final_a:
 
 
 _HALF_HANDICAP_LINES = (-1.5, -0.5, 0.0, 0.5, 1.5)
+_FT_HANDICAP_LINES = (-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0)
+_ASIAN_HANDICAP_LINES = (
+    -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5,
+)
 _HALF_EXACT_MAX_GOALS = 5
+
+
+def _is_quarter_line(line: float) -> bool:
+    return abs(line * 4 - round(line * 4)) > 1e-9 and abs(line * 2 - round(line * 2)) > 1e-9
+
+
+def _asian_line_cover(diff: np.ndarray, line: float, side: str) -> np.ndarray:
+    """Probabilidade de cover asiático por simulação (array bool)."""
+    adj = diff + line if side == "home" else -diff - line
+    if abs(line - round(line)) < 1e-9:
+        return adj > 0
+    return adj > 0
+
+
+def _asian_effective_cover_prob(
+    diff: np.ndarray,
+    line: float,
+    side: str,
+    n: int,
+) -> float:
+    """Cover efetivo asiático; linhas quarto = média das duas meias-linhas adjacentes."""
+    if _is_quarter_line(line):
+        low = line - 0.25
+        high = line + 0.25
+        p_low = float(np.sum(_asian_line_cover(diff, low, side)) / n)
+        p_high = float(np.sum(_asian_line_cover(diff, high, side)) / n)
+        return (p_low + p_high) / 2.0
+    return float(np.sum(_asian_line_cover(diff, line, side)) / n)
+
+
+def _handicap_probs(
+    h: np.ndarray,
+    a: np.ndarray,
+    n: int,
+    lines: tuple[float, ...] = _HALF_HANDICAP_LINES,
+) -> dict[str, float]:
+    """Handicap europeu: home_cover = P(h - a + line > 0)."""
+    diff = h.astype(float) - a.astype(float)
+    out: dict[str, float] = {}
+    for line in lines:
+        lk = _handicap_line_key(line)
+        out[f"home_{lk}"] = float(np.sum(diff + line > 0) / n)
+        out[f"away_{lk}"] = float(np.sum(-diff - line > 0) / n)
+    return out
+
+
+def _asian_handicap_probs(
+    h: np.ndarray,
+    a: np.ndarray,
+    n: int,
+    lines: tuple[float, ...] = _ASIAN_HANDICAP_LINES,
+) -> dict[str, float]:
+    """Handicap asiático (inclui quartos de linha)."""
+    diff = h.astype(float) - a.astype(float)
+    out: dict[str, float] = {}
+    for line in lines:
+        lk = _handicap_line_key(line)
+        out[f"home_{lk}"] = _asian_effective_cover_prob(diff, line, "home", n)
+        out[f"away_{lk}"] = _asian_effective_cover_prob(diff, line, "away", n)
+    return out
 
 
 def _handicap_line_key(line: float) -> str:
@@ -386,22 +461,6 @@ def _exact_goals_distribution(
     return out
 
 
-def _handicap_probs(
-    h: np.ndarray,
-    a: np.ndarray,
-    n: int,
-    lines: tuple[float, ...] = _HALF_HANDICAP_LINES,
-) -> dict[str, float]:
-    """Handicap europeu/asiático simples: home_cover = P(h - a + line > 0)."""
-    diff = h.astype(float) - a.astype(float)
-    out: dict[str, float] = {}
-    for line in lines:
-        lk = _handicap_line_key(line)
-        out[f"home_{lk}"] = float(np.sum(diff + line > 0) / n)
-        out[f"away_{lk}"] = float(np.sum(-diff - line > 0) / n)
-    return out
-
-
 def _half_market_probs(
     *,
     ht_h: np.ndarray,
@@ -424,6 +483,8 @@ def _half_market_probs(
         "sh_away_exact": _exact_goals_distribution(a_2h, n),
         "ht_handicap_probs": _handicap_probs(ht_h, ht_a, n),
         "sh_handicap_probs": _handicap_probs(h_2h, a_2h, n),
+        "ht_asian_handicap_probs": _asian_handicap_probs(ht_h, ht_a, n),
+        "sh_asian_handicap_probs": _asian_handicap_probs(h_2h, a_2h, n),
     }
 
 
@@ -465,6 +526,7 @@ def simulate_inplay(
     use_nhpp: bool | None = None,
     use_market_shrinkage: bool | None = None,
     use_momentum: bool | None = None,
+    halftime_stats: Any | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
@@ -547,6 +609,20 @@ def simulate_inplay(
             ht_home_score=ht_home_score,
             ht_away_score=ht_away_score,
         )
+
+    halftime_adj_dict: dict[str, Any] | None = None
+    if settings.inplay_halftime_adjust and minute > half and halftime_stats is not None:
+        from models.wc_halftime_adjust import adjust_second_half_goal_lambdas
+
+        ht_goal_adj = adjust_second_half_goal_lambdas(
+            lambda_full_home=lambda_full_home,
+            lambda_full_away=lambda_full_away,
+            stats=halftime_stats,
+        )
+        lam_2h_h *= ht_goal_adj.home_2h_factor
+        lam_2h_a *= ht_goal_adj.away_2h_factor
+        halftime_adj_dict = {**ht_goal_adj.to_dict(), "applied": True}
+
     lam_h = lam_rem_1h_h + lam_2h_h
     lam_a = lam_rem_1h_a + lam_2h_a
 
@@ -684,6 +760,8 @@ def simulate_inplay(
         a_2h=a_2h,
         n=n,
     )
+    ft_handicap = _handicap_probs(final_h, final_a, n, lines=_FT_HANDICAP_LINES)
+    ft_asian = _asian_handicap_probs(final_h, final_a, n)
 
     return InPlayResult(
         home_team=home_team,
@@ -726,10 +804,15 @@ def simulate_inplay(
         sh_away_exact=half_markets["sh_away_exact"],
         ht_handicap_probs=half_markets["ht_handicap_probs"],
         sh_handicap_probs=half_markets["sh_handicap_probs"],
+        ft_handicap_probs=ft_handicap,
+        ft_asian_handicap_probs=ft_asian,
+        ht_asian_handicap_probs=half_markets["ht_asian_handicap_probs"],
+        sh_asian_handicap_probs=half_markets["sh_asian_handicap_probs"],
         top_ht_ft=_top_ht_ft(ht_h, ht_a, final_h, final_a, n),
         combo_markets=combo,
         btts_final=btts,
         n_simulations=n,
+        halftime_adjustment=halftime_adj_dict,
     )
 
 
@@ -747,10 +830,12 @@ def inplay_from_predictor(
     ht_home_score: int | None = None,
     ht_away_score: int | None = None,
     n_simulations: int | None = None,
+    use_ensemble: bool | None = None,
     momentum_events: list[dict] | None = None,
     home_corners: int = 0,
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
+    halftime_stats: Any | None = None,
 ) -> InPlayResult:
     from datetime import datetime, timezone
 
@@ -796,16 +881,19 @@ def inplay_from_predictor(
         home_corners=home_corners,
         away_corners=away_corners,
         market_probs=market_probs,
+        halftime_stats=halftime_stats,
     )
-
-    use_ensemble = settings.inplay_use_ensemble and not settings.inplay_ensemble_shadow_mode
+    effective_use_ensemble = (
+        use_ensemble if use_ensemble is not None else settings.inplay_use_ensemble
+    ) and minute > 0
     shadow_ab = (
-        settings.inplay_use_ensemble
+        use_ensemble is None
+        and settings.inplay_use_ensemble
         and settings.inplay_ensemble_shadow_mode
         and minute > 0
     )
 
-    if use_ensemble:
+    if effective_use_ensemble:
         result = simulate_inplay_ensemble(**sim_kwargs)
     elif shadow_ab:
         poisson = simulate_inplay(**sim_kwargs)
@@ -847,6 +935,7 @@ def simulate_inplay_ensemble(
     home_corners: int = 0,
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
+    halftime_stats: Any | None = None,
 ) -> InPlayResult:
     """simulate_inplay com blend do ensemble (Hawkes + GBM + Market).
 
@@ -878,6 +967,7 @@ def simulate_inplay_ensemble(
         home_corners=home_corners,
         away_corners=away_corners,
         market_probs=market_probs,
+        halftime_stats=halftime_stats,
     )
 
     if not settings.inplay_use_ensemble or minute <= 0:

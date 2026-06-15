@@ -626,19 +626,50 @@ def build_combo_ticket(
             "Alta acurácia histórica neste confronto — priorize linhas de 10/10 no combo.",
         )
 
+    main_bets = [{**b, "role": "principal", "rank": i + 1} for i, b in enumerate(main)]
     ticket = {
         "available": len(main) >= 2,
         "title": f"BILHETE — {normalize_national_team(home_team)} x {normalize_national_team(away_team)}",
         "accuracy": accuracy,
         "reason": None if len(main) >= 2 else "Não foi possível achar 2 pernas decorrelacionadas com 9/10+.",
-        "main_bets": [{**b, "role": "principal", "rank": i + 1} for i, b in enumerate(main)],
+        "main_bets": main_bets,
         "reserve_bets": [{**b, "rank": i + 1} for i, b in enumerate(reserves)],
         "strategy_notes": strategy_notes,
         "suggested_stake_pct": stake_pct,
         "suggested_stake_value": round(bankroll * stake_pct / 100, 2),
         "combined_hit_rate_estimate": round(avg_hit ** len(main), 3) if main else 0.0,
     }
-    return enrich_combo_ticket(ticket, snapshot)
+    enriched = enrich_combo_ticket(ticket, snapshot)
+    if main_bets:
+        from models.wc_combo_last10 import build_last10_analysis
+
+        enriched["last10_analysis"] = build_last10_analysis(
+            home_team,
+            away_team,
+            main_bets,
+            client=_optional_sofascore_client(fetch_incidents=_combo_last10_fetch_incidents()),
+        )
+    return enriched
+
+
+def _combo_last10_fetch_incidents() -> bool:
+    from config import settings
+
+    return bool(getattr(settings, "combo_last10_fetch_incidents", False))
+
+
+def _optional_sofascore_client(*, fetch_incidents: bool = False) -> Any | None:
+    """Cliente Sofascore para incidentes 1T; None se desativado ou indisponível."""
+    if not fetch_incidents:
+        return None
+    try:
+        from ingest.sofascore.client import SofascoreClient, SofascoreClientError
+
+        return SofascoreClient()
+    except SofascoreClientError:
+        return None
+    except ImportError:
+        return None
 
 
 def blend_confidence_with_patterns(

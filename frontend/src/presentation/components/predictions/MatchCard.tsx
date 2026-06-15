@@ -9,14 +9,17 @@ import {
   outcomeColors,
   predictedWinner,
 } from "@/presentation/theme";
-import { IconChevronRight } from "@/presentation/components/ui/Icons";
+import { IconChevronRight, IconWallet } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
+import { buildMatchTicketsPath } from "@/presentation/utils/matchSuperbetEvent";
 
 interface MatchCardProps {
   prediction: WcPrediction;
   index?: number;
   compact?: boolean;
   group?: string | null;
+  selected?: boolean;
+  onSelect?: () => void;
 }
 
 function TeamAvatar({ name }: { name: string }) {
@@ -57,7 +60,14 @@ function ResultBadge({
   );
 }
 
-export function MatchCard({ prediction, index = 0, compact = false, group }: MatchCardProps) {
+export function MatchCard({
+  prediction,
+  index = 0,
+  compact = false,
+  group,
+  selected = false,
+  onSelect,
+}: MatchCardProps) {
   const winner = predictedWinner(
     prediction.prediction,
     prediction.homeTeam,
@@ -77,7 +87,22 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: index * 0.05, ...springSnappy }}
       whileHover={{ y: -6, transition: { duration: 0.2 } }}
-      className="glass-card-hover group relative flex flex-col overflow-hidden"
+      className={`glass-card-hover group relative flex flex-col overflow-hidden ${
+        selected ? "ring-2 ring-violet-400/60 ring-offset-2 ring-offset-[#0a0f1a]" : ""
+      }`}
+      onClick={onSelect}
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={
+        onSelect
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect();
+              }
+            }
+          : undefined
+      }
     >
       {/* Textura de fundo */}
       <img
@@ -193,8 +218,18 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
 
       <div className="relative mx-4 mb-4 flex flex-col gap-2">
         <Link
+          to={buildMatchTicketsPath(prediction.homeTeam, prediction.awayTeam)}
+          onClick={(event) => event.stopPropagation()}
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-violet-400/35 bg-violet-500/15 py-2.5 text-sm font-semibold text-violet-100 transition-all hover:border-violet-300/50 hover:bg-violet-500/25"
+        >
+          <IconWallet className="h-4 w-4" />
+          Bilhetes R$ 5 → R$ 500+
+          <IconChevronRight className="h-3.5 w-3.5" />
+        </Link>
+        <Link
           to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}`}
           state={{ prediction }}
+          onClick={(event) => event.stopPropagation()}
           className="flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2.5 text-sm font-medium text-slate-400 transition-all group-hover:border-neon-green/25 group-hover:bg-neon-green/4 group-hover:text-neon-green"
         >
           Ver análise completa
@@ -202,6 +237,7 @@ export function MatchCard({ prediction, index = 0, compact = false, group }: Mat
         </Link>
         <Link
           to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}?sofascore=1`}
+          onClick={(event) => event.stopPropagation()}
           className="flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2 text-xs font-medium text-slate-500 transition-all hover:border-neon-blue/25 hover:bg-neon-blue/4 hover:text-neon-blue"
         >
           Palpite com escalação Sofascore

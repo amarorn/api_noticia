@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   getValueBetsUseCase,
@@ -17,16 +18,21 @@ import { RoundTabs } from "@/presentation/components/ui/RoundTabs";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
 import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState";
-import { IconCalendar, IconFilter } from "@/presentation/components/ui/Icons";
+import { IconChevronRight, IconCalendar, IconFilter, IconWallet } from "@/presentation/components/ui/Icons";
 import {
   buildMatchGroupLookup,
   groupForMatch,
   sortedGroupIds,
 } from "@/presentation/utils/officialSchedule";
+import { buildMatchTicketsPath } from "@/presentation/utils/matchSuperbetEvent";
 
 export function DashboardPage() {
   const [selectedGroup, setSelectedGroup] = useState<string | "all">("all");
   const [activeRound, setActiveRound] = useState<number | "all">(1);
+  const [selectedMatch, setSelectedMatch] = useState<{
+    homeTeam: string;
+    awayTeam: string;
+  } | null>(null);
 
   const round1Query = useQuery({
     queryKey: ["wc-round", 1],
@@ -273,15 +279,30 @@ export function DashboardPage() {
           />
         ) : (
           <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredPredictions.map((pred: WcPrediction, i: number) => (
-              <StaggerItem key={`${pred.homeTeam}-${pred.awayTeam}`}>
-                <MatchCard
-                  prediction={pred}
-                  index={i}
-                  group={groupForMatch(pred.homeTeam, pred.awayTeam, groupLookup)}
-                />
-              </StaggerItem>
-            ))}
+            {filteredPredictions.map((pred: WcPrediction, i: number) => {
+              const matchKey = `${pred.homeTeam}::${pred.awayTeam}`;
+              const isSelected =
+                selectedMatch?.homeTeam === pred.homeTeam &&
+                selectedMatch?.awayTeam === pred.awayTeam;
+              return (
+                <StaggerItem key={matchKey}>
+                  <MatchCard
+                    prediction={pred}
+                    index={i}
+                    group={groupForMatch(pred.homeTeam, pred.awayTeam, groupLookup)}
+                    selected={isSelected}
+                    onSelect={() =>
+                      setSelectedMatch((current) =>
+                        current?.homeTeam === pred.homeTeam &&
+                        current?.awayTeam === pred.awayTeam
+                          ? null
+                          : { homeTeam: pred.homeTeam, awayTeam: pred.awayTeam },
+                      )
+                    }
+                  />
+                </StaggerItem>
+              );
+            })}
           </StaggerContainer>
         )}
       </section>
@@ -293,6 +314,25 @@ export function DashboardPage() {
         loading={valueQuery.isLoading}
         error={valueError}
       />
+
+      {selectedMatch && (
+        <div className="fixed bottom-4 left-1/2 z-50 flex w-[min(100%-2rem,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-violet-400/35 bg-[#12182a]/95 px-4 py-3 shadow-2xl backdrop-blur-md">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-white">
+              {selectedMatch.homeTeam} × {selectedMatch.awayTeam}
+            </p>
+            <p className="text-[10px] text-slate-400">Bilhetes longshot R$ 5 → R$ 500+</p>
+          </div>
+          <Link
+            to={buildMatchTicketsPath(selectedMatch.homeTeam, selectedMatch.awayTeam)}
+            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-violet-400/40 bg-violet-500/20 px-3 py-2 text-xs font-semibold text-violet-100"
+          >
+            <IconWallet className="h-3.5 w-3.5" />
+            Ver bilhetes
+            <IconChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+      )}
     </PageTransition>
   );
 }

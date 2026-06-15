@@ -9,35 +9,47 @@ interface LiveP0GuardBannerProps {
 export function LiveP0GuardBanner({ guardrails }: LiveP0GuardBannerProps) {
   if (!guardrails?.enabled) return null;
 
-  const block = guardrails.blockNewBets;
+  const blockFt = guardrails.blockNewBets;
+  const blockAll = blockFt && guardrails.blockNewBets2h;
+  const allow2h = guardrails.allow2hSuggestions;
   const palpite = guardrails.pregamePalpite ?? guardrails.inplayPalpite;
 
   return (
     <section
       className={`rounded-2xl border px-4 py-3 ${
-        block
+        blockAll
           ? "border-red-500/50 bg-red-500/10"
-          : "border-amber-500/30 bg-amber-500/5"
+          : blockFt
+            ? "border-amber-500/30 bg-amber-500/5"
+            : "border-amber-500/30 bg-amber-500/5"
       }`}
       aria-label="Regras operacionais P0"
     >
       <p
         className={`text-xs font-bold uppercase tracking-wider ${
-          block ? "text-red-300" : "text-amber-300"
+          blockAll ? "text-red-300" : "text-amber-300"
         }`}
       >
         Regras P0 — proteção de banca
       </p>
       <ul className="mt-2 space-y-1.5 text-sm text-slate-300">
-        {block ? (
+        {blockAll ? (
           <li className="font-semibold text-red-200">
-            ⛔ Apostas novas bloqueadas após {guardrails.blockMinute}&apos; — use apenas
-            cash-out em bilhetes abertos.
+            ⛔ Apostas novas bloqueadas após {guardrails.block2hMinute}&apos; — use apenas
+            cash-out.
+          </li>
+        ) : blockFt && allow2h ? (
+          <li className="font-semibold text-amber-200">
+            ⚠ Mercados FT bloqueados após {guardrails.blockMinute}&apos; — sugestões limitadas
+            ao 2º tempo até {guardrails.block2hMinute}&apos;.
+          </li>
+        ) : blockFt ? (
+          <li className="font-semibold text-red-200">
+            ⛔ Apostas novas bloqueadas após {guardrails.blockMinute}&apos;.
           </li>
         ) : (
           <li>
-            ✓ Entradas permitidas antes de {guardrails.blockMinute}&apos; — após isso, só
-            cash-out.
+            ✓ Entradas FT permitidas antes de {guardrails.blockMinute}&apos;.
           </li>
         )}
         {guardrails.oneBetPerMarket && (
@@ -57,8 +69,12 @@ export function LiveP0GuardBanner({ guardrails }: LiveP0GuardBannerProps) {
           </li>
         )}
       </ul>
-      {block && guardrails.blockReason && (
-        <p className="mt-2 text-xs text-red-200/80">{guardrails.blockReason}</p>
+      {guardrails.blockReason && (
+        <p
+          className={`mt-2 text-xs ${blockAll ? "text-red-200/80" : "text-amber-200/80"}`}
+        >
+          {guardrails.blockReason}
+        </p>
       )}
     </section>
   );

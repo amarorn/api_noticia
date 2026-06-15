@@ -78,22 +78,46 @@ def _wmean(pairs: list[tuple[float, float]], default: float = 1.0) -> float:
     return sum(v * w for v, w in pairs) / total_w
 
 
+def _history_fingerprint(df: pd.DataFrame) -> tuple[int, int, float, float]:
+    """Fingerprint leve do histórico filtrado para cache de forças Poisson."""
+    if df.empty:
+        return (0, 0, 0.0, 0.0)
+    season_max = int(df["season"].max()) if "season" in df.columns else 0
+    return (
+        len(df),
+        season_max,
+        float(df["home_score"].sum()),
+        float(df["away_score"].sum()),
+    )
+
+
+_STRENGTH_CACHE: dict[tuple[tuple[int, int, float, float], int], tuple[dict[str, float], dict[str, float], float]] = {}
+_STRENGTH_WARNED: set[tuple[tuple[int, int, float, float], int]] = set()
+
+
 def _team_attack_defense(
     fixtures_df: pd.DataFrame,
     *,
     ref_season: int | None = None,
 ) -> tuple[dict[str, float], dict[str, float], float]:
-    df = fixtures_df.copy()
     hp = get_wc_hyperparams()
-    ref = ref_season if ref_season is not None else _reference_season(df)
+    ref = ref_season if ref_season is not None else _reference_season(fixtures_df)
+    cache_key = (_history_fingerprint(fixtures_df), ref)
+    cached = _STRENGTH_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    df = fixtures_df.copy()
 
     # Guarda de sanidade: remover linhas com scores impossíveis para futebol.
     # Dados de cricket/outros esportes às vezes se infiltram no dataset.
     _MAX_FOOTBALL_SCORE = 15
     pre_len = len(df)
     df = df[(df["home_score"] <= _MAX_FOOTBALL_SCORE) & (df["away_score"] <= _MAX_FOOTBALL_SCORE)]
-    if len(df) < pre_len:
+    if len(df) < pre_len and cache_key not in _STRENGTH_WARNED:
         import structlog
+
+        _STRENGTH_WARNED.add(cache_key)
         structlog.get_logger().warning(
             "poisson_outliers_removidos",
             removidos=pre_len - len(df),
@@ -145,7 +169,9 @@ def _team_attack_defense(
         attack[team] = _wmean(a_vals, 1.0)
         defense[team] = _wmean(d_vals, 1.0)
 
-    return attack, defense, league_avg
+    result = (attack, defense, league_avg)
+    _STRENGTH_CACHE[cache_key] = result
+    return result
 
 
 def _history_until(fixtures_df: pd.DataFrame, before_date: datetime | None) -> pd.DataFrame:

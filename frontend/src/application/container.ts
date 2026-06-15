@@ -15,6 +15,7 @@ import {
 } from "@/application/use-cases/historicalValidationUseCases";
 import {
   GetUserOpenBetsUseCase,
+  RegisterComboProposalUseCase,
   GetValueBetsUseCase,
   GetWcGroupStandingsUseCase,
   GetWcRoundUseCase,
@@ -59,6 +60,7 @@ export const getWcComboTicketUseCase = new GetWcComboTicketUseCase(wcRepository)
 export const simulateWcMatchUseCase = new SimulateWcMatchUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
 export const getUserOpenBetsUseCase = new GetUserOpenBetsUseCase(wcRepository);
+export const registerComboProposalUseCase = new RegisterComboProposalUseCase(wcRepository);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
   brasileiraoRepository,
 );

@@ -51,6 +51,7 @@ def resolve_sofascore_event_id(
     away_team: str,
     *,
     match_date: date | None = None,
+    waf_max_retries: int | None = None,
 ) -> int | None:
     """Resolve event_id Sofascore por seleções + data (falha silenciosa)."""
     try:
@@ -59,7 +60,7 @@ def resolve_sofascore_event_id(
         from ingest.sofascore.teams import load_team_map
 
         when = match_date or datetime.now(UTC).date()
-        client = SofascoreClient()
+        client = SofascoreClient(waf_max_retries=waf_max_retries)
         team_map = load_team_map()
         for offset in (0, -1, 1):
             probe = when + timedelta(days=offset)
@@ -90,9 +91,15 @@ def enrich_momentum_from_sofascore(
     *,
     match_date: date | None = None,
     save_bronze: bool = True,
+    waf_max_retries: int | None = None,
 ) -> tuple[list[dict], int | None]:
     """Busca gols/cartões/subs Sofascore e retorna dicts para momentum_events."""
-    event_id = resolve_sofascore_event_id(home_team, away_team, match_date=match_date)
+    event_id = resolve_sofascore_event_id(
+        home_team,
+        away_team,
+        match_date=match_date,
+        waf_max_retries=waf_max_retries,
+    )
     if event_id is None:
         return [], None
 

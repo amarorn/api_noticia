@@ -100,26 +100,38 @@ def _line_book_for_leg(
     period = leg["period"]
     entity = leg.get("entity")
     team_side = leg.get("team_side")
+    shots_on_target = getattr(snapshot, "team_shots_on_target", None) or {"home": {}, "away": {}}
 
     if stat == "goals":
         if period == "first_half":
-            return snapshot.first_half_totals, "Total de Gols (1º Tempo)"
+            return snapshot.first_half_totals, "1º Tempo - Total de Gols"
         return snapshot.totals, "Total de Gols"
     if stat == "yellow_cards":
         if period == "first_half":
-            return snapshot.first_half_yellow_cards, "Total de Cartões Amarelos (1º Tempo)"
+            return snapshot.first_half_yellow_cards, "1º Tempo - Total de Cartões"
         return snapshot.yellow_cards, "Total de Cartões Amarelos"
     if stat == "corners":
         return snapshot.corners, "Total de Escanteios"
-    if stat == "shots":
-        side = "home" if entity == "team" and team_side == "home" else "away"
+    if stat in ("shots", "shots_on_target"):
         if entity == "team":
-            team_name = snapshot.home_team if side == "home" else snapshot.away_team
-            return snapshot.team_shots.get(side, {}), f"{team_name} - Total de Chutes"
-        if entity == "opponent":
+            side = "home" if team_side == "home" else "away"
+        elif entity == "opponent":
             side = "away" if team_side == "home" else "home"
-            team_name = snapshot.home_team if side == "home" else snapshot.away_team
-            return snapshot.team_shots.get(side, {}), f"{team_name} - Total de Chutes"
+        else:
+            return {}, None
+        team_name = snapshot.home_team if side == "home" else snapshot.away_team
+
+        if stat == "shots_on_target":
+            return shots_on_target.get(side, {}), f"{team_name} - Chutes no Gol"
+
+        book = snapshot.team_shots.get(side, {})
+        if book:
+            return book, f"{team_name} - Total de Chutes"
+        sot_book = shots_on_target.get(side, {})
+        if sot_book:
+            return sot_book, f"{team_name} - Chutes no Gol"
+        return {}, f"{team_name} - Total de Chutes"
+
     if stat == "goals" and entity == "team":
         side = "home" if team_side == "home" else "away"
         team_name = snapshot.home_team if side == "home" else snapshot.away_team
@@ -136,6 +148,7 @@ def enrich_leg_with_superbet(
     if snapshot is None:
         enriched.update({
             "available_on_book": False,
+            "book_checked": False,
             "market_odd": None,
             "implied_prob": None,
             "expected_value": None,
@@ -174,6 +187,7 @@ def enrich_leg_with_superbet(
         ev_payload = evaluate_outcome(leg["direction"], prob, odd)
         enriched.update({
             "available_on_book": True,
+            "book_checked": True,
             "market_odd": round(odd, 3),
             "implied_prob": round(ev_payload.implied_prob, 4),
             "expected_value": round(ev_payload.expected_value, 4),
@@ -186,6 +200,7 @@ def enrich_leg_with_superbet(
     else:
         enriched.update({
             "available_on_book": False,
+            "book_checked": True,
             "market_odd": None,
             "implied_prob": None,
             "expected_value": None,
@@ -229,7 +244,20 @@ def enrich_combo_ticket(
         return ticket
 
     main = [enrich_leg_with_superbet(b, snapshot) for b in ticket.get("main_bets", [])]
-    reserves = [enrich_leg_with_superbet(b, snapshot) for b in ticket.get("reserve_bets", [])]
+    reserves_raw = [enrich_leg_with_superbet(b, snapshot) for b in ticket.get("reserve_bets", [])]
+    if snapshot is not None:
+        reserves = [b for b in reserves_raw if b.get("available_on_book")]
+        dropped = len(reserves_raw) - len(reserves)
+        if dropped:
+            notes_extra = (
+                f"{dropped} reserva(s) oculta(s): linha não encontrada na Superbet "
+                "(ex.: Total de Chutes ≠ Chutes no Gol)."
+            )
+        else:
+            notes_extra = None
+    else:
+        reserves = reserves_raw
+        notes_extra = None
 
     combo_odd = None
     combo_ev = None
@@ -240,6 +268,11 @@ def enrich_combo_ticket(
         combo_ev = round(combo_prob * combo_odd - 1.0, 4)
 
     notes = list(ticket.get("strategy_notes") or [])
+    if notes_extra:
+        notes.append(notes_extra)
+    notes.append(
+        "No Criar Aposta Superbet use só as 2 pernas principais — não empilhe reservas no mesmo bilhete."
+    )
     if snapshot is None:
         notes.append("Odds Superbet não carregadas — informe superbet_event_id para cruzar EV.")
     elif book_legs:

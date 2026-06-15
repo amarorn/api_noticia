@@ -7,7 +7,11 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def fetch_live_match_stats(sofascore_event_id: int) -> dict[str, float | None]:
+def fetch_live_match_stats(
+    sofascore_event_id: int,
+    *,
+    waf_max_retries: int | None = None,
+) -> dict[str, float | None]:
     """Busca xG e métricas principais de um evento ao vivo.
 
     Falha silenciosa — não bloqueia o fluxo de advice.
@@ -16,7 +20,7 @@ def fetch_live_match_stats(sofascore_event_id: int) -> dict[str, float | None]:
         from ingest.sofascore.client import SofascoreClient
         from ingest.sofascore.stats_mapper import map_event_statistics
 
-        client = SofascoreClient()
+        client = SofascoreClient(waf_max_retries=waf_max_retries)
         payload = client.event_statistics(sofascore_event_id)
         mapped = map_event_statistics(payload)
         return {

@@ -143,6 +143,7 @@ def _step_train_wc() -> dict[str, Any]:
 
 def _step_predict_wc_round(round_file: Path) -> dict[str, Any]:
     from models.wc_artifact import load_or_train_wc_predictor
+    from pipelines.wc_predict_utils import before_date_for_match, match_is_played
     from schemas.national_teams import normalize_national_team
 
     round_data = json.loads(round_file.read_text(encoding="utf-8"))
@@ -150,10 +151,20 @@ def _step_predict_wc_round(round_file: Path) -> dict[str, Any]:
 
     preds = []
     for match in round_data.get("matches", []):
+        if match_is_played(match):
+            continue
         home = normalize_national_team(match["home_team"])
         away = normalize_national_team(match["away_team"])
         phase = match.get("phase", round_data.get("phase", "group"))
-        p = predictor.predict(home, away, phase=phase, is_neutral=True)
+        p = predictor.predict(
+            home,
+            away,
+            phase=phase,
+            is_neutral=True,
+            before_date=before_date_for_match(match),
+            season=round_data.get("season"),
+            group_name=match.get("group"),
+        )
         preds.append(
             {
                 "match_id": match.get("id"),

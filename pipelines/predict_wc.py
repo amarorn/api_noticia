@@ -4,6 +4,7 @@ from pathlib import Path
 
 from models.wc_artifact import load_or_train_wc_predictor
 from schemas.national_teams import normalize_national_team
+from pipelines.wc_predict_utils import before_date_for_match, match_is_played
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
 
 DEFAULT_ROUND = Path("data/rounds/wc_2026.json")
@@ -74,8 +75,16 @@ def main() -> None:
             home = normalize_national_team(match["home_team"])
             away = normalize_national_team(match["away_team"])
             match_phase = match.get("phase", phase)
+            if match_is_played(match):
+                continue
             pred = predictor.predict(
-                home, away, phase=match_phase, kxl_match=kxl_match
+                home,
+                away,
+                phase=match_phase,
+                kxl_match=kxl_match,
+                before_date=before_date_for_match(match),
+                season=round_data.get("season"),
+                group_name=match.get("group"),
             )
             results.append((pred, match))
 

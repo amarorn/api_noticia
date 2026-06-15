@@ -127,7 +127,11 @@ function PickCard({
 
 export function LiveTopPicks({ data }: LiveTopPicksProps) {
   const opportunities = data.strategy?.opportunities ?? [];
-  const picks = opportunities.filter((o) => o.tier !== "abaixo_limiar").slice(0, 3);
+  const confScore = data.confidence?.score ?? 1;
+  const picks = opportunities
+    .filter((o) => o.tier !== "abaixo_limiar")
+    .filter((o) => o.tier === "forte" || (confScore >= 0.5 && o.tier === "moderada"))
+    .slice(0, 3);
 
   if (picks.length === 0) {
     if (data.confidence && data.confidence.score < 0.25) {

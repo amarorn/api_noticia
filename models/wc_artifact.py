@@ -32,6 +32,10 @@ ARTIFACT_VERSION = 7
 
 def fixtures_fingerprint() -> str:
     paths = sorted(settings.fixtures_path.glob("world_cup_*.parquet"))
+    for extra in ("fifa_matches.parquet", "sofascore_matches.parquet"):
+        p = settings.fixtures_path / extra
+        if p.exists():
+            paths.append(p)
     if not paths:
         return "empty"
     parts = [f"{p.name}:{p.stat().st_mtime_ns}:{p.stat().st_size}" for p in paths]
@@ -97,8 +101,8 @@ def artifact_is_valid(manifest: dict | None = None) -> bool:
     return all(checks.values())
 
 
-# Fingerprints que podem mudar sem invalidar pesos do pickle treinado.
-_RUNTIME_STALE_KEYS = frozenset({"hyperparams", "odds", "fifa", "silver_fingerprint"})
+# Fingerprints que podem mudar sem invalidar o pickle (fixtures recarregadas em load_artifact).
+_RUNTIME_STALE_KEYS = frozenset({"hyperparams", "odds", "fifa", "silver_fingerprint", "fixtures"})
 
 
 def artifact_is_loadable(manifest: dict | None = None) -> bool:
@@ -170,7 +174,7 @@ def load_artifact() -> WcPredictor | None:
         logger.warning(
             "wc_artifact_stale_runtime",
             stale=stale,
-            hint="Pickle servido; execute train-wc --force se fixtures/squads/features mudaram",
+            hint="Pickle servido com fixtures atualizadas; execute retrain-wc-hoje se sincronizou placares",
         )
     from ingest.fixtures.world_cup import load_wc_fixtures, normalize_fixtures_df
 
@@ -205,13 +209,14 @@ def _touch_manifest_silver_fingerprint(manifest: dict) -> dict:
 
 
 def _touch_manifest_runtime_fingerprints(manifest: dict) -> dict:
-    """Atualiza fingerprints voláteis após load (silver, odds, FIFA)."""
+    """Atualiza fingerprints voláteis após load (silver, odds, FIFA, fixtures)."""
     updated = dict(manifest)
     changed = False
     for key, fn in (
         ("silver_fingerprint", silver_fingerprint),
         ("odds_fingerprint", _odds_fingerprint),
         ("fifa_fingerprint", fifa_rankings_fingerprint),
+        ("fixtures_fingerprint", fixtures_fingerprint),
     ):
         current = fn()
         if updated.get(key) != current:

@@ -48,6 +48,16 @@ function buildCrumbs(
   pathname: string,
   params: Record<string, string | undefined>,
 ): Crumb[] {
+  if (pathname.startsWith("/bilhetes/") && params.home && params.away) {
+    const home = decodeURIComponent(params.home);
+    const away = decodeURIComponent(params.away);
+    return [
+      { label: "Dashboard", to: "/" },
+      { label: `${home} x ${away}`, to: `/match/${params.home}/${params.away}` },
+      { label: "Bilhetes" },
+    ];
+  }
+
   if (pathname.startsWith("/match/") && params.home && params.away) {
     const home = decodeURIComponent(params.home);
     const away = decodeURIComponent(params.away);

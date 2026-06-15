@@ -1,4 +1,5 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
+import type { LiveRecalibrationEvent } from "@/presentation/utils/liveRecalibration";
 import { formatPercent } from "@/presentation/theme";
 
 function OverroundBadge({ overround }: { overround: number }) {
@@ -139,9 +140,10 @@ function EdgeMiniCard({ label, odd, implied, model, edge }: EdgeMiniCardProps) {
 
 interface LiveModelPanelProps {
   data: SuperbetLiveAdvice;
+  recalibrationEvent?: LiveRecalibrationEvent | null;
 }
 
-export function LiveModelPanel({ data }: LiveModelPanelProps) {
+export function LiveModelPanel({ data, recalibrationEvent }: LiveModelPanelProps) {
   const s = data.inplaySummary;
   const probs = { home: s.probFinalHome, draw: s.probFinalDraw, away: s.probFinalAway };
 
@@ -157,6 +159,18 @@ export function LiveModelPanel({ data }: LiveModelPanelProps) {
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
           Modelo in-play
         </h3>
+        {recalibrationEvent && (
+          <p className="mb-3 rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2 text-[10px] text-slate-400">
+            <span className="font-semibold text-slate-300">Última recalibração:</span>{" "}
+            {recalibrationEvent.message}
+            {recalibrationEvent.maxProbShiftPp >= 2 && (
+              <span className="text-neon-green/80">
+                {" "}
+                · Δ 1X2 até {recalibrationEvent.maxProbShiftPp.toFixed(1)} pp
+              </span>
+            )}
+          </p>
+        )}
         <div className="space-y-2.5">
           <ProbBar
             label={teamLabel(data.homeTeam)}
@@ -257,6 +271,61 @@ export function LiveModelPanel({ data }: LiveModelPanelProps) {
           </>
         )}
       </div>
+
+      {data.halftimeReport?.applied && data.minute >= 45 && (
+        <div className="rounded-2xl border border-sky-500/20 bg-sky-500/[0.04] p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-sky-300">
+              Ajuste intervalo
+            </h3>
+            <span className="rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-200">
+              2T recalibrado com dados do 1T
+            </span>
+          </div>
+          <p className="mb-3 text-[11px] text-slate-400">{data.halftimeReport.summary}</p>
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2">
+              <p className="text-slate-500">Placar HT</p>
+              <p className="font-mono font-semibold text-white">
+                {data.halftimeReport.frozenStats.htHomeScore}×
+                {data.halftimeReport.frozenStats.htAwayScore}
+              </p>
+            </div>
+            <div className="rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2">
+              <p className="text-slate-500">Escanteios 1T</p>
+              <p className="font-mono font-semibold text-white">
+                {data.halftimeReport.frozenStats.homeCorners1h}×
+                {data.halftimeReport.frozenStats.awayCorners1h}
+              </p>
+            </div>
+            <div className="rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2">
+              <p className="text-slate-500">Amarelos 1T</p>
+              <p className="font-mono font-semibold text-white">
+                {data.halftimeReport.frozenStats.homeYellows1h}×
+                {data.halftimeReport.frozenStats.awayYellows1h}
+              </p>
+            </div>
+            <div className="rounded-lg border border-white/8 bg-white/[0.03] px-2.5 py-2">
+              <p className="text-slate-500">Fator λ 2T (C/V)</p>
+              <p className="font-mono font-semibold text-sky-200">
+                ×{data.halftimeReport.goalAdjustment.home2hFactor.toFixed(2)} / ×
+                {data.halftimeReport.goalAdjustment.away2hFactor.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 space-y-1.5">
+            <p className="text-[10px] text-slate-500">
+              Esc FT ~{data.halftimeReport.corners.expectedFtTotal.toFixed(1)} · Cartões FT ~
+              {data.halftimeReport.cards.expectedFtTotal.toFixed(1)}
+            </p>
+            {data.halftimeReport.goalAdjustment.reasons.map((reason) => (
+              <p key={reason} className="text-[10px] text-slate-500">
+                · {reason}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Posição da casa — edge 1X2 */}
       <div className="rounded-2xl border border-violet-500/15 bg-violet-500/[0.03] p-4">

@@ -1,9 +1,10 @@
 ---
-title: api-noticia
-emoji: 📈
+title: Model WC 2026
+emoji: ⚽
 colorFrom: blue
 colorTo: green
 sdk: docker
+app_port: 8080
 pinned: false
 ---
 

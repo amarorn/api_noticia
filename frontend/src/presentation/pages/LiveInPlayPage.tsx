@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
-  getSuperbetEventUseCase,
   getSuperbetLiveAdviceUseCase,
   getUserOpenBetsUseCase,
 } from "@/application/container";
@@ -15,6 +14,9 @@ import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconArrowLeft, IconChevronRight } from "@/presentation/components/ui/Icons";
 import { BetStrategyPanel } from "@/presentation/components/predictions/BetStrategyPanel";
 import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
+import { LiveHalfTicketsPanel } from "@/presentation/components/predictions/LiveHalfTicketsPanel";
+import { LiveRemaining2hMarketsPanel } from "@/presentation/components/predictions/LiveRemaining2hMarketsPanel";
+import { LiveLongshotCombosPanel } from "@/presentation/components/predictions/LiveLongshotCombosPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
 import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
 import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
@@ -25,13 +27,18 @@ import {
 } from "@/presentation/components/predictions/LiveOpenBetMonitor";
 import { LivePlainGuide } from "@/presentation/components/predictions/LivePlainGuide";
 import { LiveScoreHeatmap } from "@/presentation/components/predictions/LiveScoreHeatmap";
+import { LivePredictionEvolutionChart } from "@/presentation/components/live-dashboard/LivePredictionEvolutionChart";
 import LiveHedgeAlert from "@/presentation/components/predictions/LiveHedgeAlert";
 import LiveAgainstModelAlert from "@/presentation/components/predictions/LiveAgainstModelAlert";
 import { LiveP0GuardBanner } from "@/presentation/components/predictions/LiveP0GuardBanner";
+import { LiveRecalibrationBanner } from "@/presentation/components/predictions/LiveRecalibrationBanner";
+import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
+import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
 import { draftAgainstModelAlert, normalizeH2hOutcome } from "@/presentation/utils/againstModelBet";
 
-const POLL_MS = 15_000;
-const SCORE_POLL_MS = 10_000;
+const FAST_POLL_MS = 10_000;
+const FULL_POLL_MS = 60_000;
+const SCORE_POLL_MS = 5_000;
 const MAX_OPEN_BETS = 2;
 
 type BetDraft = {
@@ -115,63 +122,32 @@ export function LiveInPlayPage() {
     queryFn: () => getUserOpenBetsUseCase.execute(),
   });
 
-  const adviceQuery = useQuery({
-    queryKey: ["superbet-live-advice", eventId, appliedBankroll],
-    queryFn: () =>
-      getSuperbetLiveAdviceUseCase.execute({
-        eventId,
-        phase: "friendly",
-        bankroll: appliedBankroll,
-      }),
-    enabled: Number.isFinite(eventId) && eventId > 0,
-    staleTime: 10_000,
-    refetchInterval: (query) =>
-      query.state.data?.isFinished ? false : POLL_MS,
-  });
+  const {
+    data,
+    scoreTick,
+    liveHeader,
+    adviceSource,
+    isLoading,
+    isAdvicePending,
+    isError: adviceIsError,
+    error: adviceError,
+    isFetching: adviceFetching,
+    refetch: refetchAdvice,
+  } = useLiveAdviceQueries(eventId, appliedBankroll);
 
-  const scoreTickQuery = useQuery({
-    queryKey: ["superbet-event-score", eventId],
-    queryFn: () => getSuperbetEventUseCase.execute({ eventId, saveBronze: false }),
-    enabled: Number.isFinite(eventId) && eventId > 0,
-    staleTime: 5_000,
-    refetchInterval: (query) =>
-      query.state.data?.isLive === false ? false : SCORE_POLL_MS,
-  });
-
-  const data = adviceQuery.data;
-  const scoreTick = scoreTickQuery.data;
-  const isLoading = adviceQuery.isLoading && !data;
-
-  const liveHeader = useMemo(() => {
-    if (!data) return null;
-    const adviceCapturedMs = data.capturedAt ? Date.parse(data.capturedAt) : 0;
-    const tickCapturedMs = scoreTick?.capturedAt ? Date.parse(scoreTick.capturedAt) : 0;
-    const useTick =
-      scoreTick != null &&
-      Number.isFinite(tickCapturedMs) &&
-      tickCapturedMs >= adviceCapturedMs;
-    return {
-      currentScore: useTick ? scoreTick.currentScore : data.currentScore,
-      minute: useTick ? scoreTick.minute : data.minute,
-      periodLabel: useTick ? scoreTick.periodLabel : data.periodLabel,
-      h2hOdds: useTick ? scoreTick.h2hOdds : data.h2hOdds,
-      rawMarketCount: useTick ? scoreTick.rawMarketCount : data.rawMarketCount,
-      capturedAt: useTick ? scoreTick.capturedAt : data.capturedAt,
-      scoreIsFresh: useTick,
-    };
-  }, [data, scoreTick]);
+  const recalibrationEvent = useLiveRecalibration(data, adviceFetching);
 
   useEffect(() => {
     if (!scoreTick?.currentScore || !data?.currentScore) return;
     if (scoreTick.currentScore === data.currentScore) return;
-    if (adviceQuery.isFetching || data.isFinished) return;
-    void adviceQuery.refetch();
+    if (adviceFetching || data.isFinished) return;
+    refetchAdvice();
   }, [
     scoreTick?.currentScore,
     data?.currentScore,
     data?.isFinished,
-    adviceQuery.isFetching,
-    adviceQuery.refetch,
+    adviceFetching,
+    refetchAdvice,
   ]);
 
   const apiBets: RegisteredBetEntry[] = useMemo(() => {
@@ -229,6 +205,7 @@ export function LiveInPlayPage() {
           outcome: bet.outcome,
           stake: bet.stake,
           oddsPlaced: bet.oddsPlaced,
+          fast: true,
         }),
       enabled:
         Number.isFinite(eventId) &&
@@ -238,7 +215,7 @@ export function LiveInPlayPage() {
         formMode !== bet.id,
       staleTime: 10_000,
       refetchInterval: (query: { state: { data?: { isFinished?: boolean } } }) =>
-        query.state.data?.isFinished ? false : POLL_MS,
+        query.state.data?.isFinished ? false : FAST_POLL_MS,
     })),
   });
 
@@ -299,7 +276,14 @@ export function LiveInPlayPage() {
           <IconArrowLeft className="h-4 w-4" />
           Voltar ao vivo
         </Link>
-        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to={`/ao-vivo/${eventId}/painel`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neon-blue/30 bg-neon-blue/10 px-3 py-1.5 text-xs font-medium text-neon-blue transition hover:border-neon-blue/50"
+          >
+            Painel visual
+          </Link>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
           {pulse?.wcModelsReady === false && (
             <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-300">
               Modelo WC indisponível
@@ -309,19 +293,20 @@ export function LiveInPlayPage() {
             Superbet #{eventId}
             {data?.betradarId ? ` · Betradar ${data.betradarId}` : ""}
           </span>
+          </div>
         </div>
       </div>
 
       {isLoading ? (
         <DashboardSkeleton />
-      ) : adviceQuery.isError ? (
+      ) : adviceIsError && !scoreTick ? (
         <ErrorState
           message={
-            adviceQuery.error instanceof Error
-              ? adviceQuery.error.message
+            adviceError instanceof Error
+              ? adviceError.message
               : "Falha ao capturar jogo na Superbet"
           }
-          onRetry={() => adviceQuery.refetch()}
+          onRetry={refetchAdvice}
         />
       ) : data ? (
         <>
@@ -364,29 +349,42 @@ export function LiveInPlayPage() {
                   </span>
                 </p>
                 <p>{liveHeader?.rawMarketCount ?? data.rawMarketCount} mercados</p>
-                <p className="mt-0.5 flex items-center justify-end gap-2">
+                <p className="mt-0.5 flex flex-wrap items-center justify-end gap-2">
                   <span>
                     Captura {formatCapturedAt(liveHeader?.capturedAt ?? data.capturedAt)}
                     {data.isLive
                       ? liveHeader?.scoreIsFresh
-                        ? ` · placar ${SCORE_POLL_MS / 1000}s · modelo ${POLL_MS / 1000}s`
-                        : ` · refresh ${POLL_MS / 1000}s`
+                        ? ` · placar ${SCORE_POLL_MS / 1000}s · rápido ${FAST_POLL_MS / 1000}s · completo ${FULL_POLL_MS / 1000}s`
+                        : ` · rápido ${FAST_POLL_MS / 1000}s · completo ${FULL_POLL_MS / 1000}s`
                       : ""}
                   </span>
+                  {data.isLive && !data.isFinished && (
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                        adviceSource === "full"
+                          ? "bg-sky-500/15 text-sky-300"
+                          : "bg-amber-500/10 text-amber-300"
+                      }`}
+                      title={
+                        adviceSource === "full"
+                          ? "Última captura com Sofascore e lake completo"
+                          : "Modo rápido — refresh completo a cada 60s"
+                      }
+                    >
+                      {adviceSource === "full" ? "completo" : "rápido"}
+                    </span>
+                  )}
                   <button
-                    onClick={() => {
-                      void scoreTickQuery.refetch();
-                      void adviceQuery.refetch();
-                    }}
-                    disabled={adviceQuery.isFetching || scoreTickQuery.isFetching}
-                    title="Atualizar agora"
+                    onClick={() => refetchAdvice()}
+                    disabled={adviceFetching}
+                    title="Atualizar agora (rápido + completo)"
                     className="rounded p-0.5 text-slate-500 transition hover:text-slate-300 disabled:opacity-40"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 20 20"
                       fill="currentColor"
-                      className={`h-3.5 w-3.5 ${adviceQuery.isFetching ? "animate-spin" : ""}`}
+                      className={`h-3.5 w-3.5 ${adviceFetching ? "animate-spin" : ""}`}
                     >
                       <path
                         fillRule="evenodd"
@@ -457,10 +455,21 @@ export function LiveInPlayPage() {
             )}
           </section>
 
+          <LiveRecalibrationBanner event={recalibrationEvent} />
+
           {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
 
-          {/* ── 2a. REGRAS P0 ── */}
+          {/* ── 2a. BILHETES 1T / 2T (modelo × mercado) ── */}
+          <LiveHalfTicketsPanel data={data} />
+
+          {/* ── 2a1. MERCADOS 2T VIÁVEIS (tempo restante) ── */}
+          <LiveRemaining2hMarketsPanel data={data} />
+
+          {/* ── 2a2. LONGSHOT R$5 → R$400+ ── */}
+          <LiveLongshotCombosPanel data={data} />
+
+          {/* ── 2b. REGRAS P0 ── */}
           <LiveP0GuardBanner guardrails={data.betGuardrails} />
 
           {/* ── 2b. ALERTA — aposta contra palpite do modelo ── */}
@@ -474,17 +483,25 @@ export function LiveInPlayPage() {
             <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
               <LiveMarketCards data={data} />
             </section>
-            <LiveModelPanel data={data} />
+            <LiveModelPanel data={data} recalibrationEvent={recalibrationEvent} />
           </div>
 
           {/* ── 3b. HEATMAP DE PLACARES ── */}
+          <LivePredictionEvolutionChart data={data} />
+
           <LiveScoreHeatmap data={data} />
 
           {/* ── 4. GUIA RÁPIDO (colapsável) ── */}
           <LivePlainGuide data={data} trackBet={betAnalysisActive} />
 
           {/* ── 5. BILHETE COMBO KXL ── */}
-          <ComboTicketPanel homeTeam={data.homeTeam} awayTeam={data.awayTeam} strategy={data.strategy} />
+          <ComboTicketPanel
+            homeTeam={data.homeTeam}
+            awayTeam={data.awayTeam}
+            strategy={data.strategy}
+            superbetEventId={data.superbetEventId}
+            minute={data.minute}
+          />
 
           {/* ── 6. ESTRATÉGIA ── */}
           <BetStrategyPanel strategy={data.strategy} />
@@ -503,7 +520,7 @@ export function LiveInPlayPage() {
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {displayBets.length > 0
-                    ? `${displayBets.length} bilhete${displayBets.length > 1 ? "s" : ""} cadastrado${displayBets.length > 1 ? "s" : ""} · atualiza a cada ${POLL_MS / 1000}s`
+                    ? `${displayBets.length} bilhete${displayBets.length > 1 ? "s" : ""} cadastrado${displayBets.length > 1 ? "s" : ""} · atualiza a cada ${FAST_POLL_MS / 1000}s`
                     : `Cadastre até ${MAX_OPEN_BETS} bilhetes e monitore o ponto ideal de cash-out`}
                 </p>
               </div>
@@ -592,7 +609,7 @@ export function LiveInPlayPage() {
                           betIndex={index + 1}
                           totalBets={displayBets.length}
                           isFetching={betAdviceQueries[index]?.isFetching ?? false}
-                          pollSeconds={POLL_MS / 1000}
+                          pollSeconds={FAST_POLL_MS / 1000}
                           onEdit={() => {
                             setBetDraft(betToDraft(bet));
                             setFormMode(bet.id);
@@ -812,11 +829,42 @@ export function LiveInPlayPage() {
             </div>
           )}
         </>
+      ) : scoreTick ? (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <TeamFlag team={scoreTick.homeTeam} size={36} />
+              <p className="truncate text-sm font-semibold text-white">{scoreTick.homeTeam}</p>
+            </div>
+            <div className="px-2 text-center">
+              <p className="font-mono text-2xl font-bold text-white">
+                {scoreTick.currentScore?.replace("x", " × ") ?? "0 × 0"}
+              </p>
+              <p className="mt-0.5 text-xs font-semibold text-amber-300">
+                {scoreTick.minute}&apos;
+                {scoreTick.periodLabel ? ` · ${scoreTick.periodLabel}` : ""}
+              </p>
+            </div>
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+              <p className="truncate text-sm font-semibold text-white">{scoreTick.awayTeam}</p>
+              <TeamFlag team={scoreTick.awayTeam} size={36} />
+            </div>
+          </div>
+          <p className="mt-4 text-center text-xs text-slate-500" aria-live="polite">
+            Carregando modelo in-play…
+          </p>
+        </section>
       ) : null}
 
-      {adviceQuery.isFetching && data && (
+      {isAdvicePending && (
         <p className="text-center text-[11px] text-slate-500" aria-live="polite">
-          Atualizando snapshot Superbet…
+          Calculando probabilidades e mercados…
+        </p>
+      )}
+
+      {adviceFetching && data && (
+        <p className="text-center text-[11px] text-slate-500" aria-live="polite">
+          Atualizando palpite…
         </p>
       )}
     </PageTransition>

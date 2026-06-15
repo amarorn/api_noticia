@@ -1,5 +1,7 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { buildBetReason, TIMING_CONFIG } from "@/presentation/components/predictions/liveBetInsights";
+import { SendComboProposalButton } from "@/presentation/components/predictions/SendComboProposalButton";
+import { buildProposalFromStrategyOpportunity } from "@/presentation/utils/comboProposalPayload";
 
 type Tone = "protect" | "bet" | "bet-light" | "wait" | "finished";
 
@@ -46,6 +48,9 @@ const TONE_CONFIG: Record<
 interface WatchItem {
   key: string;
   label: string;
+  market: string;
+  outcome: string;
+  modelProb: number;
   marketOdd: number;
   expectedValue: number;
   meetsThreshold: boolean;
@@ -105,6 +110,9 @@ function buildFallbackWatchList(data: SuperbetLiveAdvice, threshold: number): Wa
     rows.push({
       key: spec.key,
       label: spec.label,
+      market: "h2h",
+      outcome: spec.key,
+      modelProb: prob,
       marketOdd: odd,
       expectedValue: ev,
       meetsThreshold: ev >= threshold,
@@ -119,6 +127,9 @@ function resolveWatchList(data: SuperbetLiveAdvice, threshold: number): WatchIte
     return fromStrategy.map((w) => ({
       key: `${w.market}-${w.outcome}`,
       label: w.label,
+      market: w.market,
+      outcome: w.outcome,
+      modelProb: w.modelProb,
       marketOdd: w.marketOdd,
       expectedValue: w.expectedValue,
       meetsThreshold: w.meetsThreshold,
@@ -177,10 +188,13 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
   }
 
   const conf = data.confidence;
+  const confScore = conf?.score ?? 1;
   const confWarning =
-    conf && conf.score < 0.3
-      ? "⚠️ Dados insuficientes — modelo genérico. Não aposte valores altos."
-      : undefined;
+    confScore < 0.5
+      ? "⚠️ Confiança baixa (<50%) — só entre em palpite FORTE; evite handicap e 2T."
+      : confScore < 0.3
+        ? "⚠️ Dados insuficientes — modelo genérico. Não aposte valores altos."
+        : undefined;
 
   if (trackBet && data.cashout) {
     const action = data.cashout.action;
@@ -206,8 +220,11 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
 
   const strategy = data.strategy;
   const top =
-    strategy?.opportunities.find((o) => o.tier === "forte" || o.tier === "moderada") ??
-    strategy?.opportunities[0];
+    strategy?.opportunities.find(
+      (o) =>
+        o.tier === "forte" ||
+        (confScore >= 0.5 && o.tier === "moderada"),
+    ) ?? strategy?.opportunities.find((o) => o.tier === "forte") ?? null;
 
   const avoid = (strategy?.shields ?? [])
     .filter((s) => s.action === "evitar")
@@ -256,8 +273,8 @@ function buildActionNow(data: SuperbetLiveAdvice, trackBet: boolean): ActionStat
     };
   }
 
-  // OPORTUNIDADE MODERADA
-  if (top && top.tier === "moderada" && top.timing !== "aguardar") {
+  // OPORTUNIDADE MODERADA (só com confiança ≥ 50%)
+  if (top && top.tier === "moderada" && confScore >= 0.5 && top.timing !== "aguardar") {
     const stakeHint =
       top.timing === "agora" && top.suggestedStakeValue > 0
         ? `R$ ${top.suggestedStakeValue.toFixed(0)} (máx. ${top.suggestedStakePct}%)`
@@ -326,6 +343,22 @@ export function LiveActionNowPanel({ data, trackBet }: LiveActionNowPanelProps) 
   const cfg = TONE_CONFIG[action.tone];
   const threshold = data.strategy?.minEdgeThreshold ?? 0.04;
   const watchList = action.showWatchList ? resolveWatchList(data, threshold) : [];
+  const confScore = data.confidence?.score ?? 1;
+  const top =
+    data.strategy?.opportunities.find(
+      (o) =>
+        o.tier === "forte" ||
+        (confScore >= 0.5 && o.tier === "moderada"),
+    ) ?? null;
+  const heroProposal =
+    top && !data.isFinished
+      ? buildProposalFromStrategyOpportunity(top, {
+          homeTeam: data.homeTeam,
+          awayTeam: data.awayTeam,
+          superbetEventId: data.superbetEventId,
+          minute: data.minute,
+        })
+      : null;
 
   return (
     <section
@@ -393,6 +426,10 @@ export function LiveActionNowPanel({ data, trackBet }: LiveActionNowPanelProps) 
               </span>
             </div>
           )}
+
+          {heroProposal && (
+            <SendComboProposalButton proposal={heroProposal} className="mt-4 max-w-sm" />
+          )}
         </div>
       </div>
 
@@ -406,20 +443,42 @@ export function LiveActionNowPanel({ data, trackBet }: LiveActionNowPanelProps) 
             {watchList.map((item) => {
               const evPct = item.expectedValue * 100;
               const gap = threshold * 100 - evPct;
+              const watchProposal = buildProposalFromStrategyOpportunity(
+                {
+                  label: item.label,
+                  market: item.market,
+                  outcome: item.outcome,
+                  modelProb: item.modelProb,
+                  marketOdd: item.marketOdd,
+                  expectedValue: item.expectedValue,
+                  edgePp: (item.modelProb - 1 / item.marketOdd) * 100,
+                },
+                {
+                  homeTeam: data.homeTeam,
+                  awayTeam: data.awayTeam,
+                  superbetEventId: data.superbetEventId,
+                  minute: data.minute,
+                },
+              );
               return (
-                <span
+                <div
                   key={item.key}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs"
+                  className="inline-flex max-w-full flex-col gap-1.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5"
                 >
-                  <span className="text-slate-300">
-                    {item.label} @ {item.marketOdd.toFixed(2)}
+                  <span className="inline-flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="text-slate-300">
+                      {item.label} @ {item.marketOdd.toFixed(2)}
+                    </span>
+                    <span className="text-slate-500">
+                      EV {evPct >= 0 ? "+" : ""}
+                      {evPct.toFixed(1)}%
+                      {evPct < threshold * 100 && gap > 0 && ` · faltam +${gap.toFixed(1)} pp`}
+                    </span>
                   </span>
-                  <span className="text-slate-500">
-                    EV {evPct >= 0 ? "+" : ""}
-                    {evPct.toFixed(1)}%
-                    {evPct < threshold * 100 && gap > 0 && ` · faltam +${gap.toFixed(1)} pp`}
-                  </span>
-                </span>
+                  {watchProposal.qualified && (
+                    <SendComboProposalButton proposal={watchProposal} compact />
+                  )}
+                </div>
               );
             })}
           </div>

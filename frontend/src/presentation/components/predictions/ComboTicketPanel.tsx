@@ -1,4 +1,9 @@
 import type { SuperbetLiveAdvice, WcComboTicket } from "@/domain/entities";
+import {
+  SendComboProposalButton,
+} from "@/presentation/components/predictions/SendComboProposalButton";
+import { ComboTicketLast10Panel } from "@/presentation/components/predictions/ComboTicketLast10Panel";
+import { buildProposalFromKxlTicket } from "@/presentation/utils/comboProposalPayload";
 
 type ComboLeg = WcComboTicket extends { mainBets: infer M }
   ? M extends Array<infer L>
@@ -24,6 +29,8 @@ interface ComboTicketPanelProps {
     : null;
   /** @deprecated use ticket + patternAccuracy */
   strategy?: SuperbetLiveAdvice["strategy"];
+  superbetEventId?: number | null;
+  minute?: number | null;
 }
 
 function BetLine({ leg, index, variant }: { leg: ComboLeg; index: number; variant: "main" | "reserve" }) {
@@ -64,16 +71,25 @@ function BetLine({ leg, index, variant }: { leg: ComboLeg; index: number; varian
           <span className="rounded-md bg-white/5 px-2 py-0.5">Edge {leg.edgePp.toFixed(1)} pp</span>
         )}
       </div>
-      {leg.superbetMarket && (
-        <p className="mt-2 text-[11px] text-slate-500">
-          Superbet: {leg.superbetMarket} → {leg.superbetPick}
+      {leg.bookChecked && leg.availableOnBook && leg.superbetMarket && (
+        <p className="mt-2 rounded-md border border-neon-blue/25 bg-neon-blue/10 px-2 py-1.5 text-[11px] font-medium text-neon-blue">
+          Criar Aposta: {leg.superbetMarket} → {leg.superbetPick}
+          {leg.marketOdd != null ? ` @${leg.marketOdd.toFixed(2)}` : ""}
         </p>
       )}
       {leg.lineAdjustment && (
         <p className="mt-1 text-[11px] text-amber-400/90">{leg.lineAdjustment}</p>
       )}
-      {leg.availableOnBook === false && leg.superbetMarket && (
-        <p className="mt-1 text-[11px] text-red-300/90">Linha não encontrada na captura Superbet.</p>
+      {leg.bookChecked && leg.availableOnBook === false && (
+        <p className="mt-1 text-[11px] font-medium text-red-300/90">
+          Linha não encontrada na Superbet — não inclua no bilhete.
+        </p>
+      )}
+      {leg.bookChecked === false && (
+        <p className="mt-1 text-[11px] text-amber-200/90">
+          Odds não cruzadas (evento Superbet não vinculado). Confira manualmente no Criar Aposta
+          — no seu print as 2 pernas principais batem @~1.50.
+        </p>
       )}
     </div>
   );
@@ -85,9 +101,30 @@ export function ComboTicketPanel({
   ticket: ticketProp,
   patternAccuracy: accuracyProp,
   strategy,
+  superbetEventId,
+  minute,
 }: ComboTicketPanelProps) {
   const ticket = ticketProp ?? strategy?.comboTicket ?? null;
   const accuracy = accuracyProp ?? strategy?.patternAccuracy ?? ticket?.accuracy ?? null;
+  const kxlProposal =
+    ticket?.available && ticket.mainBets.length > 0
+      ? buildProposalFromKxlTicket(
+          {
+            title: ticket.title,
+            mainBets: ticket.mainBets,
+            comboOdd: ticket.comboOdd,
+            comboEv: ticket.comboEv,
+            suggestedStakeValue: ticket.suggestedStakeValue,
+            bookCoverage: ticket.bookCoverage,
+          },
+          {
+            homeTeam,
+            awayTeam,
+            superbetEventId,
+            minute,
+          },
+        )
+      : null;
 
   if (!ticket && !accuracy) return null;
 
@@ -97,7 +134,7 @@ export function ComboTicketPanel({
         <div>
           <h2 className="text-sm font-semibold text-white">Bilhete combo — estudo KXL</h2>
           <p className="text-xs text-slate-500">
-            Montagem automática com padrões 9/10–10/10 · odds Superbet quando disponível
+            Montagem automática com padrões 9/10–10/10 · envio só com odd Superbet e EV positivo
           </p>
         </div>
         {accuracy && (
@@ -128,6 +165,11 @@ export function ComboTicketPanel({
 
           <div className="mb-4 space-y-2">
             <p className="text-[11px] uppercase tracking-wider text-slate-500">Apostas principais (combo)</p>
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/90">
+              No <strong className="text-amber-50">Criar Aposta</strong> da Superbet use{" "}
+              <strong className="text-amber-50">só estas 2 pernas</strong>. Reservas são singles
+              separados — não empilhe tudo no mesmo bilhete @2.00.
+            </p>
             {ticket.mainBets.map((leg, idx) => (
               <BetLine key={`main-${leg.label}-${idx}`} leg={leg} index={idx + 1} variant="main" />
             ))}
@@ -136,7 +178,7 @@ export function ComboTicketPanel({
           {ticket.reserveBets.length > 0 && (
             <div className="mb-4 space-y-2 border-t border-white/8 pt-4">
               <p className="text-[11px] uppercase tracking-wider text-slate-500">
-                Apostas reserva (singles de fallback)
+                Apostas reserva (singles — só se confirmadas na Superbet)
               </p>
               {ticket.reserveBets.map((leg, idx) => (
                 <BetLine key={`res-${leg.label}-${idx}`} leg={leg} index={idx + 1} variant="reserve" />
@@ -188,6 +230,12 @@ export function ComboTicketPanel({
                 </li>
               ))}
             </ul>
+          )}
+
+          <ComboTicketLast10Panel analysis={ticket.last10Analysis} />
+
+          {kxlProposal && (
+            <SendComboProposalButton proposal={kxlProposal} className="mt-4" />
           )}
         </>
       )}

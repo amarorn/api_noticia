@@ -527,7 +527,15 @@ function buildSectionCards(
                 data.secondHalfTotals ||
                 (data.inplaySummary.probShHome != null && data.isLive),
             )
-          : true;
+          : section.id === "props"
+            ? Boolean(
+                data.analysisCoverage?.halftimeAdjust &&
+                  (data.analysisCoverage?.corners ||
+                    data.analysisCoverage?.yellowCards ||
+                    Object.keys(data.inplaySummary.cornerLineProbs ?? {}).length > 0 ||
+                    Object.keys(data.inplaySummary.cardLineProbs ?? {}).length > 0),
+              )
+            : true;
 
     const hasScanRows = sortedCards.some((c) => c.best != null);
     const showLiveHalf = data.isLive && !data.isFinished && section.id !== "core";

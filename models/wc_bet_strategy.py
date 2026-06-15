@@ -249,11 +249,12 @@ def build_bet_strategy_report(
     h2h_overround: float | None = None,
     confidence: dict[str, Any] | None = None,
     event_id: int | None = None,
+    fast: bool = False,
 ) -> dict[str, Any]:
     conf_score = float((confidence or {}).get("score") or 1.0)
     min_edge_pp = settings.live_min_edge_pp
     if conf_score < 0.5:
-        min_edge_pp = max(min_edge_pp, 8.0)
+        min_edge_pp = max(min_edge_pp, 10.0)
 
     all_edges, threshold = scan_all_market_edges(
         inplay,
@@ -288,12 +289,16 @@ def build_bet_strategy_report(
         }
 
     opportunities: list[dict[str, Any]] = []
-    block_new = minute >= settings.live_block_minute
+    block_all_new = minute > settings.live_block_2h_minute
     decay = _time_decay_confidence(minute)
     effective_threshold = threshold / decay if decay > 0 else threshold
-    if not block_new:
-        for rank, a in enumerate(aportes, start=1):
+    if not block_all_new:
+        rank = 0
+        for a in aportes:
             tier = _tier_by_edge(a.edge_pp, min_edge_pp)
+            if conf_score < 0.5 and tier in {"leve", "moderada"}:
+                continue
+            rank += 1
             stake_pct = a.suggested_stake_pct
             if tier == "leve":
                 stake_pct = round(min(stake_pct, 1.5), 2)
@@ -302,22 +307,7 @@ def build_bet_strategy_report(
             elif minute >= 75:
                 stake_pct = round(stake_pct * 0.8, 2)
 
-            timing = assess_bet_timing(
-                event_id=event_id,
-                market=a.market,
-                outcome=a.outcome,
-                model_prob=a.model_prob,
-                implied_prob=a.implied_prob,
-            )
-            fundamentacao = build_fundamentacao(
-                confidence=confidence,
-                market=a.market,
-                model_prob=a.model_prob,
-                implied_prob=a.implied_prob,
-                edge_pp=a.edge_pp,
-                minute=minute,
-            )
-            opportunities.append({
+            opp: dict[str, Any] = {
                 "rank": rank,
                 "market": a.market,
                 "outcome": a.outcome,
@@ -331,13 +321,30 @@ def build_bet_strategy_report(
                 "suggested_stake_pct": stake_pct,
                 "suggested_stake_value": round(bankroll * stake_pct / 100, 2),
                 "action": a.action,
-                "timing": timing["timing"],
-                "timing_reason": timing["timing_reason"],
-                "fundamentacao": fundamentacao,
-            })
+            }
+            if not fast:
+                timing = assess_bet_timing(
+                    event_id=event_id,
+                    market=a.market,
+                    outcome=a.outcome,
+                    model_prob=a.model_prob,
+                    implied_prob=a.implied_prob,
+                )
+                fundamentacao = build_fundamentacao(
+                    confidence=confidence,
+                    market=a.market,
+                    model_prob=a.model_prob,
+                    implied_prob=a.implied_prob,
+                    edge_pp=a.edge_pp,
+                    minute=minute,
+                )
+                opp["timing"] = timing["timing"]
+                opp["timing_reason"] = timing["timing_reason"]
+                opp["fundamentacao"] = fundamentacao
+            opportunities.append(opp)
 
     strong_ops = sum(1 for o in opportunities if o["tier"] in {"forte", "moderada"})
-    if block_new:
+    if block_all_new:
         posture = "defensivo"
     else:
         posture = _posture(
@@ -386,14 +393,24 @@ def build_bet_strategy_report(
             ),
         })
 
-    if minute >= settings.live_block_minute:
+    if minute > settings.live_block_2h_minute:
         shields.insert(0, {
             "action": "evitar",
             "priority": "alta",
             "title": "Janela fechada para aportes",
             "reason": (
-                f"Após {settings.live_block_minute}' só cash-out. "
-                "Hit rate histórico ~0% nesta faixa."
+                f"Após {settings.live_block_2h_minute}' só cash-out. "
+                "Pouco tempo restante para mercados de 2T."
+            ),
+        })
+    elif minute >= settings.live_block_minute:
+        shields.insert(0, {
+            "action": "aguardar",
+            "priority": "media",
+            "title": "Só mercados do 2º tempo",
+            "reason": (
+                f"Mercados do jogo inteiro bloqueados após {settings.live_block_minute}'. "
+                f"Sugestões limitadas ao 2T até {settings.live_block_2h_minute}'."
             ),
         })
     elif minute >= settings.live_midgame_strict_minute:
@@ -430,18 +447,21 @@ def build_bet_strategy_report(
             ),
         })
 
-    shields.extend(_house_trap_shields(benchmark))
-    shields.extend(
-        _aggressive_handicap_shields(
-            home_team=home_team,
-            away_team=away_team,
-            inplay=inplay,
-            minute=minute,
-            all_edges=all_edges,
+    if not fast:
+        shields.extend(_house_trap_shields(benchmark))
+        shields.extend(
+            _aggressive_handicap_shields(
+                home_team=home_team,
+                away_team=away_team,
+                inplay=inplay,
+                minute=minute,
+                all_edges=all_edges,
+            )
         )
-    )
-    shields.extend(_correlation_warnings(opportunities))
-    shields.extend(_hedge_suggestions(user_bet, inplay, snapshot, threshold=threshold, minute=minute))
+        shields.extend(_correlation_warnings(opportunities))
+        shields.extend(
+            _hedge_suggestions(user_bet, inplay, snapshot, threshold=threshold, minute=minute)
+        )
 
     if cashout and cashout["action"] in {"cashout", "cashout_parcial"}:
         shields.insert(0, {
@@ -464,14 +484,19 @@ def build_bet_strategy_report(
     if not opportunities:
         rules.append("Sem oportunidade com edge — aguardar é a melhor blindagem")
 
-    pattern_accuracy = pattern_accuracy_score(home_team, away_team)
-    combo_ticket = build_combo_ticket(
-        home_team, away_team, bankroll=bankroll, snapshot=snapshot
-    )
-    if pattern_accuracy["score"] >= 0.45 and combo_ticket.get("available"):
-        rules.append(
-            "Bilhete combo KXL disponível — use a seção abaixo; não duplique stakes no combo e nas oportunidades EV."
+    if fast:
+        pattern_accuracy = None
+        combo_ticket = None
+    else:
+        pattern_accuracy = pattern_accuracy_score(home_team, away_team)
+        combo_ticket = build_combo_ticket(
+            home_team, away_team, bankroll=bankroll, snapshot=snapshot
         )
+        if pattern_accuracy["score"] >= 0.45 and combo_ticket.get("available"):
+            rules.append(
+                "Bilhete combo KXL disponível — use a seção abaixo; "
+                "não duplique stakes no combo e nas oportunidades EV."
+            )
 
     return {
         "posture": posture,
@@ -495,10 +520,15 @@ def build_bet_strategy_report(
 
 
 def _wait_reason(all_edges: list[dict[str, Any]], threshold: float, minute: int) -> str:
+    if minute > settings.live_block_2h_minute:
+        return (
+            f"Após {settings.live_block_2h_minute}' não recomendamos novos aportes — "
+            "só cash-out ou aguardar."
+        )
     if minute >= settings.live_block_minute:
         return (
-            f"Após {settings.live_block_minute}' não recomendamos novos aportes — "
-            "só cash-out ou aguardar. Volatilidade e hit rate caem no histórico."
+            f"Mercados FT bloqueados após {settings.live_block_minute}'. "
+            f"Foque em mercados do 2º tempo (até {settings.live_block_2h_minute}')."
         )
     if minute >= settings.live_midgame_strict_minute:
         return (

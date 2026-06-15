@@ -28,17 +28,25 @@ class SofascoreWafBlockedError(SofascoreClientError):
 
 
 class SofascoreClient:
+    _shared_waf_blocks: int = 0
+    _shared_waf_cooldown_until: float = 0.0
+
     def __init__(
         self,
         *,
         base_url: str | None = None,
         impersonate: str | None = None,
         min_interval_sec: float | None = None,
+        waf_max_retries: int | None = None,
     ):
         self._base = (base_url or settings.sofascore_base_url).rstrip("/")
         self._impersonate = impersonate or settings.sofascore_impersonate
         self._min_interval = min_interval_sec or settings.sofascore_min_interval_sec
-        self._waf_max_retries = settings.sofascore_waf_max_retries
+        self._waf_max_retries = (
+            waf_max_retries
+            if waf_max_retries is not None
+            else settings.sofascore_waf_max_retries
+        )
         self._waf_retry_base_sec = settings.sofascore_waf_retry_base_sec
         self._waf_fail_fast_after = settings.sofascore_waf_fail_fast_after
         self._last_request_at = 0.0
@@ -77,6 +85,36 @@ class SofascoreClient:
             "e rode lotes menores (--home ou --limit). Troque de rede/VPN se persistir."
         )
 
+    @classmethod
+    def is_globally_blocked(cls) -> bool:
+        return time.monotonic() < cls._shared_waf_cooldown_until
+
+    @classmethod
+    def waf_cooldown_remaining_sec(cls) -> float:
+        return max(0.0, cls._shared_waf_cooldown_until - time.monotonic())
+
+    @classmethod
+    def _activate_global_cooldown(cls) -> None:
+        cls._shared_waf_cooldown_until = time.monotonic() + settings.sofascore_waf_cooldown_sec
+        logger.warning(
+            "sofascore_waf_cooldown_ativo",
+            cooldown_sec=settings.sofascore_waf_cooldown_sec,
+        )
+
+    @classmethod
+    def _clear_global_cooldown(cls) -> None:
+        cls._shared_waf_blocks = 0
+        cls._shared_waf_cooldown_until = 0.0
+
+    def _record_waf_block(self) -> None:
+        SofascoreClient._shared_waf_blocks += 1
+        self._consecutive_waf_blocks += 1
+        if (
+            self._consecutive_waf_blocks >= self._waf_fail_fast_after
+            or SofascoreClient._shared_waf_blocks >= self._waf_fail_fast_after
+        ):
+            SofascoreClient._activate_global_cooldown()
+
     def probe(self) -> bool:
         """Testa conectividade com a API. Retorna True se responder 200."""
         saved_retries = self._waf_max_retries
@@ -96,6 +134,10 @@ class SofascoreClient:
         return self._consecutive_waf_blocks >= self._waf_fail_fast_after
 
     def get_json(self, path: str, *, params: dict | None = None) -> dict[str, Any]:
+        if self.is_globally_blocked():
+            raise SofascoreWafBlockedError(
+                "Sofascore em cooldown por bloqueio WAF — aguarde alguns minutos."
+            )
         url = path if path.startswith("http") else f"{self._base}/{path.lstrip('/')}"
         last_error: SofascoreClientError | None = None
 
@@ -110,12 +152,12 @@ class SofascoreClient:
             self._last_request_at = time.monotonic()
 
             if response.status_code == 403 and self._is_waf_challenge(response):
-                self._consecutive_waf_blocks += 1
+                self._record_waf_block()
                 last_error = SofascoreWafBlockedError(
                     "Sofascore retornou 403 (WAF challenge). "
                     "Verifique curl_cffi, rate limits e bloqueio de IP."
                 )
-                if self.waf_blocked:
+                if self.waf_blocked or self.is_globally_blocked():
                     logger.error(
                         "sofascore_waf_fail_fast",
                         consecutive_blocks=self._consecutive_waf_blocks,
@@ -145,6 +187,7 @@ class SofascoreClient:
                 )
 
             self._consecutive_waf_blocks = 0
+            SofascoreClient._clear_global_cooldown()
             payload = response.json()
             if not isinstance(payload, dict):
                 raise SofascoreClientError(f"Resposta inesperada de {path}")

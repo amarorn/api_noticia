@@ -174,13 +174,16 @@ export class WcApiRepository implements IWcRepository {
     return mapWcFriendlies(raw);
   }
 
-  async getSuperbetLive(dto?: { sportId?: number; allSports?: boolean }) {
+  async getSuperbetLive(dto?: { sportId?: number; allSports?: boolean; rank?: boolean }) {
     const params = new URLSearchParams();
     if (dto?.sportId != null) {
       params.set("sport_id", String(dto.sportId));
     }
     if (dto?.allSports) {
       params.set("all_sports", "true");
+    }
+    if (dto?.rank === false) {
+      params.set("rank", "false");
     }
     const qs = params.size > 0 ? `?${params}` : "";
     const raw = await apiFetch<Parameters<typeof mapSuperbetLiveFeed>[0]>(
@@ -230,6 +233,7 @@ export class WcApiRepository implements IWcRepository {
     outcome?: string;
     stake?: number;
     oddsPlaced?: number;
+    fast?: boolean;
   }) {
     const params = new URLSearchParams();
     if (dto.phase) params.set("phase", dto.phase);
@@ -238,10 +242,11 @@ export class WcApiRepository implements IWcRepository {
     if (dto.outcome) params.set("outcome", dto.outcome);
     if (dto.stake != null) params.set("stake", String(dto.stake));
     if (dto.oddsPlaced != null) params.set("odds_placed", String(dto.oddsPlaced));
+    if (dto.fast) params.set("fast", "true");
     const qs = params.size > 0 ? `?${params}` : "";
     const raw = await apiFetch<Parameters<typeof mapSuperbetLiveAdvice>[0]>(
       `/worldcup/superbet/live/${dto.eventId}/advice${qs}`,
-      { timeoutMs: API_SYNC_TIMEOUT_MS },
+      { timeoutMs: dto.fast ? 60_000 : API_SYNC_TIMEOUT_MS },
     );
     return mapSuperbetLiveAdvice(raw);
   }
@@ -274,6 +279,17 @@ export class WcApiRepository implements IWcRepository {
       timeoutMs: API_SYNC_TIMEOUT_MS,
     });
     return mapUserOpenBets(raw);
+  }
+
+  async registerComboProposal(body: import("@/application/dtos/comboProposal").ComboProposalApiBody) {
+    return apiFetch<import("@/application/dtos/comboProposal").RegisterComboProposalResult>(
+      "/user/open-bets",
+      {
+        method: "POST",
+        timeoutMs: API_SYNC_TIMEOUT_MS,
+        body: JSON.stringify(body),
+      },
+    );
   }
 }
 
