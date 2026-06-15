@@ -85,12 +85,6 @@ function BetLine({ leg, index, variant }: { leg: ComboLeg; index: number; varian
           Linha não encontrada na Superbet — não inclua no bilhete.
         </p>
       )}
-      {leg.bookChecked === false && (
-        <p className="mt-1 text-[11px] text-amber-200/90">
-          Odds não cruzadas (evento Superbet não vinculado). Confira manualmente no Criar Aposta
-          — no seu print as 2 pernas principais batem @~1.50.
-        </p>
-      )}
     </div>
   );
 }
@@ -134,7 +128,7 @@ export function ComboTicketPanel({
         <div>
           <h2 className="text-sm font-semibold text-white">Bilhete combo — estudo KXL</h2>
           <p className="text-xs text-slate-500">
-            Montagem automática com padrões 9/10–10/10 · envio só com odd Superbet e EV positivo
+            Eixos escolhidos pelo score KXL deste confronto · envio só com odd Superbet e EV positivo
           </p>
         </div>
         {accuracy && (
@@ -151,6 +145,15 @@ export function ComboTicketPanel({
       {accuracy && (
         <p className="mb-4 text-xs leading-relaxed text-slate-400">{accuracy.reason}</p>
       )}
+
+      {ticket?.available &&
+        ticket.mainBets.some((leg) => leg.bookChecked === false) &&
+        !superbetEventId && (
+          <p className="mb-4 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/90">
+            Odds ainda não cruzadas com a Superbet. Abra pelo botão <strong>Ao vivo</strong> na
+            tabela (ou informe o evento) para validar linhas e EV automaticamente.
+          </p>
+        )}
 
       {!ticket?.available ? (
         <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">

@@ -1623,6 +1623,8 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
             ).map(String),
           }
         : undefined,
+      modelBeforeDate:
+        typeof summary.model_before_date === "string" ? summary.model_before_date : null,
     },
     halfMarkets: (raw.half_markets as SuperbetLiveAdvice["halfMarkets"]) ?? undefined,
     firstHalfTotals: raw.first_half_totals ?? undefined,

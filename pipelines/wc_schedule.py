@@ -112,6 +112,24 @@ def _slug_match(home: str, away: str, round_no: int) -> str:
     return base
 
 
+def find_schedule_match(
+    home: str,
+    away: str,
+    *,
+    path: Path = DEFAULT_SCHEDULE,
+) -> dict | None:
+    """Busca jogo no calendário oficial WC (mandante/visitante ou invertido)."""
+    data = load_wc_schedule(path)
+    home_n = normalize_national_team(home)
+    away_n = normalize_national_team(away)
+    for match in data.get("matches", []):
+        h = normalize_national_team(match["home_team"])
+        a = normalize_national_team(match["away_team"])
+        if (h == home_n and a == away_n) or (h == away_n and a == home_n):
+            return match
+    return None
+
+
 def official_match_exists(
     home: str,
     away: str,

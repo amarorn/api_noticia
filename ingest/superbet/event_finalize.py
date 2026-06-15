@@ -257,6 +257,24 @@ def maybe_finalize_finished_event(
         advice=advice,
     )
 
+    ip = snapshot.inplay
+    postmortem_path = None
+    if ip is not None:
+        try:
+            from pipelines.inplay_postmortem import save_inplay_postmortem
+
+            postmortem_path = save_inplay_postmortem(
+                event_id,
+                home_score=int(ip.home_score or 0),
+                away_score=int(ip.away_score or 0),
+                ht_home=ip.ht_home_score,
+                ht_away=ip.ht_away_score,
+                home_team=snapshot.home_team,
+                away_team=snapshot.away_team,
+            )
+        except Exception as exc:
+            logger.warning("postmortem falhou: %s", exc)
+
     try:
         from pipelines.inplay_match_states import upsert_match_states
 
@@ -267,7 +285,6 @@ def maybe_finalize_finished_event(
         entry_silver = None
 
     settle_summary = None
-    ip = snapshot.inplay
     if settings.superbet_finalize_settle_open_bets and ip is not None:
         try:
             from models.open_bet_settle import settle_open_bets_for_event
@@ -320,6 +337,7 @@ def maybe_finalize_finished_event(
         "final_score": inplay.get("current_score"),
         "finalized_at": datetime.now(UTC).isoformat(),
         "gold_path": str(gold_path),
+        "postmortem_path": str(postmortem_path) if postmortem_path else None,
         "silver_match_states": entry_silver,
         "settle_open_bets": (
             {

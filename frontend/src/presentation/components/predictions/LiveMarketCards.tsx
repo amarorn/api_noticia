@@ -484,11 +484,19 @@ function buildSectionCards(
     const cards = section.groups.map((group) => {
       const rows = scan.filter((row) => group.matchMarket(row.market));
       if (rows.length === 0) {
+        const waitingHalftime =
+          section.id === "props" &&
+          group.id === "cards" &&
+          data.isLive &&
+          data.minute <= 45 &&
+          Boolean(data.analysisCoverage?.yellowCards);
         return {
           group,
           best: null as MarketScanRow | null,
           verdict: "sem_odds" as Verdict,
-          detail: "Mercado não disponível para este evento",
+          detail: waitingHalftime
+            ? "Cartões FT calibrados após o intervalo (poll completo ~60s)"
+            : "Mercado não disponível para este evento",
           stakeHint: undefined as string | undefined,
           alternatives: [] as MarketScanRow[],
           matchedOpp: undefined as Opportunity | undefined,
@@ -529,11 +537,11 @@ function buildSectionCards(
             )
           : section.id === "props"
             ? Boolean(
-                data.analysisCoverage?.halftimeAdjust &&
-                  (data.analysisCoverage?.corners ||
-                    data.analysisCoverage?.yellowCards ||
-                    Object.keys(data.inplaySummary.cornerLineProbs ?? {}).length > 0 ||
-                    Object.keys(data.inplaySummary.cardLineProbs ?? {}).length > 0),
+                data.analysisCoverage?.corners ||
+                  data.analysisCoverage?.yellowCards ||
+                  Object.keys(data.inplaySummary.cornerLineProbs ?? {}).length > 0 ||
+                  Object.keys(data.inplaySummary.cardLineProbs ?? {}).length > 0 ||
+                  (data.isLive && data.minute > 45),
               )
             : true;
 

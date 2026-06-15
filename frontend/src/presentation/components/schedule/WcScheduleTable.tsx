@@ -1,31 +1,26 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import type { WcSchedule, WcScheduleMatch } from "@/domain/entities";
+import type { SuperbetLiveEvent, WcSchedule, WcScheduleMatch } from "@/domain/entities";
 import { ComboTicketModal } from "@/presentation/components/predictions/ComboTicketModal";
 import { IconChevronRight, IconWallet } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
-import { isMatchPregame } from "@/presentation/utils/sofascore";
+import {
+  buildInPlayLink,
+  findSuperbetEventForMatch,
+} from "@/presentation/utils/matchSuperbetEvent";
+import {
+  formatScheduleDate,
+  formatScheduleTime,
+  isMatchPregame,
+} from "@/presentation/utils/sofascore";
 import { formatPercent, outcomeColors, predictedWinner } from "@/presentation/theme";
 
 interface WcScheduleTableProps {
   schedule: WcSchedule;
   selectedRound: number | "all";
   selectedGroup: string | "all";
-}
-
-function formatKickoff(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
+  liveEvents?: SuperbetLiveEvent[];
 }
 
 function TeamCell({ name }: { name: string }) {
@@ -37,11 +32,12 @@ function TeamCell({ name }: { name: string }) {
   );
 }
 
-function buildPredictLink(homeTeam: string, awayTeam: string): string {
+function buildPredictLink(homeTeam: string, awayTeam: string, kickoff?: string | null): string {
   const params = new URLSearchParams({
     home: homeTeam,
     away: awayTeam,
   });
+  if (kickoff) params.set("kickoff", kickoff);
   return `/predict?${params.toString()}`;
 }
 
@@ -87,12 +83,15 @@ function MatchRow({
   match,
   index,
   onOpenCombo,
+  liveEvent,
 }: {
   match: WcScheduleMatch;
   index: number;
   onOpenCombo: (match: WcScheduleMatch) => void;
+  liveEvent: SuperbetLiveEvent | null;
 }) {
   const comboAvailable = isMatchPregame(match.kickoff);
+  const inPlayHref = liveEvent ? buildInPlayLink(liveEvent.eventId, match.kickoff) : null;
 
   return (
     <motion.tr
@@ -101,8 +100,11 @@ function MatchRow({
       transition={{ delay: index * 0.03 }}
       className="group border-b border-white/5 transition-colors hover:bg-white/[0.03]"
     >
-      <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
-        {formatKickoff(match.kickoff)}
+      <td className="px-4 py-3.5 text-xs text-slate-400 whitespace-nowrap">
+        {formatScheduleDate(match.kickoff)}
+      </td>
+      <td className="px-3 py-3.5 text-xs font-semibold text-slate-300 whitespace-nowrap">
+        {formatScheduleTime(match.kickoff)}
       </td>
       <td className="px-4 py-3.5">
         <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-neon-green/10 text-xs font-black text-neon-green">
@@ -129,6 +131,15 @@ function MatchRow({
       </td>
       <td className="px-4 py-3.5 text-right">
         <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:justify-end">
+          {inPlayHref && (
+            <Link
+              to={inPlayHref}
+              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-300 transition-colors hover:border-amber-400/45 hover:bg-amber-500/15"
+            >
+              Ao vivo
+              <IconChevronRight className="h-3 w-3" />
+            </Link>
+          )}
           {comboAvailable && (
             <button
               type="button"
@@ -140,7 +151,7 @@ function MatchRow({
             </button>
           )}
           <Link
-            to={buildPredictLink(match.homeTeam, match.awayTeam)}
+            to={buildPredictLink(match.homeTeam, match.awayTeam, match.kickoff)}
             className="inline-flex items-center gap-1 rounded-lg border border-white/8 bg-white/4 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-neon-green/30 hover:text-neon-green"
           >
             Palpite
@@ -156,6 +167,7 @@ export function WcScheduleTable({
   schedule,
   selectedRound,
   selectedGroup,
+  liveEvents = [],
 }: WcScheduleTableProps) {
   const [comboMatch, setComboMatch] = useState<WcScheduleMatch | null>(null);
 
@@ -177,10 +189,11 @@ export function WcScheduleTable({
     <>
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead>
               <tr className="border-b border-white/8 bg-white/[0.02] text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 <th className="px-4 py-3">Data</th>
+                <th className="px-3 py-3">Hora</th>
                 <th className="px-4 py-3">Gr.</th>
                 <th className="px-4 py-3">Mandante</th>
                 <th className="px-2 py-3" />
@@ -197,6 +210,7 @@ export function WcScheduleTable({
                   match={match}
                   index={i}
                   onOpenCombo={setComboMatch}
+                  liveEvent={findSuperbetEventForMatch(liveEvents, match.homeTeam, match.awayTeam)}
                 />
               ))}
             </tbody>
@@ -204,6 +218,11 @@ export function WcScheduleTable({
         </div>
         <div className="border-t border-white/5 px-4 py-2.5 text-xs text-slate-500">
           {filtered.length} jogo{filtered.length !== 1 ? "s" : ""} · {schedule.totalMatches} no total
+          {liveEvents.length > 0 ? (
+            <span className="ml-2 text-amber-300/90">
+              · {liveEvents.length} ao vivo na Superbet
+            </span>
+          ) : null}
           {schedule.predictionsSummary && schedule.predictionsSummary.draws > 0 ? (
             <span className="ml-2 text-neon-blue">
               · {schedule.predictionsSummary.draws} empate
@@ -218,6 +237,7 @@ export function WcScheduleTable({
         match={comboMatch}
         open={comboMatch != null}
         onClose={() => setComboMatch(null)}
+        liveEvents={liveEvents}
       />
     </>
   );

@@ -25,7 +25,7 @@ from pipelines.wc_intensity_profile import compute_half_lambdas_nhpp
 #   - prior_weight baixo (ex: 2) → evidência ao vivo domina rápido
 # ---------------------------------------------------------------------------
 
-_BAYESIAN_PRIOR_WEIGHT = 3.0  # Moderado: 3 "pseudo-jogos" de prior
+_BAYESIAN_PRIOR_WEIGHT = 5.0  # Moderado-alto: evita overreaction a 1 gol cedo
 
 
 def bayesian_lambda_update(
@@ -542,22 +542,30 @@ def simulate_inplay(
     )
 
     # --- P0.1: Bayesian update de λ com gols observados ---
-    # Ajusta λ_full com base nos gols reais marcados até agora.
-    # Efeito: se um time marcou mais do que o esperado, λ sobe;
-    # se marcou menos, λ desce (em direção ao prior moderado).
+    lambda_prior_home = lambda_full_home
+    lambda_prior_away = lambda_full_away
     if bayesian_update and minute > 0:
         lambda_full_home = bayesian_lambda_update(
-            lambda_prior=lambda_full_home,
+            lambda_prior=lambda_prior_home,
             goals_observed=home_score,
             minutes_elapsed=minute,
             match_minutes=match_minutes,
         )
         lambda_full_away = bayesian_lambda_update(
-            lambda_prior=lambda_full_away,
+            lambda_prior=lambda_prior_away,
             goals_observed=away_score,
             minutes_elapsed=minute,
             match_minutes=match_minutes,
         )
+
+    # Favorito pré-jogo perdendo por 1 gol: limita super-reação ao placar
+    if minute >= 15 and abs(home_score - away_score) == 1:
+        if away_score > home_score and lambda_prior_home > lambda_prior_away * 1.12:
+            lambda_full_away = min(lambda_full_away, lambda_prior_away * 1.35)
+            lambda_full_home = max(lambda_full_home, lambda_prior_home * 0.85)
+        elif home_score > away_score and lambda_prior_away > lambda_prior_home * 1.12:
+            lambda_full_home = min(lambda_full_home, lambda_prior_home * 1.35)
+            lambda_full_away = max(lambda_full_away, lambda_prior_away * 0.85)
 
     # Ajuste legado em λ_full (desligado globalmente; ativo com Sofascore live)
     score_diff = home_score - away_score  # positivo = casa vence
@@ -836,13 +844,14 @@ def inplay_from_predictor(
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
     halftime_stats: Any | None = None,
+    before_date: datetime | None = None,
 ) -> InPlayResult:
     from datetime import datetime, timezone
 
     from models.poisson_wc import goal_model_factors
     from pipelines.wc_stats import build_match_features
 
-    cutoff = datetime.now(timezone.utc)
+    cutoff = before_date or datetime.now(timezone.utc)
     features = build_match_features(
         predictor.fixtures,
         home_team,

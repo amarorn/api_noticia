@@ -167,7 +167,37 @@ def is_aggressive_leading_handicap(
     return False, ""
 
 
-def _half_period_from_market(market: str) -> str | None:
+def is_premature_underdog_handicap_2h(
+    market: str,
+    inplay: dict[str, Any],
+    *,
+    minute: int = 0,
+) -> tuple[bool, str]:
+    """Bloqueia −0,5 no 2T do visitante quando favorita mandante só perde por 1."""
+    parsed = parse_period_handicap_market(market)
+    if not parsed:
+        return False, ""
+    period, side, line = parsed
+    if period != "2h" or line > -0.499 or minute < 45:
+        return False, ""
+
+    pre = inplay.get("pregame_probs") or {}
+    pre_home = float(pre.get("1") or 0)
+    pre_away = float(pre.get("2") or 0)
+    home_score, away_score = _score_from_inplay(inplay)
+    gap = home_score - away_score
+
+    if side == "away" and pre_home >= pre_away + 0.08 and gap == -1:
+        return True, (
+            "Favorita pré-jogo perdendo por 1 gol; handicap −0,5 visitante no 2T "
+            "superestima fechamento do azarão."
+        )
+    if side == "home" and pre_away >= pre_home + 0.08 and gap == 1:
+        return True, (
+            "Favorita visitante pré-jogo perdendo por 1 gol; handicap −0,5 mandante no 2T "
+            "superestima fechamento do azarão."
+        )
+    return False, ""
     if market.startswith("ft_"):
         return "ft"
     if market.startswith("1h_"):
@@ -879,6 +909,9 @@ def _aporte_candidates(
             # Odds > 20 = mercado morto, não recomendar
             continue
         if is_aggressive_leading_handicap(market, inplay, minute=minute)[0]:
+            continue
+        blocked_ud, _ = is_premature_underdog_handicap_2h(market, inplay, minute=minute)
+        if blocked_ud:
             continue
         score_context: str | None = None
         if parse_any_handicap_market(market) or parse_period_handicap_market(market):

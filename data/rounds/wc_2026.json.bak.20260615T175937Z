@@ -309,11 +309,7 @@
       "phase": "group",
       "kickoff": "2026-06-15T12:00:00-04:00",
       "venue": "Atlanta Stadium",
-      "city": "Atlanta",
-      "home_score": 0,
-      "away_score": 0,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-15T17:59:37.772781+00:00"
+      "city": "Atlanta"
     },
     {
       "id": "G-r1-ira-nova-zelandi",
@@ -335,11 +331,7 @@
       "phase": "group",
       "kickoff": "2026-06-15T12:00:00-07:00",
       "venue": "Seattle Stadium",
-      "city": "Seattle",
-      "home_score": 1,
-      "away_score": 1,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-15T21:00:34.466933+00:00"
+      "city": "Seattle"
     },
     {
       "id": "I-r1-franca-senegal",
@@ -958,5 +950,5 @@
       "city": "Atlanta"
     }
   ],
-  "results_synced_at": "2026-06-15T21:00:34.466933+00:00"
+  "results_synced_at": "2026-06-15T07:44:06.820779+00:00"
 }

@@ -67,12 +67,13 @@ def _build_against_model_alerts(
     away_team: str,
     phase: str,
     user_bet: UserBetInput | None,
+    before_date: Any | None = None,
 ) -> list[dict[str, Any]]:
     """Alertas vermelhos quando apostas 1X2 divergem do palpite pré-jogo / ao vivo."""
     try:
         from api.user_bets_store import get_bets_for_event
 
-        pre = predictor.predict(home_team, away_team, phase=phase)
+        pre = predictor.predict(home_team, away_team, phase=phase, before_date=before_date)
         pregame_probs = {"1": pre.prob_home, "X": pre.prob_draw, "2": pre.prob_away}
         open_bets = get_bets_for_event(home_team, away_team, status="open")
         user_bet_dict = None
@@ -144,6 +145,7 @@ def run_live_advice(
     use_sofascore_live: bool | None = None,
     client: SuperbetClient | None = None,
     fast: bool = False,
+    kickoff: str | None = None,
 ) -> dict[str, Any]:
     superbet_client = client or SuperbetClient()
     snapshot = superbet_client.fetch_event(event_id)
@@ -195,6 +197,7 @@ def run_live_advice(
             save_tick=save_tick,
             use_sofascore_live=use_sofascore_live,
             fast=fast,
+            kickoff=kickoff,
         )
 
     return run_with_advice_cache(cache_key, _compute, fast=fast)
@@ -220,7 +223,22 @@ def _build_live_advice_payload(
     save_tick: bool,
     use_sofascore_live: bool | None,
     fast: bool,
+    kickoff: str | None = None,
 ) -> dict[str, Any]:
+    from pipelines.wc_predict_utils import resolve_inplay_before_date
+    from pipelines.wc_schedule import find_schedule_match
+
+    schedule_match = find_schedule_match(home, away)
+    effective_phase = phase
+    if schedule_match and phase == "friendly":
+        effective_phase = schedule_match.get("phase") or phase
+
+    model_before_date = resolve_inplay_before_date(
+        home,
+        away,
+        kickoff_iso=kickoff or (schedule_match or {}).get("kickoff"),
+        snapshot_utc_date=snapshot.utc_date,
+    )
     # --- Momentum: escanteios + eventos Sofascore ao vivo ---
     momentum_events: list[dict] = []
     sofascore_event_id: int | None = None
@@ -248,7 +266,7 @@ def _build_live_advice_payload(
                 ss_events, sofascore_event_id = enrich_momentum_from_sofascore(
                     home,
                     away,
-                    match_date=datetime.now(UTC).date(),
+                    match_date=model_before_date.date(),
                     save_bronze=True,
                     waf_max_retries=settings.inplay_sofascore_waf_max_retries,
                 )
@@ -313,7 +331,7 @@ def _build_live_advice_payload(
         home_score=home_score,
         away_score=away_score,
         minute=minute,
-        phase=phase,
+        phase=effective_phase,
         is_neutral=True,
         ht_home_score=ht_h,
         ht_away_score=ht_a,
@@ -324,10 +342,31 @@ def _build_live_advice_payload(
         halftime_stats=halftime_stats,
         n_simulations=settings.inplay_fast_mc_simulations if fast else None,
         use_ensemble=False if fast else None,
+        before_date=model_before_date,
     )
     inplay_dict = result.to_dict()
     inplay_dict["ht_home_score"] = ht_h
     inplay_dict["ht_away_score"] = ht_a
+    inplay_dict["model_before_date"] = model_before_date.isoformat()
+    try:
+        pre = predictor.predict(
+            home,
+            away,
+            phase=effective_phase,
+            is_neutral=True,
+            before_date=model_before_date,
+        )
+        inplay_dict["pregame_probs"] = {
+            "1": round(pre.prob_home, 4),
+            "X": round(pre.prob_draw, 4),
+            "2": round(pre.prob_away, 4),
+        }
+    except Exception:
+        inplay_dict["pregame_probs"] = {
+            "1": market_probs[0] if market_probs else None,
+            "X": market_probs[1] if market_probs else None,
+            "2": market_probs[2] if market_probs else None,
+        }
 
     if fast:
         ht_report = None
@@ -339,7 +378,7 @@ def _build_live_advice_payload(
                 from models.corners_predictor import CornersPredictor
 
                 cp = CornersPredictor(fixtures_df=predictor.fixtures)
-                corner_pred = cp.predict(home, away, phase=phase)
+                corner_pred = cp.predict(home, away, phase=effective_phase)
                 corner_lambda_home = corner_pred.factors.lambda_home
                 corner_lambda_away = corner_pred.factors.lambda_away
             except Exception:
@@ -426,10 +465,16 @@ def _build_live_advice_payload(
     if fast:
         from models.wc_draw_model import resolve_wc_outcome
 
-        pregame_prediction = resolve_wc_outcome(inplay_probs, phase=phase)
+        pregame_prediction = resolve_wc_outcome(inplay_probs, phase=effective_phase)
         pregame_probs = inplay_probs
     else:
-        pre = predictor.predict(home, away, phase=phase)
+        pre = predictor.predict(
+            home,
+            away,
+            phase=effective_phase,
+            is_neutral=True,
+            before_date=model_before_date,
+        )
         pregame_probs = {"1": pre.prob_home, "X": pre.prob_draw, "2": pre.prob_away}
         pregame_prediction = pre.prediction
     from models.bet_guardrails import build_bet_guardrails_payload
@@ -518,6 +563,7 @@ def _build_live_advice_payload(
             "corner_line_probs": inplay_dict.get("corner_line_probs"),
             "card_line_probs": inplay_dict.get("card_line_probs"),
             "halftime_adjustment": inplay_dict.get("halftime_adjustment"),
+            "model_before_date": inplay_dict.get("model_before_date"),
         },
         "half_markets": snapshot.half_markets,
         "first_half_totals": snapshot.first_half_totals,
@@ -566,8 +612,9 @@ def _build_live_advice_payload(
             inplay_dict=inplay_dict,
             home_team=home,
             away_team=away,
-            phase=phase,
+            phase=effective_phase,
             user_bet=user_bet,
+            before_date=model_before_date,
         ),
         "bet_guardrails": bet_guardrails,
         "trend_report": None

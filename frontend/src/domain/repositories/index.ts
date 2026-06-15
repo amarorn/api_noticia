@@ -105,6 +105,7 @@ export interface IWcRepository {
     stake?: number;
     oddsPlaced?: number;
     fast?: boolean;
+    kickoff?: string;
   }): Promise<import("@/domain/entities").SuperbetLiveAdvice>;
   getComboTicket(request: {
     homeTeam: string;

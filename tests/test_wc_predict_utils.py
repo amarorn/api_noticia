@@ -21,3 +21,17 @@ def test_before_date_uses_kickoff_for_future():
     cutoff = before_date_for_match({"kickoff": kick}, now=datetime(2026, 6, 13, tzinfo=UTC))
     assert cutoff is not None
     assert cutoff.year == 2026
+
+
+def test_resolve_inplay_before_date_from_kickoff():
+    from pipelines.wc_predict_utils import resolve_inplay_before_date
+
+    now = datetime(2026, 6, 15, 20, 0, tzinfo=UTC)
+    cutoff = resolve_inplay_before_date(
+        "Bélgica",
+        "Egito",
+        kickoff_iso="2026-06-15T18:00:00-04:00",
+        now=now,
+    )
+    assert cutoff <= now
+    assert cutoff == now

@@ -46,12 +46,33 @@ load_env() {
 
 kill_port() {
   local port=$1
-  local pids
-  pids="$(lsof -ti:"$port" 2>/dev/null || true)"
-  if [[ -n "$pids" ]]; then
-    echo "$pids" | xargs kill 2>/dev/null || true
-    sleep 0.5
+  local attempt
+  for attempt in 1 2 3 4 5 6; do
+    local pids
+    pids="$(lsof -ti:"$port" 2>/dev/null || true)"
+    if [[ -z "$pids" ]]; then
+      return 0
+    fi
+    if [[ "$attempt" -le 2 ]]; then
+      echo "$pids" | xargs kill 2>/dev/null || true
+    else
+      echo "$pids" | xargs kill -9 2>/dev/null || true
+    fi
+    sleep 0.4
+  done
+  if lsof -ti:"$port" >/dev/null 2>&1; then
+    _red
+    echo "Erro: porta ${port} ainda em uso. Rode: ./scripts/dev-full.sh stop" >&2
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+    _rst
+    return 1
   fi
+}
+
+kill_project_uvicorn() {
+  pkill -f "uvicorn api.main:app.*--port ${API_PORT}" 2>/dev/null || true
+  pkill -f "uvicorn api.main:app --host 127.0.0.1 --port ${API_PORT}" 2>/dev/null || true
+  sleep 0.3
 }
 
 stop_services() {
@@ -60,11 +81,16 @@ stop_services() {
       [[ -n "$pid" ]] || continue
       kill "$pid" 2>/dev/null || true
     done <"$PID_FILE"
-    rm -f "$PID_FILE"
+    sleep 0.3
+    while read -r pid; do
+      [[ -n "$pid" ]] || continue
+      kill -9 "$pid" 2>/dev/null || true
+    done <"$PID_FILE"
   fi
-  rm -f "$POLL_PID_FILE"
-  kill_port "$API_PORT"
-  kill_port "$FRONTEND_PORT"
+  rm -f "$PID_FILE" "$POLL_PID_FILE"
+  kill_project_uvicorn
+  kill_port "$API_PORT" || true
+  kill_port "$FRONTEND_PORT" || true
   _grn
   echo "Serviços dev-full parados."
   _rst
@@ -109,11 +135,23 @@ ensure_prereqs() {
   fi
 
   mkdir -p "$DEV_LOG_DIR" "$(dirname "$PID_FILE")"
-  : >"$PID_FILE"
 }
 
 record_pid() {
   echo "$1" >>"$PID_FILE"
+}
+
+assert_process_alive() {
+  local pid=$1
+  local label=$2
+  if ! kill -0 "$pid" 2>/dev/null; then
+    _red
+    echo "Erro: ${label} encerrou logo após iniciar (PID ${pid})." >&2
+    echo "  Veja ${DEV_LOG_DIR}/ e rode: ./scripts/dev-full.sh stop" >&2
+    _rst
+    stop_services
+    exit 1
+  fi
 }
 
 prefix_log() {
@@ -139,7 +177,10 @@ start_api() {
   (
     "${api_cmd[@]}" 2>&1 | tee -a "$DEV_LOG_DIR/api.log" | prefix_log "api"
   ) &
-  record_pid "$!"
+  API_WRAPPER_PID=$!
+  record_pid "$API_WRAPPER_PID"
+  sleep 0.8
+  assert_process_alive "$API_WRAPPER_PID" "API"
 }
 
 start_poll() {
@@ -192,8 +233,15 @@ start_all() {
   if [[ "${NO_KILL_PORTS:-0}" != "1" ]]; then
     stop_services
   else
-    rm -f "$PID_FILE"
-    : >"$PID_FILE"
+    rm -f "$PID_FILE" "$POLL_PID_FILE"
+  fi
+  : >"$PID_FILE"
+
+  if ! kill_port "$API_PORT"; then
+    exit 1
+  fi
+  if [[ "${SKIP_FRONTEND:-0}" != "1" ]]; then
+    kill_port "$FRONTEND_PORT" || exit 1
   fi
 
   _grn
@@ -211,6 +259,9 @@ start_all() {
 
   if [[ "${SKIP_FRONTEND:-0}" != "1" ]]; then
     start_frontend
+    sleep 0.5
+    FRONTEND_PID="$(tail -n 1 "$PID_FILE")"
+    assert_process_alive "$FRONTEND_PID" "Frontend"
   fi
 
   echo ""

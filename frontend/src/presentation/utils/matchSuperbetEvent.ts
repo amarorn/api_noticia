@@ -150,3 +150,13 @@ export function buildMatchTicketsPathWithEvent(
   const base = buildMatchTicketsPath(homeTeam, awayTeam);
   return `${base}?superbetEventId=${superbetEventId}`;
 }
+
+export function buildInPlayLink(
+  eventId: number,
+  kickoff?: string | null,
+): string {
+  const base = `/ao-vivo/${eventId}`;
+  if (!kickoff) return base;
+  const params = new URLSearchParams({ kickoff });
+  return `${base}?${params.toString()}`;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   getSuperbetLiveAdviceUseCase,
@@ -105,6 +105,8 @@ function formatOddsLine(odds: Record<string, number>): string {
 
 export function LiveInPlayPage() {
   const { eventId: eventIdParam } = useParams();
+  const [searchParams] = useSearchParams();
+  const kickoffFromUrl = searchParams.get("kickoff");
   const eventId = Number.parseInt(eventIdParam ?? "", 10);
   const pulse = useDataPulse();
 
@@ -133,7 +135,7 @@ export function LiveInPlayPage() {
     error: adviceError,
     isFetching: adviceFetching,
     refetch: refetchAdvice,
-  } = useLiveAdviceQueries(eventId, appliedBankroll);
+  } = useLiveAdviceQueries(eventId, appliedBankroll, kickoffFromUrl);
 
   const recalibrationEvent = useLiveRecalibration(data, adviceFetching);
 

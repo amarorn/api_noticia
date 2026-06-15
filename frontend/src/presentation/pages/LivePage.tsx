@@ -10,6 +10,8 @@ import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconChevronRight } from "@/presentation/components/ui/Icons";
+import { buildInPlayLink } from "@/presentation/utils/matchSuperbetEvent";
+import { formatScheduleDate, formatScheduleTime } from "@/presentation/utils/sofascore";
 
 type SportFilter = "football" | "esport_fifa" | "all";
 type TierFilter = "all" | "bettable" | "top" | "good" | "watch";
@@ -47,8 +49,15 @@ function minuteLabel(event: SuperbetLiveEvent): string {
   return event.minute > 0 ? `${event.minute}'` : "Ao vivo";
 }
 
-function buildInPlayLink(event: SuperbetLiveEvent): string {
-  return `/ao-vivo/${event.eventId}`;
+function buildInPlayLinkForEvent(event: SuperbetLiveEvent): string {
+  return buildInPlayLink(event.eventId, event.utcDate);
+}
+
+function formatEventSchedule(utcDate: string | null): { date: string; time: string } {
+  return {
+    date: formatScheduleDate(utcDate),
+    time: formatScheduleTime(utcDate),
+  };
 }
 
 function isNationalTeam(name: string): boolean {
@@ -165,7 +174,7 @@ function BetTierBadge({ event }: { event: SuperbetLiveEvent }) {
 function TopPickCard({ event }: { event: SuperbetLiveEvent }) {
   return (
     <Link
-      to={buildInPlayLink(event)}
+      to={buildInPlayLinkForEvent(event)}
       className="group flex min-w-[260px] flex-1 flex-col gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4 transition-colors hover:border-emerald-400/40 hover:bg-emerald-500/10"
     >
       <div className="flex items-center gap-2">
@@ -190,6 +199,7 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
   const odds = formatOdds(event.h2hOdds);
   const tier = event.betTier ?? "skip";
   const rowStyle = TIER_STYLES[tier].row;
+  const schedule = formatEventSchedule(event.utcDate);
 
   return (
     <tr
@@ -212,6 +222,10 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
           {event.betradarId ? ` · Betradar ${event.betradarId}` : ""}
         </span>
       </td>
+      <td className="hidden px-3 py-3.5 text-xs text-slate-400 whitespace-nowrap md:table-cell">
+        <span className="block">{schedule.date}</span>
+        <span className="block font-semibold text-slate-300">{schedule.time}</span>
+      </td>
       <td className="px-4 py-3.5 font-mono text-sm text-white">
         {event.homeScore} × {event.awayScore}
       </td>
@@ -227,7 +241,7 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
       <td className="px-4 py-3.5 text-right">
         <div className="flex flex-col items-end gap-1.5">
           <Link
-            to={buildInPlayLink(event)}
+            to={buildInPlayLinkForEvent(event)}
             className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 hover:border-amber-400/40"
           >
             Abrir in-play
@@ -410,6 +424,7 @@ export function LivePage() {
                   <tr className="border-b border-white/8 text-left text-[11px] uppercase tracking-widest text-slate-500">
                     <th className="px-4 py-3">Palpite</th>
                     <th className="px-4 py-3">Confronto</th>
+                    <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
                     <th className="px-4 py-3">Placar</th>
                     <th className="px-4 py-3">Tempo</th>
                     <th className="px-4 py-3">Odds 1X2</th>

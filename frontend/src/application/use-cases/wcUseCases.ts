@@ -153,6 +153,7 @@ export class GetSuperbetLiveAdviceUseCase {
     stake?: number;
     oddsPlaced?: number;
     fast?: boolean;
+    kickoff?: string;
   }) {
     return this.repository.getSuperbetLiveAdvice(dto);
   }

@@ -488,6 +488,29 @@ class WcSuperbetEventResponse(BaseModel):
     captured_at: str
 
 
+class WcSuperbetPostmortemTipSummary(BaseModel):
+    total_ticks_with_tip: int
+    unique_tips: int | None = None
+    won: int
+    lost: int
+    unknown: int
+
+
+class WcSuperbetPostmortemResponse(BaseModel):
+    event_id: int
+    home_team: str | None = None
+    away_team: str | None = None
+    final_score: str
+    ht_score: str | None = None
+    n_ticks: int
+    kickoff_probs: dict[str, float] | None = None
+    final_probs: dict[str, float] | None = None
+    tip_summary: WcSuperbetPostmortemTipSummary
+    tips_by_market: list[dict[str, Any]]
+    model_timeline: list[dict[str, Any]]
+    issues: list[dict[str, str]]
+
+
 class WcGoalFactors(BaseModel):
     league_avg: float
     home_attack: float
@@ -1071,6 +1094,7 @@ def root():
             "/worldcup/superbet/live",
             "/worldcup/superbet/live/{event_id}/advice",
             "/worldcup/superbet/events/{event_id}",
+            "/worldcup/superbet/events/{event_id}/postmortem",
             "/worldcup/bet/advice",
             "/worldcup/round",
             "/worldcup/schedule",
@@ -1538,6 +1562,10 @@ async def worldcup_superbet_live_advice(
         False,
         description="Resposta rápida: pula Sofascore ao vivo e gravação bronze/tick (overlay/extensão).",
     ),
+    kickoff: str | None = Query(
+        None,
+        description="Kickoff ISO do jogo (recalibra features do modelo até o apito)",
+    ),
 ):
     """Captura evento Superbet ao vivo, roda modelo e retorna cash-out / aportes."""
     from ingest.superbet.advice import run_live_advice
@@ -1570,6 +1598,7 @@ async def worldcup_superbet_live_advice(
             save_tick=not fast,
             use_sofascore_live=False if fast else None,
             fast=fast,
+            kickoff=kickoff,
         )
     except SuperbetClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -1601,6 +1630,33 @@ async def worldcup_superbet_event(
         load_match_odds_index.cache_clear()
 
     return WcSuperbetEventResponse(**snapshot.to_dict())
+
+
+@app.get(
+    "/worldcup/superbet/events/{event_id}/postmortem",
+    response_model=WcSuperbetPostmortemResponse,
+)
+async def worldcup_superbet_event_postmortem(
+    event_id: int,
+    regenerate: bool = Query(
+        False,
+        description="Regera post-mortem a partir de final.json e live_ticks",
+    ),
+):
+    """Relatório pós-jogo: liquidação de tips, timeline do modelo e issues."""
+    from pipelines.inplay_postmortem import get_or_build_inplay_postmortem
+
+    report = await asyncio.to_thread(
+        get_or_build_inplay_postmortem,
+        event_id,
+        regenerate=regenerate,
+    )
+    if report is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Post-mortem não encontrado para evento {event_id}",
+        )
+    return WcSuperbetPostmortemResponse(**report)
 
 
 @app.get("/worldcup/combo-ticket")

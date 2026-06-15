@@ -782,6 +782,7 @@ export interface SuperbetLiveAdvice {
       away2hFactor?: number;
       reasons?: string[];
     };
+    modelBeforeDate?: string | null;
   };
   hedgeReport: {
     advices: Array<{

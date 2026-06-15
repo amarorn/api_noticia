@@ -234,6 +234,7 @@ export class WcApiRepository implements IWcRepository {
     stake?: number;
     oddsPlaced?: number;
     fast?: boolean;
+    kickoff?: string;
   }) {
     const params = new URLSearchParams();
     if (dto.phase) params.set("phase", dto.phase);
@@ -243,6 +244,7 @@ export class WcApiRepository implements IWcRepository {
     if (dto.stake != null) params.set("stake", String(dto.stake));
     if (dto.oddsPlaced != null) params.set("odds_placed", String(dto.oddsPlaced));
     if (dto.fast) params.set("fast", "true");
+    if (dto.kickoff) params.set("kickoff", dto.kickoff);
     const qs = params.size > 0 ? `?${params}` : "";
     const raw = await apiFetch<Parameters<typeof mapSuperbetLiveAdvice>[0]>(
       `/worldcup/superbet/live/${dto.eventId}/advice${qs}`,

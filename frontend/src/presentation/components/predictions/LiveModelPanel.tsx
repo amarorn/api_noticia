@@ -171,6 +171,19 @@ export function LiveModelPanel({ data, recalibrationEvent }: LiveModelPanelProps
             )}
           </p>
         )}
+        {s.modelBeforeDate && (
+          <p className="mb-3 text-[10px] text-slate-500">
+            Features congeladas no apito:{" "}
+            <span className="font-medium text-slate-400">
+              {new Intl.DateTimeFormat("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(new Date(s.modelBeforeDate))}
+            </span>
+          </p>
+        )}
         <div className="space-y-2.5">
           <ProbBar
             label={teamLabel(data.homeTeam)}
