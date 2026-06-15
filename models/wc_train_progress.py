@@ -40,6 +40,8 @@ class TrainProgressState:
     elapsed_sec: float | None = None
     metrics: dict[str, Any] = field(default_factory=dict)
     error: str | None = None
+    mlflow_run_id: str | None = None
+    mlflow_ui_url: str | None = None
 
 
 class TrainProgressReporter(Protocol):

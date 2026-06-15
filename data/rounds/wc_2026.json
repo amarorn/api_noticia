@@ -137,7 +137,11 @@
       "phase": "group",
       "kickoff": "2026-06-11T20:00:00-06:00",
       "venue": "Estadio Guadalajara",
-      "city": "Guadalajara"
+      "city": "Guadalajara",
+      "home_score": 2,
+      "away_score": 1,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-15T07:44:06.820779+00:00"
     },
     {
       "id": "B-r1-canada-bosnia",
@@ -946,5 +950,5 @@
       "city": "Atlanta"
     }
   ],
-  "results_synced_at": "2026-06-15T04:21:39.187344+00:00"
+  "results_synced_at": "2026-06-15T07:44:06.820779+00:00"
 }

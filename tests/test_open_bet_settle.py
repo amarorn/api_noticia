@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 
 from models.open_bet_settle import evaluate_bet_picks, evaluate_pick, settle_open_bets_for_event
 

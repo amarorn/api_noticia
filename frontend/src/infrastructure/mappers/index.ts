@@ -1070,11 +1070,15 @@ interface ApiSuperbetLiveAdvice {
     combos?: string[];
     first_half?: boolean;
     second_half?: boolean;
+    halftime_adjust?: boolean;
+    corners?: boolean;
+    yellow_cards?: boolean;
   } | null;
   confidence?: {
     score: number;
     label: string;
     reason: string;
+    pattern_accuracy?: Record<string, unknown> | null;
   } | null;
   hedge_report?: Record<string, unknown> | null;
   against_model_alerts?: Array<Record<string, unknown>> | null;
@@ -1528,7 +1532,7 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
           reason: String(raw.confidence.reason ?? ""),
           patternAccuracy: raw.confidence.pattern_accuracy
             ? mapPatternAccuracy(raw.confidence.pattern_accuracy as Record<string, unknown>)
-            : undefined,
+            : null,
         }
       : null,
     marketBenchmark: raw.market_benchmark

@@ -12,7 +12,6 @@ const TEAM_SLUG: Record<string, string> = {
   "south korea": "coreia do sul",
   "korea republic": "coreia do sul",
   mexico: "mexico",
-  "mexico": "mexico",
   "republica tcheca": "republica tcheca",
   "czech republic": "republica tcheca",
   czechia: "republica tcheca",

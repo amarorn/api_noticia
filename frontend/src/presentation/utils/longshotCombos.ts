@@ -213,10 +213,13 @@ function parseExactTeamGoals(market: string): { period: string; side: "home" | "
 }
 
 function offenseSide(market: string, outcome: string): "home" | "away" | null {
-  if (market === "next_goal") return h2hOutcomeSide(outcome);
+  const toOffense = (side: "home" | "away" | "draw" | null): "home" | "away" | null =>
+    side === "draw" ? null : side;
+
+  if (market === "next_goal") return toOffense(h2hOutcomeSide(outcome));
   if (market.startsWith("combo_home")) return "home";
   if (market.startsWith("combo_away")) return "away";
-  if (isH2hMarket(market)) return h2hOutcomeSide(outcome);
+  if (isH2hMarket(market)) return toOffense(h2hOutcomeSide(outcome));
   const teamOver = parseTeamOverLine(market);
   if (teamOver && ["yes", "sim"].includes(outcome.toLowerCase())) return teamOver.side;
   const exact = parseExactTeamGoals(market);

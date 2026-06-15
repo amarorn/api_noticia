@@ -5,6 +5,8 @@ import { fadeUpVariants } from "@/presentation/theme/motion";
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
+  /** Alias de subtitle (compatibilidade). */
+  description?: string;
   badge?: string;
   badgeColor?: "green" | "blue" | "purple" | "orange";
   children?: ReactNode;
@@ -20,11 +22,13 @@ const badgeClasses: Record<NonNullable<PageHeaderProps["badgeColor"]>, string> =
 export function PageHeader({
   title,
   subtitle,
+  description,
   badge,
   badgeColor = "blue",
   children,
 }: PageHeaderProps) {
   const reduced = useReducedMotion();
+  const lead = subtitle ?? description;
 
   return (
     <motion.header
@@ -47,7 +51,7 @@ export function PageHeader({
               </span>
             )}
           </div>
-          {subtitle && <p className="mt-1.5 text-sm text-slate-400">{subtitle}</p>}
+          {lead && <p className="mt-1.5 text-sm text-slate-400">{lead}</p>}
         </div>
         {children}
       </div>

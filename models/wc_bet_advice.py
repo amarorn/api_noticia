@@ -1,7 +1,6 @@
 """Recomendações de cash-out e aporte com base no modelo in-play vs mercado."""
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -9,6 +8,16 @@ from config import settings
 from models.inplay_market_period import is_market_blocked_by_minute
 from models.economics import coase_effective_min_edge, live_effective_min_edge
 from models.ev_value import evaluate_outcome
+from models.wc_handicap_score import (
+    assess_handicap_vs_live_score,
+    format_handicap_label_with_score,
+    handicap_blocked_by_score,
+    handicap_line_from_key,
+    paired_handicap_line_keys,
+    parse_any_handicap_market,
+    parse_period_handicap_market,
+    superbet_handicap_line_label,
+)
 from models.wc_trend_confidence import assess_prediction_confidence
 from models.wc_team_patterns import blend_confidence_with_patterns, pattern_accuracy_score
 from ingest.superbet.parser import SuperbetEventSnapshot
@@ -57,6 +66,7 @@ class AporteAdvice:
     kelly_quarter: float
     suggested_stake_pct: float
     action: str
+    score_context: str | None = None
 
 
 _INPLAY_HALF_CFG: dict[str, dict[str, Any]] = {
@@ -84,45 +94,46 @@ _INPLAY_HALF_CFG: dict[str, dict[str, Any]] = {
     },
 }
 
-_HCAP_MARKET_RE = re.compile(r"^(ft|1h|2h)_(hcap|ah)_(home|away)_(.+)$")
-
-
-def handicap_line_from_key(line_key: str) -> float | None:
-    """Converte chave estável (-0.5 → m0_5) em linha numérica."""
-    if line_key == "0":
-        return 0.0
-    if line_key.startswith("m"):
-        try:
-            return -float(line_key[1:].replace("_", "."))
-        except ValueError:
-            return None
-    if line_key.startswith("p"):
-        try:
-            return float(line_key[1:].replace("_", "."))
-        except ValueError:
-            return None
-    return None
-
-
-def parse_period_handicap_market(market: str) -> tuple[str, str, float] | None:
-    """Retorna (periodo, lado, linha) para mercados ft/1h/2h_hcap_* ou *_ah_*."""
-    match = _HCAP_MARKET_RE.match(market)
-    if not match:
-        return None
-    if match.group(2) == "ah":
-        return None
-    line = handicap_line_from_key(match.group(4))
-    if line is None:
-        return None
-    return match.group(1), match.group(3), line
-
-
 def _score_from_inplay(inplay: dict[str, Any]) -> tuple[int, int]:
     score_str = inplay.get("current_score", "0x0")
     parts = str(score_str).split("x")
     home = int(parts[0]) if len(parts) == 2 and str(parts[0]).isdigit() else 0
     away = int(parts[1]) if len(parts) == 2 and str(parts[1]).isdigit() else 0
     return home, away
+
+
+def _ht_scores_from_inplay(inplay: dict[str, Any]) -> tuple[int | None, int | None]:
+    ht_h = inplay.get("ht_home_score")
+    ht_a = inplay.get("ht_away_score")
+    if ht_h is None or ht_a is None:
+        return None, None
+    try:
+        return int(ht_h), int(ht_a)
+    except (TypeError, ValueError):
+        return None, None
+
+
+def _handicap_score_assessment(
+    market: str,
+    inplay: dict[str, Any],
+    *,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    home_team: str,
+    away_team: str,
+):
+    ht_h, ht_a = _ht_scores_from_inplay(inplay)
+    return assess_handicap_vs_live_score(
+        market,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        ht_home=ht_h,
+        ht_away=ht_a,
+        home_team=home_team,
+        away_team=away_team,
+    )
 
 
 def is_aggressive_leading_handicap(
@@ -272,7 +283,13 @@ def _market_odd_half(
         if len(parts) != 2:
             return None
         side, line = parts
-        return period_markets.get("handicap", {}).get(line, {}).get(side)
+        hcap = period_markets.get("handicap", {})
+        odd = hcap.get(line, {}).get(side)
+        if odd is not None:
+            return odd
+        home_key, away_key = paired_handicap_line_keys(line)
+        paired_line = home_key if side == "home" else away_key
+        return hcap.get(paired_line, {}).get(side)
 
     if suffix.startswith("ah_"):
         rest = suffix[len("ah_") :]
@@ -280,7 +297,13 @@ def _market_odd_half(
         if len(parts) != 2:
             return None
         side, line = parts
-        return period_markets.get("asian_handicap", {}).get(line, {}).get(side)
+        ah = period_markets.get("asian_handicap", {})
+        odd = ah.get(line, {}).get(side)
+        if odd is not None:
+            return odd
+        home_key, away_key = paired_handicap_line_keys(line)
+        paired_line = home_key if side == "home" else away_key
+        return ah.get(paired_line, {}).get(side)
 
     return None
 
@@ -363,10 +386,11 @@ def _half_aporte_specs(
                 continue
             for side in sides:
                 team_name = home_team if side == "home" else away_team
+                line_label = superbet_handicap_line_label(side, line)
                 specs.append((
                     f"{period}_hcap_{side}_{line}",
                     "yes",
-                    f"{period_label} — {team_name} handicap {_format_handicap_line_label(line)}",
+                    f"{period_label} — {team_name} handicap {line_label}",
                     lambda s=side, lk=line, ck=hcap_cfg: inplay.get(ck, {}).get(f"{s}_{lk}"),
                 ))
 
@@ -689,8 +713,8 @@ def _aporte_candidates(
     home_score: int | None = None,
     away_score: int | None = None,
     minute: int = 0,
-) -> list[tuple[str, str, str, float, float]]:
-    """market, outcome, label, model_prob, market_odd"""
+) -> list[tuple[str, str, str, float, float, str | None]]:
+    """market, outcome, label, model_prob, market_odd, score_context"""
     candidates: list[tuple[str, str, str, float, float]] = []
 
     # Extrair placar do inplay se não passado explicitamente
@@ -856,7 +880,33 @@ def _aporte_candidates(
             continue
         if is_aggressive_leading_handicap(market, inplay, minute=minute)[0]:
             continue
-        candidates.append((market, outcome, label, float(prob), float(odd)))
+        score_context: str | None = None
+        if parse_any_handicap_market(market) or parse_period_handicap_market(market):
+            ht_h, ht_a = _ht_scores_from_inplay(inplay)
+            blocked, _ = handicap_blocked_by_score(
+                market,
+                home_score=home_score,
+                away_score=away_score,
+                minute=minute,
+                ht_home=ht_h,
+                ht_away=ht_a,
+                home_team=home_team,
+                away_team=away_team,
+            )
+            if blocked:
+                continue
+            assessment = _handicap_score_assessment(
+                market,
+                inplay,
+                home_score=home_score,
+                away_score=away_score,
+                minute=minute,
+                home_team=home_team,
+                away_team=away_team,
+            )
+            score_context = assessment.score_hint if assessment else None
+            label = format_handicap_label_with_score(label, assessment)
+        candidates.append((market, outcome, label, float(prob), float(odd), score_context))
     return candidates
 
 
@@ -891,7 +941,7 @@ def scan_all_market_edges(
 
     rows: list[dict[str, Any]] = []
 
-    for market, outcome, label, prob, odd in _aporte_candidates(
+    for market, outcome, label, prob, odd, score_context in _aporte_candidates(
         inplay,
         snapshot,
         home_team=home_team,
@@ -908,7 +958,7 @@ def scan_all_market_edges(
             ev.expected_value >= effective_threshold
             and edge_pp >= settings.live_min_edge_pp
         )
-        rows.append({
+        row: dict[str, Any] = {
             "market": market,
             "outcome": outcome,
             "label": label,
@@ -920,7 +970,10 @@ def scan_all_market_edges(
             "suggested_stake_pct": suggested_pct,
             "suggested_stake_value": round(bankroll * suggested_pct / 100, 2),
             "meets_threshold": quality_pass,
-        })
+        }
+        if score_context:
+            row["score_context"] = score_context
+        rows.append(row)
 
     rows.sort(key=lambda x: (x["edge_pp"], x["model_prob"]), reverse=True)
     return rows, effective_threshold
@@ -988,11 +1041,13 @@ def advise_aportes(
     def _needs_high_confidence(market: str) -> bool:
         return "_ah_" in market or "_hcap_" in market or market.startswith("corners_") or market.startswith("cards_")
 
-    for market, outcome, label, prob, odd in _aporte_candidates(
+    for market, outcome, label, prob, odd, score_context in _aporte_candidates(
         inplay,
         snapshot,
         home_team=home_team,
         away_team=away_team,
+        home_score=_score_from_inplay(inplay)[0],
+        away_score=_score_from_inplay(inplay)[1],
         minute=minute,
     ):
         if live and is_market_blocked_by_minute(market, minute):
@@ -1029,6 +1084,7 @@ def advise_aportes(
                 kelly_quarter=round(kelly_q, 4),
                 suggested_stake_pct=suggested_pct,
                 action=action,
+                score_context=score_context,
             )
         )
 
@@ -1126,6 +1182,7 @@ def build_bet_advice_report(
                 "suggested_stake_pct": a.suggested_stake_pct,
                 "suggested_stake_value": round((bankroll or 1000) * a.suggested_stake_pct / 100, 2),
                 "action": a.action,
+                **({"score_context": a.score_context} if a.score_context else {}),
             }
             for a in aportes
         ],

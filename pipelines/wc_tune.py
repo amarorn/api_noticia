@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 
 from config import settings
-from ingest.fixtures.world_cup import load_wc_fixtures
+from pipelines.wc_training_dataset import load_wc_fixtures_for_training, wc_validation_label_df
 from models.dixon_coles_wc import DixonColesWcModel
 from models.logistic_wc import WcLogisticModel
 from models.wc_collaborative import CollaborativeWcModel
@@ -56,13 +56,13 @@ def evaluate_hyperparams(
     set_active_hyperparams(hp)
     try:
         logistic = WcLogisticModel()
-        logistic.fit(fixtures, holdout_season=None)
+        logistic.fit(fixtures, holdout_season=validation_season)
         dixon = DixonColesWcModel()
         dixon.fit(fixtures, holdout_season=validation_season)
         collab = CollaborativeWcModel(dixon_coles=dixon)
         collab.fit(fixtures, validation_season=validation_season, logistic_model=logistic)
 
-        valid_df = fixtures[fixtures["season"] == validation_season]
+        valid_df = wc_validation_label_df(fixtures, validation_season)
         baselines = load_team_baselines()
         scored: list[dict] = []
         correct = 0
@@ -172,13 +172,13 @@ def _fast_postprocess_tune(
     set_active_hyperparams(base_hp)
     try:
         logistic = WcLogisticModel()
-        logistic.fit(fixtures, holdout_season=None)
+        logistic.fit(fixtures, holdout_season=validation_season)
         dixon = DixonColesWcModel()
         dixon.fit(fixtures, holdout_season=validation_season)
         collab = CollaborativeWcModel(dixon_coles=dixon)
         collab.fit(fixtures, validation_season=validation_season, logistic_model=logistic)
 
-        valid_df = fixtures[fixtures["season"] == validation_season]
+        valid_df = wc_validation_label_df(fixtures, validation_season)
         baselines = load_team_baselines()
         base_rows: list[dict] = []
 
@@ -268,7 +268,7 @@ def run_tune(
     full_grid: bool = False,
     fast: bool = True,
 ) -> dict:
-    fixtures = load_wc_fixtures()
+    fixtures = load_wc_fixtures_for_training()
     if fixtures.empty:
         raise ValueError("Sem fixtures. Execute: import-world-cup")
 

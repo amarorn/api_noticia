@@ -501,7 +501,7 @@ export interface SuperbetLiveAdvice {
       homeHitRate: number | null;
       awayHitRate: number | null;
       patternCount: number;
-    };
+    } | null;
   } | null;
   marketBenchmark: {
     h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
@@ -602,6 +602,7 @@ export interface SuperbetLiveAdvice {
         patternRef: string;
         score: number;
         availableOnBook?: boolean;
+        bookChecked?: boolean;
         marketOdd: number | null;
         impliedProb?: number | null;
         expectedValue?: number | null;
@@ -625,6 +626,7 @@ export interface SuperbetLiveAdvice {
         patternRef: string;
         score: number;
         availableOnBook?: boolean;
+        bookChecked?: boolean;
         marketOdd: number | null;
         impliedProb?: number | null;
         expectedValue?: number | null;

@@ -119,7 +119,6 @@ def append_live_tick(
     cashout = advice.get("cashout") or {}
     aportes = advice.get("aportes") or []
     top_aporte = aportes[0] if aportes else {}
-    shadow = inplay.get("ensemble_shadow") or {}
 
     row = {
         "event_id": event_id,

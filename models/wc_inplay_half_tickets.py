@@ -7,7 +7,6 @@ from typing import Any
 
 from config import settings
 from models.inplay_leg_compatibility import (
-    combo_legs_compatible,
     is_superbet_bet_builder_market,
     legs_compatible as _markets_compatible,
 )
@@ -74,7 +73,9 @@ def _build_combo(
     notes = [
         "Probabilidades tratadas como independentes — em mercados correlacionados o hit rate real pode ser menor.",
     ]
-    if len(legs) > 1 and any(_period_of_market(l["market"]) != _period_of_market(legs[0]["market"]) for l in legs[1:]):
+    if len(legs) > 1 and any(
+        _period_of_market(leg["market"]) != _period_of_market(legs[0]["market"]) for leg in legs[1:]
+    ):
         notes.append("Bilhete misto: palpites de períodos diferentes — monte na Superbet como múltipla.")
     return {
         "id": combo_id,

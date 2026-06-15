@@ -21,6 +21,8 @@ def mock_snapshot():
     ip.ht_home_score = 1
     ip.ht_away_score = 0
     ip.minute = 90
+    ip.home_corners = 4
+    ip.away_corners = 3
     ip.status = "FINISHED"
     ip.period_label = "2T"
     snap = MagicMock()
@@ -122,4 +124,6 @@ def test_finalize_settles_open_bets(tmp_path, mock_snapshot):
             home_score=2,
             away_score=1,
             final_score="2x1",
+            home_corners=4,
+            away_corners=3,
         )

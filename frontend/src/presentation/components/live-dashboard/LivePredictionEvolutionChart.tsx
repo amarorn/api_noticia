@@ -12,7 +12,9 @@ import {
 } from "@/presentation/utils/predictionChartData";
 import {
   formatHandicapLineKey,
+  pairedHandicapKeys,
   pickPrimaryHandicapLine,
+  superbetHandicapHelp,
 } from "@/presentation/utils/handicapLine";
 import { defaultDataZoom, goalMarkLineData } from "@/presentation/utils/liveChartUtils";
 import { outcomeColors } from "@/presentation/theme";
@@ -332,12 +334,18 @@ function TabChart({
   const kind = tab === "handicap" ? "handicap" : "asian";
   const lineKey = tab === "handicap" ? handicapLine : asianLine;
   const points = buildHandicapChartPoints(history, kind, lineKey);
+  const pair = pairedHandicapKeys(lineKey);
+  const helpText =
+    tab === "handicap"
+      ? superbetHandicapHelp(data.homeTeam, data.awayTeam, pair.homeLineKey, pair.awayLineKey)
+      : undefined;
   return (
     <HandicapMetricsChart
       points={points}
       homeTeam={data.homeTeam}
       awayTeam={data.awayTeam}
       title={tab === "handicap" ? "Handicap europeu" : "Handicap asiático"}
+      helpText={helpText}
       goalEvents={goalEvents}
     />
   );

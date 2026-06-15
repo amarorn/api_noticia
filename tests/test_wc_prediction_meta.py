@@ -1,6 +1,8 @@
 """Testes de metadados e consistência de nomes no palpite WC."""
 from __future__ import annotations
 
+import pytest
+
 from models.wc_prediction_meta import build_prediction_metadata, outcome_from_score
 
 
@@ -20,6 +22,7 @@ def test_build_prediction_metadata_draw_pick():
     assert meta["uncertainty"] in {"alta", "media", "baixa"}
 
 
+@pytest.mark.slow
 def test_predict_team_name_aliases_consistent():
     from models.wc_artifact import load_or_train_wc_predictor
 

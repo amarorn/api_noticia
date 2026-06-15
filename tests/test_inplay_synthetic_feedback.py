@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from models.wc_inplay import _use_score_lambda_adjust, simulate_inplay
 
@@ -66,7 +65,6 @@ class TestScoreLambdaAdjust:
 class TestSyntheticFeedback:
     def test_build_from_match_states(self, tmp_path, monkeypatch):
         from config import settings as s
-        from pipelines.inplay_match_states import MATCH_STATES_PATH
         from pipelines.inplay_synthetic_feedback import build_synthetic_gbm_from_match_states
 
         monkeypatch.setattr(s, "lake_root", tmp_path)

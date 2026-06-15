@@ -115,7 +115,7 @@ def test_aggressive_handicap_shield_when_leader_in_second_half():
     assert "México" in hcap_shields[0]["title"]
 
     allowed_markets = {
-        m for m, _, _, _, _ in _aporte_candidates(
+        m for m, _, _, _, _, _ in _aporte_candidates(
             inplay, snap, home_team="México", away_team="África do Sul", minute=52,
         )
     }

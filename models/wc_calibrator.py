@@ -174,6 +174,23 @@ class WcCalibrator:
         return self._metrics
 
 
+def calibrator_passes_quality_gate(metrics: CalibrationMetrics) -> bool:
+    """Rejeita calibrador que piora ECE no holdout (Platt overfita com poucos jogos)."""
+    return metrics.ece_after < metrics.ece_before
+
+
+def apply_calibrator_if_passing(
+    calibrator: WcCalibrator,
+    metrics: CalibrationMetrics,
+    *,
+    gate_enabled: bool = True,
+) -> WcCalibrator:
+    """Retorna calibrador ajustado ou identidade se o gate reprovar."""
+    if not gate_enabled or calibrator_passes_quality_gate(metrics):
+        return calibrator
+    return WcCalibrator()
+
+
 # ------------------------------------------------------------------
 # Funções utilitárias de métricas
 # ------------------------------------------------------------------

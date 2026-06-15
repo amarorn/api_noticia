@@ -9,7 +9,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 from models.wc_feature_cache import load_cached_features, save_cached_features
-from pipelines.wc_holdout import wc_holdout_test_df, wc_holdout_train_df
+from pipelines.wc_holdout import wc_holdout_test_df
+from pipelines.wc_training_dataset import wc_training_label_df
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_sofascore_features import SOFASCORE_FEATURE_NAMES
 from pipelines.wc_stats import (
@@ -59,9 +60,9 @@ class WcLogisticModel:
     ) -> dict:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = (
-            wc_holdout_train_df(df, holdout_season)
+            wc_training_label_df(df, holdout_season)
             if holdout_season
-            else df
+            else wc_training_label_df(df, None)
         )
 
         cached = load_cached_features(train_df)

@@ -9,6 +9,8 @@ from ingest.superbet.event_finalize import maybe_finalize_finished_event
 from ingest.superbet.benchmark import h2h_overround, market_benchmark
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
 from ingest.superbet.live_ticks import append_live_tick
+from ingest.superbet.live_stats_payload import build_live_stats_payload
+from ingest.superbet.live_advice_cache import advice_cache_key, run_with_advice_cache
 from ingest.superbet.parser import SuperbetEventSnapshot
 from ingest.superbet.store import save_event_snapshot
 from config import settings
@@ -128,10 +130,6 @@ def _build_trend_report(
     except Exception as exc:
         logger.warning("Erro ao construir trend_report: %s", exc)
         return None
-
-
-from ingest.superbet.live_stats_payload import build_live_stats_payload
-from ingest.superbet.live_advice_cache import advice_cache_key, run_with_advice_cache
 
 
 def run_live_advice(
@@ -328,6 +326,8 @@ def _build_live_advice_payload(
         use_ensemble=False if fast else None,
     )
     inplay_dict = result.to_dict()
+    inplay_dict["ht_home_score"] = ht_h
+    inplay_dict["ht_away_score"] = ht_a
 
     if fast:
         ht_report = None

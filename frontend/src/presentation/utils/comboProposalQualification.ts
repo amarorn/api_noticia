@@ -48,11 +48,11 @@ export function qualifyKxlCombo(ticket: {
     label: string;
     hitRate: number;
     availableOnBook?: boolean;
-    marketOdd: number | null;
+    marketOdd?: number | null;
     expectedValue?: number | null;
   }>;
-  comboOdd: number | null;
-  comboEv: number | null;
+  comboOdd?: number | null;
+  comboEv?: number | null;
   bookCoverage?: { mainAvailable: number; mainTotal: number } | null;
 }): ComboProposalQualification {
   if (ticket.mainBets.length < 2) {

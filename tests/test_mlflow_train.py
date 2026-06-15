@@ -27,6 +27,13 @@ def test_log_wc_train_run_logs_metrics_and_artifacts(tmp_path, monkeypatch):
             "validation_size": 64,
         },
         "ensemble_weights": {"dixon_coles": 0.3, "logistic": 0.7},
+        "holdout_eval": {
+            "validation_season": 2022,
+            "n_samples": 64,
+            "accuracy": 0.5,
+            "labels": ["1", "X", "2"],
+            "confusion_matrix": [[10, 2, 1], [3, 4, 2], [1, 1, 5]],
+        },
     }
 
     mock_run = MagicMock()
@@ -38,17 +45,16 @@ def test_log_wc_train_run_logs_metrics_and_artifacts(tmp_path, monkeypatch):
         patch("mlflow.set_tracking_uri"),
         patch("mlflow.set_experiment"),
         patch("mlflow.start_run", return_value=mock_cm) as start_run,
-        patch("mlflow.log_param") as log_param,
-        patch("mlflow.log_metric") as log_metric,
-        patch("mlflow.log_artifact") as log_artifact,
+        patch("pipelines.mlflow_tracking.apply_manifest_to_run") as apply_manifest,
+        patch("pipelines.mlflow_tracking.log_holdout_confusion_figure") as log_cm,
     ):
         run_id = log_wc_train_run(manifest=manifest, elapsed_sec=810.5)
 
     assert run_id == "run-abc"
     start_run.assert_called_once()
-    assert log_param.called
-    logged_metrics = {call.args[0]: call.args[1] for call in log_metric.call_args_list}
-    assert logged_metrics["holdout_accuracy"] == 0.53125
-    assert logged_metrics["ensemble_brier"] == 0.1925
-    assert logged_metrics["train_elapsed_sec"] == 810.5
-    assert log_artifact.call_count == 2
+    apply_manifest.assert_called_once_with(
+        manifest,
+        elapsed_sec=810.5,
+        log_artifacts=True,
+    )
+    log_cm.assert_not_called()

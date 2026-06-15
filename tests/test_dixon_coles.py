@@ -41,6 +41,7 @@ def test_negative_rho_increases_draw_mass():
     assert corrected.prob_draw > independent.prob_draw
 
 
+@pytest.mark.slow
 def test_dixon_coles_model_fits_and_predicts(fixtures_df):
     if fixtures_df.empty:
         return

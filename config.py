@@ -63,6 +63,12 @@ class Settings(BaseSettings):
     bolao_use_lm: bool = True
     bolao_lm_max_tokens: int = 8
     wc_validation_season: int = 2022
+    wc_train_include_fifa_history: bool = True
+    wc_train_labels_copa_only: bool = True
+    wc_holdout_mode: str = "temporal"  # temporal (80/10/10 cronológico) | edition (Copa holdout)
+    wc_train_split_ratio: float = 0.8
+    wc_val_split_ratio: float = 0.1
+    wc_test_split_ratio: float = 0.1
     wc_squads_path: Path = Path("data/wc/squads_2026.json")
     wc_artifact_dir: Path = Path("data/lake/artifacts/wc_predictor")
     wc_artifact_force_retrain: bool = False
@@ -77,6 +83,7 @@ class Settings(BaseSettings):
     wc_logistic_class_weight: str = "balanced"
     wc_logistic_max_iter: int = 3000
     wc_logistic_calibration_cv: int = 5
+    wc_calibrator_gate: bool = True
     wc_ensemble_weight_steps: int = 40
     wc_kxl_blend_weight: float = 0.20
     wc_rho_min: float = -0.15
@@ -164,6 +171,10 @@ class Settings(BaseSettings):
     mlflow_experiment_wc: str = "api-noticia/wc-benchmark"
     mlflow_experiment_wc_train: str = "api-noticia/wc-train"
     mlflow_experiment_bolao: str = "api-noticia/bolao-benchmark"
+    # Seleção de modelo WC em runtime (sem retreino): auto usa melhor implementável do benchmark/MLflow
+    wc_model_selection_mode: str = "auto"  # ensemble | auto
+    wc_model_selection_metric: str = "brier"  # brier | accuracy
+    wc_model_selection_source: str = "benchmark"  # benchmark | mlflow | registry
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     api_key: str | None = None

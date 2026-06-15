@@ -2598,6 +2598,14 @@ def worldcup_benchmark_history():
     return payload
 
 
+@app.get("/worldcup/models/registry")
+def worldcup_models_registry():
+    """Leaderboard de modelos implementáveis + seleção ativa (MLflow + benchmark local)."""
+    from pipelines.mlflow_registry import model_registry_summary
+
+    return model_registry_summary()
+
+
 @app.get("/worldcup/inplay/ensemble-status")
 def worldcup_inplay_ensemble_status(
     user_id: str = Query(default="jamarorn", description="ID do usuário (reconciliação CSV)"),

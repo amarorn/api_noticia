@@ -11,7 +11,7 @@ from models.poisson_wc import (
     score_outcome_probs,
     score_probability,
 )
-from pipelines.wc_holdout import wc_holdout_train_df
+from pipelines.wc_training_dataset import wc_training_label_df
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_stats import (
     WcMatchFeatures,
@@ -51,9 +51,9 @@ class DixonColesWcModel:
     ) -> dict:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = (
-            wc_holdout_train_df(df, holdout_season)
+            wc_training_label_df(df, holdout_season)
             if holdout_season
-            else df
+            else wc_training_label_df(df, None)
         )
         if train_df.empty:
             train_df = df

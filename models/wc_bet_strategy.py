@@ -6,14 +6,17 @@ from typing import Any
 from config import settings
 from ingest.superbet.parser import SuperbetEventSnapshot
 from models.ev_value import evaluate_outcome
+from models.wc_handicap_score import assess_handicap_vs_live_score, parse_any_handicap_market
 from models.wc_bet_advice import (
     UserBetInput,
+    _ht_scores_from_inplay,
     _market_odd,
     _prob_from_inplay,
     _score_from_inplay,
     advise_aportes,
     advise_cashout,
     is_aggressive_leading_handicap,
+    parse_period_handicap_market,
     scan_all_market_edges,
 )
 from models.wc_bet_timing import assess_bet_timing, build_fundamentacao
@@ -236,6 +239,54 @@ def _aggressive_handicap_shields(
     return shields
 
 
+def _trailing_handicap_shields(
+    *,
+    home_team: str,
+    away_team: str,
+    inplay: dict[str, Any],
+    minute: int,
+    all_edges: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Alerta quando handicap negativo é sugerido para time que está perdendo."""
+    home_sc, away_sc = _score_from_inplay(inplay)
+    ht_h, ht_a = _ht_scores_from_inplay(inplay)
+    shields: list[dict[str, Any]] = []
+
+    for row in all_edges:
+        market = row.get("market", "")
+        if not (parse_any_handicap_market(market) or parse_period_handicap_market(market)):
+            continue
+        if row.get("expected_value", 0) <= 0:
+            continue
+        assessment = assess_handicap_vs_live_score(
+            market,
+            home_score=home_sc,
+            away_score=away_sc,
+            minute=minute,
+            ht_home=ht_h,
+            ht_away=ht_a,
+            home_team=home_team,
+            away_team=away_team,
+        )
+        if assessment is None or assessment.status != "needs_win":
+            continue
+        shields.append({
+            "action": "cautela",
+            "priority": "alta",
+            "title": f"Handicap exige virada: {row['label']}",
+            "reason": (
+                f"Placar {home_sc}×{away_sc}. {assessment.score_hint}. "
+                f"A probabilidade do modelo ({row['model_prob'] * 100:.0f}%) "
+                f"já considera o placar — só aporte se a virada for provável."
+            ),
+            "market": market,
+            "outcome": row.get("outcome", "yes"),
+            "odd": row["market_odd"],
+            "expected_value": row["expected_value"],
+        })
+    return shields
+
+
 def build_bet_strategy_report(
     *,
     home_team: str,
@@ -451,6 +502,15 @@ def build_bet_strategy_report(
         shields.extend(_house_trap_shields(benchmark))
         shields.extend(
             _aggressive_handicap_shields(
+                home_team=home_team,
+                away_team=away_team,
+                inplay=inplay,
+                minute=minute,
+                all_edges=all_edges,
+            )
+        )
+        shields.extend(
+            _trailing_handicap_shields(
                 home_team=home_team,
                 away_team=away_team,
                 inplay=inplay,

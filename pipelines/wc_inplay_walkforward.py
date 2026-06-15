@@ -11,7 +11,6 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
-from models.wc_inplay import simulate_inplay
 from pipelines.wc_build_timeline import build_timeline_from_fixtures, SNAPSHOT_MINUTES
 
 
