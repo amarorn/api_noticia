@@ -12,7 +12,7 @@ _memory: dict[str, dict] = {}
 _disk_loaded = False
 
 
-CACHE_FORMAT_VERSION = 2  # bump quando o formato da resposta mudar
+CACHE_FORMAT_VERSION = 3  # bump: normalização canônica + metadados incerteza
 
 def artifact_fingerprint() -> str:
     return f"{fixtures_fingerprint()}:{squads_fingerprint()}:{hyperparams_fingerprint()}:v{CACHE_FORMAT_VERSION}"

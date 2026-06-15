@@ -26,6 +26,18 @@ EXTRA_FEATURE_NAMES = [
     "fifa_points_diff",
 ] + MARKET_FEATURE_NAMES
 
+
+def row_group_name(row: Any) -> str | None:
+    """group_name/group de uma linha de fixture, ignorando pd.NA."""
+    for key in ("group_name", "group"):
+        val = row.get(key) if hasattr(row, "get") else None
+        if val is None or pd.isna(val):
+            continue
+        s = str(val).strip()
+        if s:
+            return s
+    return None
+
 GROUP_PRESSURE_FEATURE_NAMES = [
     "home_must_win",
     "away_must_win",
@@ -206,7 +218,8 @@ def compute_elo_ratings(
     fixtures_df: pd.DataFrame,
     before_date: datetime | None = None,
 ) -> dict[str, float]:
-    df = fixtures_df
+    df = fixtures_df.copy()
+    df["match_date"] = pd.to_datetime(df["match_date"], errors="coerce")
     if before_date:
         df = _played_before(df, before_date)
     df = df.sort_values("match_date")
@@ -362,6 +375,10 @@ def build_match_features(
 ) -> WcMatchFeatures:
     ref_date = before_date or datetime.now(timezone.utc)
     played = _played_before(fixtures_df, ref_date)
+    # Normalizar match_date para evitar TypeError com tipos mistos (str vs Timestamp)
+    if not played.empty and "match_date" in played.columns:
+        played = played.copy()
+        played["match_date"] = pd.to_datetime(played["match_date"], errors="coerce")
 
     hp = get_wc_hyperparams()
     if elo_timeline is not None:

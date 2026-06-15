@@ -1,0 +1,143 @@
+{
+  "event_id": 13414984,
+  "home_team": "Bielorrússia Sub-21",
+  "away_team": "Cazaquistão Sub-21",
+  "event_name": "Bielorrússia Sub-21·Cazaquistão Sub-21",
+  "utc_date": "2026-06-08T15:00:00Z",
+  "betradar_id": "71749140",
+  "is_live": true,
+  "inplay": {
+    "home_score": 2,
+    "away_score": 1,
+    "minute": 75,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 1,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.11,
+    "X": 6.75,
+    "2": 40.0
+  },
+  "h2h_implied": {
+    "1": 0.8387893473752884,
+    "X": 0.13793424823504744,
+    "2": 0.023276404389664256
+  },
+  "totals": {
+    "3.5": {
+      "Mais de 3.5": 2.0,
+      "Menos de 3.5": 1.75
+    },
+    "4.5": {
+      "Mais de 4.5": 5.75,
+      "Menos de 4.5": 1.08
+    },
+    "5.5": {
+      "Mais de 5.5": 17.0
+    },
+    "6.5": {
+      "Mais de 6.5": 30.0
+    }
+  },
+  "totals_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.4666666666666667,
+      "Menos de 3.5": 0.5333333333333333
+    },
+    "4.5": {
+      "Mais de 4.5": 0.1581259150805271,
+      "Menos de 4.5": 0.8418740849194728
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    }
+  },
+  "corners": {
+    "4.5": {
+      "Mais de 4.5": 1.22,
+      "Menos de 4.5": 3.45
+    },
+    "5.5": {
+      "Mais de 5.5": 1.95,
+      "Menos de 5.5": 1.75
+    },
+    "6.5": {
+      "Mais de 6.5": 3.25,
+      "Menos de 6.5": 1.25
+    },
+    "7.5": {
+      "Mais de 7.5": 5.5,
+      "Menos de 7.5": 1.08
+    },
+    "8.5": {
+      "Mais de 8.5": 9.0,
+      "Menos de 8.5": 1.003
+    },
+    "9.5": {
+      "Mais de 9.5": 14.0
+    },
+    "10.5": {
+      "Mais de 10.5": 22.0
+    }
+  },
+  "corners_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.7387580299785867,
+      "Menos de 4.5": 0.2612419700214133
+    },
+    "5.5": {
+      "Mais de 5.5": 0.47297297297297297,
+      "Menos de 5.5": 0.527027027027027
+    },
+    "6.5": {
+      "Mais de 6.5": 0.2777777777777778,
+      "Menos de 6.5": 0.7222222222222222
+    },
+    "7.5": {
+      "Mais de 7.5": 0.16413373860182373,
+      "Menos de 7.5": 0.8358662613981762
+    },
+    "8.5": {
+      "Mais de 8.5": 0.1008991008991009,
+      "Menos de 8.5": 0.8991008991008991
+    },
+    "9.5": {
+      "Mais de 9.5": 1.0
+    },
+    "10.5": {
+      "Mais de 10.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_3_5": {
+      "Sim": 0.4704301075268817,
+      "Não": 0.5295698924731183
+    },
+    "ft_and_btts": {
+      "Bielorrússia Sub-21 e Sim": 0.8246289169873557,
+      "Empate e Sim": 0.1451346893897746,
+      "Cazaquistão Sub-21 e Sim": 0.03023639362286971
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 3.0,
+    "away": 5.15
+  },
+  "generosity_probs": {
+    "home": 0.866042,
+    "away": 0.013689
+  },
+  "raw_market_count": 85,
+  "captured_at": "2026-06-08T16:36:50.939156+00:00"
+}

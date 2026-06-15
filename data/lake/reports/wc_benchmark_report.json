@@ -1,0 +1,122 @@
+{
+  "generated_at": "2026-06-12T21:03:26.205262+00:00",
+  "eval_season": 2022,
+  "train_samples": 3316,
+  "eval_samples": 966,
+  "feature_names": [
+    "elo_diff",
+    "h2h_home_wins",
+    "h2h_draws",
+    "h2h_away_wins",
+    "h2h_total",
+    "home_goals_rate",
+    "away_goals_rate",
+    "home_conceded_rate",
+    "away_conceded_rate",
+    "form_wins_diff",
+    "phase_knockout",
+    "is_neutral",
+    "home_must_win",
+    "away_must_win",
+    "home_secured",
+    "away_secured",
+    "group_matchday",
+    "fifa_points_diff",
+    "market_implied_12_diff",
+    "market_implied_draw",
+    "market_odds_available",
+    "squad_depth_diff",
+    "squad_top5_league_diff",
+    "squad_def_share_diff",
+    "squad_atk_share_diff",
+    "squad_mid_share_diff",
+    "squad_structural_balance_diff",
+    "squad_league_strength_diff",
+    "wc_news_count_diff",
+    "wc_news_sentiment_diff",
+    "wc_news_available",
+    "sofa_xg_for_diff_last5",
+    "sofa_xg_against_diff_last5",
+    "sofa_possession_diff_last5",
+    "sofa_shots_on_target_diff_last5",
+    "sofa_big_chances_diff_last5",
+    "sofa_stats_available",
+    "form_points_diff",
+    "streak_unbeaten_diff",
+    "streak_wins_diff",
+    "h2h_home_win_rate_all",
+    "h2h_home_wins_recent5",
+    "avgrating_diff",
+    "position_diff",
+    "points_diff",
+    "fifa_points_diff_live"
+  ],
+  "metrics": [
+    {
+      "model": "poisson",
+      "accuracy": 0.5652173913043478,
+      "brier": 0.19438835423579773,
+      "log_loss": 1.1262506457102919
+    },
+    {
+      "model": "logistic",
+      "accuracy": 0.505175983436853,
+      "brier": 0.20060188203903678,
+      "log_loss": 1.0247100785312988
+    },
+    {
+      "model": "gradient_boosting",
+      "accuracy": 0.5093167701863354,
+      "brier": 0.20182870680241813,
+      "log_loss": 1.0360267119125872
+    },
+    {
+      "model": "gradient_boosting_calibrated",
+      "accuracy": 0.515527950310559,
+      "brier": 0.19939628670093942,
+      "log_loss": 1.0171417774147813
+    },
+    {
+      "model": "ensemble_blend_linear",
+      "accuracy": 0.5610766045548654,
+      "brier": 0.1836419223972508,
+      "log_loss": 0.9424179210560089,
+      "weights": {
+        "poisson": 0.5,
+        "logistic": 0.1,
+        "gb_cal": 0.4
+      }
+    },
+    {
+      "model": "ensemble_dixit_ces",
+      "accuracy": 0.5610766045548654,
+      "brier": 0.18406373706706727,
+      "log_loss": 0.9459539521552099,
+      "sigma": 2.0,
+      "weights": {
+        "poisson": 0.5,
+        "logistic": 0.1,
+        "gb_cal": 0.4
+      }
+    }
+  ],
+  "cluster_error": {
+    "0": {
+      "size": 307,
+      "accuracy": 0.6482084690553745
+    },
+    "1": {
+      "size": 157,
+      "accuracy": 0.5031847133757962
+    },
+    "2": {
+      "size": 213,
+      "accuracy": 0.7746478873239436
+    },
+    "3": {
+      "size": 289,
+      "accuracy": 0.34256055363321797
+    }
+  },
+  "lgn_warning": null
+}

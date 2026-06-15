@@ -272,6 +272,14 @@ export interface WcPrediction {
   context: string;
   h2hSummary: string;
   modelBreakdown: ModelBreakdown;
+  maxProbOutcome?: OutcomeLabel | null;
+  maxProb?: number | null;
+  probMargin?: number | null;
+  uncertainty?: "alta" | "media" | "baixa" | null;
+  pickReason?: "argmax" | "empate_equilibrio" | null;
+  actualScore?: string | null;
+  actualOutcome?: OutcomeLabel | null;
+  predictionHit?: boolean | null;
 }
 
 export interface WcRound {
@@ -297,6 +305,17 @@ export interface WcScheduleMatch {
   kickoff: string | null;
   venue: string | null;
   city: string | null;
+  prediction?: "1" | "X" | "2" | null;
+  confidence?: number | null;
+  probHome?: number | null;
+  probDraw?: number | null;
+  probAway?: number | null;
+}
+
+export interface WcSchedulePredictionsSummary {
+  loaded: number;
+  distribution: Record<string, number>;
+  draws: number;
 }
 
 export interface WcSchedule {
@@ -307,6 +326,7 @@ export interface WcSchedule {
   matchdays: number[];
   matches: WcScheduleMatch[];
   totalMatches: number;
+  predictionsSummary?: WcSchedulePredictionsSummary | null;
 }
 
 export interface WcFriendlyMatch {
@@ -388,6 +408,13 @@ export interface SuperbetLiveEvent {
   marketCount: number;
   h2hOdds: Record<string, number>;
   capturedAt: string;
+  betRankScore?: number | null;
+  betTier?: "top" | "good" | "watch" | "skip" | "blocked" | null;
+  betLabel?: string | null;
+  betPalpite?: string | null;
+  betOpportunityCount?: number | null;
+  betTopEv?: number | null;
+  betTopLabel?: string | null;
 }
 
 export interface SuperbetLiveFeed {
@@ -396,6 +423,549 @@ export interface SuperbetLiveFeed {
   events: SuperbetLiveEvent[];
   capturedAt: string;
 }
+
+/** Snapshot leve da Superbet (placar/minuto/odds) sem rodar o modelo in-play. */
+export interface SuperbetEventSnapshot {
+  eventId: number;
+  homeTeam: string;
+  awayTeam: string;
+  isLive: boolean;
+  currentScore: string | null;
+  minute: number;
+  periodLabel: string | null;
+  status: string | null;
+  h2hOdds: Record<string, number>;
+  rawMarketCount: number;
+  capturedAt: string;
+}
+
+export interface HalftimeAdjustReport {
+  applied: boolean;
+  summary: string;
+  frozenStats: {
+    htHomeScore: number;
+    htAwayScore: number;
+    homeCorners1h: number;
+    awayCorners1h: number;
+    homeYellows1h: number;
+    awayYellows1h: number;
+    frozenAt: string;
+  };
+  goalAdjustment: {
+    home2hFactor: number;
+    away2hFactor: number;
+    reasons: string[];
+  };
+  corners: {
+    observed1hHome: number;
+    observed1hAway: number;
+    expected2hHome: number;
+    expected2hAway: number;
+    expectedFtTotal: number;
+    probHomeMoreCorners?: number;
+  };
+  cards: {
+    observed1hTotal: number;
+    expected2hTotal: number;
+    expectedFtTotal: number;
+  };
+  cornerLineProbs: Record<string, number>;
+  cardLineProbs: Record<string, number>;
+}
+
+export interface SuperbetLiveAdvice {
+  homeTeam: string;
+  awayTeam: string;
+  minute: number;
+  currentScore: string | null;
+  periodLabel: string | null;
+  status: string | null;
+  isFinished: boolean;
+  isLive: boolean;
+  superbetEventId: number;
+  betradarId: string | null;
+  capturedAt: string | null;
+  rawMarketCount: number;
+  h2hOdds: Record<string, number>;
+  h2hImplied: Record<string, number>;
+  h2hOverround: number | null;
+  generosityProbs: Record<string, number>;
+  confidence: {
+    score: number;
+    label: string;
+    reason: string;
+    patternAccuracy?: {
+      score: number;
+      label: string;
+      reason: string;
+      homeHitRate: number | null;
+      awayHitRate: number | null;
+      patternCount: number;
+    };
+  } | null;
+  marketBenchmark: {
+    h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
+    totals?: Record<string, { marketOver: number; modelOver: number; edgeOver: number }>;
+  } | null;
+  strategy: {
+    posture: string;
+    maxNewExposurePct: number;
+    maxNewExposureValue: number;
+    opportunityCount: number;
+    strongOpportunityCount: number;
+    minEdgeThreshold: number;
+    waitReason: string;
+    watchList: Array<{
+      market: string;
+      outcome: string;
+      label: string;
+      modelProb: number;
+      marketOdd: number;
+      expectedValue: number;
+      edgePp: number;
+      meetsThreshold: boolean;
+    }>;
+    marketScan: Array<{
+      market: string;
+      outcome: string;
+      label: string;
+      modelProb: number;
+      marketOdd: number;
+      impliedProb: number;
+      expectedValue: number;
+      edgePp: number;
+      suggestedStakePct: number;
+      suggestedStakeValue: number;
+      meetsThreshold: boolean;
+    }>;
+    opportunities: Array<{
+      rank: number;
+      market: string;
+      outcome: string;
+      label: string;
+      tier: string;
+      modelProb: number;
+      marketOdd: number;
+      impliedProb?: number;
+      expectedValue: number;
+      edgePp: number;
+      suggestedStakePct: number;
+      suggestedStakeValue: number;
+      action: string;
+      timing?: string;
+      timingReason?: string;
+      fundamentacao?: string;
+    }>;
+    shields: Array<{
+      action: string;
+      priority: string;
+      title: string;
+      reason: string;
+      market?: string;
+      outcome?: string;
+      odd?: number;
+      expectedValue?: number;
+    }>;
+    rules: string[];
+    cashout: { action: string; confidence: number; reason: string } | null;
+    patternAccuracy: {
+      score: number;
+      label: string;
+      reason: string;
+      homeHitRate: number | null;
+      awayHitRate: number | null;
+      patternCount: number;
+    } | null;
+    comboTicket: {
+      available: boolean;
+      title: string;
+      reason: string | null;
+      accuracy: {
+        score: number;
+        label: string;
+        reason: string;
+        homeHitRate: number | null;
+        awayHitRate: number | null;
+        patternCount: number;
+      } | null;
+      mainBets: Array<{
+        rank: number;
+        role: string;
+        label: string;
+        stat: string;
+        period: string;
+        direction: string;
+        line: number | null;
+        hitRate: number;
+        hits: number;
+        total: number;
+        patternRef: string;
+        score: number;
+        availableOnBook?: boolean;
+        marketOdd: number | null;
+        impliedProb?: number | null;
+        expectedValue?: number | null;
+        edgePp?: number | null;
+        superbetMarket?: string | null;
+        superbetPick?: string | null;
+        lineAdjustment?: string | null;
+        fairOdd?: number | null;
+      }>;
+      reserveBets: Array<{
+        rank: number;
+        role: string;
+        label: string;
+        stat: string;
+        period: string;
+        direction: string;
+        line: number | null;
+        hitRate: number;
+        hits: number;
+        total: number;
+        patternRef: string;
+        score: number;
+        availableOnBook?: boolean;
+        marketOdd: number | null;
+        impliedProb?: number | null;
+        expectedValue?: number | null;
+        edgePp?: number | null;
+        superbetMarket?: string | null;
+        superbetPick?: string | null;
+        lineAdjustment?: string | null;
+        fairOdd?: number | null;
+      }>;
+      strategyNotes: string[];
+      suggestedStakePct: number;
+      suggestedStakeValue: number;
+      combinedHitRateEstimate: number;
+      comboOdd: number | null;
+      comboEv: number | null;
+      superbetCapturedAt: string | null;
+      bookCoverage: {
+        mainAvailable: number;
+        mainTotal: number;
+        reserveAvailable: number;
+        reserveTotal: number;
+      } | null;
+      last10Analysis: {
+        windowSize: number;
+        sourceNote: string;
+        incidentsFetched: number;
+        legs: Array<{
+          rank: number | null;
+          label: string;
+          stat: string;
+          period: string;
+          direction: string;
+          line: number | null;
+          patternRef: string | null;
+          kxlCrossing: { hits: number; total: number; hitRate: number | null };
+          sofascoreCrossing: {
+            hits: number | null;
+            total: number | null;
+            hitRate: number | null;
+            evaluated?: number | null;
+          };
+          teams: Array<{
+            team: string;
+            hits: number;
+            total: number;
+            evaluated: number;
+            hitRate: number | null;
+            kxlPattern: {
+              team: string;
+              hits: number;
+              total: number;
+              hitRate: number | null;
+              line: number | null;
+              source: string;
+            } | null;
+            matches: Array<{
+              eventId: number;
+              matchDate: string | null;
+              homeTeam: string;
+              awayTeam: string;
+              metricValue: number | null;
+              hit: boolean | null;
+              detail: string;
+              incidentsSource: string | null;
+            }>;
+          }>;
+        }>;
+      } | null;
+    } | null;
+  } | null;
+  cashout: {
+    action: string;
+    confidence: number;
+    reason: string;
+    currentModelProb: number;
+    placedImpliedProb?: number;
+    remainingEv: number;
+    estimatedFairCashout: number;
+    potentialReturn: number;
+  } | null;
+  aportes: Array<{
+    label: string;
+    market: string;
+    outcome: string;
+    modelProb: number;
+    marketOdd: number;
+    expectedValue: number;
+    edgePp: number;
+    suggestedStakePct: number;
+    suggestedStakeValue: number;
+    action: string;
+  }>;
+  bttsOdds: Record<string, number>;
+  nextGoalOdds: Record<string, number>;
+  analysisCoverage: {
+    h2h: boolean;
+    totals: boolean;
+    btts: boolean;
+    nextGoal: boolean;
+    combos: string[];
+    firstHalf?: boolean;
+    secondHalf?: boolean;
+    halftimeAdjust?: boolean;
+    corners?: boolean;
+    yellowCards?: boolean;
+  } | null;
+  halftimeReport?: HalftimeAdjustReport | null;
+  halfMarkets?: Record<
+    string,
+    {
+      h2h?: Record<string, number>;
+      correct_score?: Record<string, number>;
+      exact_total?: Record<string, number>;
+      exact_team_home?: Record<string, number>;
+      exact_team_away?: Record<string, number>;
+      handicap?: Record<string, Record<string, number>>;
+      asian_handicap?: Record<string, Record<string, number>>;
+    }
+  >;
+  firstHalfTotals?: Record<string, Record<string, number>>;
+  secondHalfTotals?: Record<string, Record<string, number>>;
+  inplaySummary: {
+    probFinalHome: number;
+    probFinalDraw: number;
+    probFinalAway: number;
+    probHtHome?: number;
+    probHtDraw?: number;
+    probHtAway?: number;
+    probShHome?: number;
+    probShDraw?: number;
+    probShAway?: number;
+    over25?: number;
+    btts?: number;
+    probNextGoalHome?: number;
+    probNextGoalAway?: number;
+    probNoMoreGoals?: number;
+    topFinalScores?: Record<string, number>;
+    htCorrectScores?: Record<string, number>;
+    shCorrectScores?: Record<string, number>;
+    htExactTotals?: Record<string, number>;
+    shExactTotals?: Record<string, number>;
+    htLineProbs?: Record<string, number>;
+    secondHalfLineProbs?: Record<string, number>;
+    htHandicapProbs?: Record<string, number>;
+    shHandicapProbs?: Record<string, number>;
+    ftHandicapProbs?: Record<string, number>;
+    ftAsianHandicapProbs?: Record<string, number>;
+    cornerLineProbs?: Record<string, number>;
+    cardLineProbs?: Record<string, number>;
+    halftimeAdjustment?: {
+      applied?: boolean;
+      home2hFactor?: number;
+      away2hFactor?: number;
+      reasons?: string[];
+    };
+  };
+  hedgeReport: {
+    advices: Array<{
+      bet_id: string;
+      event_name: string;
+      market: string;
+      outcome: string;
+      stake: number;
+      odds_placed: number;
+      potential_return: number;
+      prob_current: number;
+      ev_remaining: number;
+      action: "cashout" | "hedge" | "hold" | "shift";
+      urgency: "critical" | "high" | "medium" | "low";
+      reasoning: string;
+      hedge?: {
+        market: string;
+        outcome: string;
+        odd_current: number;
+        stake_suggested: number;
+        guaranteed_return: number;
+        net_if_original_wins: number;
+        net_if_hedge_wins: number;
+      };
+      cashout_value?: number;
+    }>;
+    total_at_risk: number;
+    total_potential: number;
+    overall_action: string;
+    summary: string;
+  } | null;
+  againstModelAlerts: Array<{
+    betId: string | null;
+    market: string;
+    betOutcome: OutcomeLabel;
+    betOutcomeLabel: string;
+    stake: number;
+    oddsPlaced: number | null;
+    pregamePalpite: OutcomeLabel;
+    pregameProb: number;
+    pregameUncertainty: string | null;
+    inplayPalpite: OutcomeLabel;
+    inplayProb: number;
+    inplayProbs: Record<OutcomeLabel, number>;
+    severity: "critical" | "high" | "medium";
+    againstPregame: boolean;
+    againstInplay: boolean;
+    message: string;
+  }>;
+  betGuardrails: {
+    enabled: boolean;
+    blockNewBets: boolean;
+    blockNewBets2h: boolean;
+    allow2hSuggestions: boolean;
+    blockMinute: number;
+    block2hMinute: number;
+    blockReason: string | null;
+    oneBetPerMarket: boolean;
+    pregamePalpite: OutcomeLabel | null;
+    pregameProb: number | null;
+    inplayPalpite: OutcomeLabel | null;
+    inplayProb: number | null;
+  } | null;
+  liveStats: LiveMatchStats | null;
+  trendReport: LiveTrendReport | null;
+  halfTickets: InplayHalfTickets | null;
+  viable2hMarkets: Viable2hMarketsPanel | null;
+}
+
+export interface Viable2hMarketRow {
+  market: string;
+  outcome: string;
+  label: string;
+  shortLabel: string;
+  category: string;
+  categoryLabel: string;
+  modelProb: number;
+  marketOdd: number;
+  impliedProb: number;
+  expectedValue: number;
+  edgePp: number;
+  meetsThreshold: boolean;
+  viabilityScore: number;
+}
+
+export interface Viable2hMarketsPanel {
+  available: boolean;
+  closed: boolean;
+  closedReason: string | null;
+  minute: number;
+  minutesRemaining: number;
+  remainingFraction: number;
+  block2hMinute: number;
+  minModelProb: number;
+  markets: Viable2hMarketRow[];
+  chart: {
+    categories: string[];
+    probabilitiesPct: number[];
+    evPct: number[];
+  };
+}
+
+export interface InplayTicketLeg {
+  market: string;
+  outcome: string;
+  label: string;
+  modelProb: number;
+  marketOdd: number;
+  expectedValue: number;
+  edgePp: number;
+  suggestedStakePct?: number;
+  suggestedStakeValue?: number;
+}
+
+export interface InplayTicketCombo {
+  id: string;
+  title: string;
+  legs: InplayTicketLeg[];
+  combinedOdd: number;
+  combinedProb: number;
+  combinedEv: number;
+  suggestedStakePct: number;
+  suggestedStakeValue: number;
+  notes: string[];
+}
+
+export interface InplayHalfPeriodTickets {
+  available: boolean;
+  closed: boolean;
+  closedReason: string | null;
+  singles: InplayTicketLeg[];
+  combos: InplayTicketCombo[];
+}
+
+export interface InplayHalfTickets {
+  firstHalf: InplayHalfPeriodTickets;
+  secondHalf: InplayHalfPeriodTickets;
+  mixedCombos: InplayTicketCombo[];
+}
+
+export interface LiveMatchStats {
+  source: string | null;
+  possessionSource: string | null;
+  sofascoreEventId: number | null;
+  sofascoreAvailable: boolean;
+  homeXg: number | null;
+  awayXg: number | null;
+  homePossessionPct: number | null;
+  awayPossessionPct: number | null;
+  homeShotsOnTarget: number | null;
+  awayShotsOnTarget: number | null;
+  homeCorners: number | null;
+  awayCorners: number | null;
+  homeYellowCards: number | null;
+  awayYellowCards: number | null;
+  warnings: string[];
+}
+
+export interface LiveTrendReport {
+  eventId: number;
+  homeTeam: string;
+  awayTeam: string;
+  currentScore: string | null;
+  minute: number;
+  dominantTrend: string | null;
+  signals: Array<{
+    type: string;
+    direction: string;
+    strength: number;
+    description: string;
+    minute: number | null;
+  }>;
+  positionAdvice: {
+    action: string;
+    urgency: string;
+    reasoning: string;
+    repositionTo: string | null;
+    repositionDetail: string | null;
+    repositionOdd: number | null;
+    confidence: number;
+  } | null;
+  bestOpportunities: Array<Record<string, unknown>>;
+}
+
+/** Bilhete combo KXL (pré-jogo ou in-play via strategy.comboTicket). */
+export type WcComboTicket = NonNullable<NonNullable<SuperbetLiveAdvice["strategy"]>["comboTicket"]>;
 
 export interface WcSquadPlayer {
   name: string;
@@ -502,6 +1072,9 @@ export interface WcGroupStandingRow {
   ga: number;
   gd: number;
   points: number;
+  realPoints: number;
+  realPlayed: number;
+  realGd: number;
 }
 
 export interface WcGroupStandingsBlock {
@@ -514,6 +1087,8 @@ export interface WcGroupStandings {
   competition: string;
   simulated: boolean;
   note: string;
+  asOf: string;
+  nRealResults: number;
   groups: WcGroupStandingsBlock[];
 }
 
@@ -618,4 +1193,27 @@ export interface HistoricalValidationResult {
   modelBreakdown: ModelBreakdown;
   cutoffDate: string;
   cutoffNote: string;
+}
+
+export interface UserOpenBet {
+  id: string;
+  eventName: string;
+  homeTeam: string;
+  awayTeam: string;
+  picks: Array<{ market: string; outcome: string; targetValue?: string | null }>;
+  stake: number;
+  oddsPlaced: number;
+  potentialReturn: number;
+  cashoutValue: number | null;
+  ticketCode: string | null;
+  status: string;
+  source: string;
+  capturedAt: string | null;
+  superbetEventId?: number | null;
+  userId?: string | null;
+}
+
+export interface UserOpenBetsList {
+  count: number;
+  bets: UserOpenBet[];
 }

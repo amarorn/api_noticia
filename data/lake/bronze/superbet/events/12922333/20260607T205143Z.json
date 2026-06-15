@@ -1,0 +1,155 @@
+{
+  "event_id": 12922333,
+  "home_team": "Marrocos",
+  "away_team": "Noruega",
+  "event_name": "Marrocos·Noruega",
+  "utc_date": "2026-06-07T19:00:00Z",
+  "betradar_id": "71170368",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 1,
+    "minute": 80,
+    "stoppage_time": null,
+    "home_corners": 2,
+    "away_corners": 9,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 1,
+    "ht_home_score": 1,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 5.15,
+    "X": 1.5,
+    "2": 5.0
+  },
+  "h2h_implied": {
+    "1": 0.18303843807199513,
+    "X": 0.6284319707138499,
+    "2": 0.188529591214155
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 2.3,
+      "Menos de 2.5": 1.6
+    },
+    "3.5": {
+      "Mais de 3.5": 8.25,
+      "Menos de 3.5": 1.05
+    },
+    "4.5": {
+      "Mais de 4.5": 25.0
+    },
+    "5.5": {
+      "Mais de 5.5": 45.0
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.41025641025641024,
+      "Menos de 2.5": 0.5897435897435896
+    },
+    "3.5": {
+      "Mais de 3.5": 0.11290322580645161,
+      "Menos de 3.5": 0.8870967741935483
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {
+    "11.5": {
+      "Mais de 11.5": 1.22,
+      "Menos de 11.5": 3.65
+    },
+    "12.5": {
+      "Mais de 12.5": 1.87,
+      "Menos de 12.5": 1.87
+    },
+    "13.5": {
+      "Mais de 13.5": 3.1,
+      "Menos de 13.5": 1.3
+    },
+    "14.5": {
+      "Mais de 14.5": 5.25,
+      "Menos de 14.5": 1.1
+    },
+    "15.5": {
+      "Mais de 15.5": 8.75,
+      "Menos de 15.5": 1.02
+    },
+    "16.5": {
+      "Mais de 16.5": 14.0
+    },
+    "17.5": {
+      "Mais de 17.5": 22.0
+    }
+  },
+  "corners_implied": {
+    "11.5": {
+      "Mais de 11.5": 0.7494866529774128,
+      "Menos de 11.5": 0.25051334702258726
+    },
+    "12.5": {
+      "Mais de 12.5": 0.5,
+      "Menos de 12.5": 0.5
+    },
+    "13.5": {
+      "Mais de 13.5": 0.29545454545454547,
+      "Menos de 13.5": 0.7045454545454546
+    },
+    "14.5": {
+      "Mais de 14.5": 0.17322834645669294,
+      "Menos de 14.5": 0.8267716535433072
+    },
+    "15.5": {
+      "Mais de 15.5": 0.10440122824974413,
+      "Menos de 15.5": 0.8955987717502559
+    },
+    "16.5": {
+      "Mais de 16.5": 1.0
+    },
+    "17.5": {
+      "Mais de 17.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.4025974025974026,
+      "Não": 0.5974025974025974
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.11931818181818181,
+      "Não": 0.8806818181818181
+    },
+    "ft_and_btts": {
+      "Marrocos e Sim": 0.1903171953255426,
+      "Empate e Sim": 0.6153589315525876,
+      "Noruega e Sim": 0.19432387312186977
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.039514982826009716,
+      "X e Mais de 3.5": 0.051137036598365514,
+      "2 e Mais de 3.5": 0.039514982826009716,
+      "1 e Menos de 3.5": 0.15805993130403886,
+      "X e Menos de 3.5": 0.5537131351415374,
+      "2 e Menos de 3.5": 0.15805993130403886
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 4.5,
+    "away": 4.2
+  },
+  "generosity_probs": {
+    "home": 0.177259,
+    "away": 0.182265
+  },
+  "raw_market_count": 143,
+  "captured_at": "2026-06-07T20:51:43.138845+00:00"
+}

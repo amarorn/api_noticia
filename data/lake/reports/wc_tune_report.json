@@ -1,0 +1,35 @@
+{
+  "path": "data/wc/hyperparams.json",
+  "hyperparams": {
+    "elo_k": 32.0,
+    "elo_home_adv": 30.0,
+    "elo_initial": 1500.0,
+    "home_adv_goals": 0.12,
+    "home_adv_goals_neutral": 0.03,
+    "logistic_c": 1.0,
+    "logistic_class_weight": "balanced",
+    "logistic_max_iter": 3000,
+    "ensemble_weight_steps": 40,
+    "kxl_blend_weight": 0.25,
+    "rho_min": -0.2,
+    "rho_max": 0.2,
+    "rho_step": 0.01,
+    "draw_prob_floor": 0.16
+  },
+  "metrics": {
+    "brier": 0.18472544313934358,
+    "accuracy": 0.515625,
+    "n": 64,
+    "pred_distribution": {
+      "1": 51,
+      "X": 0,
+      "2": 13
+    },
+    "ensemble_weights": {
+      "dixon_coles": 0.325,
+      "logistic": 0.675
+    },
+    "phase2": true
+  },
+  "tuned_at": "2026-06-03T12:44:17.842486+00:00"
+}

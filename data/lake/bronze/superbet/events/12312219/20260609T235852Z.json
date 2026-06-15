@@ -1,0 +1,83 @@
+{
+  "event_id": 12312219,
+  "home_team": "Náutico PE",
+  "away_team": "Fortaleza",
+  "event_name": "Náutico PE·Fortaleza",
+  "utc_date": "2026-06-09T22:00:00Z",
+  "betradar_id": "68822960",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 94,
+    "stoppage_time": "4:42",
+    "home_corners": 11,
+    "away_corners": 4,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 4,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 60.0,
+    "X": 7.0,
+    "2": 1.12
+  },
+  "h2h_implied": {
+    "1": 0.01583710407239819,
+    "X": 0.13574660633484162,
+    "2": 0.84841628959276
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 4.6,
+      "Menos de 1.5": 1.14
+    },
+    "2.5": {
+      "Mais de 2.5": 20.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.1986062717770035,
+      "Menos de 1.5": 0.8013937282229965
+    },
+    "2.5": {
+      "Mais de 2.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "ft_and_btts": {
+      "Náutico PE e Sim": 0.020533185915588302,
+      "Empate e Sim": 0.1421528255694575,
+      "Fortaleza e Sim": 0.012319911549352981,
+      "Fortaleza e Não": 0.8249940769656013
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.006089686779935686,
+      "X e Mais de 3.5": 0.006089686779935686,
+      "2 e Mais de 3.5": 0.006089686779935686,
+      "1 e Menos de 3.5": 0.018269060339807058,
+      "X e Menos de 3.5": 0.14053123338313123,
+      "2 e Menos de 3.5": 0.8229306459372547
+    }
+  },
+  "btts_odds": {
+    "yes": 6.0,
+    "no": 1.12
+  },
+  "next_goal_odds": {
+    "home": 6.0,
+    "away": 18.0
+  },
+  "generosity_probs": {
+    "home": 0.009591,
+    "away": 0.867013
+  },
+  "raw_market_count": 69,
+  "captured_at": "2026-06-09T23:58:52.015863+00:00"
+}

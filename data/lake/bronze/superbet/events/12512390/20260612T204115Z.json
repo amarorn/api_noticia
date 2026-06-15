@@ -1,0 +1,269 @@
+{
+  "event_id": 12512390,
+  "home_team": "Canadá",
+  "away_team": "Bósnia",
+  "event_name": "Canadá·Bósnia e Herzegovina",
+  "utc_date": "2026-06-12T19:00:00Z",
+  "betradar_id": "66456916",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 78,
+    "stoppage_time": null,
+    "home_corners": 9,
+    "away_corners": 3,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 2,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 8.75,
+    "X": 3.25,
+    "2": 1.57
+  },
+  "h2h_implied": {
+    "1": 0.10792660356406325,
+    "X": 0.2905716249801703,
+    "2": 0.6015017714557666
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.75,
+      "Menos de 1.5": 2.07
+    },
+    "2.5": {
+      "Mais de 2.5": 4.5,
+      "Menos de 2.5": 1.18
+    },
+    "3.5": {
+      "Mais de 3.5": 13.0,
+      "Menos de 3.5": 1.01
+    },
+    "4.5": {
+      "Mais de 4.5": 30.0
+    },
+    "5.5": {
+      "Mais de 5.5": 45.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.5418848167539266,
+      "Menos de 1.5": 0.4581151832460733
+    },
+    "2.5": {
+      "Mais de 2.5": 0.2077464788732394,
+      "Menos de 2.5": 0.7922535211267606
+    },
+    "3.5": {
+      "Mais de 3.5": 0.07209136331192006,
+      "Menos de 3.5": 0.92790863668808
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {
+    "12.5": {
+      "Mais de 12.5": 1.05,
+      "Menos de 12.5": 7.0
+    },
+    "13.5": {
+      "Mais de 13.5": 1.3,
+      "Menos de 13.5": 3.1
+    },
+    "14.5": {
+      "Mais de 14.5": 1.87,
+      "Menos de 14.5": 1.87
+    },
+    "15.5": {
+      "Mais de 15.5": 2.75,
+      "Menos de 15.5": 1.38
+    },
+    "16.5": {
+      "Mais de 16.5": 4.2,
+      "Menos de 16.5": 1.16
+    },
+    "17.5": {
+      "Mais de 17.5": 6.75,
+      "Menos de 17.5": 1.05
+    },
+    "18.5": {
+      "Mais de 18.5": 10.0,
+      "Menos de 18.5": 1.004
+    },
+    "19.5": {
+      "Mais de 19.5": 15.0
+    },
+    "20.5": {
+      "Mais de 20.5": 22.0
+    }
+  },
+  "corners_implied": {
+    "12.5": {
+      "Mais de 12.5": 0.8695652173913044,
+      "Menos de 12.5": 0.13043478260869565
+    },
+    "13.5": {
+      "Mais de 13.5": 0.7045454545454546,
+      "Menos de 13.5": 0.29545454545454547
+    },
+    "14.5": {
+      "Mais de 14.5": 0.5,
+      "Menos de 14.5": 0.5
+    },
+    "15.5": {
+      "Mais de 15.5": 0.334140435835351,
+      "Menos de 15.5": 0.6658595641646489
+    },
+    "16.5": {
+      "Mais de 16.5": 0.21641791044776118,
+      "Menos de 16.5": 0.7835820895522388
+    },
+    "17.5": {
+      "Mais de 17.5": 0.1346153846153846,
+      "Menos de 17.5": 0.8653846153846154
+    },
+    "18.5": {
+      "Mais de 18.5": 0.09173478655767484,
+      "Menos de 18.5": 0.9082652134423251
+    },
+    "19.5": {
+      "Mais de 19.5": 1.0
+    },
+    "20.5": {
+      "Mais de 20.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.2013888888888889,
+      "Não": 0.7986111111111112
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.07275320970042796,
+      "Não": 0.927246790299572
+    },
+    "ft_and_btts": {
+      "Canadá e Sim": 0.11213128078539686,
+      "Empate e Sim": 0.2847778559629126,
+      "Bósnia e Herzegovina e Sim": 0.08155002238937953,
+      "Bósnia e Herzegovina e Não": 0.521540840862311
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.11163436747107358,
+      "X e Mais de 1.5": 0.28351585389479006,
+      "2 e Mais de 1.5": 0.17341260966380362,
+      "2 e Menos de 1.5": 0.43143716897033274
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.11078914628576829,
+      "X e Mais de 2.5": 0.029543772342871543,
+      "2 e Mais de 2.5": 0.08863131702861464,
+      "X e Menos de 2.5": 0.26457109560780484,
+      "2 e Menos de 2.5": 0.5064646687349407
+    }
+  },
+  "btts_odds": {
+    "yes": 2.1,
+    "no": 1.72
+  },
+  "next_goal_odds": {
+    "home": 2.27,
+    "away": 5.75
+  },
+  "generosity_probs": {
+    "home": 0.096806,
+    "away": 0.617173
+  },
+  "team_totals": {
+    "home": {
+      "0.5": {
+        "Mais de 0.5": 2.1,
+        "Menos de 0.5": 1.7
+      },
+      "1.5": {
+        "Mais de 1.5": 6.25,
+        "Menos de 1.5": 1.08
+      },
+      "2.5": {
+        "Mais de 2.5": 18.0
+      },
+      "3.5": {
+        "Mais de 3.5": 35.0
+      }
+    },
+    "away": {}
+  },
+  "first_half_totals": {
+    "1.5-80": {
+      "Primeiros 80 min - Mais de 1.5": 7.75,
+      "Primeiros 80 min - Menos de 1.5": 1.05
+    },
+    "1.5-85": {
+      "Primeiros 85 min - Mais de 1.5": 3.3,
+      "Primeiros 85 min - Menos de 1.5": 1.28
+    }
+  },
+  "second_half_totals": {
+    "0.5": {
+      "Mais de 0.5": 1.7,
+      "Menos de 0.5": 2.05
+    },
+    "1.5": {
+      "Mais de 1.5": 4.3,
+      "Menos de 1.5": 1.16
+    },
+    "2.5": {
+      "Mais de 2.5": 11.0
+    }
+  },
+  "yellow_cards": {},
+  "first_half_yellow_cards": {},
+  "team_shots": {
+    "home": {},
+    "away": {}
+  },
+  "half_markets": {
+    "2h": {
+      "handicap": {
+        "m1_5": {
+          "home": 7.5,
+          "away": 1.05
+        },
+        "m0_5": {
+          "home": 2.4,
+          "away": 1.53
+        },
+        "p0_5": {
+          "home": 1.07,
+          "away": 6.5
+        },
+        "0": {
+          "home": 8.0,
+          "away": 1.55
+        }
+      },
+      "correct_score": {
+        "0x0": 2.07,
+        "0x1": 8.25,
+        "0x2": 45.0,
+        "1x0": 3.35,
+        "1x1": 12.0,
+        "1x2": 60.0,
+        "2x0": 9.5,
+        "2x1": 30.0,
+        "2x2": 125.0
+      }
+    }
+  },
+  "raw_market_count": 182,
+  "captured_at": "2026-06-12T20:41:15.826045+00:00"
+}

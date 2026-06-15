@@ -78,14 +78,51 @@ def _wmean(pairs: list[tuple[float, float]], default: float = 1.0) -> float:
     return sum(v * w for v, w in pairs) / total_w
 
 
+def _history_fingerprint(df: pd.DataFrame) -> tuple[int, int, float, float]:
+    """Fingerprint leve do histórico filtrado para cache de forças Poisson."""
+    if df.empty:
+        return (0, 0, 0.0, 0.0)
+    season_max = int(df["season"].max()) if "season" in df.columns else 0
+    return (
+        len(df),
+        season_max,
+        float(df["home_score"].sum()),
+        float(df["away_score"].sum()),
+    )
+
+
+_STRENGTH_CACHE: dict[tuple[tuple[int, int, float, float], int], tuple[dict[str, float], dict[str, float], float]] = {}
+_STRENGTH_WARNED: set[tuple[tuple[int, int, float, float], int]] = set()
+
+
 def _team_attack_defense(
     fixtures_df: pd.DataFrame,
     *,
     ref_season: int | None = None,
 ) -> tuple[dict[str, float], dict[str, float], float]:
-    df = fixtures_df.copy()
     hp = get_wc_hyperparams()
-    ref = ref_season if ref_season is not None else _reference_season(df)
+    ref = ref_season if ref_season is not None else _reference_season(fixtures_df)
+    cache_key = (_history_fingerprint(fixtures_df), ref)
+    cached = _STRENGTH_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    df = fixtures_df.copy()
+
+    # Guarda de sanidade: remover linhas com scores impossíveis para futebol.
+    # Dados de cricket/outros esportes às vezes se infiltram no dataset.
+    _MAX_FOOTBALL_SCORE = 15
+    pre_len = len(df)
+    df = df[(df["home_score"] <= _MAX_FOOTBALL_SCORE) & (df["away_score"] <= _MAX_FOOTBALL_SCORE)]
+    if len(df) < pre_len and cache_key not in _STRENGTH_WARNED:
+        import structlog
+
+        _STRENGTH_WARNED.add(cache_key)
+        structlog.get_logger().warning(
+            "poisson_outliers_removidos",
+            removidos=pre_len - len(df),
+            max_score_permitido=_MAX_FOOTBALL_SCORE,
+        )
 
     df["_w"] = df["season"].fillna(ref).astype(int).apply(
         lambda s: _season_weight(s, ref, hp.poisson_season_half_life)
@@ -132,7 +169,9 @@ def _team_attack_defense(
         attack[team] = _wmean(a_vals, 1.0)
         defense[team] = _wmean(d_vals, 1.0)
 
-    return attack, defense, league_avg
+    result = (attack, defense, league_avg)
+    _STRENGTH_CACHE[cache_key] = result
+    return result
 
 
 def _history_until(fixtures_df: pd.DataFrame, before_date: datetime | None) -> pd.DataFrame:
@@ -146,13 +185,65 @@ def _history_until(fixtures_df: pd.DataFrame, before_date: datetime | None) -> p
     return filtered if not filtered.empty else fixtures_df
 
 
+@dataclass
+class XgCalibration:
+    """P2.1: Dados de xG recente para calibrar λ (últimos N jogos via Sofascore).
+
+    O xG captura a qualidade das chances criadas, enquanto gols reais incluem
+    sorte/azar. Ao blendar xG com o λ baseado em gols, reduzimos variância.
+    """
+
+    home_xg_for: float | None = None  # xG médio a favor da casa (últimos jogos)
+    home_xg_against: float | None = None  # xG médio contra a casa
+    away_xg_for: float | None = None  # xG médio a favor do visitante
+    away_xg_against: float | None = None  # xG médio contra o visitante
+
+
+# Peso do xG na calibração do λ (0.0 = só gols reais, 1.0 = só xG)
+_XG_BLEND_WEIGHT = 0.35
+
+
+def _apply_xg_calibration(
+    lambda_home: float,
+    lambda_away: float,
+    xg: XgCalibration | None,
+) -> tuple[float, float]:
+    """P2.1: Ajusta λ com base no xG recente, blendando com o valor puro de gols.
+
+    Se xG_for do time é maior que o λ calculado por gols → time cria mais chances
+    do que converte → λ sobe (boa fase ofensiva, azar nos chutes).
+    Se xG_for é menor → time converte mais do que cria → λ desce (sorte recente).
+    """
+    if xg is None:
+        return lambda_home, lambda_away
+
+    w = _XG_BLEND_WEIGHT
+
+    if xg.home_xg_for is not None and xg.home_xg_for > 0:
+        lambda_home = lambda_home * (1 - w) + xg.home_xg_for * w
+
+    if xg.away_xg_for is not None and xg.away_xg_for > 0:
+        lambda_away = lambda_away * (1 - w) + xg.away_xg_for * w
+
+    # Clamp mínimo
+    lambda_home = max(0.3, lambda_home)
+    lambda_away = max(0.3, lambda_away)
+
+    return lambda_home, lambda_away
+
+
 def expected_lambdas(
     fixtures_df: pd.DataFrame,
     home_team: str,
     away_team: str,
     features: WcMatchFeatures | None = None,
     before_date: datetime | None = None,
+    xg_calibration: XgCalibration | None = None,
 ) -> tuple[float, float]:
+    """Calcula λ esperado para casa e visitante.
+
+    P2.1: Se xg_calibration for fornecido, ajusta o λ com blend xG + gols reais.
+    """
     history = _history_until(fixtures_df, before_date)
     ref = _reference_season(history)
     attack, defense, league_avg = _team_attack_defense(history, ref_season=ref)
@@ -173,6 +264,9 @@ def expected_lambdas(
         lam_home *= max(0.5, elo_factor)
         lam_away *= max(0.5, 2.0 - elo_factor)
 
+    # P2.1: Calibração xG
+    lam_home, lam_away = _apply_xg_calibration(lam_home, lam_away, xg_calibration)
+
     return lam_home, lam_away
 
 
@@ -183,7 +277,12 @@ def goal_model_factors(
     features: WcMatchFeatures | None = None,
     before_date: datetime | None = None,
     rho: float = 0.0,
+    xg_calibration: XgCalibration | None = None,
 ) -> GoalModelFactors:
+    """Calcula fatores do modelo de gols (ataque, defesa, λ, etc.).
+
+    P2.1: Se xg_calibration for fornecido, ajusta o λ final com blend xG.
+    """
     history = _history_until(fixtures_df, before_date)
     ref = _reference_season(history)
     attack, defense, league_avg = _team_attack_defense(history, ref_season=ref)
@@ -207,6 +306,9 @@ def goal_model_factors(
         elo_away = max(0.5, 2.0 - elo_factor)
         lam_home *= elo_home
         lam_away *= elo_away
+
+    # P2.1: Calibração xG
+    lam_home, lam_away = _apply_xg_calibration(lam_home, lam_away, xg_calibration)
 
     return GoalModelFactors(
         league_avg=float(league_avg),

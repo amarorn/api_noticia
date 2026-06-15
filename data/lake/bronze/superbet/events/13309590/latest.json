@@ -1,0 +1,88 @@
+{
+  "event_id": 13309590,
+  "home_team": "Atlético Nacional (COL)",
+  "away_team": "Junior Barranquilla",
+  "event_name": "Atlético Nacional (COL)·Junior Barranquilla",
+  "utc_date": "2026-06-08T22:00:00Z",
+  "betradar_id": "71702730",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 95,
+    "stoppage_time": "5:09",
+    "home_corners": 13,
+    "away_corners": 5,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 3,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.02,
+    "X": 17.0,
+    "2": 100.0
+  },
+  "h2h_implied": {
+    "1": 0.934404784152495,
+    "X": 0.056064287049149696,
+    "2": 0.009530928798355449
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 4.5,
+      "Menos de 1.5": 1.12
+    },
+    "2.5": {
+      "Mais de 2.5": 18.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.19928825622775798,
+      "Menos de 1.5": 0.8007117437722419
+    },
+    "2.5": {
+      "Mais de 2.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "ft_and_btts": {
+      "Atlético Nacional (COL) e Sim": 0.01848735144092592,
+      "Atlético Nacional (COL) e Não": 0.906242717692447,
+      "Empate e Sim": 0.06602625514616399,
+      "Junior Barranquilla e Sim": 0.00924367572046296
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.14811020289984184,
+      "X e Mais de 1.5": 0.06347580124278936,
+      "2 e Mais de 1.5": 0.008886612173990512,
+      "1 e Menos de 1.5": 0.7795273836833783
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.03016170730470928,
+      "X e Mais de 2.5": 0.009048512191412785,
+      "2 e Mais de 2.5": 0.009048512191412785,
+      "1 e Menos de 2.5": 0.8871090383738024,
+      "X e Menos de 2.5": 0.06463222993866274
+    }
+  },
+  "btts_odds": {
+    "yes": 13.0,
+    "no": 1.02
+  },
+  "next_goal_odds": {
+    "home": 6.25,
+    "away": 13.0
+  },
+  "generosity_probs": {
+    "home": 0.958926,
+    "away": 0.000977
+  },
+  "raw_market_count": 58,
+  "captured_at": "2026-06-08T23:59:31.488857+00:00"
+}

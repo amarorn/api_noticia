@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   getWcScheduleUseCase,
   getWcTeamsUseCase,
+  getWcComboTicketUseCase,
   simulateWcMatchUseCase,
 } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
@@ -13,6 +14,7 @@ import {
   ProbabilityDonut,
 } from "@/presentation/components/charts/ProbabilityCharts";
 import { ConfidenceBadge, ConfidenceBar } from "@/presentation/components/predictions/ConfidenceBadge";
+import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
 import { InPlayPanel } from "@/presentation/components/predictions/InPlayPanel";
 import { MatchContextPanel } from "@/presentation/components/predictions/MatchContextPanel";
 import { PoissonFactorsPanel } from "@/presentation/components/predictions/PoissonFactorsPanel";
@@ -176,6 +178,24 @@ export function PredictPage() {
     if (dateFromUrl) return dateFromUrl.slice(0, 10);
     return undefined;
   }, [dateFromUrl]);
+
+  const superbetEventIdFromUrl = useMemo(() => {
+    const parsed = Number.parseInt(searchParams.get("superbetEventId") ?? "", 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  }, [searchParams]);
+
+  const comboTicketQuery = useQuery({
+    queryKey: ["wc-combo-ticket", homeTeam, awayTeam, superbetEventIdFromUrl],
+    queryFn: () =>
+      getWcComboTicketUseCase.execute({
+        homeTeam,
+        awayTeam,
+        bankroll: 1000,
+        superbetEventId: superbetEventIdFromUrl,
+      }),
+    enabled: Boolean(homeTeam && awayTeam),
+    staleTime: 5 * 60_000,
+  });
 
   const predictMutation = useMutation({
     mutationFn: () =>
@@ -779,6 +799,14 @@ export function PredictPage() {
                 <MatchContextPanel prediction={predictMutation.data} />
               </div>
             </motion.div>
+          )}
+
+          {homeTeam && awayTeam && (
+            <ComboTicketPanel
+              homeTeam={homeTeam}
+              awayTeam={awayTeam}
+              ticket={comboTicketQuery.data ?? null}
+            />
           )}
 
           {homeTeam && awayTeam && (

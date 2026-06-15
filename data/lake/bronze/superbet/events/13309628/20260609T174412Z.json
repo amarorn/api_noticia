@@ -1,0 +1,149 @@
+{
+  "event_id": 13309628,
+  "home_team": "RD do Congo",
+  "away_team": "Chile",
+  "event_name": "RD do Congo·Chile",
+  "utc_date": "2026-06-09T16:00:00Z",
+  "betradar_id": "71602022",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 78,
+    "stoppage_time": null,
+    "home_corners": 7,
+    "away_corners": 2,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 2,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 25.0,
+    "X": 5.25,
+    "2": 1.18
+  },
+  "h2h_implied": {
+    "1": 0.03710802959058373,
+    "X": 0.17670490281230344,
+    "2": 0.7861870675971129
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 2.6,
+      "Menos de 1.5": 1.4
+    },
+    "2.5": {
+      "Mais de 2.5": 8.75,
+      "Menos de 2.5": 1.005
+    },
+    "3.5": {
+      "Mais de 3.5": 25.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.3499999999999999,
+      "Menos de 1.5": 0.6499999999999999
+    },
+    "2.5": {
+      "Mais de 2.5": 0.10348360655737704,
+      "Menos de 2.5": 0.8965163934426229
+    },
+    "3.5": {
+      "Mais de 3.5": 1.0
+    }
+  },
+  "corners": {
+    "9.5": {
+      "Mais de 9.5": 1.2,
+      "Menos de 9.5": 3.65
+    },
+    "10.5": {
+      "Mais de 10.5": 1.83,
+      "Menos de 10.5": 1.87
+    },
+    "11.5": {
+      "Mais de 11.5": 2.95,
+      "Menos de 11.5": 1.3
+    },
+    "12.5": {
+      "Mais de 12.5": 4.85,
+      "Menos de 12.5": 1.1
+    },
+    "13.5": {
+      "Mais de 13.5": 8.25,
+      "Menos de 13.5": 1.01
+    },
+    "14.5": {
+      "Mais de 14.5": 13.0
+    },
+    "15.5": {
+      "Mais de 15.5": 20.0
+    }
+  },
+  "corners_implied": {
+    "9.5": {
+      "Mais de 9.5": 0.752577319587629,
+      "Menos de 9.5": 0.24742268041237114
+    },
+    "10.5": {
+      "Mais de 10.5": 0.5054054054054055,
+      "Menos de 10.5": 0.4945945945945946
+    },
+    "11.5": {
+      "Mais de 11.5": 0.3058823529411765,
+      "Menos de 11.5": 0.6941176470588235
+    },
+    "12.5": {
+      "Mais de 12.5": 0.18487394957983194,
+      "Menos de 12.5": 0.8151260504201681
+    },
+    "13.5": {
+      "Mais de 13.5": 0.10907127429805617,
+      "Menos de 13.5": 0.8909287257019439
+    },
+    "14.5": {
+      "Mais de 14.5": 1.0
+    },
+    "15.5": {
+      "Mais de 15.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.07834101382488479,
+      "Não": 0.9216589861751152
+    },
+    "ft_and_btts": {
+      "RD do Congo e Sim": 0.04007123775601068,
+      "Empate e Sim": 0.176313446126447,
+      "Chile e Sim": 0.04897595725734639,
+      "Chile e Não": 0.7346393588601959
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.009747899159663865,
+      "X e Mais de 3.5": 0.011697478991596639,
+      "2 e Mais de 3.5": 0.011697478991596639,
+      "1 e Menos de 3.5": 0.03509243697478991,
+      "X e Menos de 3.5": 0.17546218487394957,
+      "2 e Menos de 3.5": 0.7563025210084033
+    }
+  },
+  "btts_odds": {
+    "yes": 4.0,
+    "no": 1.2
+  },
+  "next_goal_odds": {
+    "home": 4.3,
+    "away": 5.75
+  },
+  "generosity_probs": {
+    "home": 0.020301,
+    "away": 0.819099
+  },
+  "raw_market_count": 91,
+  "captured_at": "2026-06-09T17:44:12.322942+00:00"
+}

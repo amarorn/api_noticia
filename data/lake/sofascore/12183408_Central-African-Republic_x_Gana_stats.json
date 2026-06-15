@@ -1,0 +1,20 @@
+{
+  "event_id": 12183408,
+  "home_team": "Central African Republic",
+  "away_team": "Gana",
+  "match_date": "2025-10-08T16:00:00+00:00",
+  "source": "sofascore",
+  "home_yellow_cards": 2.0,
+  "away_yellow_cards": 1.0,
+  "home_red_cards": 0.0,
+  "away_red_cards": 0.0,
+  "incident_goals_home": 0,
+  "incident_goals_away": 5,
+  "incident_yellow_cards_home": 2,
+  "incident_yellow_cards_away": 1,
+  "incident_red_cards_home": 0,
+  "incident_red_cards_away": 0,
+  "incident_substitutions_home": 5,
+  "incident_substitutions_away": 5,
+  "fetched_at": "2026-06-06T02:57:53.107669+00:00"
+}

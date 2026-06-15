@@ -1,0 +1,51 @@
+{
+  "event_id": 12512390,
+  "home_team": "Canadá",
+  "away_team": "Bósnia",
+  "event_name": "Canadá·Bósnia e Herzegovina",
+  "utc_date": "2026-06-12T19:00:00Z",
+  "betradar_id": "66456916",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 80,
+    "stoppage_time": null,
+    "home_corners": 9,
+    "away_corners": 3,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 2,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {},
+  "h2h_implied": {},
+  "totals": {},
+  "totals_implied": {},
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.081393,
+    "away": 0.628821
+  },
+  "team_totals": {
+    "home": {},
+    "away": {}
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "yellow_cards": {},
+  "first_half_yellow_cards": {},
+  "team_shots": {
+    "home": {},
+    "away": {}
+  },
+  "half_markets": {},
+  "raw_market_count": 169,
+  "captured_at": "2026-06-12T20:43:15.388899+00:00"
+}

@@ -86,6 +86,9 @@ def load_parquet_to_bigquery(
         source_format=bigquery.SourceFormat.PARQUET,
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
         autodetect=True,
+        schema_update_options=[
+            bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION,
+        ],
     )
     job = client.load_table_from_uri(gcs_uri, table_ref, job_config=job_config)
     job.result()
@@ -142,6 +145,9 @@ def load_dataframe_to_bigquery(
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
         autodetect=True,
+        schema_update_options=[
+            bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION,
+        ],
     )
     job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
     job.result()

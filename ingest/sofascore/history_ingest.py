@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 import structlog
 
-from ingest.sofascore.client import SofascoreClient, SofascoreClientError
+from ingest.sofascore.client import SofascoreClient, SofascoreClientError, SofascoreWafBlockedError
 from ingest.sofascore.stats_dataset import load_match_stats_history, stats_training_summary
 from ingest.sofascore.stats_ingest import ingest_match_stats
 from ingest.sofascore.teams import load_team_map, resolve_team_id
@@ -81,6 +81,15 @@ def ingest_team_history(
             ingest_match_stats(event_id=event_id, save=save)
             existing.add(event_id)
             ok += 1
+        except SofascoreWafBlockedError as exc:
+            fail += 1
+            logger.error(
+                "sofascore_history_waf_abort",
+                team=canonical,
+                event_id=event_id,
+                error=str(exc),
+            )
+            break
         except (LookupError, SofascoreClientError, ValueError) as exc:
             fail += 1
             logger.warning(
@@ -89,6 +98,9 @@ def ingest_team_history(
                 event_id=event_id,
                 error=str(exc),
             )
+            if sofascore.waf_blocked:
+                logger.error("sofascore_history_waf_abort", team=canonical)
+                break
     return ok, skip, fail
 
 
@@ -123,6 +135,9 @@ def ingest_all_teams_history(
             ingested += ok
             skipped += skip
             failed += fail
+            if sofascore.waf_blocked:
+                logger.error("sofascore_history_waf_abort", team=team)
+                break
 
     summary = stats_training_summary(load_match_stats_history())
     report = HistoryIngestReport(
@@ -180,6 +195,18 @@ def ingest_fixtures_history(
                 else:
                     existing.add(int(result.event_id))
                     ingested += 1
+            except SofascoreWafBlockedError as exc:
+                failed += 1
+                logger.error(
+                    "sofascore_fixture_history_waf_abort",
+                    home=home,
+                    away=away,
+                    date=match_date.isoformat(),
+                    error=str(exc),
+                    processed=ingested + skipped + failed,
+                    total=len(subset),
+                )
+                break
             except (LookupError, SofascoreClientError, ValueError) as exc:
                 failed += 1
                 logger.debug(
@@ -189,6 +216,13 @@ def ingest_fixtures_history(
                     date=match_date.isoformat(),
                     error=str(exc),
                 )
+                if sofascore.waf_blocked:
+                    logger.error(
+                        "sofascore_fixture_history_waf_abort",
+                        processed=ingested + skipped + failed,
+                        total=len(subset),
+                    )
+                    break
 
     summary = stats_training_summary(load_match_stats_history())
     report = HistoryIngestReport(

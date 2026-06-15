@@ -56,7 +56,16 @@ export async function apiFetch<T>(
     let detail = response.statusText;
     try {
       const body = await response.json();
-      detail = body.detail ?? body.message ?? detail;
+      const raw = body.detail ?? body.message ?? detail;
+      if (Array.isArray(raw)) {
+        detail = raw
+          .map((item: { msg?: string; message?: string }) => item.msg ?? item.message ?? String(item))
+          .join(" · ");
+      } else if (typeof raw === "object" && raw !== null) {
+        detail = (raw as { message?: string }).message ?? JSON.stringify(raw);
+      } else {
+        detail = String(raw);
+      }
     } catch {
       /* ignore */
     }

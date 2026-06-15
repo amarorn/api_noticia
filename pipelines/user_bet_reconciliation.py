@@ -1,0 +1,537 @@
+"""Reconciliação de transações do usuário com snapshots dos eventos Superbet.
+
+Para cada `bilhete colocado` (in-play), procura o snapshot mais próximo em
+`data/lake/bronze/superbet/events/<event_id>/<timestamp>.json` dentro de uma
+janela temporal, e calcula:
+- match_confidence (0-1): qualidade do match
+- inferred_market: qual mercado o bilhete provavelmente atinge
+- model_prob_*: probabilidades do modelo no momento da aposta
+- won (se há `valor ganhado` correspondente)
+
+Output: silver_bet_reconciliation.parquet
+"""
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+
+from config import settings
+from ingest.user_transactions.store import load_transactions
+from schemas.national_teams import normalize_national_team
+
+# Janela máxima de busca por snapshot (configurável)
+DEFAULT_MATCH_WINDOW_SECONDS = 300  # ±5 min
+
+_LIVE_TICKS_CACHE: pd.DataFrame | None = None
+TS_FILENAME_RE = re.compile(r"(\d{8}T\d{6}Z)\.json$")
+
+
+def match_window_seconds() -> int:
+    return int(getattr(settings, "wallet_reconcile_window_sec", DEFAULT_MATCH_WINDOW_SECONDS))
+
+
+def bet_at_to_utc(bet_at_local: datetime) -> datetime:
+    """Converte timestamp local BR (CSV) para UTC."""
+    from zoneinfo import ZoneInfo
+
+    if bet_at_local.tzinfo is None:
+        local = bet_at_local.replace(tzinfo=ZoneInfo("America/Sao_Paulo"))
+    else:
+        local = bet_at_local.astimezone(ZoneInfo("America/Sao_Paulo"))
+    return local.astimezone(timezone.utc).replace(tzinfo=timezone.utc)
+
+
+def _events_root() -> Path:
+    return Path(settings.lake_root) / "bronze" / "superbet" / "events"
+
+
+def _silver_root() -> Path:
+    p = Path(settings.lake_root) / "silver" / "bet_reconciliation"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _parse_snapshot_timestamp(filename: str) -> datetime | None:
+    """Extrai o timestamp do nome do arquivo: 20260609T064127Z.json → datetime."""
+    m = TS_FILENAME_RE.search(filename)
+    if not m:
+        return None
+    raw = m.group(1)
+    return datetime.strptime(raw, "%Y%m%dT%H%M%SZ")
+
+
+@dataclass
+class SnapshotRef:
+    """Referência para um snapshot indexado em memória."""
+
+    event_id: int
+    path: Path
+    timestamp: datetime
+    home_team: str
+    away_team: str
+    is_live: bool
+    minute: int | None = None
+    home_score: int | None = None
+    away_score: int | None = None
+    payload: dict[str, Any] = field(default_factory=dict)
+
+
+def index_event_snapshots() -> list[SnapshotRef]:
+    """Lê todos os snapshots em bronze/superbet/events/ e indexa por timestamp."""
+    root = _events_root()
+    refs: list[SnapshotRef] = []
+    if not root.exists():
+        return refs
+
+    for event_dir in root.iterdir():
+        if not event_dir.is_dir():
+            continue
+        try:
+            event_id = int(event_dir.name)
+        except ValueError:
+            continue
+
+        for snap_file in event_dir.glob("*.json"):
+            ts = _parse_snapshot_timestamp(snap_file.name)
+            if ts is None:
+                continue
+            try:
+                payload = json.loads(snap_file.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+
+            inplay = payload.get("inplay") or {}
+            ref = SnapshotRef(
+                event_id=event_id,
+                path=snap_file,
+                timestamp=ts,
+                home_team=payload.get("home_team", ""),
+                away_team=payload.get("away_team", ""),
+                is_live=bool(payload.get("is_live")),
+                minute=inplay.get("minute"),
+                home_score=inplay.get("home_score"),
+                away_score=inplay.get("away_score"),
+                payload=payload,
+            )
+            refs.append(ref)
+
+    refs.sort(key=lambda r: r.timestamp)
+    return refs
+
+
+@dataclass
+class MatchResult:
+    """Resultado da tentativa de match de uma aposta com snapshots."""
+
+    matched: bool
+    snapshot: SnapshotRef | None = None
+    delta_seconds: float | None = None
+    confidence: float = 0.0
+    candidates_considered: int = 0
+
+
+def _load_live_ticks() -> pd.DataFrame:
+    """Carrega live_ticks.parquet (cache em memória por execução)."""
+    global _LIVE_TICKS_CACHE
+    if _LIVE_TICKS_CACHE is not None:
+        return _LIVE_TICKS_CACHE
+    from ingest.superbet.live_ticks import live_ticks_path
+
+    path = live_ticks_path()
+    if not path.exists():
+        _LIVE_TICKS_CACHE = pd.DataFrame()
+        return _LIVE_TICKS_CACHE
+    df = pd.read_parquet(path)
+    if "captured_at" in df.columns:
+        df["captured_at"] = pd.to_datetime(df["captured_at"], utc=True, errors="coerce")
+    _LIVE_TICKS_CACHE = df
+    return df
+
+
+def find_tick_for_bet(
+    event_id: int,
+    bet_at_utc: datetime,
+    ticks: pd.DataFrame,
+    *,
+    window_seconds: int | None = None,
+) -> dict[str, Any] | None:
+    """Busca tick do modelo mais próximo da aposta (por event_id + tempo)."""
+    window_seconds = window_seconds or match_window_seconds()
+    if ticks.empty or "event_id" not in ticks.columns:
+        return None
+    subset = ticks[ticks["event_id"] == event_id]
+    if subset.empty or "captured_at" not in subset.columns:
+        return None
+
+    best_row = None
+    best_delta = float("inf")
+    for _, row in subset.iterrows():
+        cap = row.get("captured_at")
+        if pd.isna(cap):
+            continue
+        cap_dt = cap.to_pydatetime()
+        if cap_dt.tzinfo is None:
+            cap_dt = cap_dt.replace(tzinfo=timezone.utc)
+        bet_dt = bet_at_utc if bet_at_utc.tzinfo else bet_at_utc.replace(tzinfo=timezone.utc)
+        delta = abs((cap_dt - bet_dt).total_seconds())
+        if delta <= window_seconds and delta < best_delta:
+            best_delta = delta
+            best_row = row
+
+    if best_row is None:
+        return None
+
+    return {
+        "prob_final_home": float(best_row["prob_final_home"])
+        if pd.notna(best_row.get("prob_final_home")) else None,
+        "prob_final_draw": float(best_row["prob_final_draw"])
+        if pd.notna(best_row.get("prob_final_draw")) else None,
+        "prob_final_away": float(best_row["prob_final_away"])
+        if pd.notna(best_row.get("prob_final_away")) else None,
+        "tick_delta_seconds": best_delta,
+        "event_id": int(best_row["event_id"]) if pd.notna(best_row.get("event_id")) else event_id,
+    }
+
+
+def find_global_tick_for_bet(
+    bet_at_utc: datetime,
+    ticks: pd.DataFrame,
+    *,
+    window_seconds: int | None = None,
+) -> dict[str, Any] | None:
+    """Encontra tick mais próximo entre todos os eventos (CSV sem event_id)."""
+    if ticks.empty or "captured_at" not in ticks.columns or "event_id" not in ticks.columns:
+        return None
+    window_seconds = window_seconds or match_window_seconds()
+    best_row = None
+    best_delta = float("inf")
+    for _, row in ticks.iterrows():
+        cap = row.get("captured_at")
+        if pd.isna(cap):
+            continue
+        cap_dt = cap.to_pydatetime()
+        if cap_dt.tzinfo is None:
+            cap_dt = cap_dt.replace(tzinfo=timezone.utc)
+        bet_dt = bet_at_utc if bet_at_utc.tzinfo else bet_at_utc.replace(tzinfo=timezone.utc)
+        delta = abs((cap_dt - bet_dt).total_seconds())
+        if delta <= window_seconds and delta < best_delta:
+            best_delta = delta
+            best_row = row
+    if best_row is None:
+        return None
+    return find_tick_for_bet(
+        int(best_row["event_id"]),
+        bet_at_utc,
+        ticks,
+        window_seconds=window_seconds,
+    )
+
+
+def find_snapshot_for_bet(
+    bet_at_local: datetime,
+    snapshots: list[SnapshotRef],
+    *,
+    window_seconds: int | None = None,
+    expected_home_team: str | None = None,
+    expected_away_team: str | None = None,
+    preferred_event_id: int | None = None,
+) -> MatchResult:
+    """Busca o snapshot in-play mais próximo da hora da aposta.
+
+    Args:
+        bet_at_local: timestamp da aposta (CSV usa horário local BR).
+        snapshots: lista pré-indexada e ordenada por timestamp.
+        window_seconds: janela de busca em segundos.
+        expected_*: nomes opcionais para boost de confidence.
+        preferred_event_id: restringe ao evento identificado via live_ticks.
+
+    Returns:
+        MatchResult com o melhor candidato.
+    """
+    window_seconds = window_seconds or match_window_seconds()
+    if not snapshots:
+        return MatchResult(matched=False)
+
+    bet_at_utc = bet_at_to_utc(bet_at_local)
+
+    pool = snapshots
+    if preferred_event_id is not None:
+        scoped = [s for s in snapshots if s.event_id == preferred_event_id]
+        if scoped:
+            pool = scoped
+
+    candidates = []
+    for snap in pool:
+        if not snap.is_live:
+            continue
+        delta = abs((snap.timestamp.replace(tzinfo=timezone.utc) - bet_at_utc).total_seconds())
+        if delta > window_seconds:
+            continue
+        candidates.append((delta, snap))
+
+    if not candidates:
+        return MatchResult(matched=False, candidates_considered=0)
+
+    # Score: 1.0 quando delta=0; cai linearmente até 0.5 no limite da janela
+    best_delta, best_snap = min(candidates, key=lambda x: x[0])
+    base_conf = 1.0 - 0.5 * (best_delta / window_seconds)
+
+    # Boost se nomes batem (normalizados)
+    name_boost = 0.0
+    if expected_home_team:
+        eh = normalize_national_team(expected_home_team).lower()
+        if eh in normalize_national_team(best_snap.home_team).lower():
+            name_boost += 0.1
+    if expected_away_team:
+        ea = normalize_national_team(expected_away_team).lower()
+        if ea in normalize_national_team(best_snap.away_team).lower():
+            name_boost += 0.1
+
+    if preferred_event_id is not None and best_snap.event_id == preferred_event_id:
+        name_boost += 0.15
+
+    confidence = min(1.0, base_conf + name_boost)
+    return MatchResult(
+        matched=True,
+        snapshot=best_snap,
+        delta_seconds=best_delta,
+        confidence=confidence,
+        candidates_considered=len(candidates),
+    )
+
+
+def pair_placed_with_outcome(
+    df_tx: pd.DataFrame,
+    *,
+    pair_window_minutes: int = 240,
+) -> list[dict]:
+    """Empareia 'bilhete colocado' → 'valor ganhado' (heurística por proximidade).
+
+    Como o CSV não tem ticket_code direto, atribui o `valor ganhado` mais próximo
+    posterior à aposta colocada, dentro de uma janela de horas.
+
+    Args:
+        df_tx: DataFrame de transações.
+        pair_window_minutes: janela máxima entre colocada e ganho.
+
+    Returns:
+        Lista de dicts com {placed_at, stake, won_at, won_amount, won}.
+    """
+    if df_tx.empty:
+        return []
+
+    placed = df_tx[df_tx["transaction_type"] == "bilhete colocado"].copy()
+    won = df_tx[df_tx["transaction_type"] == "valor ganhado"].copy()
+    cancelled = df_tx[df_tx["transaction_type"] == "bilhete cancelado"]
+
+    # Identificar bilhetes cancelados por proximidade (mesmo timestamp ±2s)
+    cancelled_keys = set()
+    if not cancelled.empty:
+        for _, c in cancelled.iterrows():
+            for idx, p in placed.iterrows():
+                if abs((c["transaction_at"] - p["transaction_at"]).total_seconds()) < 5:
+                    if abs(c["amount"] - p["amount"]) < 0.01:
+                        cancelled_keys.add(idx)
+
+    pairs = []
+    used_won = set()
+
+    for idx, p in placed.iterrows():
+        if idx in cancelled_keys:
+            continue
+        placed_at = p["transaction_at"]
+        stake = float(p["amount"])
+        game = p.get("game_name", "")
+
+        if "INPLAY" not in (game or "").upper():
+            continue
+
+        window_end = placed_at + timedelta(minutes=pair_window_minutes)
+        candidates = won[
+            (won["transaction_at"] > placed_at)
+            & (won["transaction_at"] < window_end)
+            & (~won.index.isin(used_won))
+        ].sort_values("transaction_at")
+
+        won_amount = 0.0
+        won_at = None
+        if not candidates.empty:
+            first = candidates.iloc[0]
+            won_amount = float(first["amount"])
+            won_at = first["transaction_at"]
+            used_won.add(candidates.index[0])
+
+        pairs.append({
+            "placed_at": placed_at,
+            "stake": stake,
+            "game_name": game,
+            "won_at": won_at,
+            "won_amount": won_amount,
+            "won": won_amount > 0,
+            "user_id": p.get("user_id"),
+            "upload_id": p.get("upload_id"),
+        })
+
+    return pairs
+
+
+def reconcile_user_transactions(
+    user_id: str,
+    *,
+    snapshots: list[SnapshotRef] | None = None,
+) -> pd.DataFrame:
+    """Pipeline ponta-a-ponta: lê transações + snapshots + gera silver.
+
+    Args:
+        user_id: usuário para reconciliar.
+        snapshots: snapshots pré-indexados (opcional, se None lê do bronze).
+
+    Returns:
+        DataFrame com a tabela de reconciliação.
+    """
+    df_tx = load_transactions(user_id)
+    if df_tx.empty:
+        return pd.DataFrame()
+
+    if snapshots is None:
+        snapshots = index_event_snapshots()
+
+    ticks = _load_live_ticks()
+    pairs = pair_placed_with_outcome(df_tx)
+
+    rows = []
+    for pair in pairs:
+        bet_at = pair["placed_at"]
+        bet_at_utc = bet_at_to_utc(bet_at)
+        global_tick = find_global_tick_for_bet(bet_at_utc, ticks)
+        preferred_event_id = int(global_tick["event_id"]) if global_tick and global_tick.get("event_id") else None
+
+        match = find_snapshot_for_bet(
+            bet_at,
+            snapshots,
+            preferred_event_id=preferred_event_id,
+        )
+
+        row: dict[str, Any] = {
+            "placed_at": bet_at,
+            "won_at": pair["won_at"],
+            "stake": pair["stake"],
+            "won_amount": pair["won_amount"],
+            "won": pair["won"],
+            "pnl": pair["won_amount"] - pair["stake"],
+            "user_id": pair["user_id"],
+            "upload_id": pair["upload_id"],
+            "match_confidence": match.confidence,
+            "match_delta_seconds": match.delta_seconds,
+            "candidates_considered": match.candidates_considered,
+        }
+
+        if match.matched and match.snapshot:
+            snap = match.snapshot
+            payload = snap.payload
+            generosity = payload.get("generosity_probs") or {}
+            row.update({
+                "event_id": snap.event_id,
+                "snapshot_path": str(snap.path),
+                "match_minute": snap.minute,
+                "home_team": snap.home_team,
+                "away_team": snap.away_team,
+                "home_score": snap.home_score,
+                "away_score": snap.away_score,
+                "model_generosity_home": generosity.get("home"),
+                "model_generosity_away": generosity.get("away"),
+            })
+            bet_at_utc = bet_at_to_utc(bet_at)
+            tick = find_tick_for_bet(snap.event_id, bet_at_utc, ticks)
+            if tick is None and global_tick:
+                tick = global_tick
+            if tick:
+                row.update(tick)
+            else:
+                row.update({
+                    "prob_final_home": None,
+                    "prob_final_draw": None,
+                    "prob_final_away": None,
+                    "tick_delta_seconds": None,
+                })
+        else:
+            row.update({
+                "event_id": preferred_event_id,
+                "snapshot_path": None,
+                "match_minute": None,
+                "home_team": None,
+                "away_team": None,
+                "home_score": None,
+                "away_score": None,
+                "model_generosity_home": None,
+                "model_generosity_away": None,
+            })
+            if global_tick:
+                row.update(global_tick)
+                if preferred_event_id and match.confidence < 0.5:
+                    row["match_confidence"] = max(match.confidence, 0.55)
+            else:
+                row.update({
+                    "prob_final_home": None,
+                    "prob_final_draw": None,
+                    "prob_final_away": None,
+                    "tick_delta_seconds": None,
+                })
+
+        row["brier_contribution"] = _brier_for_bet_row(row)
+        rows.append(row)
+
+    return pd.DataFrame(rows)
+
+
+def _brier_for_bet_row(row: dict[str, Any]) -> float | None:
+    """Brier binário: (p_modelo - won)² usando prob do favorito no placar."""
+    won = row.get("won")
+    if won is None:
+        return None
+    hs = row.get("home_score")
+    as_ = row.get("away_score")
+    p_home = row.get("prob_final_home")
+    p_away = row.get("prob_final_away")
+    p_draw = row.get("prob_final_draw")
+
+    p: float | None = None
+    if hs is not None and as_ is not None:
+        if hs > as_ and p_home is not None:
+            p = float(p_home)
+        elif hs < as_ and p_away is not None:
+            p = float(p_away)
+        elif hs == as_ and p_draw is not None:
+            p = float(p_draw)
+        elif p_home is not None:
+            p = float(p_home)
+        elif p_away is not None:
+            p = float(p_away)
+    elif row.get("model_generosity_home") is not None:
+        p = float(row["model_generosity_home"])
+
+    if p is None:
+        return None
+    outcome = 1.0 if won else 0.0
+    return (p - outcome) ** 2
+
+
+def save_reconciliation(df: pd.DataFrame, user_id: str) -> Path:
+    """Persiste a tabela de reconciliação em silver/bet_reconciliation/."""
+    out = _silver_root() / f"reconciliation_{user_id}.parquet"
+    df.to_parquet(out, index=False)
+    return out
+
+
+def load_reconciliation(user_id: str) -> pd.DataFrame:
+    """Lê a tabela de reconciliação salva (ou retorna vazio)."""
+    path = _silver_root() / f"reconciliation_{user_id}.parquet"
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_parquet(path)

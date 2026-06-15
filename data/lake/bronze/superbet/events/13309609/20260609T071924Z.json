@@ -1,0 +1,142 @@
+{
+  "event_id": 13309609,
+  "home_team": "Japão (F)",
+  "away_team": "África do Sul (F)",
+  "event_name": "Japão (F)·África do Sul (F)",
+  "utc_date": "2026-06-09T06:30:00Z",
+  "betradar_id": "71182722",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 47,
+    "stoppage_time": "2:45",
+    "home_corners": 3,
+    "away_corners": 1,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "1H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.72,
+    "X": 3.35,
+    "2": 5.0
+  },
+  "h2h_implied": {
+    "1": 0.5383774749292878,
+    "X": 0.27642067369503726,
+    "2": 0.185201851375675
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.07,
+      "Menos de 1.5": 6.0
+    },
+    "2.5": {
+      "Mais de 2.5": 1.5,
+      "Menos de 2.5": 2.4
+    },
+    "3.5": {
+      "Mais de 3.5": 2.55,
+      "Menos de 3.5": 1.45
+    },
+    "4.5": {
+      "Mais de 4.5": 4.85,
+      "Menos de 4.5": 1.12
+    },
+    "5.5": {
+      "Mais de 5.5": 9.25,
+      "Menos de 5.5": 1.01
+    },
+    "6.5": {
+      "Mais de 6.5": 17.0
+    },
+    "7.5": {
+      "Mais de 7.5": 30.0
+    },
+    "8.5": {
+      "Mais de 8.5": 35.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.8486562942008486,
+      "Menos de 1.5": 0.15134370579915135
+    },
+    "2.5": {
+      "Mais de 2.5": 0.6153846153846154,
+      "Menos de 2.5": 0.38461538461538464
+    },
+    "3.5": {
+      "Mais de 3.5": 0.36250000000000004,
+      "Menos de 3.5": 0.6375000000000001
+    },
+    "4.5": {
+      "Mais de 4.5": 0.18760469011725298,
+      "Menos de 4.5": 0.8123953098827471
+    },
+    "5.5": {
+      "Mais de 5.5": 0.09844054580896687,
+      "Menos de 5.5": 0.9015594541910331
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    },
+    "8.5": {
+      "Mais de 8.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.6056701030927835,
+      "Não": 0.3943298969072165
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.36250000000000004,
+      "Não": 0.6375000000000001
+    },
+    "ft_and_btts": {
+      "Japão (F) e Sim": 0.5118560598716483,
+      "Empate e Sim": 0.2719235318068131,
+      "África do Sul (F) e Sim": 0.058010353452120134,
+      "África do Sul (F) e Não": 0.15821005486941855
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.49967583983075425,
+      "X e Mais de 2.5": 0.04996758398307542,
+      "2 e Mais de 2.5": 0.05662992851415215,
+      "X e Menos de 2.5": 0.23928138808796684,
+      "2 e Menos de 2.5": 0.1544452595840513
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.29328690096545335,
+      "X e Mais de 3.5": 0.049168686338326,
+      "2 e Mais de 3.5": 0.013931127795859035,
+      "1 e Menos de 3.5": 0.23218546326431724,
+      "X e Menos de 3.5": 0.23545568105677242,
+      "2 e Menos de 3.5": 0.17597214057927202
+    }
+  },
+  "btts_odds": {
+    "yes": 1.11,
+    "no": 5.5
+  },
+  "next_goal_odds": {
+    "home": 1.16,
+    "away": 12.0
+  },
+  "generosity_probs": {
+    "home": 0.552253,
+    "away": 0.174473
+  },
+  "raw_market_count": 84,
+  "captured_at": "2026-06-09T07:19:24.268791+00:00"
+}

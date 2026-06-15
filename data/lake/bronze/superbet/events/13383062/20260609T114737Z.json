@@ -1,0 +1,142 @@
+{
+  "event_id": 13383062,
+  "home_team": "China",
+  "away_team": "Tailândia",
+  "event_name": "China·Tailândia",
+  "utc_date": "2026-06-09T11:35:00Z",
+  "betradar_id": "71814424",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 0,
+    "minute": 11,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 0,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "1H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.78,
+    "X": 3.2,
+    "2": 4.75
+  },
+  "h2h_implied": {
+    "1": 0.517869919253177,
+    "X": 0.2880651425845797,
+    "2": 0.19406493816224318
+  },
+  "totals": {
+    "0.5": {
+      "Mais de 0.5": 1.07,
+      "Menos de 0.5": 5.75
+    },
+    "1.5": {
+      "Mais de 1.5": 1.45,
+      "Menos de 1.5": 2.45
+    },
+    "2.5": {
+      "Mais de 2.5": 2.4,
+      "Menos de 2.5": 1.47
+    },
+    "3.5": {
+      "Mais de 3.5": 4.3,
+      "Menos de 3.5": 1.14
+    },
+    "4.5": {
+      "Mais de 4.5": 8.25,
+      "Menos de 4.5": 1.01
+    },
+    "5.5": {
+      "Mais de 5.5": 15.0
+    },
+    "6.5": {
+      "Mais de 6.5": 25.0
+    },
+    "7.5": {
+      "Mais de 7.5": 30.0
+    }
+  },
+  "totals_implied": {
+    "0.5": {
+      "Mais de 0.5": 0.843108504398827,
+      "Menos de 0.5": 0.15689149560117302
+    },
+    "1.5": {
+      "Mais de 1.5": 0.6282051282051282,
+      "Menos de 1.5": 0.37179487179487175
+    },
+    "2.5": {
+      "Mais de 2.5": 0.37984496124031014,
+      "Menos de 2.5": 0.6201550387596899
+    },
+    "3.5": {
+      "Mais de 3.5": 0.20955882352941177,
+      "Menos de 3.5": 0.7904411764705883
+    },
+    "4.5": {
+      "Mais de 4.5": 0.10907127429805617,
+      "Menos de 4.5": 0.8909287257019439
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.2888888888888889,
+      "Não": 0.7111111111111111
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.17582417582417584,
+      "Não": 0.8241758241758241
+    },
+    "ft_and_btts": {
+      "China e Sim": 0.17568066855062475,
+      "China e Não": 0.3232524301331495,
+      "Empate e Sim": 0.16662496398615956,
+      "Empate e Não": 0.1293009720532598,
+      "Tailândia e Sim": 0.08081310753328738,
+      "Tailândia e Não": 0.12432785774351904
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.3305359051392019,
+      "X e Mais de 1.5": 0.16697174589506078,
+      "2 e Mais de 1.5": 0.11568756679872066,
+      "1 e Menos de 1.5": 0.16196259351820894,
+      "X e Menos de 1.5": 0.12957007481456714,
+      "2 e Menos de 1.5": 0.09527211383424056
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.24253467989272012,
+      "X e Mais de 2.5": 0.05416607850937417,
+      "2 e Mais de 2.5": 0.09285613458749857,
+      "1 e Menos de 2.5": 0.25793370718749603,
+      "X e Menos de 2.5": 0.2321403364687464,
+      "2 e Menos de 2.5": 0.12036906335416481
+    }
+  },
+  "btts_odds": {
+    "yes": 2.25,
+    "no": 1.57
+  },
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.540582,
+    "away": 0.191369
+  },
+  "raw_market_count": 169,
+  "captured_at": "2026-06-09T11:47:37.241789+00:00"
+}

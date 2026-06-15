@@ -1,0 +1,177 @@
+{
+  "event_id": 13282284,
+  "home_team": "Equador",
+  "away_team": "Guatemala",
+  "event_name": "Equador·Guatemala",
+  "utc_date": "2026-06-07T20:00:00Z",
+  "betradar_id": "71170370",
+  "is_live": true,
+  "inplay": {
+    "home_score": 2,
+    "away_score": 0,
+    "minute": 78,
+    "stoppage_time": null,
+    "home_corners": 6,
+    "away_corners": 0,
+    "home_yellow_cards": 4,
+    "away_yellow_cards": 1,
+    "ht_home_score": 1,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.0,
+    "X": 125.0,
+    "2": 250.0
+  },
+  "h2h_implied": {
+    "1": 0.9880251353594436,
+    "X": 0.007983243093704304,
+    "2": 0.003991621546852152
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 1.97,
+      "Menos de 2.5": 1.8
+    },
+    "3.5": {
+      "Mais de 3.5": 5.5,
+      "Menos de 3.5": 1.11
+    },
+    "4.5": {
+      "Mais de 4.5": 17.0,
+      "Menos de 4.5": 1.003
+    },
+    "5.5": {
+      "Mais de 5.5": 35.0
+    },
+    "6.5": {
+      "Mais de 6.5": 40.0
+    },
+    "7.5": {
+      "Mais de 7.5": 40.0
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.47745358090185674,
+      "Menos de 2.5": 0.5225464190981433
+    },
+    "3.5": {
+      "Mais de 3.5": 0.16792738275340394,
+      "Menos de 3.5": 0.832072617246596
+    },
+    "4.5": {
+      "Mais de 4.5": 0.0560799555802332,
+      "Menos de 4.5": 0.9439200444197667
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    }
+  },
+  "corners": {
+    "6.5": {
+      "Mais de 6.5": 1.22,
+      "Menos de 6.5": 3.65
+    },
+    "7.5": {
+      "Mais de 7.5": 1.87,
+      "Menos de 7.5": 1.87
+    },
+    "8.5": {
+      "Mais de 8.5": 3.05,
+      "Menos de 8.5": 1.3
+    },
+    "9.5": {
+      "Mais de 9.5": 5.15,
+      "Menos de 9.5": 1.1
+    },
+    "10.5": {
+      "Mais de 10.5": 8.75,
+      "Menos de 10.5": 1.02
+    },
+    "11.5": {
+      "Mais de 11.5": 14.0
+    },
+    "12.5": {
+      "Mais de 12.5": 22.0
+    }
+  },
+  "corners_implied": {
+    "6.5": {
+      "Mais de 6.5": 0.7494866529774128,
+      "Menos de 6.5": 0.25051334702258726
+    },
+    "7.5": {
+      "Mais de 7.5": 0.5,
+      "Menos de 7.5": 0.5
+    },
+    "8.5": {
+      "Mais de 8.5": 0.29885057471264376,
+      "Menos de 8.5": 0.7011494252873564
+    },
+    "9.5": {
+      "Mais de 9.5": 0.176,
+      "Menos de 9.5": 0.824
+    },
+    "10.5": {
+      "Mais de 10.5": 0.10440122824974413,
+      "Menos de 10.5": 0.8955987717502559
+    },
+    "11.5": {
+      "Mais de 11.5": 1.0
+    },
+    "12.5": {
+      "Mais de 12.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.1325898389095415,
+      "Não": 0.8674101610904584
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.07275320970042796,
+      "Não": 0.927246790299572
+    },
+    "ft_and_btts": {
+      "Equador e Sim": 0.11991073312089888,
+      "Equador e Não": 0.8604705385990429,
+      "Empate e Sim": 0.010325646463188516,
+      "Guatemala e Sim": 0.009293081816869664
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.46583850931677023,
+      "X e Mais de 2.5": 0.010351966873706006,
+      "2 e Mais de 2.5": 0.006211180124223603,
+      "1 e Menos de 2.5": 0.5175983436853002
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.15150586003022906,
+      "X e Mais de 3.5": 0.010352900435398986,
+      "2 e Mais de 3.5": 0.0062117402612393915,
+      "1 e Menos de 3.5": 0.8319294992731326
+    }
+  },
+  "btts_odds": {
+    "yes": 7.25,
+    "no": 1.07
+  },
+  "next_goal_odds": {
+    "home": 2.35,
+    "away": 8.75
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 0.000119
+  },
+  "raw_market_count": 126,
+  "captured_at": "2026-06-07T21:56:09.114872+00:00"
+}

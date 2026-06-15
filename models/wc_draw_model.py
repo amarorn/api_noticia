@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 from pipelines.wc_group_pressure import GroupPressure
 from pipelines.wc_hyperparams import get_wc_hyperparams
-from pipelines.wc_stats import WcMatchFeatures
+from pipelines.wc_stats import WcMatchFeatures, row_group_name
 
 
 DRAW_FEATURE_NAMES = [
@@ -111,6 +111,45 @@ def apply_two_stage_probs(
     return {"1": rem * p1_cond, "X": p_x, "2": rem * (1.0 - p1_cond)}
 
 
+def resolve_wc_outcome(
+    probs: dict[str, float],
+    *,
+    phase: str = "group",
+    draw_pick_min_prob: float | None = None,
+    draw_balance_gap: float | None = None,
+    draw_competitive_margin: float | None = None,
+) -> str:
+    """Escolhe palpite 1/X/2 a partir das probabilidades calibradas.
+
+    Além do argmax simples, prevê empate em jogos equilibrados de fase de grupos
+    quando P(X) é competitiva e a diferença entre mandante e visitante é pequena.
+    """
+    hp = get_wc_hyperparams()
+    min_px = draw_pick_min_prob if draw_pick_min_prob is not None else hp.draw_pick_min_prob
+    gap = draw_balance_gap if draw_balance_gap is not None else hp.draw_balance_gap
+    margin = (
+        draw_competitive_margin
+        if draw_competitive_margin is not None
+        else hp.draw_competitive_margin
+    )
+    knockout = phase not in ("group",)
+
+    p1, px, p2 = probs["1"], probs["X"], probs["2"]
+    favorite_gap = abs(p1 - p2)
+    favorite = max(p1, p2)
+
+    if px >= favorite:
+        return "X"
+
+    if not knockout and px >= min_px:
+        if favorite_gap <= gap:
+            return "X"
+        if px >= favorite - margin:
+            return "X"
+
+    return max(probs, key=probs.get)  # type: ignore[return-value]
+
+
 class WcDrawModel:
     def __init__(self) -> None:
         self.scaler = StandardScaler()
@@ -168,7 +207,7 @@ def build_draw_training_rows(
 
     for _, row in train_df.iterrows():
         before = row["match_date"]
-        gcol = row.get("group_name") or row.get("group")
+        gcol = row_group_name(row)
         feats = build_match_features(
             fixtures_df,
             row["home_team"],

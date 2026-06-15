@@ -1,0 +1,41 @@
+{
+  "event_id": 13324536,
+  "home_team": "Tuggeranong United",
+  "away_team": "Monaro Panthers",
+  "event_name": "Tuggeranong United·Monaro Panthers",
+  "utc_date": "2026-06-10T09:30:00Z",
+  "betradar_id": "69194958",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 6,
+    "minute": 90,
+    "stoppage_time": null,
+    "home_corners": 1,
+    "away_corners": 8,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 4,
+    "period_label": "END",
+    "status": "FINISHED"
+  },
+  "h2h_odds": {},
+  "h2h_implied": {},
+  "totals": {},
+  "totals_implied": {},
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {},
+  "team_totals": {
+    "home": {},
+    "away": {}
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "raw_market_count": 0,
+  "captured_at": "2026-06-10T11:27:59.308112+00:00"
+}

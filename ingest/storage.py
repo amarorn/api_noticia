@@ -62,6 +62,18 @@ def save_bronze(articles: list[BronzeArticle]) -> Path:
     return saved_paths[0]
 
 
+def _read_bronze_parquets(files: list[Path]) -> pd.DataFrame:
+    frames: list[pd.DataFrame] = []
+    for path in files:
+        try:
+            frames.append(pd.read_parquet(path))
+        except OSError as exc:
+            logger.warning("bronze_parquet_skipped", path=str(path), error=str(exc))
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
 def load_bronze(source: str | None = None) -> pd.DataFrame:
     from ingest.gcp.lake_store import cloud_lake_enabled, read_layer_snapshot
     from ingest.gcp.lake_frames import normalize_bronze_df
@@ -76,10 +88,13 @@ def load_bronze(source: str | None = None) -> pd.DataFrame:
     if not bronze_root.exists():
         return pd.DataFrame()
 
-    pattern = f"source={source}/**/*.parquet" if source else "**/*.parquet"
+    # Apenas partições de notícias (source=*/...); ignora superbet/live_ticks etc.
+    pattern = f"source={source}/**/*.parquet" if source else "source=*/**/*.parquet"
     files = list(bronze_root.glob(pattern))
     if not files:
         return pd.DataFrame()
 
-    df = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+    df = _read_bronze_parquets(files)
+    if df.empty:
+        return df
     return df.drop_duplicates(subset=["content_hash"], keep="last")

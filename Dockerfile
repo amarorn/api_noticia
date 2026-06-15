@@ -5,8 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PYTHONPATH=/app \
     PORT=8080 \
-    LAKE_ROOT=/data/lake \
-    WC_ARTIFACT_DIR=/data/lake/artifacts/wc_predictor
+    LAKE_ROOT=/app/data/lake \
+    LAKE_PRIMARY=local \
+    WC_ARTIFACT_DIR=/app/data/lake/artifacts/wc_predictor
 
 WORKDIR /app
 
@@ -20,6 +21,10 @@ COPY config.py ./
 COPY data/sources.yaml ./data/sources.yaml
 COPY data/rounds ./data/rounds
 COPY data/wc ./data/wc
+COPY data/lake/fixtures ./data/lake/fixtures
+RUN mkdir -p ./data/lake/artifacts/wc_predictor
+COPY data/lake/artifacts/wc_predictor/predictor.pkl ./data/lake/artifacts/wc_predictor/predictor.pkl
+COPY data/lake/artifacts/wc_predictor/manifest.json ./data/lake/artifacts/wc_predictor/manifest.json
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 RUN pip install --upgrade pip && \

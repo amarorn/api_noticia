@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bolão AI — Captura Superbet</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0b1220;
+      --surface: #111827;
+      --surface-2: #1a2332;
+      --border: rgba(148, 163, 184, 0.18);
+      --text: #e8eef7;
+      --muted: #94a3b8;
+      --accent: #00e676;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --violet: #818cf8;
+      --cyan: #22d3ee;
+    }
+    body {
+      width: 340px;
+      font-family: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(165deg, var(--bg) 0%, #0f172a 55%, #0b1324 100%);
+      color: var(--text);
+      padding: 0;
+    }
+    .shell { padding: 16px; }
+    .hero {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 14px rgba(0, 230, 118, 0.65);
+      flex-shrink: 0;
+    }
+    h1 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    p.sub {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 2px;
+    }
+    .hint { color: #64748b; font-size: 10px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .field { margin-bottom: 10px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 12px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus {
+      outline: none;
+      border-color: rgba(0, 230, 118, 0.45);
+      box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+    }
+    input::placeholder { color: #64748b; }
+    .btn {
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: transform 0.12s, filter 0.12s;
+    }
+    .btn:first-of-type { margin-top: 0; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, #00e676, #10b981);
+      color: #052e1c;
+    }
+    .btn-violet {
+      background: linear-gradient(135deg, #a5b4fc, #6366f1);
+      color: #1e1b4b;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #fcd34d, #f59e0b);
+      color: #451a03;
+    }
+    .btn-cyan {
+      background: linear-gradient(135deg, #67e8f9, #0891b2);
+      color: #083344;
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .toggle-row input { width: auto; accent-color: var(--accent); }
+    .status-wrap {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      min-height: 52px;
+    }
+    .status {
+      font-size: 11px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .status.ok { color: var(--accent); }
+    .status.warn { color: var(--warn); }
+    .status.err { color: var(--danger); }
+    .last-run {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 8px;
+      min-height: 14px;
+    }
+    .bet-item {
+      margin-top: 6px;
+      padding: 9px 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 11px;
+      border-left: 3px solid var(--accent);
+    }
+    .bet-item strong { color: #fff; }
+    .bet-item span { color: var(--muted); }
+    #betsList { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero">
+      <span class="logo-dot" aria-hidden="true"></span>
+      <div>
+        <h1>Bolão AI</h1>
+        <p class="sub">Captura Superbet → painel ao vivo<br>
+        <span class="hint">Pode fechar durante a captura — você recebe notificação.</span></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Conexão</div>
+      <div class="field">
+        <label for="apiKey">API Key</label>
+        <input id="apiKey" type="password" placeholder="Mesma chave do .env / Bolão AI">
+      </div>
+      <div class="field">
+        <label for="userId">Usuário carteira</label>
+        <input id="userId" type="text" placeholder="jamarorn" value="jamarorn">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Captura</div>
+      <button id="captureBtn" class="btn btn-primary">Capturar apostas abertas</button>
+      <button id="captureSettledBtn" class="btn btn-violet">Capturar finalizadas</button>
+      <button id="captureWalletBtn" class="btn btn-gold">Enviar extrato carteira</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Painel ao vivo</div>
+      <label class="toggle-row">
+        <input type="checkbox" id="livePanelAuto">
+        Ativar automaticamente na página do jogo
+      </label>
+      <button id="livePanelBtn" class="btn btn-cyan">Ativar painel nesta página</button>
+      <p class="hint" style="margin-top:8px;">Minimize com − no canto do painel. Verde = edge, vermelho = evitar.</p>
+    </div>
+
+    <div class="status-wrap">
+      <div id="status" class="status"></div>
+      <div id="lastRun" class="last-run"></div>
+      <div id="betsList"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+{
+  "event_id": 13336525,
+  "home_team": "Arábia Saudita",
+  "away_team": "Senegal",
+  "event_name": "Arábia Saudita·Senegal",
+  "utc_date": "2026-06-09T23:07:00Z",
+  "betradar_id": null,
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 0,
+    "minute": 68,
+    "stoppage_time": null,
+    "home_corners": 1,
+    "away_corners": 3,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 5.75,
+    "X": 1.8,
+    "2": 3.05
+  },
+  "h2h_implied": {
+    "1": 0.1644820612688188,
+    "X": 0.525428806830949,
+    "2": 0.3100891319002322
+  },
+  "totals": {
+    "0.5": {
+      "Mais de 0.5": 1.78,
+      "Menos de 0.5": 2.0
+    },
+    "1.5": {
+      "Mais de 1.5": 4.5,
+      "Menos de 1.5": 1.16
+    },
+    "2.5": {
+      "Mais de 2.5": 12.0,
+      "Menos de 2.5": 1.006
+    },
+    "3.5": {
+      "Mais de 3.5": 30.0
+    },
+    "4.5": {
+      "Mais de 4.5": 40.0
+    }
+  },
+  "totals_implied": {
+    "0.5": {
+      "Mais de 0.5": 0.5291005291005291,
+      "Menos de 0.5": 0.4708994708994709
+    },
+    "1.5": {
+      "Mais de 1.5": 0.20494699646643108,
+      "Menos de 1.5": 0.7950530035335689
+    },
+    "2.5": {
+      "Mais de 2.5": 0.0776325903151422,
+      "Menos de 2.5": 0.9223674096848579
+    },
+    "3.5": {
+      "Mais de 3.5": 1.0
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    }
+  },
+  "corners": {
+    "4.5": {
+      "Mais de 4.5": 1.05,
+      "Menos de 4.5": 6.75
+    },
+    "5.5": {
+      "Mais de 5.5": 1.35,
+      "Menos de 5.5": 2.85
+    },
+    "6.5": {
+      "Mais de 6.5": 1.95,
+      "Menos de 6.5": 1.78
+    },
+    "7.5": {
+      "Mais de 7.5": 2.95,
+      "Menos de 7.5": 1.33
+    },
+    "8.5": {
+      "Mais de 8.5": 4.6,
+      "Menos de 8.5": 1.14
+    }
+  },
+  "corners_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.8653846153846154,
+      "Menos de 4.5": 0.1346153846153846
+    },
+    "5.5": {
+      "Mais de 5.5": 0.6785714285714286,
+      "Menos de 5.5": 0.32142857142857145
+    },
+    "6.5": {
+      "Mais de 6.5": 0.47721179624664883,
+      "Menos de 6.5": 0.5227882037533512
+    },
+    "7.5": {
+      "Mais de 7.5": 0.3107476635514019,
+      "Menos de 7.5": 0.6892523364485982
+    },
+    "8.5": {
+      "Mais de 8.5": 0.1986062717770035,
+      "Menos de 8.5": 0.8013937282229965
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.0560799555802332,
+      "Não": 0.9439200444197667
+    },
+    "ft_and_btts": {
+      "Arábia Saudita e Sim": 0.019340430214967525,
+      "Arábia Saudita e Não": 0.15135988863887626,
+      "Empate e Sim": 0.08288755806414652,
+      "Empate e Não": 0.4308511681552171,
+      "Senegal e Sim": 0.034812774386941546,
+      "Senegal e Não": 0.2807481805398511
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.04269914731786544,
+      "X e Mais de 1.5": 0.08133170917688655,
+      "2 e Mais de 1.5": 0.09759805101226386,
+      "1 e Menos de 1.5": 0.13663727141716941,
+      "X e Menos de 1.5": 0.4227638348303509,
+      "2 e Menos de 1.5": 0.21896998624546382
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.022155203146669925,
+      "X e Mais de 2.5": 0.00886208125866797,
+      "2 e Mais de 2.5": 0.04431040629333985,
+      "1 e Menos de 2.5": 0.15412315232466034,
+      "X e Menos de 2.5": 0.497869733633032,
+      "2 e Menos de 2.5": 0.2726794233436298
+    }
+  },
+  "btts_odds": {
+    "yes": 7.5,
+    "no": 1.07
+  },
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.157416,
+    "away": 0.30961
+  },
+  "raw_market_count": 99,
+  "captured_at": "2026-06-10T00:40:12.165149+00:00"
+}

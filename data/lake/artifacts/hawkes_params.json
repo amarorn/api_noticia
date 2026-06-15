@@ -1,0 +1,10 @@
+{
+  "alpha_self": 0.062186576976968,
+  "alpha_cross": 0.01,
+  "beta": 0.07974387385892062,
+  "n_matches": 500,
+  "n_goals": 5962,
+  "log_likelihood": -10652.524632219618,
+  "converged": true,
+  "half_life_minutes": 8.692168401377527
+}

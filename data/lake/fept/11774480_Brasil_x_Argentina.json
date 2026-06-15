@@ -1,0 +1,152 @@
+{
+  "home_team": "Brasil",
+  "away_team": "Argentina",
+  "event_id": 11774480,
+  "match_date": null,
+  "source": "sofascore",
+  "fetched_at": "2026-06-06T00:33:14.478734+00:00",
+  "meta": {
+    "ratings_found": 22,
+    "ratings_missing": 0
+  },
+  "kxl_match": {
+    "partida": {
+      "mandante": "Brasil",
+      "visitante": "Argentina"
+    },
+    "fept": {
+      "esquema_mandante": "4-2-3-1",
+      "esquema_visitante": "4-4-2",
+      "mandante_titulares_notas": {
+        "goleiro": {
+          "nome": "Alisson",
+          "posicao": "G",
+          "nota_sofascore": 6.4
+        },
+        "defensores": [
+          {
+            "nome": "E. Royal",
+            "posicao": "D",
+            "nota_sofascore": 7.2
+          },
+          {
+            "nome": "Marquinhos",
+            "posicao": "D",
+            "nota_sofascore": 6.6
+          },
+          {
+            "nome": "G. Magalhães",
+            "posicao": "D",
+            "nota_sofascore": 6.6
+          },
+          {
+            "nome": "C. Augusto",
+            "posicao": "D",
+            "nota_sofascore": 6.3
+          }
+        ],
+        "meio_campistas": [
+          {
+            "nome": "André",
+            "posicao": "M",
+            "nota_sofascore": 7.0
+          },
+          {
+            "nome": "B. Guimarães",
+            "posicao": "M",
+            "nota_sofascore": 7.0
+          },
+          {
+            "nome": "Raphinha",
+            "posicao": "M",
+            "nota_sofascore": 6.8
+          },
+          {
+            "nome": "Rodrygo",
+            "posicao": "M",
+            "nota_sofascore": 6.3
+          },
+          {
+            "nome": "G. Martinelli",
+            "posicao": "M",
+            "nota_sofascore": 6.9
+          }
+        ],
+        "atacantes": [
+          {
+            "nome": "G. Jesus",
+            "posicao": "F",
+            "nota_sofascore": 6.4
+          }
+        ],
+        "defesa_extra": []
+      },
+      "visitante_titulares_notas": {
+        "goleiro": {
+          "nome": "E. Martínez",
+          "posicao": "G",
+          "nota_sofascore": 7.4
+        },
+        "defensores": [
+          {
+            "nome": "N. Molina",
+            "posicao": "D",
+            "nota_sofascore": 6.8
+          },
+          {
+            "nome": "C. Romero",
+            "posicao": "D",
+            "nota_sofascore": 8.3
+          },
+          {
+            "nome": "N. Otamendi",
+            "posicao": "D",
+            "nota_sofascore": 8.1
+          },
+          {
+            "nome": "M. Acuña",
+            "posicao": "D",
+            "nota_sofascore": 6.7
+          }
+        ],
+        "meio_campistas": [
+          {
+            "nome": "G. Lo Celso",
+            "posicao": "M",
+            "nota_sofascore": 7.2
+          },
+          {
+            "nome": "E. Fernández",
+            "posicao": "M",
+            "nota_sofascore": 7.3
+          },
+          {
+            "nome": "R. De Paul",
+            "posicao": "M",
+            "nota_sofascore": 7.0
+          },
+          {
+            "nome": "A. Mac Allister",
+            "posicao": "M",
+            "nota_sofascore": 6.9
+          }
+        ],
+        "atacantes": [
+          {
+            "nome": "L. Messi",
+            "posicao": "F",
+            "nota_sofascore": 6.8
+          },
+          {
+            "nome": "J. Álvarez",
+            "posicao": "F",
+            "nota_sofascore": 6.5
+          }
+        ],
+        "defesa_extra": []
+      },
+      "titulares_mandante": [],
+      "titulares_visitante": []
+    }
+  }
+}

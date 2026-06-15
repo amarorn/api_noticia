@@ -1,0 +1,39 @@
+{
+  "event_id": 13545749,
+  "home_team": "Atlantic FC de Kribi",
+  "away_team": "Les Astres de Douala",
+  "betradar_id": "72015636",
+  "final_score": "2x1",
+  "home_score": 2,
+  "away_score": 1,
+  "ht_score": "2x0",
+  "status": "FINISHED",
+  "period_label": "END",
+  "minute": 90,
+  "captured_at": "2026-06-12T16:26:37.640483+00:00",
+  "finalized_at": "2026-06-12T16:26:38.265308+00:00",
+  "n_bronze_snapshots": 2,
+  "n_live_ticks": 11,
+  "inplay_summary": {
+    "prob_final_home": 1.0,
+    "prob_final_draw": 0.0,
+    "prob_final_away": 0.0,
+    "over_2_5": 1.0,
+    "btts_final": 1.0
+  },
+  "confidence": {
+    "score": 0.375,
+    "label": "baixa",
+    "reason": "Confiança BAIXA: Atlantic FC de Kribi e Les Astres de Douala quase não se enfrentaram. O modelo está usando médias genéricas.",
+    "pattern_accuracy": {
+      "score": 0.0,
+      "label": "sem_dados",
+      "reason": "Nenhum padrão KXL cadastrado para estes times.",
+      "home_hit_rate": null,
+      "away_hit_rate": null,
+      "pattern_count": 0
+    }
+  },
+  "n_aportes": 0,
+  "extra": {}
+}

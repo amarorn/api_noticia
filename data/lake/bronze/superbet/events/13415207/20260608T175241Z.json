@@ -1,0 +1,124 @@
+{
+  "event_id": 13415207,
+  "home_team": "Itália Sub-21",
+  "away_team": "Albânia Sub-21",
+  "event_name": "Itália Sub-21·Albânia Sub-21",
+  "utc_date": "2026-06-08T16:15:00Z",
+  "betradar_id": "71860296",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 70,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 3,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.11,
+    "X": 6.75,
+    "2": 30.0
+  },
+  "h2h_implied": {
+    "1": 0.8323314528807916,
+    "X": 0.13687228336261906,
+    "2": 0.030796263756589292
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.7,
+      "Menos de 1.5": 2.07
+    },
+    "2.5": {
+      "Mais de 2.5": 4.2,
+      "Menos de 2.5": 1.16
+    },
+    "3.5": {
+      "Mais de 3.5": 10.5
+    },
+    "4.5": {
+      "Mais de 4.5": 25.0
+    },
+    "5.5": {
+      "Mais de 5.5": 35.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.5490716180371352,
+      "Menos de 1.5": 0.4509283819628647
+    },
+    "2.5": {
+      "Mais de 2.5": 0.21641791044776118,
+      "Menos de 2.5": 0.7835820895522388
+    },
+    "3.5": {
+      "Mais de 3.5": 1.0
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.1424802110817942,
+      "Não": 0.8575197889182057
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.0560799555802332,
+      "Não": 0.9439200444197667
+    },
+    "ft_and_btts": {
+      "Itália Sub-21 e Sim": 0.10895394339796897,
+      "Itália Sub-21 e Não": 0.7144520878555343,
+      "Empate e Sim": 0.14172870685914662,
+      "Albânia Sub-21 e Sim": 0.03486526188735007
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.39699958686221853,
+      "X e Mais de 1.5": 0.14201611237347656,
+      "2 e Mais de 1.5": 0.03493596364387523,
+      "1 e Menos de 1.5": 0.42604833712042967
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.17728848624928278,
+      "X e Mais de 2.5": 0.01910775907353381,
+      "2 e Mais de 2.5": 0.03439396633236086,
+      "1 e Menos de 2.5": 0.636925302451127,
+      "X e Menos de 2.5": 0.13228448589369562
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.05800892444991537,
+      "X e Mais de 3.5": 0.019336308149971792,
+      "2 e Mais de 3.5": 0.009668154074985896,
+      "1 e Menos de 3.5": 0.7501154023695954,
+      "X e Menos de 3.5": 0.13386674873057394,
+      "2 e Menos de 3.5": 0.029004462224957686
+    }
+  },
+  "btts_odds": {
+    "yes": 3.8,
+    "no": 1.22
+  },
+  "next_goal_odds": {
+    "home": 2.45,
+    "away": 4.85
+  },
+  "generosity_probs": {
+    "home": 0.861427,
+    "away": 0.016542
+  },
+  "raw_market_count": 78,
+  "captured_at": "2026-06-08T17:52:41.404707+00:00"
+}

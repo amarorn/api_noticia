@@ -1,0 +1,108 @@
+{
+  "event_id": 13324536,
+  "home_team": "Tuggeranong United",
+  "away_team": "Monaro Panthers",
+  "event_name": "Tuggeranong United·Monaro Panthers",
+  "utc_date": "2026-06-10T09:30:00Z",
+  "betradar_id": "69194958",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 17,
+    "stoppage_time": null,
+    "home_corners": 0,
+    "away_corners": 3,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "1H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 8.5,
+    "X": 6.75,
+    "2": 1.2
+  },
+  "h2h_implied": {
+    "1": 0.10703666997026759,
+    "X": 0.13478691774033696,
+    "2": 0.7581764122893955
+  },
+  "totals": {
+    "1.5": {
+      "Menos de 1.5": 14.0
+    },
+    "2.5": {
+      "Mais de 2.5": 1.07,
+      "Menos de 2.5": 5.5
+    },
+    "3.5": {
+      "Mais de 3.5": 1.33,
+      "Menos de 3.5": 2.85
+    },
+    "4.5": {
+      "Mais de 4.5": 1.87,
+      "Menos de 4.5": 1.83
+    },
+    "5.5": {
+      "Mais de 5.5": 2.85,
+      "Menos de 5.5": 1.33
+    },
+    "6.5": {
+      "Mais de 6.5": 4.75,
+      "Menos de 6.5": 1.11
+    },
+    "7.5": {
+      "Mais de 7.5": 7.75,
+      "Menos de 7.5": 1.02
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Menos de 1.5": 1.0
+    },
+    "2.5": {
+      "Mais de 2.5": 0.8371385083713851,
+      "Menos de 2.5": 0.16286149162861494
+    },
+    "3.5": {
+      "Mais de 3.5": 0.6818181818181818,
+      "Menos de 3.5": 0.3181818181818182
+    },
+    "4.5": {
+      "Mais de 4.5": 0.4945945945945946,
+      "Menos de 4.5": 0.5054054054054055
+    },
+    "5.5": {
+      "Mais de 5.5": 0.3181818181818182,
+      "Menos de 5.5": 0.6818181818181818
+    },
+    "6.5": {
+      "Mais de 6.5": 0.18941979522184302,
+      "Menos de 6.5": 0.810580204778157
+    },
+    "7.5": {
+      "Mais de 7.5": 0.11630558722919042,
+      "Menos de 7.5": 0.8836944127708096
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {
+    "yes": 1.3,
+    "no": 3.2
+  },
+  "next_goal_odds": {
+    "home": 2.55,
+    "away": 1.53
+  },
+  "generosity_probs": {
+    "home": 0.092013,
+    "away": 0.800133
+  },
+  "raw_market_count": 41,
+  "captured_at": "2026-06-10T09:52:07.074173+00:00"
+}

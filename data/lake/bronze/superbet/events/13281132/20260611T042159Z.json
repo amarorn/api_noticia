@@ -1,0 +1,95 @@
+{
+  "event_id": 13281132,
+  "home_team": "Phoenix Rising",
+  "away_team": "Louisville City",
+  "event_name": "Phoenix Rising·Louisville City",
+  "utc_date": "2026-06-11T02:30:00Z",
+  "betradar_id": "67172620",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 2,
+    "minute": 85,
+    "stoppage_time": null,
+    "home_corners": 5,
+    "away_corners": 4,
+    "home_yellow_cards": 5,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 50.0,
+    "X": 20.0,
+    "2": 1.008
+  },
+  "h2h_implied": {
+    "1": 0.018866162323713458,
+    "X": 0.04716540580928365,
+    "2": 0.9339684318670028
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 2.35,
+      "Menos de 2.5": 1.47
+    },
+    "3.5": {
+      "Mais de 3.5": 7.0,
+      "Menos de 3.5": 1.02
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.38481675392670156,
+      "Menos de 2.5": 0.6151832460732984
+    },
+    "3.5": {
+      "Mais de 3.5": 0.12718204488778054,
+      "Menos de 3.5": 0.8728179551122194
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {
+    "yes": 3.4,
+    "no": 1.25
+  },
+  "next_goal_odds": {
+    "home": 3.75,
+    "away": 5.25
+  },
+  "generosity_probs": {
+    "home": 0.002573,
+    "away": 1.0
+  },
+  "team_totals": {
+    "home": {
+      "0.5": {
+        "Mais de 0.5": 3.3,
+        "Menos de 0.5": 1.22
+      },
+      "1.5": {
+        "Mais de 1.5": 12.0
+      },
+      "2.5": {
+        "Mais de 2.5": 25.0
+      }
+    },
+    "away": {
+      "2.5": {
+        "Mais de 2.5": 4.3,
+        "Menos de 2.5": 1.12
+      },
+      "3.5": {
+        "Mais de 3.5": 17.0
+      }
+    }
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "raw_market_count": 15,
+  "captured_at": "2026-06-11T04:21:59.185577+00:00"
+}

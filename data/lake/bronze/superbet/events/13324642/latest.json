@@ -1,0 +1,128 @@
+{
+  "event_id": 13324642,
+  "home_team": "Charlotte Eagles",
+  "away_team": "Asheville City",
+  "event_name": "Charlotte Eagles·Asheville City",
+  "utc_date": "2026-06-10T21:00:00Z",
+  "betradar_id": "69091616",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 1,
+    "minute": 51,
+    "stoppage_time": "6:04",
+    "home_corners": 3,
+    "away_corners": 0,
+    "home_yellow_cards": 1,
+    "away_yellow_cards": 1,
+    "ht_home_score": 1,
+    "ht_away_score": 1,
+    "period_label": "1H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 3.3,
+    "X": 2.6,
+    "2": 2.35
+  },
+  "h2h_implied": {
+    "1": 0.2722209846290934,
+    "X": 0.34551124972154157,
+    "2": 0.38226776564936515
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 1.14,
+      "Menos de 2.5": 4.05
+    },
+    "3.5": {
+      "Mais de 3.5": 1.78,
+      "Menos de 3.5": 1.9
+    },
+    "4.5": {
+      "Mais de 4.5": 3.3,
+      "Menos de 4.5": 1.22
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.7803468208092486,
+      "Menos de 2.5": 0.21965317919075145
+    },
+    "3.5": {
+      "Mais de 3.5": 0.516304347826087,
+      "Menos de 3.5": 0.4836956521739131
+    },
+    "4.5": {
+      "Mais de 4.5": 0.2699115044247788,
+      "Menos de 4.5": 0.7300884955752213
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 2.5,
+    "away": 2.0
+  },
+  "generosity_probs": {
+    "home": 0.270526,
+    "away": 0.392298
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 1.72,
+        "Menos de 1.5": 1.95
+      },
+      "2.5": {
+        "Mais de 2.5": 4.2,
+        "Menos de 2.5": 1.12
+      }
+    },
+    "away": {
+      "1.5": {
+        "Mais de 1.5": 1.5,
+        "Menos de 1.5": 2.3
+      },
+      "2.5": {
+        "Mais de 2.5": 3.15,
+        "Menos de 2.5": 1.25
+      }
+    }
+  },
+  "first_half_totals": {
+    "2.5-55": {
+      "Primeiros 55 min - Mais de 2.5": 3.0,
+      "Primeiros 55 min - Menos de 2.5": 1.3
+    },
+    "2.5-60": {
+      "Primeiros 60 min - Mais de 2.5": 2.22,
+      "Primeiros 60 min - Menos de 2.5": 1.55
+    },
+    "2.5-65": {
+      "Primeiros 65 min - Mais de 2.5": 1.83,
+      "Primeiros 65 min - Menos de 2.5": 1.8
+    },
+    "2.5-70": {
+      "Primeiros 70 min - Mais de 2.5": 1.6,
+      "Primeiros 70 min - Menos de 2.5": 2.1
+    },
+    "2.5-75": {
+      "Primeiros 75 min - Mais de 2.5": 1.45,
+      "Primeiros 75 min - Menos de 2.5": 2.45
+    },
+    "3.5-80": {
+      "Primeiros 80 min - Mais de 3.5": 2.6,
+      "Primeiros 80 min - Menos de 3.5": 1.4
+    },
+    "3.5-85": {
+      "Primeiros 85 min - Mais de 3.5": 2.25,
+      "Primeiros 85 min - Menos de 3.5": 1.53
+    }
+  },
+  "second_half_totals": {},
+  "raw_market_count": 15,
+  "captured_at": "2026-06-10T21:59:30.046524+00:00"
+}

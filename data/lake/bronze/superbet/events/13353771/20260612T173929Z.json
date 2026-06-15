@@ -1,0 +1,98 @@
+{
+  "event_id": 13353771,
+  "home_team": "Utenis Utena",
+  "away_team": "FK BFA Vilnius",
+  "event_name": "Utenis Utena·FK BFA Vilnius",
+  "utc_date": "2026-06-12T16:00:00Z",
+  "betradar_id": "70162086",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 5,
+    "minute": 80,
+    "stoppage_time": null,
+    "home_corners": 4,
+    "away_corners": 3,
+    "home_yellow_cards": 1,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 4,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 50.0,
+    "X": 50.0
+  },
+  "h2h_implied": {
+    "1": 0.5,
+    "X": 0.5
+  },
+  "totals": {
+    "6.5": {
+      "Mais de 6.5": 1.45,
+      "Menos de 6.5": 2.4
+    },
+    "7.5": {
+      "Mais de 7.5": 3.1,
+      "Menos de 7.5": 1.25
+    }
+  },
+  "totals_implied": {
+    "6.5": {
+      "Mais de 6.5": 0.6233766233766234,
+      "Menos de 6.5": 0.3766233766233766
+    },
+    "7.5": {
+      "Mais de 7.5": 0.28735632183908044,
+      "Menos de 7.5": 0.7126436781609196
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 7.4e-05,
+    "away": 1.0
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 2.4,
+        "Menos de 1.5": 1.45
+      },
+      "2.5": {
+        "Mais de 2.5": 7.25,
+        "Menos de 2.5": 1.01
+      }
+    },
+    "away": {
+      "5.5": {
+        "Mais de 5.5": 2.12,
+        "Menos de 5.5": 1.6
+      },
+      "6.5": {
+        "Mais de 6.5": 6.0,
+        "Menos de 6.5": 1.04
+      }
+    }
+  },
+  "first_half_totals": {
+    "6.5-85": {
+      "Primeiros 85 min - Mais de 6.5": 2.9,
+      "Primeiros 85 min - Menos de 6.5": 1.33
+    }
+  },
+  "second_half_totals": {},
+  "yellow_cards": {},
+  "first_half_yellow_cards": {},
+  "team_shots": {
+    "home": {},
+    "away": {}
+  },
+  "half_markets": {},
+  "raw_market_count": 12,
+  "captured_at": "2026-06-12T17:39:29.872733+00:00"
+}

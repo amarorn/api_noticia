@@ -1,0 +1,139 @@
+{
+  "event_id": 13363542,
+  "home_team": "Iraque",
+  "away_team": "Venezuela",
+  "event_name": "Iraque·Venezuela",
+  "utc_date": "2026-06-10T01:00:00Z",
+  "betradar_id": "71784352",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 2,
+    "minute": 85,
+    "stoppage_time": null,
+    "home_corners": 1,
+    "away_corners": 3,
+    "home_yellow_cards": 1,
+    "away_yellow_cards": 3,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 200.0,
+    "X": 90.0
+  },
+  "h2h_implied": {
+    "1": 0.3103448275862069,
+    "X": 0.6896551724137931
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 2.6,
+      "Menos de 2.5": 1.4
+    },
+    "3.5": {
+      "Mais de 3.5": 8.5,
+      "Menos de 3.5": 1.008
+    },
+    "4.5": {
+      "Mais de 4.5": 22.0
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.3499999999999999,
+      "Menos de 2.5": 0.6499999999999999
+    },
+    "3.5": {
+      "Mais de 3.5": 0.10620399579390115,
+      "Menos de 3.5": 0.8937960042060988
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    }
+  },
+  "corners": {
+    "4.5": {
+      "Mais de 4.5": 1.62,
+      "Menos de 4.5": 2.12
+    },
+    "5.5": {
+      "Mais de 5.5": 3.1,
+      "Menos de 5.5": 1.28
+    },
+    "6.5": {
+      "Mais de 6.5": 5.75,
+      "Menos de 6.5": 1.07
+    },
+    "7.5": {
+      "Mais de 7.5": 10.5
+    },
+    "8.5": {
+      "Mais de 8.5": 18.0
+    }
+  },
+  "corners_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.5668449197860962,
+      "Menos de 4.5": 0.4331550802139037
+    },
+    "5.5": {
+      "Mais de 5.5": 0.2922374429223744,
+      "Menos de 5.5": 0.7077625570776256
+    },
+    "6.5": {
+      "Mais de 6.5": 0.15689149560117302,
+      "Menos de 6.5": 0.843108504398827
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    },
+    "8.5": {
+      "Mais de 8.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.1325898389095415,
+      "Não": 0.8674101610904584
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.0560799555802332,
+      "Não": 0.9439200444197667
+    },
+    "ft_and_btts": {
+      "Iraque e Sim": 0.009097714674401696,
+      "Empate e Sim": 0.015162857790669493,
+      "Venezuela e Sim": 0.12548571964691993,
+      "Venezuela e Não": 0.8502537078880089
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.009080488082155443,
+      "X e Mais de 2.5": 0.015134146803592406,
+      "2 e Mais de 2.5": 0.33631437341316456,
+      "2 e Menos de 2.5": 0.6394709917010877
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.009150984904894063,
+      "X e Mais de 3.5": 0.015251641508156772,
+      "2 e Mais de 3.5": 0.08715223718946725,
+      "2 e Menos de 3.5": 0.8884451363974818
+    }
+  },
+  "btts_odds": {
+    "yes": 7.0,
+    "no": 1.07
+  },
+  "next_goal_odds": {
+    "home": 8.0,
+    "away": 3.55
+  },
+  "generosity_probs": {
+    "home": 0.000146,
+    "away": 1.0
+  },
+  "raw_market_count": 77,
+  "captured_at": "2026-06-10T02:53:51.992797+00:00"
+}

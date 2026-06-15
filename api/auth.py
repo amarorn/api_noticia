@@ -15,6 +15,8 @@ _PUBLIC_PREFIXES = (
     "/docs",
     "/redoc",
     "/openapi.json",
+    "/config/sportradar",
+    "/sportradar/lmt",
 )
 
 

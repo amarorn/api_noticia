@@ -1,0 +1,178 @@
+{
+  "generated_at": "2026-06-01T02:52:12.733929+00:00",
+  "purpose": "estudo probabilístico com dados reais e verificáveis",
+  "dataset": {
+    "rows": 604,
+    "seasons": [
+      1986,
+      1990,
+      1994,
+      1998,
+      2002,
+      2006,
+      2010,
+      2014,
+      2018,
+      2022
+    ],
+    "season_summary": [
+      {
+        "season": 1986,
+        "matches": 52,
+        "home_wins": 22,
+        "draws": 11,
+        "away_wins": 19
+      },
+      {
+        "season": 1990,
+        "matches": 52,
+        "home_wins": 29,
+        "draws": 8,
+        "away_wins": 15
+      },
+      {
+        "season": 1994,
+        "matches": 52,
+        "home_wins": 26,
+        "draws": 8,
+        "away_wins": 18
+      },
+      {
+        "season": 1998,
+        "matches": 64,
+        "home_wins": 30,
+        "draws": 16,
+        "away_wins": 18
+      },
+      {
+        "season": 2002,
+        "matches": 64,
+        "home_wins": 28,
+        "draws": 14,
+        "away_wins": 22
+      },
+      {
+        "season": 2006,
+        "matches": 64,
+        "home_wins": 34,
+        "draws": 11,
+        "away_wins": 19
+      },
+      {
+        "season": 2010,
+        "matches": 64,
+        "home_wins": 25,
+        "draws": 14,
+        "away_wins": 25
+      },
+      {
+        "season": 2014,
+        "matches": 64,
+        "home_wins": 31,
+        "draws": 9,
+        "away_wins": 24
+      },
+      {
+        "season": 2018,
+        "matches": 64,
+        "home_wins": 27,
+        "draws": 9,
+        "away_wins": 28
+      },
+      {
+        "season": 2022,
+        "matches": 64,
+        "home_wins": 32,
+        "draws": 10,
+        "away_wins": 22
+      }
+    ],
+    "competition": "Copa do Mundo",
+    "data_quality": {
+      "missing_scores": 0,
+      "missing_labels": 0
+    }
+  },
+  "sources": {
+    "provider": "openfootball/worldcup",
+    "manifest": [
+      {
+        "season": 1986,
+        "folder": "1986--mexico",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1986--mexico/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1986--mexico/cup_finals.txt"
+      },
+      {
+        "season": 1990,
+        "folder": "1990--italy",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1990--italy/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1990--italy/cup_finals.txt"
+      },
+      {
+        "season": 1994,
+        "folder": "1994--usa",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1994--usa/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1994--usa/cup_finals.txt"
+      },
+      {
+        "season": 1998,
+        "folder": "1998--france",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1998--france/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/1998--france/cup_finals.txt"
+      },
+      {
+        "season": 2002,
+        "folder": "2002--south-korea-n-japan",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2002--south-korea-n-japan/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2002--south-korea-n-japan/cup_finals.txt"
+      },
+      {
+        "season": 2006,
+        "folder": "2006--germany",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2006--germany/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2006--germany/cup_finals.txt"
+      },
+      {
+        "season": 2010,
+        "folder": "2010--south-africa",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2010--south-africa/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2010--south-africa/cup_finals.txt"
+      },
+      {
+        "season": 2014,
+        "folder": "2014--brazil",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2014--brazil/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2014--brazil/cup_finals.txt"
+      },
+      {
+        "season": 2018,
+        "folder": "2018--russia",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2018--russia/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2018--russia/cup_finals.txt"
+      },
+      {
+        "season": 2022,
+        "folder": "2022--qatar",
+        "group_stage_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2022--qatar/cup.txt",
+        "knockout_url": "https://raw.githubusercontent.com/openfootball/worldcup/master/2022--qatar/cup_finals.txt"
+      }
+    ]
+  },
+  "models": {
+    "collaborative_ensemble": {
+      "description": "combinação calibrada de Poisson + Regressão Logística",
+      "weights": {
+        "poisson": 0.55,
+        "logistic": 0.45
+      },
+      "validation": {
+        "season": 2022,
+        "samples": 64,
+        "accuracy": 0.5781,
+        "brier_score": 0.187066,
+        "log_loss": 0.944303
+      }
+    }
+  },
+  "usage_note": "Probabilidades são estimativas estatísticas. Use gestão de risco e nunca trate como garantia."
+}

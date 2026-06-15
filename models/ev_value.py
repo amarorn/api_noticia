@@ -38,9 +38,21 @@ def _sanitize_prob(prob: float) -> float:
     return max(0.0, min(1.0, prob))
 
 
-def evaluate_outcome(outcome: str, prob: float, odd: float) -> OutcomeValue:
+def evaluate_outcome(outcome: str, prob: float, odd: float, *, house_prob: float | None = None) -> OutcomeValue:
+    """Avalia EV de uma aposta.
+
+    Se `house_prob` for fornecido (probabilidade real da casa, ex: generosity_prob
+    sem margem), usa ela no lugar de `1/odd` para calcular a prob implícita.
+    EV = P_modelo / P_casa * (1 - margem_casa) — quando `house_prob` está presente,
+    a margem já foi removida, então EV = (P_modelo * odd_cru) - 1 ainda funciona
+    corretamente, mas o `implied_prob` fica mais preciso para referência e o
+    filtro de "odd suspeita" ganha uma baseline real.
+    """
     p = _sanitize_prob(prob)
-    implied = 1.0 / odd if odd > 0 else 1.0
+    if house_prob is not None and house_prob > 0:
+        implied = _sanitize_prob(house_prob)
+    else:
+        implied = 1.0 / odd if odd > 0 else 1.0
     fair_odd = (1.0 / p) if p > 0 else 999.0
     ev = (p * odd) - 1.0 if odd > 0 else -1.0
     kelly = _kelly_fraction(p, odd)

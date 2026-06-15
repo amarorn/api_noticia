@@ -1,0 +1,249 @@
+{
+  "event_id": 13108472,
+  "home_team": "Portugal",
+  "away_team": "Nigéria",
+  "event_name": "Portugal·Nigéria",
+  "utc_date": "2026-06-10T19:45:00Z",
+  "betradar_id": "71325934",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 1,
+    "minute": 61,
+    "stoppage_time": null,
+    "home_corners": 2,
+    "away_corners": 2,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 1,
+    "ht_home_score": 1,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.7,
+    "X": 2.7,
+    "2": 10.5
+  },
+  "h2h_implied": {
+    "1": 0.5581807442409923,
+    "X": 0.351447135262847,
+    "2": 0.09037212049616065
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 1.35,
+      "Menos de 2.5": 3.1
+    },
+    "3.5": {
+      "Mais de 3.5": 2.7,
+      "Menos de 3.5": 1.45
+    },
+    "4.5": {
+      "Mais de 4.5": 6.25,
+      "Menos de 4.5": 1.1
+    },
+    "5.5": {
+      "Mais de 5.5": 15.0,
+      "Menos de 5.5": 1.01
+    },
+    "6.5": {
+      "Mais de 6.5": 30.0
+    },
+    "7.5": {
+      "Mais de 7.5": 45.0
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.6966292134831461,
+      "Menos de 2.5": 0.30337078651685395
+    },
+    "3.5": {
+      "Mais de 3.5": 0.3493975903614458,
+      "Menos de 3.5": 0.6506024096385543
+    },
+    "4.5": {
+      "Mais de 4.5": 0.14965986394557823,
+      "Menos de 4.5": 0.8503401360544217
+    },
+    "5.5": {
+      "Mais de 5.5": 0.06308557151780138,
+      "Menos de 5.5": 0.9369144284821986
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    }
+  },
+  "corners": {
+    "4.5": {
+      "Mais de 4.5": 1.008,
+      "Menos de 4.5": 9.5
+    },
+    "5.5": {
+      "Mais de 5.5": 1.16,
+      "Menos de 5.5": 4.2
+    },
+    "6.5": {
+      "Mais de 6.5": 1.47,
+      "Menos de 6.5": 2.5
+    },
+    "7.5": {
+      "Mais de 7.5": 2.05,
+      "Menos de 7.5": 1.72
+    },
+    "8.5": {
+      "Mais de 8.5": 2.95,
+      "Menos de 8.5": 1.33
+    },
+    "9.5": {
+      "Mais de 9.5": 4.5,
+      "Menos de 9.5": 1.14
+    },
+    "10.5": {
+      "Mais de 10.5": 6.75,
+      "Menos de 10.5": 1.05
+    },
+    "11.5": {
+      "Mais de 11.5": 10.0,
+      "Menos de 11.5": 1.005
+    },
+    "12.5": {
+      "Mais de 12.5": 15.0
+    },
+    "13.5": {
+      "Mais de 13.5": 22.0
+    }
+  },
+  "corners_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.9039010466222646,
+      "Menos de 4.5": 0.0960989533777355
+    },
+    "5.5": {
+      "Mais de 5.5": 0.7835820895522388,
+      "Menos de 5.5": 0.21641791044776118
+    },
+    "6.5": {
+      "Mais de 6.5": 0.6297229219143576,
+      "Menos de 6.5": 0.37027707808564236
+    },
+    "7.5": {
+      "Mais de 7.5": 0.4562334217506631,
+      "Menos de 7.5": 0.5437665782493368
+    },
+    "8.5": {
+      "Mais de 8.5": 0.3107476635514019,
+      "Menos de 8.5": 0.6892523364485982
+    },
+    "9.5": {
+      "Mais de 9.5": 0.20212765957446804,
+      "Menos de 9.5": 0.7978723404255319
+    },
+    "10.5": {
+      "Mais de 10.5": 0.1346153846153846,
+      "Menos de 10.5": 0.8653846153846154
+    },
+    "11.5": {
+      "Mais de 11.5": 0.09173478655767484,
+      "Menos de 11.5": 0.9082652134423251
+    },
+    "12.5": {
+      "Mais de 12.5": 1.0
+    },
+    "13.5": {
+      "Mais de 13.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.6963470319634703,
+      "Não": 0.3036529680365297
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.36250000000000004,
+      "Não": 0.6375000000000001
+    },
+    "ft_and_btts": {
+      "Portugal e Sim": 0.550025608479747,
+      "Empate e Sim": 0.3532856792927605,
+      "Nigéria e Sim": 0.09668871222749235
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.26151503150021027,
+      "X e Mais de 3.5": 0.07845450945006308,
+      "2 e Mais de 3.5": 0.024657131541448395,
+      "1 e Menos de 3.5": 0.2829506898198997,
+      "X e Menos de 3.5": 0.2739681282383155,
+      "2 e Menos de 3.5": 0.07845450945006308
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 1.6,
+    "away": 6.5
+  },
+  "generosity_probs": {
+    "home": 0.572981,
+    "away": 0.076512
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 1.47,
+        "Menos de 1.5": 2.55
+      },
+      "2.5": {
+        "Mais de 2.5": 3.2,
+        "Menos de 2.5": 1.3
+      },
+      "3.5": {
+        "Mais de 3.5": 7.75,
+        "Menos de 3.5": 1.05
+      },
+      "4.5": {
+        "Mais de 4.5": 20.0
+      }
+    },
+    "away": {
+      "1.5": {
+        "Mais de 1.5": 4.3,
+        "Menos de 1.5": 1.18
+      },
+      "2.5": {
+        "Mais de 2.5": 20.0
+      },
+      "3.5": {
+        "Mais de 3.5": 40.0
+      }
+    }
+  },
+  "first_half_totals": {
+    "2.5-65": {
+      "Primeiros 65 min - Mais de 2.5": 5.0,
+      "Primeiros 65 min - Menos de 2.5": 1.14
+    },
+    "2.5-70": {
+      "Primeiros 70 min - Mais de 2.5": 2.95,
+      "Primeiros 70 min - Menos de 2.5": 1.35
+    },
+    "2.5-75": {
+      "Primeiros 75 min - Mais de 2.5": 2.25,
+      "Primeiros 75 min - Menos de 2.5": 1.57
+    },
+    "2.5-80": {
+      "Primeiros 80 min - Mais de 2.5": 1.83,
+      "Primeiros 80 min - Menos de 2.5": 1.87
+    },
+    "2.5-85": {
+      "Primeiros 85 min - Mais de 2.5": 1.6,
+      "Primeiros 85 min - Menos de 2.5": 2.2
+    }
+  },
+  "second_half_totals": {},
+  "raw_market_count": 128,
+  "captured_at": "2026-06-10T21:12:15.109615+00:00"
+}

@@ -25,7 +25,7 @@ export function WcGroupsPage() {
     <PageTransition className="space-y-8">
       <HeroPageHeader
         title="Classificação simulada"
-        subtitle="Tabela por grupo com base nos palpites do modelo (fase de grupos completa)."
+        subtitle="Tabela por grupo: projeção do modelo (Pts) e pontos reais do dia (Pts R)."
       />
 
       {artifact && (
@@ -62,7 +62,12 @@ export function WcGroupsPage() {
 
       {standingsQuery.data && (
         <>
-          <p className="text-xs text-slate-500">{standingsQuery.data.note}</p>
+          <p className="text-xs text-slate-500">
+            {standingsQuery.data.note}
+            {standingsQuery.data.nRealResults === 0 ? (
+              <span className="text-slate-400"> · Nenhum jogo oficial com placar até hoje.</span>
+            ) : null}
+          </p>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {standingsQuery.data.groups.map((block) => (
               <div key={block.group} className="glass-card overflow-hidden">
@@ -75,7 +80,12 @@ export function WcGroupsPage() {
                       <th className="px-3 py-2">#</th>
                       <th className="px-2 py-2">Seleção</th>
                       <th className="px-1 py-2 text-center">J</th>
-                      <th className="px-1 py-2 text-center">Pts</th>
+                      <th className="px-1 py-2 text-center" title="Projeção do modelo">
+                        Pts
+                      </th>
+                      <th className="px-1 py-2 text-center" title="Placares reais até hoje">
+                        Pts R
+                      </th>
                       <th className="px-1 py-2 text-center">SG</th>
                     </tr>
                   </thead>
@@ -97,6 +107,18 @@ export function WcGroupsPage() {
                         <td className="px-1 py-2 text-center text-slate-400">{row.played}</td>
                         <td className="px-1 py-2 text-center font-bold text-neon-green">
                           {row.points}
+                        </td>
+                        <td
+                          className={`px-1 py-2 text-center font-bold ${
+                            row.realPoints > 0 ? "text-amber-300" : "text-slate-500"
+                          }`}
+                          title={
+                            row.realPlayed > 0
+                              ? `${row.realPlayed} jogo(s) · SG ${row.realGd}`
+                              : "Sem jogos oficiais disputados"
+                          }
+                        >
+                          {row.realPoints}
                         </td>
                         <td className="px-1 py-2 text-center text-slate-400">{row.gd}</td>
                       </tr>

@@ -144,6 +144,18 @@ def save_wc_fixtures(matches: list[MatchResult]) -> Path | None:
     return out_path
 
 
+def normalize_fixtures_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Unifica tipos vindos de fontes distintas (GCP Timestamp vs FIFA string)."""
+    if df.empty:
+        return df
+    out = df.copy()
+    if "match_date" in out.columns:
+        out["match_date"] = pd.to_datetime(out["match_date"], utc=True, errors="coerce")
+    if "season" in out.columns:
+        out["season"] = pd.to_numeric(out["season"], errors="coerce").astype("Int64")
+    return out
+
+
 def load_wc_fixtures(
     seasons: list[int] | None = None,
     *,
@@ -163,8 +175,8 @@ def load_wc_fixtures(
         if df.empty:
             return df
         if seasons and "season" in df.columns:
-            return df[df["season"].isin(seasons)].reset_index(drop=True)
-        return df
+            df = df[df["season"].isin(seasons)].reset_index(drop=True)
+        return normalize_fixtures_df(df)
 
     root = settings.fixtures_path
     frames: list[pd.DataFrame] = []
@@ -199,7 +211,7 @@ def load_wc_fixtures(
 
     if not frames:
         return pd.DataFrame()
-    return pd.concat(frames, ignore_index=True)
+    return normalize_fixtures_df(pd.concat(frames, ignore_index=True))
 
 
 async def import_wc_seasons(

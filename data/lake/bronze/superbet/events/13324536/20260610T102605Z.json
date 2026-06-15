@@ -1,0 +1,104 @@
+{
+  "event_id": 13324536,
+  "home_team": "Tuggeranong United",
+  "away_team": "Monaro Panthers",
+  "event_name": "Tuggeranong United·Monaro Panthers",
+  "utc_date": "2026-06-10T09:30:00Z",
+  "betradar_id": "69194958",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 4,
+    "minute": 45,
+    "stoppage_time": null,
+    "home_corners": 0,
+    "away_corners": 5,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 0,
+    "ht_away_score": 4,
+    "period_label": "HT",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 100.0,
+    "X": 100.0
+  },
+  "h2h_implied": {
+    "1": 0.5,
+    "X": 0.5
+  },
+  "totals": {
+    "4.5": {
+      "Mais de 4.5": 1.03,
+      "Menos de 4.5": 7.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.33,
+      "Menos de 5.5": 2.85
+    },
+    "6.5": {
+      "Mais de 6.5": 2.07,
+      "Menos de 6.5": 1.65
+    },
+    "7.5": {
+      "Mais de 7.5": 3.5,
+      "Menos de 7.5": 1.22
+    },
+    "8.5": {
+      "Mais de 8.5": 6.25,
+      "Menos de 8.5": 1.05
+    },
+    "9.5": {
+      "Mais de 9.5": 12.0
+    }
+  },
+  "totals_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.8717310087173101,
+      "Menos de 4.5": 0.1282689912826899
+    },
+    "5.5": {
+      "Mais de 5.5": 0.6818181818181818,
+      "Menos de 5.5": 0.3181818181818182
+    },
+    "6.5": {
+      "Mais de 6.5": 0.4435483870967742,
+      "Menos de 6.5": 0.5564516129032258
+    },
+    "7.5": {
+      "Mais de 7.5": 0.2584745762711865,
+      "Menos de 7.5": 0.7415254237288137
+    },
+    "8.5": {
+      "Mais de 8.5": 0.14383561643835618,
+      "Menos de 8.5": 0.8561643835616439
+    },
+    "9.5": {
+      "Mais de 9.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {
+    "yes": 1.75,
+    "no": 1.97
+  },
+  "next_goal_odds": {
+    "home": 3.1,
+    "away": 1.5
+  },
+  "generosity_probs": {
+    "home": 0.000337,
+    "away": 1.0
+  },
+  "team_totals": {
+    "home": {},
+    "away": {}
+  },
+  "first_half_totals": {},
+  "second_half_totals": {},
+  "raw_market_count": 21,
+  "captured_at": "2026-06-10T10:26:05.157996+00:00"
+}

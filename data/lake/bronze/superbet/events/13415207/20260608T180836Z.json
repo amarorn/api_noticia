@@ -1,0 +1,98 @@
+{
+  "event_id": 13415207,
+  "home_team": "Itália Sub-21",
+  "away_team": "Albânia Sub-21",
+  "event_name": "Itália Sub-21·Albânia Sub-21",
+  "utc_date": "2026-06-08T16:15:00Z",
+  "betradar_id": "71860296",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 87,
+    "stoppage_time": null,
+    "home_corners": 4,
+    "away_corners": 3,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 3,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.05,
+    "X": 9.25,
+    "2": 75.0
+  },
+  "h2h_implied": {
+    "1": 0.8869073301692314,
+    "X": 0.10067596720839925,
+    "2": 0.012416702622369241
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 2.95,
+      "Menos de 1.5": 1.33
+    },
+    "2.5": {
+      "Mais de 2.5": 10.5
+    },
+    "3.5": {
+      "Mais de 3.5": 30.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.3107476635514019,
+      "Menos de 1.5": 0.6892523364485982
+    },
+    "2.5": {
+      "Mais de 2.5": 1.0
+    },
+    "3.5": {
+      "Mais de 3.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.0531299316149395,
+      "Não": 0.9468700683850605
+    },
+    "ft_and_btts": {
+      "Itália Sub-21 e Sim": 0.04066018974755216,
+      "Itália Sub-21 e Não": 0.8360039013515397,
+      "Empate e Sim": 0.1084271726601391,
+      "Albânia Sub-21 e Sim": 0.014908736240769124
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.2236862668306028,
+      "X e Mais de 1.5": 0.10709827320980378,
+      "2 e Mais de 1.5": 0.01472601256634802,
+      "1 e Menos de 1.5": 0.6544894473932453
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.06805378311101623,
+      "X e Mais de 2.5": 0.00884699180443211,
+      "2 e Mais de 2.5": 0.014744986340720181,
+      "1 e Menos de 2.5": 0.8042719822211007,
+      "X e Menos de 2.5": 0.10408225652273069
+    }
+  },
+  "btts_odds": {
+    "yes": 6.75,
+    "no": 1.07
+  },
+  "next_goal_odds": {
+    "home": 4.3,
+    "away": 7.75
+  },
+  "generosity_probs": {
+    "home": 0.915405,
+    "away": 0.004635
+  },
+  "raw_market_count": 61,
+  "captured_at": "2026-06-08T18:08:36.741909+00:00"
+}

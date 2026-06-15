@@ -1,0 +1,132 @@
+"""Cache em memória para respostas de advice ao vivo (evita recomputar Poisson a cada poll)."""
+from __future__ import annotations
+
+import threading
+import time
+from collections.abc import Callable
+from typing import Any, TypeVar
+
+T = TypeVar("T")
+
+_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
+_INFLIGHT: dict[tuple[Any, ...], tuple[threading.Event, dict[str, Any] | None, BaseException | None]] = {}
+_LOCK = threading.Lock()
+
+_DEFAULT_TTL_FAST = 8.0
+_DEFAULT_TTL_FULL = 12.0
+
+
+def advice_cache_key(
+    *,
+    event_id: int,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    bankroll: float,
+    fast: bool,
+    phase: str,
+) -> tuple[Any, ...]:
+    return (
+        event_id,
+        home_score,
+        away_score,
+        minute,
+        int(bankroll * 100),
+        fast,
+        phase,
+    )
+
+
+def _get_cached_unlocked(key: tuple[Any, ...]) -> dict[str, Any] | None:
+    entry = _CACHE.get(key)
+    if entry is None:
+        return None
+    expires_at, payload = entry
+    if time.monotonic() > expires_at:
+        del _CACHE[key]
+        return None
+    return payload
+
+
+def get_cached_advice(key: tuple[Any, ...]) -> dict[str, Any] | None:
+    with _LOCK:
+        return _get_cached_unlocked(key)
+
+
+def set_cached_advice(key: tuple[Any, ...], payload: dict[str, Any], *, ttl_sec: float) -> None:
+    with _LOCK:
+        _CACHE[key] = (time.monotonic() + ttl_sec, payload)
+
+
+def run_with_advice_cache(
+    key: tuple[Any, ...],
+    compute: Callable[[], T],
+    *,
+    fast: bool,
+) -> T:
+    """Retorna cache hit, deduplica requests paralelos ou executa ``compute``."""
+    cached = get_cached_advice(key)
+    if cached is not None:
+        return cached  # type: ignore[return-value]
+
+    ttl = _DEFAULT_TTL_FAST if fast else _DEFAULT_TTL_FULL
+
+    with _LOCK:
+        cached = _get_cached_unlocked(key)
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+
+        inflight = _INFLIGHT.get(key)
+        if inflight is None:
+            wait_event = threading.Event()
+            _INFLIGHT[key] = (wait_event, None, None)
+            is_leader = True
+        else:
+            wait_event, _, _ = inflight
+            is_leader = False
+
+    if not is_leader:
+        wait_event.wait(timeout=120.0)
+        with _LOCK:
+            inflight = _INFLIGHT.get(key)
+            if inflight is not None:
+                _, result, error = inflight
+                if error is not None:
+                    raise error
+                if result is not None:
+                    return result  # type: ignore[return-value]
+        cached = get_cached_advice(key)
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        return run_with_advice_cache(key, compute, fast=fast)
+
+    try:
+        result = compute()
+        if isinstance(result, dict):
+            set_cached_advice(key, result, ttl_sec=ttl)
+        with _LOCK:
+            inflight = _INFLIGHT.get(key)
+            if inflight is not None:
+                event, _, err = inflight
+                _INFLIGHT[key] = (event, result if isinstance(result, dict) else None, err)
+        return result
+    except BaseException as exc:
+        with _LOCK:
+            inflight = _INFLIGHT.get(key)
+            if inflight is not None:
+                event, res, _ = inflight
+                _INFLIGHT[key] = (event, res, exc)
+        raise
+    finally:
+        with _LOCK:
+            inflight = _INFLIGHT.pop(key, None)
+        if inflight is not None:
+            inflight[0].set()
+
+
+__all__ = [
+    "advice_cache_key",
+    "get_cached_advice",
+    "run_with_advice_cache",
+    "set_cached_advice",
+]

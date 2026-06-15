@@ -33,6 +33,9 @@ class WcHyperParams:
     rho_max: float = 0.2
     rho_step: float = 0.01
     draw_prob_floor: float = 0.18
+    draw_pick_min_prob: float = 0.26
+    draw_balance_gap: float = 0.18
+    draw_competitive_margin: float = 0.035
     poisson_season_half_life: float = 10.0
     draw_model_blend: float = 0.55
     knockout_draw_discount: float = 0.82
@@ -63,6 +66,9 @@ def _from_settings_defaults() -> WcHyperParams:
         rho_max=getattr(settings, "wc_rho_max", 0.20),
         rho_step=getattr(settings, "wc_rho_step", 0.01),
         draw_prob_floor=getattr(settings, "wc_draw_prob_floor", 0.18),
+        draw_pick_min_prob=getattr(settings, "wc_draw_pick_min_prob", 0.26),
+        draw_balance_gap=getattr(settings, "wc_draw_balance_gap", 0.18),
+        draw_competitive_margin=getattr(settings, "wc_draw_competitive_margin", 0.035),
         poisson_season_half_life=getattr(settings, "wc_poisson_season_half_life", 8.0),
         draw_model_blend=getattr(settings, "wc_draw_model_blend", 0.55),
         knockout_draw_discount=getattr(settings, "wc_knockout_draw_discount", 0.82),

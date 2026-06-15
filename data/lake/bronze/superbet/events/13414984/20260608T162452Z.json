@@ -1,0 +1,182 @@
+{
+  "event_id": 13414984,
+  "home_team": "Bielorrússia Sub-21",
+  "away_team": "Cazaquistão Sub-21",
+  "event_name": "Bielorrússia Sub-21·Cazaquistão Sub-21",
+  "utc_date": "2026-06-08T15:00:00Z",
+  "betradar_id": "71749140",
+  "is_live": true,
+  "inplay": {
+    "home_score": 0,
+    "away_score": 1,
+    "minute": 63,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 1,
+    "home_yellow_cards": 2,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 7.25,
+    "X": 3.1,
+    "2": 1.6
+  },
+  "h2h_implied": {
+    "1": 0.1270654540796721,
+    "X": 0.29716920712181377,
+    "2": 0.5757653387985142
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.55,
+      "Menos de 1.5": 2.3
+    },
+    "2.5": {
+      "Mais de 2.5": 3.6,
+      "Menos de 2.5": 1.22
+    },
+    "3.5": {
+      "Mais de 3.5": 8.75,
+      "Menos de 3.5": 1.02
+    },
+    "4.5": {
+      "Mais de 4.5": 20.0
+    },
+    "5.5": {
+      "Mais de 5.5": 30.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.5974025974025974,
+      "Menos de 1.5": 0.4025974025974026
+    },
+    "2.5": {
+      "Mais de 2.5": 0.2531120331950208,
+      "Menos de 2.5": 0.7468879668049794
+    },
+    "3.5": {
+      "Mais de 3.5": 0.10440122824974413,
+      "Menos de 3.5": 0.8955987717502559
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {
+    "4.5": {
+      "Mais de 4.5": 1.01,
+      "Menos de 4.5": 8.25
+    },
+    "5.5": {
+      "Mais de 5.5": 1.2,
+      "Menos de 5.5": 3.6
+    },
+    "6.5": {
+      "Mais de 6.5": 1.62,
+      "Menos de 6.5": 2.15
+    },
+    "7.5": {
+      "Mais de 7.5": 2.3,
+      "Menos de 7.5": 1.53
+    },
+    "8.5": {
+      "Mais de 8.5": 3.45,
+      "Menos de 8.5": 1.22
+    },
+    "9.5": {
+      "Mais de 9.5": 5.0,
+      "Menos de 9.5": 1.1
+    },
+    "10.5": {
+      "Mais de 10.5": 7.5,
+      "Menos de 10.5": 1.02
+    },
+    "11.5": {
+      "Mais de 11.5": 11.0
+    }
+  },
+  "corners_implied": {
+    "4.5": {
+      "Mais de 4.5": 0.8909287257019439,
+      "Menos de 4.5": 0.10907127429805617
+    },
+    "5.5": {
+      "Mais de 5.5": 0.75,
+      "Menos de 5.5": 0.25
+    },
+    "6.5": {
+      "Mais de 6.5": 0.5702917771883289,
+      "Menos de 6.5": 0.4297082228116711
+    },
+    "7.5": {
+      "Mais de 7.5": 0.39947780678851175,
+      "Menos de 7.5": 0.6005221932114883
+    },
+    "8.5": {
+      "Mais de 8.5": 0.2612419700214133,
+      "Menos de 8.5": 0.7387580299785867
+    },
+    "9.5": {
+      "Mais de 9.5": 0.18032786885245902,
+      "Menos de 9.5": 0.8196721311475409
+    },
+    "10.5": {
+      "Mais de 10.5": 0.11971830985915492,
+      "Menos de 10.5": 0.880281690140845
+    },
+    "11.5": {
+      "Mais de 11.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.23828125000000003,
+      "Não": 0.76171875
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.09781576448243115,
+      "Não": 0.902184235517569
+    },
+    "ft_and_btts": {
+      "Bielorrússia Sub-21 e Sim": 0.1278705306436051,
+      "Empate e Sim": 0.29258511248960484,
+      "Cazaquistão Sub-21 e Sim": 0.1078907602305418,
+      "Cazaquistão Sub-21 e Não": 0.47165359663624823
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.12707675722097106,
+      "X e Mais de 1.5": 0.29076885126832364,
+      "2 e Mais de 1.5": 0.2092117344491597,
+      "2 e Menos de 1.5": 0.37294265706154556
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.12519506719776838,
+      "X e Mais de 2.5": 0.042253335179246836,
+      "2 e Mais de 2.5": 0.11656092463240506,
+      "X e Menos de 2.5": 0.2640833448702927,
+      "2 e Menos de 2.5": 0.45190732812028694
+    }
+  },
+  "btts_odds": {
+    "yes": 1.87,
+    "no": 1.83
+  },
+  "next_goal_odds": {
+    "home": 2.12,
+    "away": 4.85
+  },
+  "generosity_probs": {
+    "home": 0.109299,
+    "away": 0.593573
+  },
+  "raw_market_count": 108,
+  "captured_at": "2026-06-08T16:24:52.753877+00:00"
+}

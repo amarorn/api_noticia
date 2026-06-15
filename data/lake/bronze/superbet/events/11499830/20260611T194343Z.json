@@ -1,0 +1,281 @@
+{
+  "event_id": 11499830,
+  "home_team": "México",
+  "away_team": "África do Sul",
+  "event_name": "México·África do Sul",
+  "utc_date": "2026-06-11T19:00:00Z",
+  "betradar_id": "66456904",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 38,
+    "stoppage_time": null,
+    "home_corners": 2,
+    "away_corners": 0,
+    "home_yellow_cards": 1,
+    "away_yellow_cards": 1,
+    "ht_home_score": 1,
+    "ht_away_score": 0,
+    "period_label": "1H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.14,
+    "X": 7.25,
+    "2": 25.0
+  },
+  "h2h_implied": {
+    "1": 0.8313648143476365,
+    "X": 0.1307249501181111,
+    "2": 0.037910235534252226
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.25,
+      "Menos de 1.5": 3.75
+    },
+    "2.5": {
+      "Mais de 2.5": 2.2,
+      "Menos de 2.5": 1.67
+    },
+    "3.5": {
+      "Mais de 3.5": 4.5,
+      "Menos de 3.5": 1.18
+    },
+    "4.5": {
+      "Mais de 4.5": 10.5,
+      "Menos de 4.5": 1.03
+    },
+    "5.5": {
+      "Mais de 5.5": 22.0,
+      "Menos de 5.5": 1.002
+    },
+    "6.5": {
+      "Mais de 6.5": 40.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.75,
+      "Menos de 1.5": 0.25
+    },
+    "2.5": {
+      "Mais de 2.5": 0.43152454780361754,
+      "Menos de 2.5": 0.5684754521963824
+    },
+    "3.5": {
+      "Mais de 3.5": 0.2077464788732394,
+      "Menos de 3.5": 0.7922535211267606
+    },
+    "4.5": {
+      "Mais de 4.5": 0.08933217692974847,
+      "Menos de 4.5": 0.9106678230702514
+    },
+    "5.5": {
+      "Mais de 5.5": 0.04389395914819644,
+      "Menos de 5.5": 0.9561060408518036
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    }
+  },
+  "corners": {
+    "2.5": {
+      "Menos de 2.5": 20.0
+    },
+    "3.5": {
+      "Mais de 3.5": 1.02,
+      "Menos de 3.5": 8.5
+    },
+    "4.5": {
+      "Mais de 4.5": 1.14,
+      "Menos de 4.5": 4.6
+    },
+    "5.5": {
+      "Mais de 5.5": 1.38,
+      "Menos de 5.5": 2.75
+    },
+    "6.5": {
+      "Mais de 6.5": 1.75,
+      "Menos de 6.5": 2.0
+    },
+    "7.5": {
+      "Mais de 7.5": 2.35,
+      "Menos de 7.5": 1.53
+    },
+    "8.5": {
+      "Mais de 8.5": 3.25,
+      "Menos de 8.5": 1.28
+    },
+    "9.5": {
+      "Mais de 9.5": 4.6,
+      "Menos de 9.5": 1.14
+    },
+    "10.5": {
+      "Mais de 10.5": 6.75,
+      "Menos de 10.5": 1.05
+    },
+    "11.5": {
+      "Mais de 11.5": 9.25,
+      "Menos de 11.5": 1.01
+    },
+    "12.5": {
+      "Mais de 12.5": 13.0
+    },
+    "13.5": {
+      "Mais de 13.5": 18.0
+    }
+  },
+  "corners_implied": {
+    "2.5": {
+      "Menos de 2.5": 1.0
+    },
+    "3.5": {
+      "Mais de 3.5": 0.8928571428571429,
+      "Menos de 3.5": 0.10714285714285715
+    },
+    "4.5": {
+      "Mais de 4.5": 0.8013937282229965,
+      "Menos de 4.5": 0.1986062717770035
+    },
+    "5.5": {
+      "Mais de 5.5": 0.6658595641646489,
+      "Menos de 5.5": 0.334140435835351
+    },
+    "6.5": {
+      "Mais de 6.5": 0.5333333333333333,
+      "Menos de 6.5": 0.4666666666666667
+    },
+    "7.5": {
+      "Mais de 7.5": 0.3943298969072165,
+      "Menos de 7.5": 0.6056701030927835
+    },
+    "8.5": {
+      "Mais de 8.5": 0.282560706401766,
+      "Menos de 8.5": 0.717439293598234
+    },
+    "9.5": {
+      "Mais de 9.5": 0.1986062717770035,
+      "Menos de 9.5": 0.8013937282229965
+    },
+    "10.5": {
+      "Mais de 10.5": 0.1346153846153846,
+      "Menos de 10.5": 0.8653846153846154
+    },
+    "11.5": {
+      "Mais de 11.5": 0.09844054580896687,
+      "Menos de 11.5": 0.9015594541910331
+    },
+    "12.5": {
+      "Mais de 12.5": 1.0
+    },
+    "13.5": {
+      "Mais de 13.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.26041666666666663,
+      "Não": 0.7395833333333333
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.15492957746478872,
+      "Não": 0.8450704225352113
+    },
+    "ft_and_btts": {
+      "México e Sim": 0.20101874704615866,
+      "México e Não": 0.6238512839363546,
+      "Empate e Sim": 0.13401249803077245,
+      "África do Sul e Sim": 0.041117470986714276
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.36967334319128914,
+      "X e Mais de 2.5": 0.03548864094636376,
+      "2 e Mais de 2.5": 0.04032800107541336,
+      "1 e Menos de 2.5": 0.44360801182954696,
+      "X e Menos de 2.5": 0.11090200295738674
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.16212691718016647,
+      "X e Mais de 3.5": 0.035667921779636624,
+      "2 e Mais de 3.5": 0.014861634074848593,
+      "1 e Menos de 3.5": 0.6461580032542867,
+      "X e Menos de 3.5": 0.11146225556136445,
+      "2 e Menos de 3.5": 0.029723268149697186
+    }
+  },
+  "btts_odds": {
+    "yes": 2.7,
+    "no": 1.45
+  },
+  "next_goal_odds": {
+    "home": 1.7,
+    "away": 4.0
+  },
+  "generosity_probs": {
+    "home": 0.85574,
+    "away": 0.024898
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 1.45,
+        "Menos de 1.5": 2.6
+      },
+      "2.5": {
+        "Mais de 2.5": 3.1,
+        "Menos de 2.5": 1.33
+      },
+      "3.5": {
+        "Mais de 3.5": 7.5,
+        "Menos de 3.5": 1.05
+      },
+      "4.5": {
+        "Mais de 4.5": 18.0
+      }
+    },
+    "away": {
+      "0.5": {
+        "Mais de 0.5": 2.7,
+        "Menos de 0.5": 1.42
+      },
+      "1.5": {
+        "Mais de 1.5": 9.5,
+        "Menos de 1.5": 1.02
+      },
+      "2.5": {
+        "Mais de 2.5": 30.0
+      }
+    }
+  },
+  "first_half_totals": {
+    "1.5-40": {
+      "Primeiros 40 min - Mais de 1.5": 9.5,
+      "Primeiros 40 min - Menos de 1.5": 1.03
+    },
+    "1.5-50": {
+      "Primeiros 50 min - Mais de 1.5": 2.95,
+      "Primeiros 50 min - Menos de 1.5": 1.35
+    },
+    "1.5-55": {
+      "Primeiros 55 min - Mais de 1.5": 2.35,
+      "Primeiros 55 min - Menos de 1.5": 1.53
+    },
+    "1.5-60": {
+      "Primeiros 60 min - Mais de 1.5": 2.02,
+      "Primeiros 60 min - Menos de 1.5": 1.7
+    },
+    "1.5-65": {
+      "Primeiros 65 min - Mais de 1.5": 1.8,
+      "Primeiros 65 min - Menos de 1.5": 1.9
+    },
+    "1.5-75": {
+      "Primeiros 75 min - Mais de 1.5": 1.53,
+      "Primeiros 75 min - Menos de 1.5": 2.35
+    }
+  },
+  "second_half_totals": {},
+  "raw_market_count": 276,
+  "captured_at": "2026-06-11T19:43:43.052904+00:00"
+}

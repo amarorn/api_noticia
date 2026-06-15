@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "bets": [
+    {
+      "id": "auto_1781231649631",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "1",
+          "target_value": null
+        },
+        {
+          "market": "h2h",
+          "outcome": "2",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 6.5,
+      "potential_return": 97.5,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T23:34:09.634246",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781231649636",
+      "event_name": "Coreia do Sul — República Tcheca",
+      "home_team": "Coreia do Sul",
+      "away_team": "República Tcheca",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Mais de 8.5",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.2,
+      "potential_return": 44.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-11T23:34:09.638399",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781293182368",
+      "event_name": "Longo Prazo - Copa do Mundo 2026",
+      "home_team": "Longo Prazo",
+      "away_team": "Copa do Mundo 2026",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Classificação Exata Posições 1-4 — 1º Alemanha - 2º Equador - 3º Costa do Marfim - 4º Curacao",
+          "target_value": null
+        },
+        {
+          "market": "other",
+          "outcome": "Se Classificar — República Tcheca",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 6.72,
+      "potential_return": 140.26,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T16:39:42.370316",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781293182372",
+      "event_name": "Longo Prazo - Copa do Mundo 2026",
+      "home_team": "Longo Prazo",
+      "away_team": "Copa do Mundo 2026",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "1º Lugar & 2º Lugar — 1º Suíça - 2º Canadá",
+          "target_value": null
+        },
+        {
+          "market": "other",
+          "outcome": "Se Classificar — México",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 7.22,
+      "potential_return": 108.32,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T16:39:42.374798",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781296795168",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "0:2",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 8.0,
+      "potential_return": 120.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:39:55.170118",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781296795172",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "0:1",
+          "target_value": null
+        }
+      ],
+      "stake": 10.0,
+      "odds_placed": 2.8,
+      "potential_return": 28.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:39:55.174773",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781297820320",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Mais de 16.5",
+          "target_value": null
+        }
+      ],
+      "stake": 10.0,
+      "odds_placed": 3.2,
+      "potential_return": 32.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:57:00.653308",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781297820656",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Mais de 10.5",
+          "target_value": null
+        }
+      ],
+      "stake": 10.0,
+      "odds_placed": 3.6,
+      "potential_return": 36.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:57:00.658788",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781297820660",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "totals",
+          "outcome": "under",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.0,
+      "potential_return": 30.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:57:00.662863",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781297820670",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "Menos de 15.5",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 2.0,
+      "potential_return": 30.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:57:00.671770",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781297820673",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "h2h",
+          "outcome": "away",
+          "target_value": null
+        }
+      ],
+      "stake": 20.0,
+      "odds_placed": 2.35,
+      "potential_return": 47.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:57:00.675138",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781297820677",
+      "event_name": "Canadá — Bósnia e Herzegovina",
+      "home_team": "Canadá",
+      "away_team": "Bósnia e Herzegovina",
+      "picks": [
+        {
+          "market": "totals_2.5",
+          "outcome": "under",
+          "target_value": null
+        }
+      ],
+      "stake": 10.0,
+      "odds_placed": 2.3,
+      "potential_return": 23.0,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:57:00.678873",
+      "superbet_event_id": null,
+      "user_id": null
+    },
+    {
+      "id": "auto_1781297820681",
+      "event_name": "Longo Prazo - Copa do Mundo 2026",
+      "home_team": "Longo Prazo",
+      "away_team": "Copa 2026",
+      "picks": [
+        {
+          "market": "other",
+          "outcome": "1º Lugar & 2º Lugar — 1º Suíça - 2º Canadá",
+          "target_value": null
+        },
+        {
+          "market": "other",
+          "outcome": "Se Classificar — México",
+          "target_value": null
+        },
+        {
+          "market": "combo",
+          "outcome": "legs_1",
+          "target_value": null
+        }
+      ],
+      "stake": 15.0,
+      "odds_placed": 7.22,
+      "potential_return": 108.32,
+      "cashout_value": null,
+      "ticket_code": null,
+      "status": "open",
+      "source": "superbet_extension",
+      "captured_at": "2026-06-12T17:57:00.683082",
+      "superbet_event_id": null,
+      "user_id": null
+    }
+  ]
+}

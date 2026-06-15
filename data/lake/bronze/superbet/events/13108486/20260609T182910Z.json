@@ -1,0 +1,38 @@
+{
+  "event_id": 13108486,
+  "home_team": "Hungria",
+  "away_team": "Cazaquistão",
+  "event_name": "Hungria·Cazaquistão",
+  "utc_date": "2026-06-09T17:00:00Z",
+  "betradar_id": "71422650",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 1,
+    "minute": 64,
+    "stoppage_time": null,
+    "home_corners": 3,
+    "away_corners": 3,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 5,
+    "ht_home_score": 0,
+    "ht_away_score": 1,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {},
+  "h2h_implied": {},
+  "totals": {},
+  "totals_implied": {},
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.647519,
+    "away": 0.039244
+  },
+  "raw_market_count": 89,
+  "captured_at": "2026-06-09T18:29:10.591447+00:00"
+}

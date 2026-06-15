@@ -1,0 +1,118 @@
+{
+  "event_id": 13309590,
+  "home_team": "Atlético Nacional (COL)",
+  "away_team": "Junior Barranquilla",
+  "event_name": "Atlético Nacional (COL)·Junior Barranquilla",
+  "utc_date": "2026-06-08T22:00:00Z",
+  "betradar_id": "71702730",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 71,
+    "stoppage_time": null,
+    "home_corners": 11,
+    "away_corners": 4,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.11,
+    "X": 6.75,
+    "2": 30.0
+  },
+  "h2h_implied": {
+    "1": 0.8323314528807916,
+    "X": 0.13687228336261906,
+    "2": 0.030796263756589292
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.42,
+      "Menos de 1.5": 2.55
+    },
+    "2.5": {
+      "Mais de 2.5": 2.95,
+      "Menos de 2.5": 1.3
+    },
+    "3.5": {
+      "Mais de 3.5": 6.75,
+      "Menos de 3.5": 1.04
+    },
+    "4.5": {
+      "Mais de 4.5": 15.0
+    },
+    "5.5": {
+      "Mais de 5.5": 25.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.6423173803526449,
+      "Menos de 1.5": 0.35768261964735515
+    },
+    "2.5": {
+      "Mais de 2.5": 0.3058823529411765,
+      "Menos de 2.5": 0.6941176470588235
+    },
+    "3.5": {
+      "Mais de 3.5": 0.13350449293966624,
+      "Menos de 3.5": 0.8664955070603337
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.18566775244299674,
+      "Não": 0.8143322475570033
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.09338168631006347,
+      "Não": 0.9066183136899365
+    },
+    "ft_and_btts": {
+      "Atlético Nacional (COL) e Sim": 0.14602565149906055,
+      "Atlético Nacional (COL) e Não": 0.6739645453802794,
+      "Empate e Sim": 0.14018462543909813,
+      "Junior Barranquilla e Sim": 0.03982517768156197
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.4849364495869562,
+      "X e Mais de 1.5": 0.13966169748104337,
+      "2 e Mais de 1.5": 0.039676618602569144,
+      "1 e Menos de 1.5": 0.3357252343294312
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.25500277104673,
+      "X e Mais de 2.5": 0.028475309433551522,
+      "2 e Mais de 2.5": 0.03882996740938844,
+      "1 e Menos de 2.5": 0.5511350212945455,
+      "X e Menos de 2.5": 0.12655693081578454
+    }
+  },
+  "btts_odds": {
+    "yes": 3.25,
+    "no": 1.3
+  },
+  "next_goal_odds": {
+    "home": 2.0,
+    "away": 4.4
+  },
+  "generosity_probs": {
+    "home": 0.85952,
+    "away": 0.020185
+  },
+  "raw_market_count": 83,
+  "captured_at": "2026-06-08T23:35:40.584620+00:00"
+}

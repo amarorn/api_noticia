@@ -1,0 +1,38 @@
+{
+  "event_id": 13309590,
+  "home_team": "Atlético Nacional (COL)",
+  "away_team": "Junior Barranquilla",
+  "event_name": "Atlético Nacional (COL)·Junior Barranquilla",
+  "utc_date": "2026-06-08T22:00:00Z",
+  "betradar_id": "71702730",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 56,
+    "stoppage_time": null,
+    "home_corners": 9,
+    "away_corners": 4,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 0,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {},
+  "h2h_implied": {},
+  "totals": {},
+  "totals_implied": {},
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {},
+  "generosity_probs": {
+    "home": 0.869379,
+    "away": 0.021475
+  },
+  "raw_market_count": 100,
+  "captured_at": "2026-06-08T23:21:45.867490+00:00"
+}

@@ -1,0 +1,117 @@
+{
+  "event_id": 13309618,
+  "home_team": "Rússia",
+  "away_team": "Trinidad e Tobago",
+  "event_name": "Rússia·Trinidad e Tobago",
+  "utc_date": "2026-06-09T17:00:00Z",
+  "betradar_id": "71527260",
+  "is_live": true,
+  "inplay": {
+    "home_score": 3,
+    "away_score": 0,
+    "minute": 66,
+    "stoppage_time": null,
+    "home_corners": 7,
+    "away_corners": 2,
+    "home_yellow_cards": 1,
+    "away_yellow_cards": 2,
+    "ht_home_score": 2,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "X": 150.0,
+    "2": 200.0
+  },
+  "h2h_implied": {
+    "X": 0.5714285714285714,
+    "2": 0.42857142857142855
+  },
+  "totals": {
+    "3.5": {
+      "Mais de 3.5": 1.16,
+      "Menos de 3.5": 4.0
+    },
+    "4.5": {
+      "Mais de 4.5": 1.9,
+      "Menos de 4.5": 1.8
+    },
+    "5.5": {
+      "Mais de 5.5": 3.6,
+      "Menos de 5.5": 1.2
+    },
+    "6.5": {
+      "Mais de 6.5": 7.25,
+      "Menos de 6.5": 1.03
+    },
+    "7.5": {
+      "Mais de 7.5": 15.0
+    },
+    "8.5": {
+      "Mais de 8.5": 25.0
+    }
+  },
+  "totals_implied": {
+    "3.5": {
+      "Mais de 3.5": 0.7751937984496123,
+      "Menos de 3.5": 0.22480620155038755
+    },
+    "4.5": {
+      "Mais de 4.5": 0.4864864864864864,
+      "Menos de 4.5": 0.5135135135135135
+    },
+    "5.5": {
+      "Mais de 5.5": 0.25,
+      "Menos de 5.5": 0.75
+    },
+    "6.5": {
+      "Mais de 6.5": 0.12439613526570048,
+      "Menos de 6.5": 0.8756038647342995
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    },
+    "8.5": {
+      "Mais de 8.5": 1.0
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.23828125000000003,
+      "Não": 0.76171875
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.23828125000000003,
+      "Não": 0.76171875
+    },
+    "ft_and_btts": {
+      "Rússia e Sim": 0.23393337884168466,
+      "Rússia e Não": 0.747819817608664,
+      "Empate e Sim": 0.0091234017748257,
+      "Trinidad e Tobago e Sim": 0.0091234017748257
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.7665464527150346,
+      "X e Mais de 3.5": 0.009045248142037407,
+      "2 e Mais de 3.5": 0.009045248142037407,
+      "1 e Menos de 3.5": 0.21536305100089065
+    }
+  },
+  "btts_odds": {
+    "yes": 3.9,
+    "no": 1.22
+  },
+  "next_goal_odds": {
+    "home": 1.38,
+    "away": 6.5
+  },
+  "generosity_probs": {
+    "home": 1.0,
+    "away": 3.3e-05
+  },
+  "raw_market_count": 59,
+  "captured_at": "2026-06-09T18:29:40.715401+00:00"
+}

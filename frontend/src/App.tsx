@@ -13,8 +13,14 @@ import { WcGroupsPage } from "@/presentation/pages/WcGroupsPage";
 import { SchedulePage } from "@/presentation/pages/SchedulePage";
 import { FriendliesPage } from "@/presentation/pages/FriendliesPage";
 import { LivePage } from "@/presentation/pages/LivePage";
+import { LiveInPlayPage } from "@/presentation/pages/LiveInPlayPage";
+import { LiveDashboardPage } from "@/presentation/pages/LiveDashboardPage";
 import { AlbumPage } from "@/presentation/pages/AlbumPage";
 import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
+import { CarteiraPage } from "@/presentation/pages/CarteiraPage";
+import { BetPerformancePage } from "@/presentation/pages/BetPerformancePage";
+import { ModelBenchmarkPage } from "@/presentation/pages/ModelBenchmarkPage";
+import { MatchTicketsPage } from "@/presentation/pages/MatchTicketsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,13 +44,19 @@ export function App() {
               <Route path="validate" element={<HistoricalValidationPage />} />
               <Route path="brasileirao" element={<BrasileiraoPage />} />
               <Route path="match/:home/:away" element={<MatchDetailPage />} />
+              <Route path="bilhetes/:home/:away" element={<MatchTicketsPage />} />
               <Route path="album" element={<AlbumPage />} />
               <Route path="jogos" element={<SchedulePage />} />
               <Route path="amistosos" element={<FriendliesPage />} />
               <Route path="ao-vivo" element={<LivePage />} />
+              <Route path="ao-vivo/:eventId/painel" element={<LiveDashboardPage />} />
+              <Route path="ao-vivo/:eventId" element={<LiveInPlayPage />} />
               <Route path="convocacoes" element={<SquadsPage />} />
               <Route path="grupos" element={<WcGroupsPage />} />
               <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
+              <Route path="carteira" element={<CarteiraPage />} />
+              <Route path="performance" element={<BetPerformancePage />} />
+              <Route path="modelos" element={<ModelBenchmarkPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

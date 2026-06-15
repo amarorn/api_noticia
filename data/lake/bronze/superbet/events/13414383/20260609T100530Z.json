@@ -1,0 +1,67 @@
+{
+  "event_id": 13414383,
+  "home_team": "Indonésia (F)",
+  "away_team": "Cambódia (F)",
+  "event_name": "Indonésia (F)·Cambódia (F)",
+  "utc_date": "2026-06-09T08:30:00Z",
+  "betradar_id": "71732822",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 1,
+    "minute": 75,
+    "stoppage_time": null,
+    "home_corners": 2,
+    "away_corners": 3,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 4.2,
+    "X": 1.47,
+    "2": 5.15
+  },
+  "h2h_implied": {
+    "1": 0.21401009201543483,
+    "X": 0.6114574057583853,
+    "2": 0.17453250222617986
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 2.22,
+      "Menos de 2.5": 1.53
+    },
+    "3.5": {
+      "Mais de 3.5": 6.5,
+      "Menos de 3.5": 1.03
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.408,
+      "Menos de 2.5": 0.5920000000000001
+    },
+    "3.5": {
+      "Mais de 3.5": 0.13678618857901728,
+      "Menos de 3.5": 0.8632138114209829
+    }
+  },
+  "corners": {},
+  "corners_implied": {},
+  "combo_markets": {},
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 3.85,
+    "away": 4.5
+  },
+  "generosity_probs": {
+    "home": 0.20257,
+    "away": 0.158362
+  },
+  "raw_market_count": 15,
+  "captured_at": "2026-06-09T10:05:30.954582+00:00"
+}

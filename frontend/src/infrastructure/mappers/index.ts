@@ -27,6 +27,8 @@ import type {
   WcFriendlyMatch,
   WcSimulation,
   WcSimulationLineupPlayer,
+  SuperbetLiveAdvice,
+  SuperbetLiveEvent,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -171,6 +173,14 @@ interface ApiWcPrediction {
   context: string;
   h2h_summary: string;
   model_breakdown: ApiModelBreakdown;
+  max_prob_outcome?: string | null;
+  max_prob?: number | null;
+  prob_margin?: number | null;
+  uncertainty?: string | null;
+  pick_reason?: string | null;
+  actual_score?: string | null;
+  actual_outcome?: string | null;
+  prediction_hit?: boolean | null;
 }
 
 interface ApiWcRound {
@@ -428,6 +438,14 @@ function mapWcPrediction(raw: ApiWcPrediction): WcPrediction {
     context: raw.context,
     h2hSummary: raw.h2h_summary,
     modelBreakdown: mapModelBreakdown(raw.model_breakdown),
+    maxProbOutcome: raw.max_prob_outcome ? mapOutcome(raw.max_prob_outcome) : null,
+    maxProb: raw.max_prob ?? null,
+    probMargin: raw.prob_margin ?? null,
+    uncertainty: (raw.uncertainty as WcPrediction["uncertainty"]) ?? null,
+    pickReason: (raw.pick_reason as WcPrediction["pickReason"]) ?? null,
+    actualScore: raw.actual_score ?? null,
+    actualOutcome: raw.actual_outcome ? mapOutcome(raw.actual_outcome) : null,
+    predictionHit: raw.prediction_hit ?? null,
   };
 }
 
@@ -497,6 +515,11 @@ interface ApiWcScheduleMatch {
   kickoff: string | null;
   venue: string | null;
   city: string | null;
+  prediction?: "1" | "X" | "2" | null;
+  confidence?: number | null;
+  prob_home?: number | null;
+  prob_draw?: number | null;
+  prob_away?: number | null;
 }
 
 interface ApiWcSchedule {
@@ -507,6 +530,11 @@ interface ApiWcSchedule {
   matchdays: number[];
   matches: ApiWcScheduleMatch[];
   total_matches: number;
+  predictions_summary?: {
+    loaded: number;
+    distribution: Record<string, number>;
+    draws: number;
+  } | null;
 }
 
 function mapWcScheduleMatch(raw: ApiWcScheduleMatch): WcScheduleMatch {
@@ -520,6 +548,11 @@ function mapWcScheduleMatch(raw: ApiWcScheduleMatch): WcScheduleMatch {
     kickoff: raw.kickoff,
     venue: raw.venue,
     city: raw.city,
+    prediction: raw.prediction ?? null,
+    confidence: raw.confidence ?? null,
+    probHome: raw.prob_home ?? null,
+    probDraw: raw.prob_draw ?? null,
+    probAway: raw.prob_away ?? null,
   };
 }
 
@@ -664,6 +697,13 @@ export function mapWcSchedule(raw: ApiWcSchedule): WcSchedule {
     matchdays: raw.matchdays,
     matches: raw.matches.map(mapWcScheduleMatch),
     totalMatches: raw.total_matches,
+    predictionsSummary: raw.predictions_summary
+      ? {
+          loaded: raw.predictions_summary.loaded,
+          distribution: raw.predictions_summary.distribution,
+          draws: raw.predictions_summary.draws,
+        }
+      : null,
   };
 }
 
@@ -760,6 +800,8 @@ export function mapWcGroupStandings(raw: {
   competition: string;
   simulated: boolean;
   note: string;
+  as_of: string;
+  n_real_results: number;
   groups: {
     group: string;
     standings: {
@@ -773,6 +815,9 @@ export function mapWcGroupStandings(raw: {
       ga: number;
       gd: number;
       points: number;
+      real_points: number;
+      real_played: number;
+      real_gd: number;
     }[];
   }[];
 }): WcGroupStandings {
@@ -781,9 +826,16 @@ export function mapWcGroupStandings(raw: {
     competition: raw.competition,
     simulated: raw.simulated,
     note: raw.note,
+    asOf: raw.as_of,
+    nRealResults: raw.n_real_results,
     groups: raw.groups.map((g) => ({
       group: g.group,
-      standings: g.standings.map((r) => ({ ...r })),
+      standings: g.standings.map((r) => ({
+        ...r,
+        realPoints: r.real_points ?? 0,
+        realPlayed: r.real_played ?? 0,
+        realGd: r.real_gd ?? 0,
+      })),
     })),
   };
 }
@@ -967,6 +1019,13 @@ interface ApiSuperbetLiveEvent {
   market_count: number;
   h2h_odds: Record<string, number>;
   captured_at: string;
+  bet_rank_score?: number | null;
+  bet_tier?: string | null;
+  bet_label?: string | null;
+  bet_palpite?: string | null;
+  bet_opportunity_count?: number | null;
+  bet_top_ev?: number | null;
+  bet_top_label?: string | null;
 }
 
 interface ApiSuperbetLiveFeed {
@@ -974,6 +1033,674 @@ interface ApiSuperbetLiveFeed {
   sport_id: number | null;
   events: ApiSuperbetLiveEvent[];
   captured_at: string;
+}
+
+interface ApiSuperbetLiveAdvice {
+  home_team: string;
+  away_team: string;
+  minute: number;
+  current_score: string | null;
+  period_label: string | null;
+  status: string | null;
+  is_finished: boolean;
+  is_live: boolean;
+  superbet_event_id: number;
+  betradar_id: string | null;
+  captured_at: string | null;
+  raw_market_count: number;
+  h2h_odds: Record<string, number>;
+  h2h_implied: Record<string, number>;
+  h2h_overround?: number | null;
+  generosity_probs?: Record<string, number>;
+  market_benchmark?: {
+    h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
+    totals?: Record<string, { market_over: number; model_over: number; edge_over: number }>;
+  } | null;
+  strategy?: Record<string, unknown> | null;
+  cashout: Record<string, unknown> | null;
+  aportes: Array<Record<string, unknown>>;
+  inplay_summary: Record<string, unknown>;
+  btts_odds?: Record<string, number>;
+  next_goal_odds?: Record<string, number>;
+  analysis_coverage?: {
+    h2h?: boolean;
+    totals?: boolean;
+    btts?: boolean;
+    next_goal?: boolean;
+    combos?: string[];
+    first_half?: boolean;
+    second_half?: boolean;
+  } | null;
+  confidence?: {
+    score: number;
+    label: string;
+    reason: string;
+  } | null;
+  hedge_report?: Record<string, unknown> | null;
+  against_model_alerts?: Array<Record<string, unknown>> | null;
+  bet_guardrails?: Record<string, unknown> | null;
+  half_markets?: Record<string, Record<string, unknown>>;
+  first_half_totals?: Record<string, Record<string, number>>;
+  second_half_totals?: Record<string, Record<string, number>>;
+  half_tickets?: Record<string, unknown> | null;
+  viable_2h_markets?: Record<string, unknown> | null;
+  halftime_report?: Record<string, unknown> | null;
+  trend_report?: Record<string, unknown> | null;
+  live_stats?: Record<string, unknown> | null;
+}
+
+function mapPatternAccuracy(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  return {
+    score: Number(raw.score ?? 0),
+    label: String(raw.label ?? "sem_dados"),
+    reason: String(raw.reason ?? ""),
+    homeHitRate: raw.home_hit_rate != null ? Number(raw.home_hit_rate) : null,
+    awayHitRate: raw.away_hit_rate != null ? Number(raw.away_hit_rate) : null,
+    patternCount: Number(raw.pattern_count ?? 0),
+  };
+}
+
+function mapComboLeg(raw: Record<string, unknown>) {
+  return {
+    rank: Number(raw.rank ?? 0),
+    role: String(raw.role ?? ""),
+    label: String(raw.label ?? ""),
+    stat: String(raw.stat ?? ""),
+    period: String(raw.period ?? ""),
+    direction: String(raw.direction ?? ""),
+    line: raw.line != null ? Number(raw.line) : null,
+    hitRate: Number(raw.hit_rate ?? 0),
+    hits: Number(raw.hits ?? 0),
+    total: Number(raw.total ?? 10),
+    patternRef: String(raw.pattern_ref ?? ""),
+    score: Number(raw.score ?? 0),
+    availableOnBook: raw.available_on_book != null ? Boolean(raw.available_on_book) : undefined,
+    bookChecked: raw.book_checked != null ? Boolean(raw.book_checked) : undefined,
+    marketOdd: raw.market_odd != null ? Number(raw.market_odd) : null,
+    impliedProb: raw.implied_prob != null ? Number(raw.implied_prob) : null,
+    expectedValue: raw.expected_value != null ? Number(raw.expected_value) : null,
+    edgePp: raw.edge_pp != null ? Number(raw.edge_pp) : null,
+    superbetMarket: raw.superbet_market != null ? String(raw.superbet_market) : null,
+    superbetPick: raw.superbet_pick != null ? String(raw.superbet_pick) : null,
+    lineAdjustment: raw.line_adjustment != null ? String(raw.line_adjustment) : null,
+    fairOdd: raw.fair_odd != null ? Number(raw.fair_odd) : null,
+  };
+}
+
+function mapInplayTicketLeg(raw: Record<string, unknown>) {
+  return {
+    market: String(raw.market ?? ""),
+    outcome: String(raw.outcome ?? ""),
+    label: String(raw.label ?? ""),
+    modelProb: Number(raw.model_prob ?? 0),
+    marketOdd: Number(raw.market_odd ?? 0),
+    expectedValue: Number(raw.expected_value ?? 0),
+    edgePp: Number(raw.edge_pp ?? 0),
+    suggestedStakePct:
+      raw.suggested_stake_pct != null ? Number(raw.suggested_stake_pct) : undefined,
+    suggestedStakeValue:
+      raw.suggested_stake_value != null ? Number(raw.suggested_stake_value) : undefined,
+  };
+}
+
+function mapInplayTicketCombo(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id ?? ""),
+    title: String(raw.title ?? ""),
+    legs: ((raw.legs as Array<Record<string, unknown>>) ?? []).map(mapInplayTicketLeg),
+    combinedOdd: Number(raw.combined_odd ?? 0),
+    combinedProb: Number(raw.combined_prob ?? 0),
+    combinedEv: Number(raw.combined_ev ?? 0),
+    suggestedStakePct: Number(raw.suggested_stake_pct ?? 0),
+    suggestedStakeValue: Number(raw.suggested_stake_value ?? 0),
+    notes: ((raw.notes as string[]) ?? []).map(String),
+  };
+}
+
+function mapHalfTickets(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const mapPeriod = (block: Record<string, unknown> | undefined) => ({
+    available: Boolean(block?.available),
+    closed: Boolean(block?.closed),
+    closedReason: block?.closed_reason != null ? String(block.closed_reason) : null,
+    singles: ((block?.singles as Array<Record<string, unknown>>) ?? []).map(mapInplayTicketLeg),
+    combos: ((block?.combos as Array<Record<string, unknown>>) ?? []).map(mapInplayTicketCombo),
+  });
+  return {
+    firstHalf: mapPeriod(raw.first_half as Record<string, unknown> | undefined),
+    secondHalf: mapPeriod(raw.second_half as Record<string, unknown> | undefined),
+    mixedCombos: ((raw.mixed_combos as Array<Record<string, unknown>>) ?? []).map(
+      mapInplayTicketCombo,
+    ),
+  };
+}
+
+function mapViable2hMarkets(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const chart = (raw.chart as Record<string, unknown>) ?? {};
+  return {
+    available: Boolean(raw.available),
+    closed: Boolean(raw.closed),
+    closedReason: raw.closed_reason != null ? String(raw.closed_reason) : null,
+    minute: Number(raw.minute ?? 0),
+    minutesRemaining: Number(raw.minutes_remaining ?? 0),
+    remainingFraction: Number(raw.remaining_fraction ?? 0),
+    block2hMinute: Number(raw.block_2h_minute ?? 82),
+    minModelProb: Number(raw.min_model_prob ?? 0.06),
+    markets: ((raw.markets as Array<Record<string, unknown>>) ?? []).map((m) => ({
+      market: String(m.market ?? ""),
+      outcome: String(m.outcome ?? "yes"),
+      label: String(m.label ?? ""),
+      shortLabel: String(m.short_label ?? m.label ?? ""),
+      category: String(m.category ?? "other"),
+      categoryLabel: String(m.category_label ?? m.category ?? ""),
+      modelProb: Number(m.model_prob ?? 0),
+      marketOdd: Number(m.market_odd ?? 0),
+      impliedProb: Number(m.implied_prob ?? 0),
+      expectedValue: Number(m.expected_value ?? 0),
+      edgePp: Number(m.edge_pp ?? 0),
+      meetsThreshold: Boolean(m.meets_threshold),
+      viabilityScore: Number(m.viability_score ?? 0),
+    })),
+    chart: {
+      categories: ((chart.categories as string[]) ?? []).map(String),
+      probabilitiesPct: ((chart.probabilities_pct as number[]) ?? []).map(Number),
+      evPct: ((chart.ev_pct as number[]) ?? []).map(Number),
+    },
+  };
+}
+
+export function mapComboTicket(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const accuracyRaw = raw.accuracy as Record<string, unknown> | null | undefined;
+  return {
+    available: Boolean(raw.available),
+    title: String(raw.title ?? ""),
+    reason: raw.reason != null ? String(raw.reason) : null,
+    accuracy: mapPatternAccuracy(accuracyRaw),
+    mainBets: ((raw.main_bets as Array<Record<string, unknown>>) ?? []).map(mapComboLeg),
+    reserveBets: ((raw.reserve_bets as Array<Record<string, unknown>>) ?? []).map(mapComboLeg),
+    strategyNotes: ((raw.strategy_notes as string[]) ?? []).map(String),
+    suggestedStakePct: Number(raw.suggested_stake_pct ?? 0),
+    suggestedStakeValue: Number(raw.suggested_stake_value ?? 0),
+    combinedHitRateEstimate: Number(raw.combined_hit_rate_estimate ?? 0),
+    comboOdd: raw.combo_odd != null ? Number(raw.combo_odd) : null,
+    comboEv: raw.combo_ev != null ? Number(raw.combo_ev) : null,
+    superbetCapturedAt: raw.superbet_captured_at != null ? String(raw.superbet_captured_at) : null,
+      bookCoverage: raw.book_coverage
+        ? {
+            mainAvailable: Number((raw.book_coverage as Record<string, unknown>).main_available ?? 0),
+            mainTotal: Number((raw.book_coverage as Record<string, unknown>).main_total ?? 0),
+            reserveAvailable: Number((raw.book_coverage as Record<string, unknown>).reserve_available ?? 0),
+            reserveTotal: Number((raw.book_coverage as Record<string, unknown>).reserve_total ?? 0),
+          }
+        : null,
+    last10Analysis: mapComboLast10Analysis(raw.last10_analysis as Record<string, unknown> | null),
+  };
+}
+
+function mapComboLast10Analysis(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const legs = ((raw.legs as Array<Record<string, unknown>>) ?? []).map((leg) => ({
+    rank: leg.rank != null ? Number(leg.rank) : null,
+    label: String(leg.label ?? ""),
+    stat: String(leg.stat ?? ""),
+    period: String(leg.period ?? ""),
+    direction: String(leg.direction ?? ""),
+    line: leg.line != null ? Number(leg.line) : null,
+    patternRef: leg.pattern_ref != null ? String(leg.pattern_ref) : null,
+    kxlCrossing: {
+      hits: Number((leg.kxl_crossing as Record<string, unknown> | undefined)?.hits ?? 0),
+      total: Number((leg.kxl_crossing as Record<string, unknown> | undefined)?.total ?? 0),
+      hitRate:
+        (leg.kxl_crossing as Record<string, unknown> | undefined)?.hit_rate != null
+          ? Number((leg.kxl_crossing as Record<string, unknown>).hit_rate)
+          : null,
+    },
+    sofascoreCrossing: {
+      hits:
+        (leg.sofascore_crossing as Record<string, unknown> | undefined)?.hits != null
+          ? Number((leg.sofascore_crossing as Record<string, unknown>).hits)
+          : null,
+      total:
+        (leg.sofascore_crossing as Record<string, unknown> | undefined)?.total != null
+          ? Number((leg.sofascore_crossing as Record<string, unknown>).total)
+          : null,
+      hitRate:
+        (leg.sofascore_crossing as Record<string, unknown> | undefined)?.hit_rate != null
+          ? Number((leg.sofascore_crossing as Record<string, unknown>).hit_rate)
+          : null,
+      evaluated:
+        (leg.sofascore_crossing as Record<string, unknown> | undefined)?.evaluated != null
+          ? Number((leg.sofascore_crossing as Record<string, unknown>).evaluated)
+          : null,
+    },
+    teams: ((leg.teams as Array<Record<string, unknown>>) ?? []).map((team) => ({
+      team: String(team.team ?? ""),
+      hits: Number(team.hits ?? 0),
+      total: Number(team.total ?? 0),
+      evaluated: Number(team.evaluated ?? 0),
+      hitRate: team.hit_rate != null ? Number(team.hit_rate) : null,
+      kxlPattern: team.kxl_pattern
+        ? {
+            team: String((team.kxl_pattern as Record<string, unknown>).team ?? ""),
+            hits: Number((team.kxl_pattern as Record<string, unknown>).hits ?? 0),
+            total: Number((team.kxl_pattern as Record<string, unknown>).total ?? 0),
+            hitRate:
+              (team.kxl_pattern as Record<string, unknown>).hit_rate != null
+                ? Number((team.kxl_pattern as Record<string, unknown>).hit_rate)
+                : null,
+            line:
+              (team.kxl_pattern as Record<string, unknown>).line != null
+                ? Number((team.kxl_pattern as Record<string, unknown>).line)
+                : null,
+            source: String((team.kxl_pattern as Record<string, unknown>).source ?? ""),
+          }
+        : null,
+      matches: ((team.matches as Array<Record<string, unknown>>) ?? []).map((m) => ({
+        eventId: Number(m.event_id ?? 0),
+        matchDate: m.match_date != null ? String(m.match_date) : null,
+        homeTeam: String(m.home_team ?? ""),
+        awayTeam: String(m.away_team ?? ""),
+        metricValue: m.metric_value != null ? Number(m.metric_value) : null,
+        hit: m.hit === true ? true : m.hit === false ? false : null,
+        detail: String(m.detail ?? ""),
+        incidentsSource: m.incidents_source != null ? String(m.incidents_source) : null,
+      })),
+    })),
+  }));
+  return {
+    windowSize: Number(raw.window_size ?? 10),
+    sourceNote: String(raw.source_note ?? ""),
+    incidentsFetched: Number(raw.incidents_fetched ?? 0),
+    legs,
+  };
+}
+
+function mapBetStrategy(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const opps = (raw.opportunities as Array<Record<string, unknown>>) ?? [];
+  const shields = (raw.shields as Array<Record<string, unknown>>) ?? [];
+  const cash = raw.cashout as Record<string, unknown> | null;
+  return {
+    posture: String(raw.posture ?? "neutro"),
+    maxNewExposurePct: Number(raw.max_new_exposure_pct ?? 0),
+    maxNewExposureValue: Number(raw.max_new_exposure_value ?? 0),
+    opportunityCount: Number(raw.opportunity_count ?? 0),
+    strongOpportunityCount: Number(raw.strong_opportunity_count ?? 0),
+    minEdgeThreshold: Number(raw.min_edge_threshold ?? 0),
+    waitReason: String(raw.wait_reason ?? ""),
+    watchList: ((raw.watch_list as Array<Record<string, unknown>>) ?? []).map((w) => ({
+      market: String(w.market),
+      outcome: String(w.outcome),
+      label: String(w.label),
+      modelProb: Number(w.model_prob),
+      marketOdd: Number(w.market_odd),
+      expectedValue: Number(w.expected_value),
+      edgePp: Number(w.edge_pp),
+      meetsThreshold: Boolean(w.meets_threshold),
+    })),
+    marketScan: ((raw.market_scan as Array<Record<string, unknown>>) ?? []).map((row) => ({
+      market: String(row.market),
+      outcome: String(row.outcome),
+      label: String(row.label),
+      modelProb: Number(row.model_prob),
+      marketOdd: Number(row.market_odd),
+      impliedProb: Number(row.implied_prob),
+      expectedValue: Number(row.expected_value),
+      edgePp: Number(row.edge_pp),
+      suggestedStakePct: Number(row.suggested_stake_pct),
+      suggestedStakeValue: Number(row.suggested_stake_value),
+      meetsThreshold: Boolean(row.meets_threshold),
+    })),
+    opportunities: opps.map((op) => ({
+      rank: Number(op.rank),
+      market: String(op.market),
+      outcome: String(op.outcome),
+      label: String(op.label),
+      tier: String(op.tier),
+      modelProb: Number(op.model_prob),
+      marketOdd: Number(op.market_odd),
+      impliedProb: op.implied_prob != null ? Number(op.implied_prob) : undefined,
+      expectedValue: Number(op.expected_value),
+      edgePp: Number(op.edge_pp),
+      suggestedStakePct: Number(op.suggested_stake_pct),
+      suggestedStakeValue: Number(op.suggested_stake_value),
+      action: String(op.action),
+      timing: op.timing != null ? String(op.timing) : undefined,
+      timingReason: op.timing_reason != null ? String(op.timing_reason) : undefined,
+      fundamentacao: op.fundamentacao != null ? String(op.fundamentacao) : undefined,
+    })),
+    shields: shields.map((s) => ({
+      action: String(s.action),
+      priority: String(s.priority),
+      title: String(s.title),
+      reason: String(s.reason),
+      market: s.market != null ? String(s.market) : undefined,
+      outcome: s.outcome != null ? String(s.outcome) : undefined,
+      odd: s.odd != null ? Number(s.odd) : undefined,
+      expectedValue: s.expected_value != null ? Number(s.expected_value) : undefined,
+    })),
+    rules: ((raw.rules as string[]) ?? []).map(String),
+    cashout: cash
+      ? {
+          action: String(cash.action),
+          confidence: Number(cash.confidence),
+          reason: String(cash.reason),
+        }
+      : null,
+    patternAccuracy: mapPatternAccuracy(raw.pattern_accuracy as Record<string, unknown> | null),
+    comboTicket: mapComboTicket(raw.combo_ticket as Record<string, unknown> | null),
+  };
+}
+
+function mapLiveStats(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  return {
+    source: raw.source != null ? String(raw.source) : null,
+    possessionSource:
+      raw.possession_source != null ? String(raw.possession_source) : null,
+    sofascoreEventId: raw.sofascore_event_id != null ? Number(raw.sofascore_event_id) : null,
+    sofascoreAvailable: Boolean(raw.sofascore_available),
+    homeXg: raw.home_xg != null ? Number(raw.home_xg) : null,
+    awayXg: raw.away_xg != null ? Number(raw.away_xg) : null,
+    homePossessionPct:
+      raw.home_possession_pct != null ? Number(raw.home_possession_pct) : null,
+    awayPossessionPct:
+      raw.away_possession_pct != null ? Number(raw.away_possession_pct) : null,
+    homeShotsOnTarget:
+      raw.home_shots_on_target != null ? Number(raw.home_shots_on_target) : null,
+    awayShotsOnTarget:
+      raw.away_shots_on_target != null ? Number(raw.away_shots_on_target) : null,
+    homeCorners: raw.home_corners != null ? Number(raw.home_corners) : null,
+    awayCorners: raw.away_corners != null ? Number(raw.away_corners) : null,
+    homeYellowCards:
+      raw.home_yellow_cards != null ? Number(raw.home_yellow_cards) : null,
+    awayYellowCards:
+      raw.away_yellow_cards != null ? Number(raw.away_yellow_cards) : null,
+    warnings: ((raw.warnings as string[]) ?? []).map(String),
+  };
+}
+
+function mapTrendReport(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const advice = raw.position_advice as Record<string, unknown> | null | undefined;
+  return {
+    eventId: Number(raw.event_id ?? 0),
+    homeTeam: String(raw.home_team ?? ""),
+    awayTeam: String(raw.away_team ?? ""),
+    currentScore: raw.current_score != null ? String(raw.current_score) : null,
+    minute: Number(raw.minute ?? 0),
+    dominantTrend: raw.dominant_trend != null ? String(raw.dominant_trend) : null,
+    signals: ((raw.signals as Array<Record<string, unknown>>) ?? []).map((s) => ({
+      type: String(s.type ?? ""),
+      direction: String(s.direction ?? ""),
+      strength: Number(s.strength ?? 0),
+      description: String(s.description ?? ""),
+      minute: s.minute != null ? Number(s.minute) : null,
+    })),
+    positionAdvice: advice
+      ? {
+          action: String(advice.action ?? ""),
+          urgency: String(advice.urgency ?? ""),
+          reasoning: String(advice.reasoning ?? ""),
+          repositionTo: advice.reposition_to != null ? String(advice.reposition_to) : null,
+          repositionDetail:
+            advice.reposition_detail != null ? String(advice.reposition_detail) : null,
+          repositionOdd: advice.reposition_odd != null ? Number(advice.reposition_odd) : null,
+          confidence: Number(advice.confidence ?? 0),
+        }
+      : null,
+    bestOpportunities: ((raw.best_opportunities as Array<Record<string, unknown>>) ?? []).map(
+      (item) => ({ ...item }),
+    ),
+  };
+}
+
+function mapHalftimeReport(raw: Record<string, unknown>) {
+  const frozen = (raw.frozen_stats as Record<string, unknown>) ?? {};
+  const goal = (raw.goal_adjustment as Record<string, unknown>) ?? {};
+  const corners = (raw.corners as Record<string, unknown>) ?? {};
+  const cards = (raw.cards as Record<string, unknown>) ?? {};
+  return {
+    applied: Boolean(raw.applied),
+    summary: String(raw.summary ?? ""),
+    frozenStats: {
+      htHomeScore: Number(frozen.ht_home_score ?? 0),
+      htAwayScore: Number(frozen.ht_away_score ?? 0),
+      homeCorners1h: Number(frozen.home_corners_1h ?? 0),
+      awayCorners1h: Number(frozen.away_corners_1h ?? 0),
+      homeYellows1h: Number(frozen.home_yellows_1h ?? 0),
+      awayYellows1h: Number(frozen.away_yellows_1h ?? 0),
+      frozenAt: String(frozen.frozen_at ?? ""),
+    },
+    goalAdjustment: {
+      home2hFactor: Number(goal.home_2h_factor ?? 1),
+      away2hFactor: Number(goal.away_2h_factor ?? 1),
+      reasons: ((goal.reasons as string[]) ?? []).map(String),
+    },
+    corners: {
+      observed1hHome: Number(corners.observed_1h_home ?? 0),
+      observed1hAway: Number(corners.observed_1h_away ?? 0),
+      expected2hHome: Number(corners.expected_2h_home ?? 0),
+      expected2hAway: Number(corners.expected_2h_away ?? 0),
+      expectedFtTotal: Number(corners.expected_ft_total ?? 0),
+      probHomeMoreCorners:
+        corners.prob_home_more_corners != null
+          ? Number(corners.prob_home_more_corners)
+          : undefined,
+    },
+    cards: {
+      observed1hTotal: Number(cards.observed_1h_total ?? 0),
+      expected2hTotal: Number(cards.expected_2h_total ?? 0),
+      expectedFtTotal: Number(cards.expected_ft_total ?? 0),
+    },
+    cornerLineProbs: (raw.corner_line_probs as Record<string, number>) ?? {},
+    cardLineProbs: (raw.card_line_probs as Record<string, number>) ?? {},
+  };
+}
+
+export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
+  const cash = raw.cashout;
+  const summary = raw.inplay_summary ?? {};
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    minute: raw.minute,
+    currentScore: raw.current_score,
+    periodLabel: raw.period_label,
+    status: raw.status,
+    isFinished: raw.is_finished,
+    isLive: raw.is_live,
+    superbetEventId: raw.superbet_event_id,
+    betradarId: raw.betradar_id,
+    capturedAt: raw.captured_at,
+    rawMarketCount: raw.raw_market_count,
+    h2hOdds: raw.h2h_odds ?? {},
+    h2hImplied: raw.h2h_implied ?? {},
+    h2hOverround: raw.h2h_overround ?? null,
+    generosityProbs: raw.generosity_probs ?? {},
+    confidence: raw.confidence
+      ? {
+          score: Number(raw.confidence.score ?? 0),
+          label: String(raw.confidence.label ?? ""),
+          reason: String(raw.confidence.reason ?? ""),
+          patternAccuracy: raw.confidence.pattern_accuracy
+            ? mapPatternAccuracy(raw.confidence.pattern_accuracy as Record<string, unknown>)
+            : undefined,
+        }
+      : null,
+    marketBenchmark: raw.market_benchmark
+      ? {
+          h2h: raw.market_benchmark.h2h,
+          totals: raw.market_benchmark.totals
+            ? Object.fromEntries(
+                Object.entries(raw.market_benchmark.totals).map(([k, v]) => [
+                  k,
+                  {
+                    marketOver: v.market_over,
+                    modelOver: v.model_over,
+                    edgeOver: v.edge_over,
+                  },
+                ]),
+              )
+            : undefined,
+        }
+      : null,
+    strategy: mapBetStrategy(raw.strategy as Record<string, unknown> | null),
+    cashout: cash
+      ? {
+          action: String(cash.action),
+          confidence: Number(cash.confidence),
+          reason: String(cash.reason),
+          currentModelProb: Number(cash.current_model_prob),
+          placedImpliedProb:
+            cash.placed_implied_prob != null ? Number(cash.placed_implied_prob) : undefined,
+          remainingEv: Number(cash.remaining_ev),
+          estimatedFairCashout: Number(cash.estimated_fair_cashout),
+          potentialReturn: Number(cash.potential_return),
+        }
+      : null,
+    aportes: (raw.aportes ?? []).map((a) => ({
+      label: String(a.label),
+      market: String(a.market),
+      outcome: String(a.outcome),
+      modelProb: Number(a.model_prob),
+      marketOdd: Number(a.market_odd),
+      expectedValue: Number(a.expected_value),
+      edgePp: Number(a.edge_pp),
+      suggestedStakePct: Number(a.suggested_stake_pct),
+      suggestedStakeValue: Number(a.suggested_stake_value),
+      action: String(a.action),
+    })),
+    inplaySummary: {
+      probFinalHome: Number(summary.prob_final_home ?? 0),
+      probFinalDraw: Number(summary.prob_final_draw ?? 0),
+      probFinalAway: Number(summary.prob_final_away ?? 0),
+      probHtHome: summary.prob_ht_home as number | undefined,
+      probHtDraw: summary.prob_ht_draw as number | undefined,
+      probHtAway: summary.prob_ht_away as number | undefined,
+      probShHome: summary.prob_sh_home as number | undefined,
+      probShDraw: summary.prob_sh_draw as number | undefined,
+      probShAway: summary.prob_sh_away as number | undefined,
+      over25: summary.over_2_5 as number | undefined,
+      btts: summary.btts as number | undefined,
+      probNextGoalHome: summary.prob_next_goal_home as number | undefined,
+      probNextGoalAway: summary.prob_next_goal_away as number | undefined,
+      probNoMoreGoals: summary.prob_no_more_goals as number | undefined,
+      topFinalScores: summary.top_final_scores as Record<string, number> | undefined,
+      htCorrectScores: summary.ht_correct_scores as Record<string, number> | undefined,
+      shCorrectScores: summary.sh_correct_scores as Record<string, number> | undefined,
+      htExactTotals: summary.ht_exact_totals as Record<string, number> | undefined,
+      shExactTotals: summary.sh_exact_totals as Record<string, number> | undefined,
+      htLineProbs: summary.ht_line_probs as Record<string, number> | undefined,
+      secondHalfLineProbs: summary.second_half_line_probs as Record<string, number> | undefined,
+      htHandicapProbs: summary.ht_handicap_probs as Record<string, number> | undefined,
+      shHandicapProbs: summary.sh_handicap_probs as Record<string, number> | undefined,
+      ftHandicapProbs: summary.ft_handicap_probs as Record<string, number> | undefined,
+      ftAsianHandicapProbs: summary.ft_asian_handicap_probs as Record<string, number> | undefined,
+      cornerLineProbs: summary.corner_line_probs as Record<string, number> | undefined,
+      cardLineProbs: summary.card_line_probs as Record<string, number> | undefined,
+      halftimeAdjustment: summary.halftime_adjustment
+        ? {
+            applied: Boolean(
+              (summary.halftime_adjustment as Record<string, unknown>).applied,
+            ),
+            home2hFactor: Number(
+              (summary.halftime_adjustment as Record<string, unknown>).home_2h_factor ?? 1,
+            ),
+            away2hFactor: Number(
+              (summary.halftime_adjustment as Record<string, unknown>).away_2h_factor ?? 1,
+            ),
+            reasons: (
+              ((summary.halftime_adjustment as Record<string, unknown>).reasons as string[]) ??
+              []
+            ).map(String),
+          }
+        : undefined,
+    },
+    halfMarkets: (raw.half_markets as SuperbetLiveAdvice["halfMarkets"]) ?? undefined,
+    firstHalfTotals: raw.first_half_totals ?? undefined,
+    secondHalfTotals: raw.second_half_totals ?? undefined,
+    bttsOdds: raw.btts_odds ?? {},
+    nextGoalOdds: raw.next_goal_odds ?? {},
+    analysisCoverage: raw.analysis_coverage
+      ? {
+          h2h: Boolean(raw.analysis_coverage.h2h),
+          totals: Boolean(raw.analysis_coverage.totals),
+          btts: Boolean(raw.analysis_coverage.btts),
+          nextGoal: Boolean(raw.analysis_coverage.next_goal),
+          combos: ((raw.analysis_coverage.combos as string[]) ?? []).map(String),
+          firstHalf: Boolean(raw.analysis_coverage.first_half),
+          secondHalf: Boolean(raw.analysis_coverage.second_half),
+          halftimeAdjust: Boolean(raw.analysis_coverage.halftime_adjust),
+          corners: Boolean(raw.analysis_coverage.corners),
+          yellowCards: Boolean(raw.analysis_coverage.yellow_cards),
+        }
+      : null,
+    halftimeReport: raw.halftime_report
+      ? mapHalftimeReport(raw.halftime_report as Record<string, unknown>)
+      : null,
+    hedgeReport: (raw.hedge_report as SuperbetLiveAdvice["hedgeReport"]) ?? null,
+    againstModelAlerts: ((raw.against_model_alerts as Array<Record<string, unknown>>) ?? []).map(
+      (a) => ({
+        betId: a.bet_id != null ? String(a.bet_id) : null,
+        market: String(a.market ?? "h2h"),
+        betOutcome: mapOutcome(String(a.bet_outcome ?? "X")),
+        betOutcomeLabel: String(a.bet_outcome_label ?? ""),
+        stake: Number(a.stake ?? 0),
+        oddsPlaced: a.odds_placed != null ? Number(a.odds_placed) : null,
+        pregamePalpite: mapOutcome(String(a.pregame_palpite ?? "X")),
+        pregameProb: Number(a.pregame_prob ?? 0),
+        pregameUncertainty: a.pregame_uncertainty != null ? String(a.pregame_uncertainty) : null,
+        inplayPalpite: mapOutcome(String(a.inplay_palpite ?? "X")),
+        inplayProb: Number(a.inplay_prob ?? 0),
+        inplayProbs: {
+          "1": Number((a.inplay_probs as Record<string, number> | undefined)?.["1"] ?? 0),
+          X: Number((a.inplay_probs as Record<string, number> | undefined)?.X ?? 0),
+          "2": Number((a.inplay_probs as Record<string, number> | undefined)?.["2"] ?? 0),
+        },
+        severity: (String(a.severity ?? "medium") as "critical" | "high" | "medium"),
+        againstPregame: Boolean(a.against_pregame),
+        againstInplay: Boolean(a.against_inplay),
+        message: String(a.message ?? ""),
+      }),
+    ),
+    betGuardrails: raw.bet_guardrails
+      ? {
+          enabled: Boolean(raw.bet_guardrails.enabled),
+          blockNewBets: Boolean(raw.bet_guardrails.block_new_bets),
+          blockNewBets2h: Boolean(raw.bet_guardrails.block_new_bets_2h),
+          allow2hSuggestions: Boolean(raw.bet_guardrails.allow_2h_suggestions),
+          blockMinute: Number(raw.bet_guardrails.block_minute ?? 45),
+          block2hMinute: Number(raw.bet_guardrails.block_2h_minute ?? 82),
+          blockReason:
+            raw.bet_guardrails.block_reason != null
+              ? String(raw.bet_guardrails.block_reason)
+              : null,
+          oneBetPerMarket: Boolean(raw.bet_guardrails.one_bet_per_market),
+          pregamePalpite: raw.bet_guardrails.pregame_palpite
+            ? mapOutcome(String(raw.bet_guardrails.pregame_palpite))
+            : null,
+          pregameProb:
+            raw.bet_guardrails.pregame_prob != null
+              ? Number(raw.bet_guardrails.pregame_prob)
+              : null,
+          inplayPalpite: raw.bet_guardrails.inplay_palpite
+            ? mapOutcome(String(raw.bet_guardrails.inplay_palpite))
+            : null,
+          inplayProb:
+            raw.bet_guardrails.inplay_prob != null
+              ? Number(raw.bet_guardrails.inplay_prob)
+              : null,
+        }
+      : null,
+    liveStats: mapLiveStats(raw.live_stats as Record<string, unknown> | null),
+    trendReport: mapTrendReport(raw.trend_report as Record<string, unknown> | null),
+    halfTickets: mapHalfTickets(raw.half_tickets as Record<string, unknown> | null),
+    viable2hMarkets: mapViable2hMarkets(raw.viable_2h_markets as Record<string, unknown> | null),
+  };
 }
 
 export function mapSuperbetLiveFeed(raw: ApiSuperbetLiveFeed) {
@@ -998,8 +1725,97 @@ export function mapSuperbetLiveFeed(raw: ApiSuperbetLiveFeed) {
       marketCount: event.market_count,
       h2hOdds: event.h2h_odds,
       capturedAt: event.captured_at,
+      betRankScore: event.bet_rank_score ?? null,
+      betTier: (event.bet_tier as SuperbetLiveEvent["betTier"]) ?? null,
+      betLabel: event.bet_label ?? null,
+      betPalpite: event.bet_palpite ?? null,
+      betOpportunityCount: event.bet_opportunity_count ?? null,
+      betTopEv: event.bet_top_ev ?? null,
+      betTopLabel: event.bet_top_label ?? null,
     })),
   };
 }
 
+interface ApiSuperbetEvent {
+  event_id: number;
+  home_team: string;
+  away_team: string;
+  is_live: boolean;
+  inplay: {
+    home_score?: number;
+    away_score?: number;
+    minute?: number;
+    period_label?: string | null;
+    status?: string | null;
+  } | null;
+  h2h_odds: Record<string, number>;
+  raw_market_count: number;
+  captured_at: string;
+}
+
+export function mapSuperbetEvent(raw: ApiSuperbetEvent) {
+  const inplay = raw.inplay;
+  const homeScore = inplay?.home_score ?? 0;
+  const awayScore = inplay?.away_score ?? 0;
+  return {
+    eventId: raw.event_id,
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    isLive: raw.is_live,
+    currentScore: inplay ? `${homeScore}x${awayScore}` : null,
+    minute: inplay?.minute ?? 0,
+    periodLabel: inplay?.period_label ?? null,
+    status: inplay?.status ?? null,
+    h2hOdds: raw.h2h_odds ?? {},
+    rawMarketCount: raw.raw_market_count ?? 0,
+    capturedAt: raw.captured_at,
+  };
+}
+
 export { mapWcPrediction };
+
+export function mapUserOpenBets(raw: {
+  count: number;
+  bets: Array<{
+    id: string;
+    event_name: string;
+    home_team: string;
+    away_team: string;
+    picks: Array<{ market: string; outcome: string; target_value?: string | null }>;
+    stake: number;
+    odds_placed: number;
+    potential_return?: number;
+    cashout_value?: number | null;
+    ticket_code?: string | null;
+    status: string;
+    source: string;
+    captured_at: string | null;
+    superbet_event_id?: number | null;
+    user_id?: string | null;
+  }>;
+}) {
+  return {
+    count: raw.count,
+    bets: raw.bets.map((b) => ({
+      id: b.id,
+      eventName: b.event_name,
+      homeTeam: b.home_team,
+      awayTeam: b.away_team,
+      picks: b.picks.map((p) => ({
+        market: p.market,
+        outcome: p.outcome,
+        targetValue: p.target_value ?? null,
+      })),
+      stake: b.stake,
+      oddsPlaced: b.odds_placed,
+      potentialReturn: b.potential_return != null ? b.potential_return : b.stake * b.odds_placed,
+      cashoutValue: b.cashout_value ?? null,
+      ticketCode: b.ticket_code ?? null,
+      status: b.status,
+      source: b.source,
+      capturedAt: b.captured_at,
+      superbetEventId: b.superbet_event_id ?? null,
+      userId: b.user_id ?? null,
+    })),
+  };
+}

@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-06-12T21:03:26.213492+00:00",
+  "live_ticks": {
+    "n_events": 43,
+    "n_ticks": 1000,
+    "brier_modelo": 0.09598,
+    "brier_mercado": 0.11928,
+    "delta_brier": -0.0233,
+    "accuracy_modelo": 0.801,
+    "brier_by_minute_bucket": {
+      "0-15": {
+        "brier": 0.20563,
+        "n": 27
+      },
+      "15-30": {
+        "brier": 0.07499,
+        "n": 58
+      },
+      "30-45": {
+        "brier": 0.1262,
+        "n": 276
+      },
+      "45-60": {
+        "brier": 0.12766,
+        "n": 177
+      },
+      "60-75": {
+        "brier": 0.11129,
+        "n": 174
+      },
+      "75-90": {
+        "brier": 0.0269,
+        "n": 246
+      },
+      "90+": {
+        "brier": 0.06349,
+        "n": 42
+      }
+    }
+  },
+  "walkforward": {
+    "eval_season": 2022,
+    "brier_overall": 0.124086,
+    "brier_by_minute": {
+      "15": 0.18806200943179235,
+      "30": 0.1728503589448657,
+      "45": 0.14350725205122342,
+      "60": 0.11706868691051232,
+      "75": 0.07971205436699683,
+      "85": 0.04331534889962441
+    },
+    "n_samples": 5796,
+    "n_games": 515,
+    "elapsed_seconds": 20.7
+  },
+  "reconciliation": {
+    "user_id": "jamarorn",
+    "n_bets": 324,
+    "n_matched": 152,
+    "n_high_confidence": 148,
+    "match_rate": 0.469,
+    "high_confidence_rate": 0.457,
+    "hit_rate": 0.289,
+    "pnl": -593.24,
+    "brier_avg": 0.64551
+  }
+}

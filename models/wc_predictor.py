@@ -8,12 +8,14 @@ from models.wc_collaborative import CollaborativeWcModel
 from models.dixon_coles_wc import DixonColesWcModel
 from models.logistic_wc import WcLogisticModel
 from models.poisson_wc import goal_model_factors
+from models.wc_calibrator import WcCalibrator
 from models.wc_draw_model import (
     WcDrawModel,
     _wc_draw_rates,
     apply_two_stage_probs,
     build_draw_training_rows,
     draw_features_to_vector,
+    resolve_wc_outcome,
 )
 from pipelines.wc_stats import group_pressure_from_features
 from pipelines.wc_baselines import (
@@ -26,6 +28,7 @@ from pipelines.wc_kxl_collision import (
     format_collision_context,
 )
 from config import settings
+from schemas.national_teams import normalize_national_team
 from models.wc_monte_carlo import simulate_match_mc
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_sofascore_features import (
@@ -170,8 +173,95 @@ def train_wc_predictor(
     )
     reporter.step_done("draw_model", {"samples": len(y_draw)})
     log.info("wc_train_step_done", step="draw_model", samples=len(y_draw))
+
+    # --- Fase 0.1: Calibrador Platt scaling sobre holdout ---
+    log.info("wc_train_step", step="calibrator")
+    reporter.step_start("calibrator")
+    predictor.calibrator = _train_calibrator(predictor, validation_season)
+    cal_metrics = predictor.calibrator.metrics
+    reporter.step_done("calibrator", {
+        "ece_before": cal_metrics.ece_before if cal_metrics else None,
+        "ece_after": cal_metrics.ece_after if cal_metrics else None,
+    })
+    log.info(
+        "wc_train_step_done",
+        step="calibrator",
+        ece_before=cal_metrics.ece_before if cal_metrics else None,
+        ece_after=cal_metrics.ece_after if cal_metrics else None,
+        n_samples=cal_metrics.n_samples if cal_metrics else 0,
+    )
+
     log.info("wc_train_complete")
     return predictor
+
+
+def _train_calibrator(predictor, validation_season: int) -> WcCalibrator:
+    """Treina o calibrador Platt sobre previsões do ensemble no holdout.
+
+    Gera previsões raw (Dixon-Coles + Logística blend) para cada jogo do
+    holdout e ajusta o calibrador sobre essas probabilidades vs resultado real.
+    """
+    import numpy as np
+    from pipelines.wc_holdout import wc_holdout_test_df
+
+    holdout_df = wc_holdout_test_df(predictor.fixtures, validation_season)
+    calibrator = WcCalibrator()
+
+    if holdout_df.empty or len(holdout_df) < 20:
+        # Sem dados suficientes, retorna calibrador vazio (fallback = identidade)
+        return calibrator
+
+    probs_list: list[list[float]] = []
+    labels: list[str] = []
+
+    pw = predictor.collaborative.dixon_coles_weight
+    lw = predictor.collaborative.logistic_weight
+
+    for _, row in holdout_df.iterrows():
+        home = row["home_team"]
+        away = row["away_team"]
+        match_date = row["match_date"]
+        phase = row.get("phase", "group")
+
+        # Resultado real
+        hs = int(row["home_score"])
+        as_ = int(row["away_score"])
+        if hs > as_:
+            label = "1"
+        elif hs == as_:
+            label = "X"
+        else:
+            label = "2"
+
+        try:
+            poisson = predictor.dixon_coles.predict(
+                predictor.fixtures, home, away,
+                build_match_features(
+                    predictor.fixtures, home, away,
+                    before_date=match_date, phase=phase, is_neutral=True,
+                ),
+                before_date=match_date,
+            )
+            logistic = predictor.logistic.predict_match(
+                predictor.fixtures, home, away,
+                phase=phase, is_neutral=True, before_date=match_date,
+                include_sofascore=False,
+            )
+            ph = pw * poisson.prob_home + lw * logistic.prob_home
+            pd_ = pw * poisson.prob_draw + lw * logistic.prob_draw
+            pa = pw * poisson.prob_away + lw * logistic.prob_away
+            total = ph + pd_ + pa
+            probs_list.append([ph / total, pd_ / total, pa / total])
+            labels.append(label)
+        except Exception:
+            continue
+
+    if len(labels) < 20:
+        return calibrator
+
+    probs_arr = np.array(probs_list)
+    calibrator.fit(probs_arr, np.array(labels))
+    return calibrator
 
 
 class WcPredictor:
@@ -186,6 +276,7 @@ class WcPredictor:
         self.collab_metrics = trained.collab_metrics
         self.draw_model = trained.draw_model
         self._draw_metrics = trained._draw_metrics
+        self.calibrator = trained.calibrator
 
     @property
     def training_metrics(self) -> dict:
@@ -202,6 +293,8 @@ class WcPredictor:
         season: int | None = None,
         group_name: str | None = None,
     ) -> WcPrediction:
+        home_team = normalize_national_team(home_team)
+        away_team = normalize_national_team(away_team)
         cutoff = before_date or datetime.now(timezone.utc)
         features = build_match_features(
             self.fixtures,
@@ -306,7 +399,14 @@ class WcPredictor:
             hp.draw_prob_floor,
         )
         prob_home, prob_draw, prob_away = probs["1"], probs["X"], probs["2"]
-        prediction = max(probs, key=probs.get)  # type: ignore[assignment]
+
+        # Calibração pós-hoc (Fase 0.1): ajusta probabilidades se calibrador disponível
+        if hasattr(self, "calibrator") and self.calibrator and self.calibrator.is_fitted:
+            cal_probs = self.calibrator.calibrate_single(prob_home, prob_draw, prob_away)
+            prob_home, prob_draw, prob_away = cal_probs["1"], cal_probs["X"], cal_probs["2"]
+
+        probs = {"1": prob_home, "X": prob_draw, "2": prob_away}
+        prediction = resolve_wc_outcome(probs, phase=phase)  # type: ignore[assignment]
         confidence = probs[prediction]
 
         h2h_summary = (

@@ -1,0 +1,290 @@
+{
+  "event_id": 13108463,
+  "home_team": "Inglaterra",
+  "away_team": "Costa Rica",
+  "event_name": "Inglaterra·Costa Rica",
+  "utc_date": "2026-06-10T21:00:00Z",
+  "betradar_id": "69164886",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 0,
+    "minute": 45,
+    "stoppage_time": null,
+    "home_corners": 4,
+    "away_corners": 1,
+    "home_yellow_cards": 0,
+    "away_yellow_cards": 2,
+    "ht_home_score": 1,
+    "ht_away_score": 0,
+    "period_label": "HT",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 1.03,
+    "X": 18.0,
+    "2": 100.0
+  },
+  "h2h_implied": {
+    "1": 0.9367486495206969,
+    "X": 0.053602839389239876,
+    "2": 0.009648511090063178
+  },
+  "totals": {
+    "1.5": {
+      "Mais de 1.5": 1.18,
+      "Menos de 1.5": 4.3
+    },
+    "2.5": {
+      "Mais de 2.5": 1.95,
+      "Menos de 2.5": 1.83
+    },
+    "3.5": {
+      "Mais de 3.5": 3.8,
+      "Menos de 3.5": 1.22
+    },
+    "4.5": {
+      "Mais de 4.5": 8.25,
+      "Menos de 4.5": 1.04
+    },
+    "5.5": {
+      "Mais de 5.5": 17.0,
+      "Menos de 5.5": 1.002
+    },
+    "6.5": {
+      "Mais de 6.5": 30.0
+    },
+    "7.5": {
+      "Mais de 7.5": 40.0
+    }
+  },
+  "totals_implied": {
+    "1.5": {
+      "Mais de 1.5": 0.7846715328467153,
+      "Menos de 1.5": 0.21532846715328463
+    },
+    "2.5": {
+      "Mais de 2.5": 0.48412698412698413,
+      "Menos de 2.5": 0.5158730158730157
+    },
+    "3.5": {
+      "Mais de 3.5": 0.24302788844621515,
+      "Menos de 3.5": 0.756972111553785
+    },
+    "4.5": {
+      "Mais de 4.5": 0.11194833153928956,
+      "Menos de 4.5": 0.8880516684607104
+    },
+    "5.5": {
+      "Mais de 5.5": 0.0560799555802332,
+      "Menos de 5.5": 0.9439200444197667
+    },
+    "6.5": {
+      "Mais de 6.5": 1.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.0
+    }
+  },
+  "corners": {
+    "5.5": {
+      "Menos de 5.5": 18.0
+    },
+    "6.5": {
+      "Mais de 6.5": 1.03,
+      "Menos de 6.5": 8.0
+    },
+    "7.5": {
+      "Mais de 7.5": 1.16,
+      "Menos de 7.5": 4.2
+    },
+    "8.5": {
+      "Mais de 8.5": 1.4,
+      "Menos de 8.5": 2.65
+    },
+    "9.5": {
+      "Mais de 9.5": 1.83,
+      "Menos de 9.5": 1.9
+    },
+    "10.5": {
+      "Mais de 10.5": 2.5,
+      "Menos de 10.5": 1.47
+    },
+    "11.5": {
+      "Mais de 11.5": 3.4,
+      "Menos de 11.5": 1.25
+    },
+    "12.5": {
+      "Mais de 12.5": 4.85,
+      "Menos de 12.5": 1.12
+    },
+    "13.5": {
+      "Mais de 13.5": 7.0,
+      "Menos de 13.5": 1.05
+    },
+    "14.5": {
+      "Mais de 14.5": 10.0,
+      "Menos de 14.5": 1.007
+    },
+    "15.5": {
+      "Mais de 15.5": 14.0
+    },
+    "16.5": {
+      "Mais de 16.5": 20.0
+    }
+  },
+  "corners_implied": {
+    "5.5": {
+      "Menos de 5.5": 1.0
+    },
+    "6.5": {
+      "Mais de 6.5": 0.8859357696566998,
+      "Menos de 6.5": 0.11406423034330011
+    },
+    "7.5": {
+      "Mais de 7.5": 0.7835820895522388,
+      "Menos de 7.5": 0.21641791044776118
+    },
+    "8.5": {
+      "Mais de 8.5": 0.654320987654321,
+      "Menos de 8.5": 0.34567901234567905
+    },
+    "9.5": {
+      "Mais de 9.5": 0.5093833780160857,
+      "Menos de 9.5": 0.49061662198391415
+    },
+    "10.5": {
+      "Mais de 10.5": 0.37027707808564236,
+      "Menos de 10.5": 0.6297229219143576
+    },
+    "11.5": {
+      "Mais de 11.5": 0.26881720430107525,
+      "Menos de 11.5": 0.7311827956989247
+    },
+    "12.5": {
+      "Mais de 12.5": 0.18760469011725298,
+      "Menos de 12.5": 0.8123953098827471
+    },
+    "13.5": {
+      "Mais de 13.5": 0.13043478260869565,
+      "Menos de 13.5": 0.8695652173913044
+    },
+    "14.5": {
+      "Mais de 14.5": 0.09173478655767484,
+      "Menos de 14.5": 0.9082652134423251
+    },
+    "15.5": {
+      "Mais de 15.5": 1.0
+    },
+    "16.5": {
+      "Mais de 16.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.16058394160583941,
+      "Não": 0.8394160583941606
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.1090146750524109,
+      "Não": 0.8909853249475891
+    },
+    "ft_and_btts": {
+      "Inglaterra e Sim": 0.14139336034370345,
+      "Inglaterra e Não": 0.7922903812362693,
+      "Empate e Sim": 0.05406216719023955,
+      "Costa Rica e Sim": 0.012254091229787632
+    },
+    "ft_and_total_1_5": {
+      "1 e Mais de 1.5": 0.7310081223124701,
+      "X e Mais de 1.5": 0.053750597228858096,
+      "2 e Mais de 1.5": 0.012183468705207836,
+      "1 e Menos de 1.5": 0.2030578117534639
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.46831095847642834,
+      "X e Mais de 2.5": 0.012176084920387137,
+      "2 e Mais de 2.5": 0.012176084920387137,
+      "1 e Menos de 2.5": 0.4566031845145176,
+      "X e Menos de 2.5": 0.05073368716827973
+    }
+  },
+  "btts_odds": {
+    "yes": 4.85,
+    "no": 1.16
+  },
+  "next_goal_odds": {
+    "home": 1.33,
+    "away": 8.0
+  },
+  "generosity_probs": {
+    "home": 0.955884,
+    "away": 0.004068
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 1.25,
+        "Menos de 1.5": 3.6
+      },
+      "2.5": {
+        "Mais de 2.5": 2.17,
+        "Menos de 2.5": 1.65
+      },
+      "3.5": {
+        "Mais de 3.5": 4.5,
+        "Menos de 3.5": 1.16
+      },
+      "4.5": {
+        "Mais de 4.5": 10.0,
+        "Menos de 4.5": 1.02
+      }
+    },
+    "away": {
+      "0.5": {
+        "Mais de 0.5": 4.85,
+        "Menos de 0.5": 1.14
+      },
+      "1.5": {
+        "Mais de 1.5": 22.0
+      }
+    }
+  },
+  "first_half_totals": {
+    "1.5-50": {
+      "Primeiros 50 min - Mais de 1.5": 5.5,
+      "Primeiros 50 min - Menos de 1.5": 1.11
+    },
+    "1.5-55": {
+      "Primeiros 55 min - Mais de 1.5": 3.25,
+      "Primeiros 55 min - Menos de 1.5": 1.3
+    },
+    "1.5-60": {
+      "Primeiros 60 min - Mais de 1.5": 2.4,
+      "Primeiros 60 min - Menos de 1.5": 1.5
+    },
+    "1.5-65": {
+      "Primeiros 65 min - Mais de 1.5": 1.97,
+      "Primeiros 65 min - Menos de 1.5": 1.75
+    },
+    "1.5-70": {
+      "Primeiros 70 min - Mais de 1.5": 1.72,
+      "Primeiros 70 min - Menos de 1.5": 2.02
+    },
+    "1.5-75": {
+      "Primeiros 75 min - Mais de 1.5": 1.55,
+      "Primeiros 75 min - Menos de 1.5": 2.3
+    },
+    "1.5-80": {
+      "Primeiros 80 min - Mais de 1.5": 1.42,
+      "Primeiros 80 min - Menos de 1.5": 2.65
+    },
+    "2.5-85": {
+      "Primeiros 85 min - Mais de 2.5": 2.55,
+      "Primeiros 85 min - Menos de 2.5": 1.45
+    }
+  },
+  "second_half_totals": {},
+  "raw_market_count": 147,
+  "captured_at": "2026-06-10T22:02:43.581353+00:00"
+}

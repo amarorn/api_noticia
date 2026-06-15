@@ -1,0 +1,192 @@
+{
+  "event_id": 12312213,
+  "home_team": "Sport Recife",
+  "away_team": "Athletic Club MG",
+  "event_name": "Sport Recife·Athletic Club MG",
+  "utc_date": "2026-06-11T00:00:00Z",
+  "betradar_id": "68822948",
+  "is_live": true,
+  "inplay": {
+    "home_score": 1,
+    "away_score": 1,
+    "minute": 81,
+    "stoppage_time": null,
+    "home_corners": 6,
+    "away_corners": 2,
+    "home_yellow_cards": 1,
+    "away_yellow_cards": 1,
+    "ht_home_score": 0,
+    "ht_away_score": 0,
+    "period_label": "2H",
+    "status": "STARTED"
+  },
+  "h2h_odds": {
+    "1": 4.3,
+    "X": 1.42,
+    "2": 7.75
+  },
+  "h2h_implied": {
+    "1": 0.21819731937504955,
+    "X": 0.6607383614878262,
+    "2": 0.12106431913712427
+  },
+  "totals": {
+    "2.5": {
+      "Mais de 2.5": 2.55,
+      "Menos de 2.5": 1.45
+    },
+    "3.5": {
+      "Mais de 3.5": 8.5,
+      "Menos de 3.5": 1.02
+    },
+    "4.5": {
+      "Mais de 4.5": 25.0
+    },
+    "5.5": {
+      "Mais de 5.5": 35.0
+    }
+  },
+  "totals_implied": {
+    "2.5": {
+      "Mais de 2.5": 0.36250000000000004,
+      "Menos de 2.5": 0.6375000000000001
+    },
+    "3.5": {
+      "Mais de 3.5": 0.10714285714285715,
+      "Menos de 3.5": 0.8928571428571429
+    },
+    "4.5": {
+      "Mais de 4.5": 1.0
+    },
+    "5.5": {
+      "Mais de 5.5": 1.0
+    }
+  },
+  "corners": {
+    "8.5": {
+      "Mais de 8.5": 1.14,
+      "Menos de 8.5": 4.5
+    },
+    "9.5": {
+      "Mais de 9.5": 1.65,
+      "Menos de 9.5": 2.12
+    },
+    "10.5": {
+      "Mais de 10.5": 2.6,
+      "Menos de 10.5": 1.42
+    },
+    "11.5": {
+      "Mais de 11.5": 4.2,
+      "Menos de 11.5": 1.16
+    },
+    "12.5": {
+      "Mais de 12.5": 7.0,
+      "Menos de 12.5": 1.05
+    },
+    "13.5": {
+      "Mais de 13.5": 11.0
+    },
+    "14.5": {
+      "Mais de 14.5": 17.0
+    }
+  },
+  "corners_implied": {
+    "8.5": {
+      "Mais de 8.5": 0.7978723404255319,
+      "Menos de 8.5": 0.20212765957446804
+    },
+    "9.5": {
+      "Mais de 9.5": 0.5623342175066313,
+      "Menos de 9.5": 0.4376657824933686
+    },
+    "10.5": {
+      "Mais de 10.5": 0.35323383084577115,
+      "Menos de 10.5": 0.6467661691542289
+    },
+    "11.5": {
+      "Mais de 11.5": 0.21641791044776118,
+      "Menos de 11.5": 0.7835820895522388
+    },
+    "12.5": {
+      "Mais de 12.5": 0.13043478260869565,
+      "Menos de 12.5": 0.8695652173913044
+    },
+    "13.5": {
+      "Mais de 13.5": 1.0
+    },
+    "14.5": {
+      "Mais de 14.5": 1.0
+    }
+  },
+  "combo_markets": {
+    "btts_and_over_2_5": {
+      "Sim": 0.37027707808564236,
+      "Não": 0.6297229219143576
+    },
+    "btts_and_over_3_5": {
+      "Sim": 0.10358565737051792,
+      "Não": 0.896414342629482
+    },
+    "ft_and_btts": {
+      "Sport Recife e Sim": 0.22890494719288493,
+      "Empate e Sim": 0.6448026681489717,
+      "Athletic Club MG e Sim": 0.1262923846581434
+    },
+    "ft_and_total_2_5": {
+      "1 e Mais de 2.5": 0.22357297195242193,
+      "X e Mais de 2.5": 0.044714594390484384,
+      "2 e Mais de 2.5": 0.12335060521512933,
+      "X e Menos de 2.5": 0.6083618284419644
+    },
+    "ft_and_total_3_5": {
+      "1 e Mais de 3.5": 0.048121986349757874,
+      "X e Mais de 3.5": 0.04330978771478209,
+      "2 e Mais de 3.5": 0.01924879453990315,
+      "1 e Menos de 3.5": 0.18830342484687865,
+      "X e Menos de 3.5": 0.5892488124460148,
+      "2 e Menos de 3.5": 0.11176719410266345
+    }
+  },
+  "btts_odds": {},
+  "next_goal_odds": {
+    "home": 3.75,
+    "away": 6.5
+  },
+  "generosity_probs": {
+    "home": 0.2186,
+    "away": 0.107786
+  },
+  "team_totals": {
+    "home": {
+      "1.5": {
+        "Mais de 1.5": 3.45,
+        "Menos de 1.5": 1.25
+      },
+      "2.5": {
+        "Mais de 2.5": 13.0,
+        "Menos de 2.5": 1.002
+      },
+      "3.5": {
+        "Mais de 3.5": 35.0
+      }
+    },
+    "away": {
+      "1.5": {
+        "Mais de 1.5": 5.5,
+        "Menos de 1.5": 1.1
+      },
+      "2.5": {
+        "Mais de 2.5": 25.0
+      }
+    }
+  },
+  "first_half_totals": {
+    "2.5-85": {
+      "Primeiros 85 min - Mais de 2.5": 7.0,
+      "Primeiros 85 min - Menos de 2.5": 1.07
+    }
+  },
+  "second_half_totals": {},
+  "raw_market_count": 114,
+  "captured_at": "2026-06-11T01:42:07.245231+00:00"
+}
