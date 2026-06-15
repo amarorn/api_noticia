@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from api.auth import ApiKeyMiddleware, api_key_enabled
@@ -429,6 +430,10 @@ class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
     hedge_report: dict | None = None
     against_model_alerts: list[dict] = Field(default_factory=list)
     trend_report: dict | None = None
+    live_stats: dict | None = None
+    halftime_report: dict | None = None
+    half_tickets: dict | None = None
+    viable_2h_markets: dict | None = None
 
 
 class WcSuperbetLiveEventResponse(BaseModel):
@@ -448,6 +453,13 @@ class WcSuperbetLiveEventResponse(BaseModel):
     market_count: int
     h2h_odds: dict[str, float]
     captured_at: str
+    bet_rank_score: float | None = None
+    bet_tier: str | None = None
+    bet_label: str | None = None
+    bet_palpite: str | None = None
+    bet_opportunity_count: int | None = None
+    bet_top_ev: float | None = None
+    bet_top_label: str | None = None
 
 
 class WcSuperbetLiveResponse(BaseModel):
@@ -983,6 +995,28 @@ def _sanitize_match_item(data: dict) -> dict:
     return out
 
 
+@app.get("/config/sportradar")
+def config_sportradar():
+    """Config pública do widget LMT (client id omitido se ausente)."""
+    from api.sportradar_embed import sportradar_public_config
+
+    payload = sportradar_public_config()
+    return {
+        "widget": payload["widget"],
+        "language": payload["language"],
+        "embed_available": payload["embed_available"],
+        "client_id_configured": payload["client_id"] is not None,
+    }
+
+
+@app.get("/sportradar/lmt/{betradar_id}", response_class=HTMLResponse)
+def sportradar_lmt_embed(betradar_id: str):
+    """Página iframe com match.lmtPlus — feed Sportradar em tempo real via betradar_id."""
+    from api.sportradar_embed import lmt_embed_response
+
+    return lmt_embed_response(betradar_id=betradar_id)
+
+
 @app.get("/health/live")
 def health_live():
     """Liveness para o proxy Fly — sem I/O no lake (sobe antes do warm de modelos)."""
@@ -1459,11 +1493,13 @@ def worldcup_corners_predict(req: WcCornersPredictRequest):
 def worldcup_superbet_live(
     sport_id: int = Query(5, description="Filtra por esporte (5=futebol)."),
     all_sports: bool = Query(False, description="Ignora sport_id e retorna todos os esportes."),
+    rank: bool = Query(True, description="Ordena e enriquece com score de palpite in-play."),
 ):
     """Lista jogos ao vivo na Superbet (feed /live)."""
     from datetime import datetime, timezone
 
     from ingest.superbet.client import SuperbetClient, SuperbetClientError
+    from ingest.superbet.live_rank import rank_live_events
 
     filter_sport = None if all_sports else sport_id
     try:
@@ -1472,10 +1508,19 @@ def worldcup_superbet_live(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     captured_at = datetime.now(timezone.utc).isoformat()
+    if rank:
+        ranked = rank_live_events(events)
+        payload = [
+            WcSuperbetLiveEventResponse(**{**event.to_dict(), **bet_rank.to_dict()})
+            for event, bet_rank in ranked
+        ]
+    else:
+        payload = [WcSuperbetLiveEventResponse(**event.to_dict()) for event in events]
+
     return WcSuperbetLiveResponse(
-        count=len(events),
+        count=len(payload),
         sport_id=filter_sport,
-        events=[WcSuperbetLiveEventResponse(**event.to_dict()) for event in events],
+        events=payload,
         captured_at=captured_at,
     )
 
@@ -1489,6 +1534,10 @@ async def worldcup_superbet_live_advice(
     outcome: str | None = Query(None, description="Palpite da aposta (1, X, 2, yes, home, away)"),
     stake: float | None = Query(None, gt=0),
     odds_placed: float | None = Query(None, gt=1),
+    fast: bool = Query(
+        False,
+        description="Resposta rápida: pula Sofascore ao vivo e gravação bronze/tick (overlay/extensão).",
+    ),
 ):
     """Captura evento Superbet ao vivo, roda modelo e retorna cash-out / aportes."""
     from ingest.superbet.advice import run_live_advice
@@ -1517,6 +1566,10 @@ async def worldcup_superbet_live_advice(
             phase=phase,
             bankroll=bankroll,
             user_bet=user_bet,
+            save_bronze=not fast,
+            save_tick=not fast,
+            use_sofascore_live=False if fast else None,
+            fast=fast,
         )
     except SuperbetClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -1630,22 +1683,26 @@ def register_open_bet(req: UserOpenBetRequest):
 
     from fastapi import HTTPException
 
-    from api.user_bets_store import add_open_bet, list_open_bets
-    from models.bet_guardrails import BetGuardrailError
+    from api.user_bets_store import add_open_bet, list_combo_proposals, list_open_bets
+    from models.bet_guardrails import BetGuardrailError, resolve_live_minute
+    from models.combo_proposal import ComboProposalValidationError, validate_combo_proposal
 
     bet_id = req.id or str(uuid.uuid4())
-    pick_dicts = [p.model_dump() for p in req.picks]
+    pick_dicts = [p.model_dump(exclude_none=True) for p in req.picks]
+    is_proposal = req.source == "bolao_proposal"
 
-    minute = req.minute
-    if minute is None and req.superbet_event_id:
+    if is_proposal:
         try:
-            from ingest.superbet.client import SuperbetClient
+            validate_combo_proposal(req)
+        except ComboProposalValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-            snap = SuperbetClient().fetch_event(req.superbet_event_id)
-            if snap.inplay:
-                minute = snap.inplay.minute
-        except Exception:
-            pass
+    minute = resolve_live_minute(
+        minute=req.minute,
+        superbet_event_id=req.superbet_event_id,
+        home_team=req.home_team,
+        away_team=req.away_team,
+    )
 
     try:
         ub = add_open_bet(
@@ -1661,12 +1718,18 @@ def register_open_bet(req: UserOpenBetRequest):
                 "potential_return": req.potential_return,
                 "cashout_value": req.cashout_value,
                 "ticket_code": req.ticket_code,
-                "status": "open",
+                "status": "proposal" if is_proposal else "open",
                 "source": req.source,
                 "captured_at": req.captured_at
                 or __import__("datetime", fromlist=["datetime"]).datetime.now().isoformat(),
+                "model_source": req.model_source,
+                "combined_ev": req.combined_ev,
+                "combined_prob": req.combined_prob,
+                "proposal_minute": minute if is_proposal else None,
+                "register_minute": minute if not is_proposal else None,
             },
             minute=minute,
+            skip_guardrails=is_proposal,
         )
     except BetGuardrailError as exc:
         raise HTTPException(
@@ -1676,12 +1739,14 @@ def register_open_bet(req: UserOpenBetRequest):
 
     return {
         "id": ub.id,
-        "message": "Aposta cadastrada com sucesso",
+        "message": "Proposta enviada à estação" if is_proposal else "Aposta cadastrada com sucesso",
+        "status": ub.status,
         "event_name": ub.event_name,
         "picks_count": len(ub.picks),
         "stake": ub.stake,
         "odds_placed": ub.odds_placed,
         "open_bets_count": len(list_open_bets()),
+        "proposals_count": len(list_combo_proposals()),
     }
 
 
@@ -1723,11 +1788,13 @@ def dedupe_user_open_bets():
 
 
 @app.get("/user/open-bets", response_model=dict)
-def list_user_open_bets():
-    """Lista apostas abertas do usuário."""
-    from api.user_bets_store import list_open_bets
+def list_user_open_bets(include_proposals: bool = True):
+    """Lista apostas abertas do usuário (opcionalmente propostas da estação)."""
+    from api.user_bets_store import list_combo_proposals, list_open_bets
 
     bets = list_open_bets()
+    if include_proposals:
+        bets = [*bets, *list_combo_proposals()]
     return {
         "count": len(bets),
         "bets": [

@@ -9,6 +9,8 @@
   const captureBtn = document.getElementById("captureBtn");
   const captureSettledBtn = document.getElementById("captureSettledBtn");
   const captureWalletBtn = document.getElementById("captureWalletBtn");
+  const livePanelBtn = document.getElementById("livePanelBtn");
+  const livePanelAuto = document.getElementById("livePanelAuto");
   const userIdInput = document.getElementById("userId");
   const statusDiv = document.getElementById("status");
   const betsList = document.getElementById("betsList");
@@ -16,9 +18,10 @@
 
   const KIND_LABEL = { open: "abertas", settled: "finalizadas", wallet: "extrato" };
 
-  chrome.storage.local.get(["bolao_api_key", "bolao_user_id"], (items) => {
+  chrome.storage.local.get(["bolao_api_key", "bolao_user_id", "bolao_live_panel_enabled"], (items) => {
     if (items.bolao_api_key) apiKeyInput.value = items.bolao_api_key;
     if (items.bolao_user_id) userIdInput.value = items.bolao_user_id;
+    if (livePanelAuto) livePanelAuto.checked = Boolean(items.bolao_live_panel_enabled);
   });
 
   apiKeyInput.addEventListener("change", () => {
@@ -74,7 +77,7 @@
           const live = b.is_live ? "🟢 AO VIVO" : "⏸ Pré-jogo";
           const r = b.send;
           let sendTag = "";
-          if (r?.ok) sendTag = ' <span style="color:#00ff88">✓ enviada</span>';
+          if (r?.ok) sendTag = ' <span style="color:#00e676">✓ enviada</span>';
           else if (r?.skipped) sendTag = ` <span style="color:#fbbf24">⚠ ${r.error}</span>`;
           else if (r) sendTag = ` <span style="color:#f87171">✗ ${r.error || "erro API"}</span>`;
           const againstTag = b.against_model
@@ -99,7 +102,7 @@
       betsList.innerHTML = record.bets
         .map((b) => {
           const icon = icons[b.result] || "❓";
-          const profitClass = b.profit >= 0 ? "color:#00ff88" : "color:#f87171";
+          const profitClass = b.profit >= 0 ? "color:#00e676" : "color:#f87171";
           return `
             <div class="bet-item">
               <strong>${icon} ${b.event_name || "—"}</strong><br>
@@ -165,10 +168,32 @@
     if (!/superbet\.(com|com\.br|bet\.br)/i.test(url)) {
       return {
         error:
-          "Abra a Superbet (Minhas Apostas ou Carteira).\nURL atual: " + url.slice(0, 55),
+          "Abra a Superbet (jogo ao vivo ou Minhas Apostas).\nURL atual: " + url.slice(0, 55),
       };
     }
     return { tab };
+  }
+
+  function extractEventIdFromUrl(url) {
+    if (!url) return null;
+    const patterns = [
+      /\/(?:event|evento)\/(\d+)/i,
+      /\/e-(\d+)/i,
+      /[?&]event(?:Id|_id)=(\d+)/i,
+      /\/odds\/(?:[^?#]+\/)*[^/?#]+-(\d{5,})(?:\?|#|$)/i,
+    ];
+    for (const p of patterns) {
+      const m = url.match(p);
+      if (m) return parseInt(m[1], 10);
+    }
+    try {
+      const seg = new URL(url).pathname.split("/").filter(Boolean).pop() || "";
+      const slug = seg.match(/-(\d{5,})$/);
+      if (slug) return parseInt(slug[1], 10);
+    } catch {
+      /* ignore */
+    }
+    return null;
   }
 
   function startBackgroundCapture(type, tabId, extra = {}) {
@@ -234,5 +259,53 @@
     setStatus("Iniciando envio do extrato…", "warn");
     setButtonsDisabled(true);
     startBackgroundCapture("wallet", tab.id, { userId });
+  });
+
+  if (livePanelAuto) {
+    livePanelAuto.addEventListener("change", () => {
+      chrome.storage.local.set({ bolao_live_panel_enabled: livePanelAuto.checked });
+    });
+  }
+
+  livePanelBtn?.addEventListener("click", async () => {
+    const { tab, error } = await getSuperbetTab();
+    if (error) {
+      setStatus(error, "err");
+      return;
+    }
+    const eventId = extractEventIdFromUrl(tab.url);
+    if (!eventId) {
+      setStatus(
+        "Abra a página de UM jogo ao vivo (URL termina com -13367973) e clique de novo.",
+        "warn"
+      );
+      return;
+    }
+    const apiKey = apiKeyInput.value.trim();
+    if (!apiKey) {
+      setStatus("Cole a API Key acima (mesma do .env) antes de ativar o painel.", "warn");
+      return;
+    }
+    chrome.storage.local.set({ bolao_api_key: apiKey, bolao_live_panel_enabled: true });
+    if (livePanelAuto) livePanelAuto.checked = true;
+    setStatus(`Iniciando painel — evento #${eventId}…`, "warn");
+    chrome.runtime.sendMessage(
+      { type: "START_LIVE_PANEL", tabId: tab.id, eventId },
+      (resp) => {
+        if (chrome.runtime.lastError || !resp?.ok) {
+          setStatus(
+            resp?.error ||
+              chrome.runtime.lastError?.message ||
+              "Recarregue a página (F5) e tente de novo.",
+            "err"
+          );
+          return;
+        }
+        const msg = resp.injected
+          ? `Painel injetado — evento #${resp.eventId || eventId}. Atualiza a cada 20s.`
+          : `Painel ativo — evento #${resp.eventId || eventId}. Atualiza a cada 20s.`;
+        setStatus(msg, "ok");
+      }
+    );
   });
 })();

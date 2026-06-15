@@ -1260,6 +1260,10 @@
 
   // ── P2: alerta contra palpite na página do evento (bet slip) ──
   function extractEventIdFromUrl() {
+    if (typeof window.bolaoExtractSuperbetEventId === "function") {
+      const id = window.bolaoExtractSuperbetEventId();
+      if (id) return id;
+    }
     const m = location.pathname.match(/\/(?:event|evento)\/(\d+)/i);
     if (m) return parseInt(m[1], 10);
     const q = new URLSearchParams(location.search).get("eventId");

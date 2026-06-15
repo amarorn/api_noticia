@@ -22,6 +22,10 @@ class PickData(BaseModel):
     market: str
     outcome: str
     target_value: str | None = None
+    model_prob: float | None = None
+    market_odd: float | None = None
+    expected_value: float | None = None
+    edge_pp: float | None = None
 
 
 class UserOpenBet(BaseModel):
@@ -40,6 +44,11 @@ class UserOpenBet(BaseModel):
     captured_at: str = ""
     superbet_event_id: int | None = None
     user_id: str | None = None
+    model_source: str | None = None
+    combined_ev: float | None = None
+    combined_prob: float | None = None
+    proposal_minute: int | None = None
+    register_minute: int | None = None
 
     def model_post_init(self, __context: Any) -> None:
         if not self.captured_at:
@@ -78,6 +87,8 @@ def add_open_bet(
             picks=picks,
             bet_id=ub_kwargs.get("id"),
             minute=minute,
+            stake=float(ub_kwargs.get("stake") or 0) or None,
+            source=str(ub_kwargs.get("source") or ""),
         )
 
     store = _load_store()
@@ -146,6 +157,15 @@ def list_open_bets(user_id: str | None = None) -> list[UserOpenBet]:
     if user_id:
         bets = [b for b in bets if b.user_id == user_id]
     return [b for b in bets if b.status == "open"]
+
+
+def list_combo_proposals(user_id: str | None = None) -> list[UserOpenBet]:
+    """Propostas enviadas pelo frontend (ainda não apostadas na Superbet)."""
+    store = _load_store()
+    bets = [UserOpenBet(**b) for b in store.get("bets", [])]
+    if user_id:
+        bets = [b for b in bets if b.user_id == user_id]
+    return [b for b in bets if b.status == "proposal"]
 
 
 def find_open_bet(bet_id: str) -> UserOpenBet | None:

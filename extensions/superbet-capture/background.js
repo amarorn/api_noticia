@@ -43,9 +43,124 @@ async function ensureContentScript(tabId) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ["content_script.js"],
+      files: ["event_id.js", "content_script.js"],
     });
     await new Promise((r) => setTimeout(r, 350));
+    return { ok: true, injected: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+const LIVE_PANEL_FILES = ["event_id.js", "content_script.js", "live_market_panel.js"];
+const TICKET_BUILDER_FILES = ["event_id.js", "content_script.js", "ticket_builder.js"];
+
+const SUPERBET_EVENT_URLS = (eventId) => [
+  `https://superbet.bet.br/evento/${eventId}`,
+  `https://www.superbet.bet.br/evento/${eventId}`,
+  `https://superbet.bet.br/odds/futebol/e-${eventId}`,
+];
+
+async function ensureTicketBuilderScripts(tabId) {
+  try {
+    const ping = await chrome.tabs.sendMessage(tabId, { type: "PING" });
+    if (ping?.ok) {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["ticket_builder.js"],
+      });
+      await new Promise((r) => setTimeout(r, 300));
+      return { ok: true };
+    }
+  } catch {
+    /* injetar abaixo */
+  }
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: TICKET_BUILDER_FILES,
+    });
+    await new Promise((r) => setTimeout(r, 450));
+    return { ok: true, injected: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+async function findSuperbetTabForEvent(eventId) {
+  const tabs = await chrome.tabs.query({});
+  for (const tab of tabs) {
+    const url = tab.url || "";
+    if (!/superbet\.(com|bet\.br)/i.test(url)) continue;
+    if (url.includes(String(eventId))) return tab;
+  }
+  return null;
+}
+
+async function openSuperbetEventTab(eventId) {
+  const existing = await findSuperbetTabForEvent(eventId);
+  if (existing?.id) {
+    await chrome.tabs.update(existing.id, { active: true });
+    if (existing.windowId != null) {
+      await chrome.windows.update(existing.windowId, { focused: true });
+    }
+    return existing;
+  }
+  const url = SUPERBET_EVENT_URLS(eventId)[0];
+  return chrome.tabs.create({ url, active: true });
+}
+
+async function queueSuperbetTicket(payload) {
+  const eventId = payload?.superbetEventId;
+  if (!eventId) {
+    return { ok: false, error: "superbetEventId ausente no bilhete." };
+  }
+
+  await chrome.storage.local.set({
+    bolao_pending_ticket: { ...payload, queuedAt: new Date().toISOString() },
+  });
+
+  const tab = await openSuperbetEventTab(eventId);
+  if (!tab?.id) {
+    return { ok: false, error: "Não foi possível abrir aba Superbet." };
+  }
+
+  const ensured = await ensureTicketBuilderScripts(tab.id);
+  if (!ensured.ok) {
+    return {
+      ok: true,
+      tabId: tab.id,
+      warning: ensured.error || "Abra o evento na Superbet e recarregue (F5).",
+    };
+  }
+
+  chrome.tabs.sendMessage(tab.id, { type: "APPLY_PENDING_TICKET" }, () => {
+    if (chrome.runtime.lastError) {
+      /* ticket_builder auto-aplica ao carregar */
+    }
+  });
+
+  showNotification(
+    "Bolão AI — bilhete enfileirado",
+    `${payload.legs?.length || 0} perna(s) · R$ ${Number(payload.stake || 0).toFixed(2)} → Superbet #${eventId}`,
+  );
+
+  return { ok: true, tabId: tab.id };
+}
+
+async function ensureLivePanelScripts(tabId) {
+  try {
+    const status = await chrome.tabs.sendMessage(tabId, { type: "GET_LIVE_PANEL_STATUS" });
+    if (status?.ok) return { ok: true };
+  } catch {
+    /* injetar abaixo */
+  }
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: LIVE_PANEL_FILES,
+    });
+    await new Promise((r) => setTimeout(r, 450));
     return { ok: true, injected: true };
   } catch (err) {
     return { ok: false, error: String(err) };
@@ -379,6 +494,45 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true;
   }
 
+  if (request.type === "START_LIVE_PANEL") {
+    (async () => {
+      const tabId = request.tabId;
+      const fallbackEventId = request.eventId;
+      const ensured = await ensureLivePanelScripts(tabId);
+      if (!ensured.ok) {
+        sendResponse({ ok: false, error: ensured.error || "Não foi possível injetar o painel." });
+        return;
+      }
+      chrome.tabs.sendMessage(tabId, { type: "ENABLE_LIVE_PANEL" }, (resp) => {
+        if (chrome.runtime.lastError) {
+          sendResponse({
+            ok: false,
+            error: chrome.runtime.lastError.message || "Recarregue a página (F5) e tente de novo.",
+          });
+          return;
+        }
+        sendResponse({
+          ok: true,
+          eventId: resp?.eventId || fallbackEventId || null,
+          injected: ensured.injected || false,
+        });
+      });
+    })();
+    return true;
+  }
+
+  if (request.type === "API_GET_LIVE_ADVICE") {
+    const { eventId, apiKey, bankroll = 1000, phase = "friendly" } = request;
+    const qs = new URLSearchParams({
+      phase,
+      bankroll: String(bankroll),
+    });
+    apiFetch(`/worldcup/superbet/live/${eventId}/advice?${qs}`, {
+      headers: apiKey ? { "X-API-Key": apiKey } : {},
+    }).then(sendResponse);
+    return true;
+  }
+
   if (request.type === "SHOW_AGAINST_MODEL_NOTIFICATION") {
     showNotification(
       "⛔ Bolão AI — contra o palpite",
@@ -444,6 +598,23 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       );
       sendResponse({ ok: true, upload: uploadResult.data, reconcile: reconcile.data || reconcile });
     })();
+    return true;
+  }
+
+  if (request.type === "QUEUE_SUPERBET_TICKET") {
+    queueSuperbetTicket(request.payload).then(sendResponse);
+    return true;
+  }
+
+  if (request.type === "TICKET_BUILDER_RESULT") {
+    const { okCount, total } = request.payload || {};
+    if (okCount != null && total != null) {
+      showNotification(
+        "Bolão AI — cupom montado",
+        `${okCount}/${total} perna(s) clicadas — confira stake e confirme na Superbet.`,
+      );
+    }
+    sendResponse({ ok: true });
     return true;
   }
 
