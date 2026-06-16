@@ -19,6 +19,7 @@ export function useLiveAdviceQueries(
   const kickoffKey = kickoff ?? "";
   const phaseKey = phase || "group";
 
+  // 1. Score tick — mais rápido, mostra placar imediatamente
   const scoreTickQuery = useQuery({
     queryKey: ["superbet-event-score", eventId],
     queryFn: () => getSuperbetEventUseCase.execute({ eventId, saveBronze: false }),
@@ -30,6 +31,7 @@ export function useLiveAdviceQueries(
     },
   });
 
+  // 2. Fast advice — mostra dados básicos rapidamente
   const fastAdviceQuery = useQuery({
     queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, phaseKey, "fast"],
     queryFn: () =>
@@ -48,6 +50,7 @@ export function useLiveAdviceQueries(
     },
   });
 
+  // 3. Full advice — só carrega depois do fast, em background
   const fullAdviceQuery = useQuery({
     queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, phaseKey, "full"],
     queryFn: () =>
@@ -106,17 +109,21 @@ export function useLiveAdviceQueries(
   }, [scoreTickQuery.data, data]);
 
   const scoreTick = scoreTickQuery.data ?? null;
-  const hasBootstrap = Boolean(scoreTick || fastAdviceQuery.data);
+
+  // Loading progressivo: mostra algo assim que score ou fast chegar
+  const hasAnyData = Boolean(scoreTick || fastAdviceQuery.data);
+  const isLoading = !hasAnyData && (scoreTickQuery.isLoading || fastAdviceQuery.isLoading);
+  const isAdvicePending = !data && fastAdviceQuery.isLoading;
 
   return {
     data,
     scoreTick,
     liveHeader,
     adviceSource,
-    isLoading: !hasBootstrap && (scoreTickQuery.isLoading || fastAdviceQuery.isLoading),
-    isAdvicePending: !data && (fastAdviceQuery.isLoading || fastAdviceQuery.isFetching),
-    isError: fastAdviceQuery.isError && fullAdviceQuery.isError && scoreTickQuery.isError,
-    error: fastAdviceQuery.error ?? fullAdviceQuery.error ?? scoreTickQuery.error,
+    isLoading,
+    isAdvicePending,
+    isError: fastAdviceQuery.isError && scoreTickQuery.isError,
+    error: fastAdviceQuery.error ?? scoreTickQuery.error,
     isFetching: fastAdviceQuery.isFetching || fullAdviceQuery.isFetching,
     refetch: () => {
       void scoreTickQuery.refetch();

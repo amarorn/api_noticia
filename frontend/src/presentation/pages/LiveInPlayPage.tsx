@@ -10,7 +10,7 @@ import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
-import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
+import { LiveMatchSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconArrowLeft, IconBell, IconChevronRight } from "@/presentation/components/ui/Icons";
 import { useToast } from "@/presentation/components/ui/toast/ToastContext";
@@ -50,7 +50,6 @@ import { draftAgainstModelAlert, normalizeH2hOutcome } from "@/presentation/util
 import { resolveLiveAdvicePhase } from "@/presentation/utils/liveAdvicePhase";
 
 const FAST_POLL_MS = 10_000;
-const FULL_POLL_MS = 60_000;
 const SCORE_POLL_MS = 5_000;
 const MAX_OPEN_BETS = 2;
 
@@ -394,7 +393,7 @@ export function LiveInPlayPage() {
       </div>
 
       {isLoading ? (
-        <DashboardSkeleton />
+        <LiveMatchSkeleton />
       ) : adviceIsError && !scoreTick ? (
         <ErrorState
           message={
@@ -407,15 +406,15 @@ export function LiveInPlayPage() {
       ) : data ? (
         <>
           {/* ── 1. MATCH HEADER ── */}
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <TeamFlag team={data.homeTeam} size={36} />
+          <section className="glass-card p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <TeamFlag team={data.homeTeam} size={32} />
                 <div className="min-w-0 text-left">
                   <p className="truncate text-sm font-semibold text-white">{data.homeTeam}</p>
                 </div>
                 <div className="px-2 text-center">
-                  <p className="font-mono text-2xl font-bold text-white">
+                  <p className="font-mono text-xl font-bold text-white">
                     {liveHeader?.currentScore?.replace("x", " × ") ??
                       data.currentScore?.replace("x", " × ") ??
                       "0 × 0"}
@@ -435,7 +434,7 @@ export function LiveInPlayPage() {
                 <div className="min-w-0 text-right">
                   <p className="truncate text-sm font-semibold text-white">{data.awayTeam}</p>
                 </div>
-                <TeamFlag team={data.awayTeam} size={36} />
+                <TeamFlag team={data.awayTeam} size={32} />
               </div>
               <div className="text-right text-[11px] text-slate-500">
                 <p>
@@ -447,11 +446,11 @@ export function LiveInPlayPage() {
                 <p>{liveHeader?.rawMarketCount ?? data.rawMarketCount} mercados</p>
                 <p className="mt-0.5 flex flex-wrap items-center justify-end gap-2">
                   <span>
-                    Captura {formatCapturedAt(liveHeader?.capturedAt ?? data.capturedAt)}
+                    {formatCapturedAt(liveHeader?.capturedAt ?? data.capturedAt)}
                     {data.isLive
                       ? liveHeader?.scoreIsFresh
-                        ? ` · placar ${SCORE_POLL_MS / 1000}s · rápido ${FAST_POLL_MS / 1000}s · completo ${FULL_POLL_MS / 1000}s`
-                        : ` · rápido ${FAST_POLL_MS / 1000}s · completo ${FULL_POLL_MS / 1000}s`
+                        ? ` · ${SCORE_POLL_MS / 1000}s`
+                        : ` · ${FAST_POLL_MS / 1000}s`
                       : ""}
                   </span>
                   {data.isLive && !data.isFinished && (
@@ -473,7 +472,7 @@ export function LiveInPlayPage() {
                   <button
                     onClick={() => refetchAdvice()}
                     disabled={adviceFetching}
-                    title="Atualizar agora (rápido + completo)"
+                    title="Atualizar agora"
                     className="rounded p-0.5 text-slate-500 transition hover:text-slate-300 disabled:opacity-40"
                   >
                     <svg
@@ -493,13 +492,13 @@ export function LiveInPlayPage() {
               </div>
             </div>
             {data.isFinished && (
-              <p className="mt-3 text-sm text-slate-400">Jogo encerrado — polling pausado.</p>
+              <p className="mt-2 text-sm text-slate-400">Jogo encerrado — polling pausado.</p>
             )}
 
             {/* ── Barras de probabilidade 1X2 ── */}
             {(data.inplaySummary.probFinalHome > 0 || data.inplaySummary.probFinalAway > 0) && (
-              <div className="mt-3">
-                <div className="flex overflow-hidden rounded-xl" style={{ height: "28px" }}>
+              <div className="mt-2">
+                <div className="flex overflow-hidden rounded-xl" style={{ height: "24px" }}>
                   {[
                     {
                       key: "1",
@@ -575,8 +574,8 @@ export function LiveInPlayPage() {
           <LiveHedgeAlert report={data?.hedgeReport ?? null} />
 
           {/* ── 3. COLUNA DUPLA: Mercados | Modelo + Casa ── */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
-            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
+            <section className="glass-card p-3">
               <LiveMarketCards data={data} />
             </section>
             <LiveModelPanel data={data} recalibrationEvent={recalibrationEvent} />
