@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.beanalytic.poll-superbet-live</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>@@REPO_ROOT@@/scripts/poll_superbet_cron.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>@@REPO_ROOT@@</string>
+
+    <!-- Poll a cada 2 minutos (janela 10h–23h filtrada no script) -->
+    <key>StartInterval</key>
+    <integer>120</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>@@REPO_ROOT@@/data/lake/logs/poll_superbet_launchd.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>@@REPO_ROOT@@/data/lake/logs/poll_superbet_launchd.err.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>

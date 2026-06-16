@@ -6,7 +6,9 @@ import pytest
 
 from models.wc_artifact import (
     ARTIFACT_VERSION,
+    artifact_is_loadable,
     artifact_is_valid,
+    load_artifact,
     read_manifest,
     save_artifact,
 )
@@ -38,6 +40,7 @@ def tiny_fixtures() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+@pytest.mark.slow
 def test_save_and_load_artifact_roundtrip(tmp_path, tiny_fixtures):
     with (
         patch("models.wc_artifact.settings") as mock_settings,
@@ -64,6 +67,7 @@ def test_save_and_load_artifact_roundtrip(tmp_path, tiny_fixtures):
         assert loaded.collaborative.metrics is not None
 
 
+@pytest.mark.slow
 def test_artifact_invalid_when_fingerprint_changes(tmp_path, tiny_fixtures):
     with (
         patch("models.wc_artifact.settings") as mock_settings,
@@ -81,3 +85,53 @@ def test_artifact_invalid_when_fingerprint_changes(tmp_path, tiny_fixtures):
         manifest_path.write_text(json.dumps(data), encoding="utf-8")
 
         assert artifact_is_valid() is False
+
+
+@pytest.mark.slow
+def test_artifact_loadable_when_only_fixtures_stale(tmp_path, tiny_fixtures):
+    with (
+        patch("models.wc_artifact.settings") as mock_settings,
+        patch("models.wc_artifact.fixtures_fingerprint", return_value="fp-test"),
+        patch("models.wc_artifact.squads_fingerprint", return_value="sq-test"),
+        patch("ingest.fixtures.world_cup.load_wc_fixtures", return_value=tiny_fixtures),
+    ):
+        mock_settings.wc_artifact_dir = tmp_path / "artifacts"
+        mock_settings.fixtures_path = tmp_path / "fixtures"
+        mock_settings.wc_squads_path = tmp_path / "squads.json"
+
+        predictor = train_wc_predictor(tiny_fixtures, validation_season=2022)
+        save_artifact(predictor)
+
+        manifest_path = tmp_path / "artifacts" / "manifest.json"
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        data["fixtures_fingerprint"] = "stale-fixtures"
+        manifest_path.write_text(json.dumps(data), encoding="utf-8")
+
+        assert artifact_is_valid() is False
+        assert artifact_is_loadable() is True
+        assert load_artifact() is not None
+
+
+@pytest.mark.slow
+def test_artifact_loadable_when_only_odds_stale(tmp_path, tiny_fixtures):
+    with (
+        patch("models.wc_artifact.settings") as mock_settings,
+        patch("models.wc_artifact.fixtures_fingerprint", return_value="fp-test"),
+        patch("models.wc_artifact.squads_fingerprint", return_value="sq-test"),
+        patch("ingest.fixtures.world_cup.load_wc_fixtures", return_value=tiny_fixtures),
+    ):
+        mock_settings.wc_artifact_dir = tmp_path / "artifacts"
+        mock_settings.fixtures_path = tmp_path / "fixtures"
+        mock_settings.wc_squads_path = tmp_path / "squads.json"
+
+        predictor = train_wc_predictor(tiny_fixtures, validation_season=2022)
+        save_artifact(predictor)
+
+        manifest_path = tmp_path / "artifacts" / "manifest.json"
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        data["odds_fingerprint"] = "stale-odds"
+        manifest_path.write_text(json.dumps(data), encoding="utf-8")
+
+        assert artifact_is_valid() is False
+        assert artifact_is_loadable() is True
+        assert load_artifact() is not None

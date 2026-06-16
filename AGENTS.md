@@ -13,9 +13,10 @@
 - Coleta de RSS de portais esportivos (Globo Esporte, ESPN BR, UOL, Lance!, Fogaonet, Gazeta Esportiva).
 - Arquitetura medalhão (Bronze → Silver → Gold) em Parquet; **dev padrão: lake local** (`LAKE_PRIMARY=local`); publicação opcional em **GCS + BigQuery** (`sync-gcp`).
 - Modelos estatísticos e de ML: Dixon-Coles, regressão logística, gradient boosting, ensemble colaborativo e motor tático **KXL** (Energy × Space × Time).
-- API REST em FastAPI que serve previsões, notícias, validação histórica e odds ao vivo.
-- Frontend web em React + TypeScript + Tailwind CSS + Vite.
+- API REST em FastAPI que serve previsões, notícias, validação histórica, odds ao vivo e **painel in-play Superbet** com recomendações de aporte/cash-out.
+- Frontend web em React + TypeScript + Tailwind CSS + Vite, com tela **Ao Vivo** (`/ao-vivo/:eventId`) para orientação de apostas em tempo real.
 - Foco atual: **Copa do Mundo 2026** (48 seleções, 12 grupos, 72 jogos), com suporte contínuo ao Brasileirão.
+- **Integração ao vivo:** Superbet API (curl_cffi) → snapshot → modelo Poisson in-play → EV/Kelly → cash-out / aporte → frontend em cards interativos.
 
 ---
 
@@ -27,7 +28,7 @@
 | API | FastAPI + Uvicorn |
 | Configuração | Pydantic Settings (`.env`) |
 | Datalake | Pandas + PyArrow (Parquet); GCS + BigQuery (opcional, `[gcp]`) |
-| ML / Estatística | scikit-learn, Poisson customizado, Dixon-Coles |
+| ML / Estatística | scikit-learn, Poisson customizado, Dixon-Coles, Monte Carlo in-play, EV/Kelly/Cash-out |
 | LLM (opcional) | transformers + Unsloth (Qwen2.5-0.5B-Instruct com PEFT/LoRA) |
 | MLflow (opcional) | Tracking local SQLite (`mlflow.db`) |
 | ETL / Pipelines | Prefect (opcional), ou funções Python puras |
@@ -76,6 +77,13 @@ api_noticia/
 │   ├── fixtures/           # Import de fixtures (Brasileirão, Copa do Mundo)
 │   ├── sofascore/          # Cliente curl_cffi, FEPT, stats, histórico, amistosos
 │   │   └── friendlies.py   # list_team_friendlies, merge FIFA+Sofascore, snapshot JSON
+│   ├── superbet/           # Cliente ao vivo, parser, advice, benchmark, store, live_ticks
+│   │   ├── client.py       # HTTP Superbet (curl_cffi) — fetch_event
+│   │   ├── parser.py       # SuperbetEventSnapshot — h2h, totals, btts, combos
+│   │   ├── advice.py       # run_live_advice → in-play + EV + cash-out + strategy
+│   │   ├── benchmark.py    # h2h_overround, market_benchmark
+│   │   ├── live_ticks.py   # append_live_tick → Parquet (bronze superbet/live_poll)
+│   │   └── store.py        # save_event_snapshot
 │   ├── fifa/               # APIs inside.fifa.com / api.fifa.com
 │   │   ├── client.py       # HTTP FIFA
 │   │   ├── match_ingest.py # detalhes de jogo, load_fifa_window_matches (cache)
@@ -108,6 +116,10 @@ api_noticia/
 │   ├── wc_artifact.py      # Persistência pickle + manifest JSON do predictor
 │   ├── wc_match_simulator.py # simulate_match: FIFA + Sofascore + ensemble WC
 │   ├── ev_value.py         # Expected Value + Kelly
+│   ├── wc_inplay.py        # Mercados in-play condicionados ao placar/minuto (Poisson + MC)
+│   ├── wc_bet_advice.py    # Recomendações cash-out e aporte in-play vs mercado
+│   ├── wc_bet_strategy.py  # Plano de apostas: posture, shields, watch list, rules
+│   ├── wc_monte_carlo.py   # _sample_poisson_bivariada com correlação rho (Dixon-Coles)
 │   ├── economics.py        # CES blend (Dixit-Stiglitz)
 │   ├── corners_predictor.py# Previsão de escanteios
 │   ├── dataset.py          # Export JSONL para treino
@@ -309,6 +321,16 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 ./scripts/fly-deploy.sh
 ```
 
+### Coleta de dados
+```bash
+daily-sync              # RSS → bronze → silver (2–3x/dia)
+collect-news            # só bronze
+ingest-sofascore --history --all-teams   # stats xG (últimos jogos por seleção)
+ingest-sofascore --all                   # fixtures WC (since-year 2018) + seleções
+ingest-sofascore --backfill-dates        # preenche match_date via Sofascore API
+poll-superbet-live --event-ids 13127506  # captura ao vivo → bronze/superbet/live_poll/
+```
+
 ---
 
 ## 5. Convenções de código
@@ -407,6 +429,49 @@ mlflow-ui                          # porta 5001 (evita conflito com AirPlay no m
 - A API recarrega o artifact no startup (em background thread para não bloquear health checks).  
 - Se o artifact estiver desatualizado ou ausente, retrain automático é disparado.
 
+### In-Play / Ao Vivo (Superbet)
+Fluxo para orientação de apostas em eventos Superbet ao vivo (`phase=friendly`, `source=friendly` no frontend).
+
+| Camada | Responsabilidade |
+|--------|------------------|
+| `ingest/superbet/client.py` | HTTP Superbet via curl_cffi — `fetch_event(event_id)` |
+| `ingest/superbet/parser.py` | `SuperbetEventSnapshot` — h2h, totals, BTTS, combos, next_goal, generosity, overround |
+| `ingest/superbet/advice.py` | `run_live_advice()` — orquestra snapshot → modelo in-play → JSON de resposta |
+| `ingest/superbet/benchmark.py` | `market_benchmark()`, `h2h_overround()` — comparação modelo vs casa |
+| `ingest/superbet/live_ticks.py` | `append_live_tick()` — persiste snapshot + modelo + aporte em Parquet (`bronze/superbet/live_poll`) |
+| `models/wc_inplay.py` | `simulate_inplay()` — Monte Carlo Poisson bivariada com rho (Dixon-Coles), condicionado ao placar e minuto |
+| `models/wc_bet_advice.py` | `advise_aportes()` / `advise_cashout()` / `scan_all_market_edges()` — EV, Kelly, stake |
+| `models/wc_bet_strategy.py` | `build_bet_strategy_report()` — posture, shields, watch_list, rules, correlation warnings |
+| `models/ev_value.py` | `evaluate_outcome()` — EV = P × O - 1, Kelly fraction, fair odd |
+
+**Fluxo de dados ao vivo:**
+```
+Superbet API → client.fetch_event() → parser.SuperbetEventSnapshot
+                                              ↓
+                                    models.wc_inplay.simulate_inplay()
+                                              ↓
+                                    models.wc_bet_advice.advise_aportes()
+                                              ↓
+                                    models.wc_bet_strategy.build_bet_strategy_report()
+                                              ↓
+                                    JSON → GET /worldcup/superbet/live/{id}/advice
+                                              ↓
+                                    frontend → LiveInPlayPage (/ao-vivo/:eventId)
+```
+
+**Endpoints API:**
+- `GET /worldcup/superbet/live` — lista eventos Superbet ao vivo com IDs
+- `GET /worldcup/superbet/live/{event_id}/advice` — resposta completa: inplay_summary, market_scan, strategy, cashout, aportes
+- `GET /worldcup/superbet/events/{event_id}` — dados brutos do evento
+
+**Frontend (`/ao-vivo`, `/ao-vivo/:eventId`):**
+- `LiveInPlayPage.tsx` — Hero CTA, cards de mercado, barras de probabilidade, guia colapsável, monitor de cash-out
+- Componentes: `LiveActionNowPanel`, `LiveMarketCards`, `LiveModelPanel`, `LivePlainGuide`, `LiveOpenBetMonitor`, `BetStrategyPanel`
+- Layout: 2 colunas (mercados | modelo) em desktop, Hero CTA em destaque, seções colapsáveis
+
+**Limitações conhecidas:**
+- O modelo in-play usa λ (força de ataque) **fixo do pré-jogo** — não se adapta a eventos reais (gol, cartão, substituição, posse de bola). Melhorias planejadas: Bayesian update de λ, momentum por placar/minuto, integração de eventos Sofascore ao vivo. Ver `docs/analise-inplay-backend.md`.
+
 ### Amistosos internacionais (Sofascore + FIFA)
 Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no frontend).
 
@@ -470,6 +535,7 @@ Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no fro
 | Frontend | `docs/frontend.md` |
 | Deploy Fly.io | `docs/deploy-fly.md` |
 | Dev Container | `.devcontainer/devcontainer.json` |
+| In-Play / Superbet | `docs/analise-inplay-backend.md`, `ingest/superbet/advice.py`, `models/wc_inplay.py` |
 | Amistosos (ingest) | `ingest/sofascore/friendlies.py`, `ingest/fifa/friendlies.py` |
 | Simulate WC | `models/wc_match_simulator.py`, `POST /worldcup/simulate` |
 | Docker compose | `docker-compose.yml`, `scripts/docker-dev.sh` |

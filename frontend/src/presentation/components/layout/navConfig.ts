@@ -8,6 +8,7 @@ import {
   IconNewspaper,
   IconTrophy,
   IconUsers,
+  IconWallet,
   IconZap,
 } from "@/presentation/components/ui/Icons";
 
@@ -99,9 +100,27 @@ export const navGroups: NavGroup[] = [
       },
       {
         to: "/brasileirao",
-        label: "Brasileirão",
+        label: "Brasileirao",
         Icon: IconTrophy,
         description: "Rodada nacional",
+      },
+      {
+        to: "/performance",
+        label: "Performance",
+        Icon: IconHistory,
+        description: "ROI e analise de apostas",
+      },
+      {
+        to: "/modelos",
+        label: "Modelos",
+        Icon: IconZap,
+        description: "Benchmark e evolução",
+      },
+      {
+        to: "/carteira",
+        label: "Carteira",
+        Icon: IconWallet,
+        description: "CSV Superbet e reconciliação",
       },
     ],
   },

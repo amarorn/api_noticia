@@ -7,6 +7,7 @@ from typing import Any
 import pandas as pd
 
 from ingest.sofascore.stats_dataset import load_match_stats_history
+from schemas.national_teams import normalize_national_team
 
 SOFASCORE_FEATURE_NAMES = [
     "sofa_xg_for_diff_last5",
@@ -35,8 +36,11 @@ def _team_perspective_rows(df: pd.DataFrame, team: str) -> pd.DataFrame:
     if df.empty:
         return df
 
-    home = df[df["home_team"] == team].copy()
-    away = df[df["away_team"] == team].copy()
+    canon = normalize_national_team(team)
+    home_mask = df["home_team"].map(normalize_national_team) == canon
+    away_mask = df["away_team"].map(normalize_national_team) == canon
+    home = df[home_mask].copy()
+    away = df[away_mask].copy()
 
     home["xg_for"] = home["home_xg"]
     home["xg_against"] = home["away_xg"]

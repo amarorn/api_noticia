@@ -17,6 +17,11 @@ def _fingerprint(train_df: pd.DataFrame) -> str:
         "rows": len(train_df),
         "max_date": str(train_df["match_date"].max()) if not train_df.empty else "",
         "min_date": str(train_df["match_date"].min()) if not train_df.empty else "",
+        "labels_copa_only": settings.wc_train_labels_copa_only,
+        "holdout_mode": settings.wc_holdout_mode,
+        "train_split_ratio": settings.wc_train_split_ratio,
+        "val_split_ratio": settings.wc_val_split_ratio,
+        "test_split_ratio": settings.wc_test_split_ratio,
     }
     raw = json.dumps(payload, sort_keys=True).encode()
     return hashlib.sha256(raw).hexdigest()[:16]

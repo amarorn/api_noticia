@@ -166,7 +166,15 @@ def main() -> None:
         from contextlib import nullcontext
 
         from ingest.gcp.lake_store import cloud_lake_enabled
+        from ingest.sofascore.client import SofascoreClient
         from ingest.sofascore.stats_dataset import match_stats_batch_write
+
+        probe = SofascoreClient()
+        if not probe.probe():
+            raise SystemExit(
+                "Sofascore indisponível (WAF 403). Pare o ingest, aguarde 1–6 h, "
+                "aumente SOFASCORE_MIN_INTERVAL_SEC=2.0 e tente lotes menores."
+            )
 
         save = not args.no_save
         batch = (
@@ -256,7 +264,14 @@ def main() -> None:
         return
 
     if args.build_team_map:
-        teams = build_team_map_from_squads()
+        from ingest.sofascore.client import SofascoreClient
+
+        probe = SofascoreClient()
+        if not probe.probe():
+            raise SystemExit(
+                "Sofascore indisponível (WAF 403). Aguarde desbloqueio do IP antes de rebuild do team map."
+            )
+        teams = build_team_map_from_squads(client=probe)
         out = {
             "version": 1,
             "source": "sofascore_search",

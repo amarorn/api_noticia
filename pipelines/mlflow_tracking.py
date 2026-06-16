@@ -51,6 +51,7 @@ def log_wc_train_run(
     manifest: dict,
     elapsed_sec: float | None = None,
     run_name: str | None = None,
+    log_artifacts: bool = True,
 ) -> str:
     import mlflow
 
@@ -60,57 +61,115 @@ def log_wc_train_run(
     if run_name is None:
         run_name = created_at[:19].replace(":", "-") if created_at else "wc-train"
 
+    with mlflow.start_run(run_name=run_name) as run:
+        apply_manifest_to_run(
+            manifest,
+            elapsed_sec=elapsed_sec,
+            log_artifacts=log_artifacts,
+        )
+        return run.info.run_id
+
+
+def apply_manifest_to_run(
+    manifest: dict,
+    *,
+    elapsed_sec: float | None = None,
+    log_artifacts: bool = True,
+) -> None:
+    """Grava params/métricas/artefatos do manifest no run MLflow ativo."""
+    import mlflow
+
     training = manifest.get("training_metrics") or {}
     collab = manifest.get("collab_metrics") or {}
     ensemble = manifest.get("ensemble_weights") or {}
     hyperparams = manifest.get("hyperparams") or {}
 
-    with mlflow.start_run(run_name=run_name) as run:
-        mlflow.log_param("artifact_version", manifest.get("artifact_version"))
-        mlflow.log_param("fixture_rows", manifest.get("fixture_rows"))
-        mlflow.log_param("train_size", training.get("train_size"))
-        mlflow.log_param("holdout_season", training.get("holdout_season"))
-        mlflow.log_param("feature_count", manifest.get("feature_count"))
-        mlflow.log_param("logistic_calibration", manifest.get("logistic_calibration"))
+    mlflow.log_param("artifact_version", manifest.get("artifact_version"))
+    mlflow.log_param("fixture_rows", manifest.get("fixture_rows"))
+    mlflow.log_param("train_size", training.get("train_size"))
+    mlflow.log_param("holdout_season", training.get("holdout_season"))
+    mlflow.log_param("feature_count", manifest.get("feature_count"))
+    mlflow.log_param("logistic_calibration", manifest.get("logistic_calibration"))
 
-        for key in (
-            "fixtures_fingerprint",
-            "squads_fingerprint",
-            "hyperparams_fingerprint",
-            "fifa_fingerprint",
-            "odds_fingerprint",
-            "baselines_fingerprint",
-            "silver_fingerprint",
-        ):
-            if manifest.get(key):
-                mlflow.log_param(key, manifest[key])
+    for key in (
+        "fixtures_fingerprint",
+        "squads_fingerprint",
+        "hyperparams_fingerprint",
+        "fifa_fingerprint",
+        "odds_fingerprint",
+        "baselines_fingerprint",
+        "silver_fingerprint",
+    ):
+        if manifest.get(key):
+            mlflow.log_param(key, manifest[key])
 
-        for key, value in hyperparams.items():
-            mlflow.log_param(f"hp_{key}", value)
+    for key, value in hyperparams.items():
+        mlflow.log_param(f"hp_{key}", value)
 
-        if training.get("holdout_accuracy") is not None:
-            mlflow.log_metric("holdout_accuracy", float(training["holdout_accuracy"]))
-        if collab.get("accuracy") is not None:
-            mlflow.log_metric("ensemble_accuracy", float(collab["accuracy"]))
-        if collab.get("brier_score") is not None:
-            mlflow.log_metric("ensemble_brier", float(collab["brier_score"]))
-        if collab.get("log_loss") is not None:
-            mlflow.log_metric("ensemble_log_loss", float(collab["log_loss"]))
-        if collab.get("validation_size") is not None:
-            mlflow.log_metric("validation_size", float(collab["validation_size"]))
-        if ensemble.get("dixon_coles") is not None:
-            mlflow.log_metric("weight_dixon_coles", float(ensemble["dixon_coles"]))
-        if ensemble.get("logistic") is not None:
-            mlflow.log_metric("weight_logistic", float(ensemble["logistic"]))
-        if elapsed_sec is not None:
-            mlflow.log_metric("train_elapsed_sec", float(elapsed_sec))
+    if training.get("holdout_accuracy") is not None:
+        mlflow.log_metric("holdout_accuracy", float(training["holdout_accuracy"]))
+    if collab.get("accuracy") is not None:
+        mlflow.log_metric("ensemble_accuracy", float(collab["accuracy"]))
+    if collab.get("brier_score") is not None:
+        mlflow.log_metric("ensemble_brier", float(collab["brier_score"]))
+    if collab.get("log_loss") is not None:
+        mlflow.log_metric("ensemble_log_loss", float(collab["log_loss"]))
+    if collab.get("validation_size") is not None:
+        mlflow.log_metric("validation_size", float(collab["validation_size"]))
+    if ensemble.get("dixon_coles") is not None:
+        mlflow.log_metric("weight_dixon_coles", float(ensemble["dixon_coles"]))
+    if ensemble.get("logistic") is not None:
+        mlflow.log_metric("weight_logistic", float(ensemble["logistic"]))
+    if elapsed_sec is not None:
+        mlflow.log_metric("train_elapsed_sec", float(elapsed_sec))
 
-        manifest_path = settings.wc_artifact_dir / "manifest.json"
-        if manifest_path.exists():
-            mlflow.log_artifact(str(manifest_path))
+    holdout_eval = manifest.get("holdout_eval")
+    if log_artifacts and holdout_eval:
+        log_holdout_confusion_figure(holdout_eval)
 
-        predictor_path = settings.wc_artifact_dir / "predictor.pkl"
-        if predictor_path.exists():
-            mlflow.log_artifact(str(predictor_path))
+    manifest_path = settings.wc_artifact_dir / "manifest.json"
+    if log_artifacts and manifest_path.exists():
+        mlflow.log_artifact(str(manifest_path))
 
-        return run.info.run_id
+    predictor_path = settings.wc_artifact_dir / "predictor.pkl"
+    if log_artifacts and predictor_path.exists():
+        mlflow.log_artifact(str(predictor_path))
+
+
+def log_holdout_confusion_figure(holdout_eval: dict) -> None:
+    """Grava matriz de confusão do holdout na aba Artifacts do MLflow."""
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import mlflow
+        import numpy as np
+        from sklearn.metrics import ConfusionMatrixDisplay
+    except ImportError:
+        return
+
+    matrix = holdout_eval.get("confusion_matrix")
+    if not matrix:
+        return
+
+    labels = holdout_eval.get("labels") or ["1", "X", "2"]
+    season = holdout_eval.get("validation_season", "")
+    accuracy = holdout_eval.get("accuracy")
+    n_samples = holdout_eval.get("n_samples")
+
+    fig, ax = plt.subplots(figsize=(5.5, 4.5))
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=np.array(matrix, dtype=int),
+        display_labels=labels,
+    )
+    disp.plot(ax=ax, colorbar=False, cmap="Blues")
+    title = f"Holdout {season}"
+    if accuracy is not None:
+        title += f" — acurácia {float(accuracy):.1%}"
+    if n_samples is not None:
+        title += f" (n={n_samples})"
+    ax.set_title(title)
+    fig.tight_layout()
+    mlflow.log_figure(fig, "plots/confusion_matrix_ensemble.png")
+    plt.close(fig)

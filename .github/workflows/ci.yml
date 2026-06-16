@@ -20,10 +20,26 @@ jobs:
       - name: Ruff check
         run: ruff check .
 
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+      - name: Typecheck + build
+        working-directory: frontend
+        run: npm run build
+
   test-and-benchmark:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: lint
+    needs: [lint, frontend-build]
 
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +52,11 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev,ml]"
 
-      - name: Unit tests
-        run: pytest tests/ -q --tb=short
+      - name: Unit tests (rápidos)
+        run: pytest tests/ -q --tb=short -m "not slow"
+
+      - name: Unit tests (slow / ML)
+        run: pytest tests/ -q --tb=short -m "slow"
 
       - name: Import fixtures (openfootball)
         run: import-fixtures --competition brasileirao --seasons 2022 2023 2024

@@ -89,6 +89,12 @@ def coase_effective_min_edge(
     return base + margin + settings.coase_transaction_cost
 
 
+def live_effective_min_edge(base_min_edge: float | None = None) -> float:
+    """Limiar in-play: margem da casa já está embutida nas odds ao vivo."""
+    base = base_min_edge if base_min_edge is not None else settings.live_ev_min_edge
+    return base + settings.coase_transaction_cost
+
+
 def ces_blend_probabilities(
     models: dict[str, dict[str, float]],
     weights: dict[str, float] | None = None,

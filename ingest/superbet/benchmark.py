@@ -6,6 +6,14 @@ from typing import Any
 from ingest.superbet.parser import SuperbetEventSnapshot
 
 
+def h2h_overround(h2h_odds: dict[str, float]) -> float | None:
+    """Margem bruta do mercado 1X2: soma(1/odd) - 1."""
+    prices = [h2h_odds[k] for k in ("1", "X", "2") if k in h2h_odds and h2h_odds[k] > 1.0]
+    if len(prices) < 2:
+        return None
+    return round(sum(1.0 / p for p in prices) - 1.0, 4)
+
+
 def market_benchmark(
     snapshot: SuperbetEventSnapshot,
     *,

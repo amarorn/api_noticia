@@ -12,6 +12,7 @@ Plataforma de previsões esportivas (bolão 1/X/2) que combina **datalake de not
 | [Referência da API](api-referencia.md) | Todos os endpoints REST com exemplos |
 | [Modelos preditivos](modelos-preditivos.md) | Dixon-Coles, logística, Elo, KXL, ensemble, EV |
 | [Plano WC — Sprints 2–4](wc-plano-sprints.md) | Artefato, walk-forward, convocações, notícias, Platt, CI |
+| [Roadmap plataforma ML](roadmap-plataforma-ml.md) | Fases A–D, status, carteira pós-partida, north star `/modelos` |
 | [Datalake e pipelines](datalake-e-pipelines.md) | Bronze/silver/gold, CLIs, importação de fixtures |
 | [Frontend](frontend.md) | React, rotas, Clean Architecture, componentes |
 | [Motor KXL — Colisão](kxl-colisao.md) | Fórmulas Vcar, Vesc, TBRTL, letalidade×GK |

@@ -9,7 +9,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 from models.wc_feature_cache import load_cached_features, save_cached_features
-from pipelines.wc_holdout import wc_holdout_test_df, wc_holdout_train_df
+from pipelines.wc_holdout import wc_holdout_test_df
+from pipelines.wc_training_dataset import wc_training_label_df
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_sofascore_features import SOFASCORE_FEATURE_NAMES
 from pipelines.wc_stats import (
@@ -17,6 +18,7 @@ from pipelines.wc_stats import (
     build_match_features,
     features_to_vector,
     precompute_elo_timeline,
+    row_group_name,
 )
 from schemas.models import BolaoLabel
 
@@ -58,9 +60,9 @@ class WcLogisticModel:
     ) -> dict:
         df = fixtures_df.sort_values("match_date").copy()
         train_df = (
-            wc_holdout_train_df(df, holdout_season)
+            wc_training_label_df(df, holdout_season)
             if holdout_season
-            else df
+            else wc_training_label_df(df, None)
         )
 
         cached = load_cached_features(train_df)
@@ -78,7 +80,7 @@ class WcLogisticModel:
 
             for index, (_, row) in enumerate(train_df.iterrows(), start=1):
                 before = row["match_date"]
-                gcol = row.get("group_name") or row.get("group")
+                gcol = row_group_name(row)
                 feats = build_match_features(
                     df,
                     row["home_team"],
@@ -134,7 +136,7 @@ class WcLogisticModel:
                     is_neutral=bool(row.get("is_neutral", True)),
                     before_date=row["match_date"],
                     season=int(row["season"]),
-                    group_name=row.get("group_name") or row.get("group"),
+                    group_name=row_group_name(row),
                 )
                 if pred.prediction == row["label"]:
                     correct += 1

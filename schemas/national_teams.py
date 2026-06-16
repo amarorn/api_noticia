@@ -102,4 +102,11 @@ NATIONAL_ALIASES: dict[str, str] = {
 
 def normalize_national_team(name: str) -> str:
     cleaned = " ".join(name.split())
+    # Remover sufixos de seleções de base (Sub-21, U21, U-21, etc.)
+    for suffix in (" Sub-21", " U21", " U-21", " U23", " U-23"):
+        if cleaned.endswith(suffix):
+            cleaned = cleaned[: -len(suffix)].strip()
+    for suffix_lower in (" u21", " u-21", " sub 21", " sub-21", " u23", " u-23"):
+        if cleaned.endswith(suffix_lower):
+            cleaned = cleaned[: -len(suffix_lower)].strip()
     return NATIONAL_ALIASES.get(cleaned, cleaned)

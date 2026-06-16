@@ -10,8 +10,13 @@ import pickle
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import structlog
+
+if TYPE_CHECKING:
+    from models.wc_train_progress import TrainProgressReporter
+
 
 from config import settings
 from models.wc_predictor import WcPredictor, train_wc_predictor
@@ -30,6 +35,10 @@ ARTIFACT_VERSION = 7
 
 def fixtures_fingerprint() -> str:
     paths = sorted(settings.fixtures_path.glob("world_cup_*.parquet"))
+    for extra in ("fifa_matches.parquet", "sofascore_matches.parquet"):
+        p = settings.fixtures_path / extra
+        if p.exists():
+            paths.append(p)
     if not paths:
         return "empty"
     parts = [f"{p.name}:{p.stat().st_mtime_ns}:{p.stat().st_size}" for p in paths]
@@ -95,8 +104,12 @@ def artifact_is_valid(manifest: dict | None = None) -> bool:
     return all(checks.values())
 
 
+# Fingerprints que podem mudar sem invalidar o pickle (fixtures recarregadas em load_artifact).
+_RUNTIME_STALE_KEYS = frozenset({"hyperparams", "odds", "fifa", "silver_fingerprint", "fixtures"})
+
+
 def artifact_is_loadable(manifest: dict | None = None) -> bool:
-    """Permite servir pickle quando só hiperparâmetros mudaram (retreino recomendado)."""
+    """Permite servir pickle quando só metadados runtime mudaram (odds, FIFA, hiperparâmetros)."""
     manifest = manifest or read_manifest()
     if not manifest or not _bundle_path().exists():
         return False
@@ -104,7 +117,7 @@ def artifact_is_loadable(manifest: dict | None = None) -> bool:
     stale = [name for name, ok in checks.items() if not ok]
     if not stale:
         return True
-    return stale == ["hyperparams"]
+    return all(name in _RUNTIME_STALE_KEYS for name in stale)
 
 
 def save_artifact(predictor: WcPredictor) -> dict:
@@ -117,8 +130,13 @@ def save_artifact(predictor: WcPredictor) -> dict:
         "_metrics": predictor._metrics,
         "_dc_metrics": predictor._dc_metrics,
         "_draw_metrics": predictor._draw_metrics,
+        "calibrator": getattr(predictor, "calibrator", None),
     }
     _bundle_path().write_bytes(pickle.dumps(bundle, protocol=pickle.HIGHEST_PROTOCOL))
+
+    from pipelines.wc_holdout_eval import evaluate_wc_holdout
+
+    holdout_eval = evaluate_wc_holdout(predictor)
 
     manifest = {
         "artifact_version": ARTIFACT_VERSION,
@@ -143,6 +161,7 @@ def save_artifact(predictor: WcPredictor) -> dict:
             "dixon_coles": predictor.collaborative.dixon_coles_weight,
             "logistic": predictor.collaborative.logistic_weight,
         },
+        "holdout_eval": holdout_eval.to_dict() if holdout_eval else None,
     }
     _manifest_path().write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
@@ -159,14 +178,16 @@ def load_artifact() -> WcPredictor | None:
     if not artifact_is_valid(manifest):
         if not artifact_is_loadable(manifest):
             return None
+        stale = [name for name, ok in _artifact_checks(manifest).items() if not ok]
         logger.warning(
-            "wc_artifact_stale_hyperparams",
-            hint="Execute train-wc --force para alinhar pesos ao hyperparams.json",
+            "wc_artifact_stale_runtime",
+            stale=stale,
+            hint="Pickle servido com fixtures atualizadas; execute retrain-wc-hoje se sincronizou placares",
         )
-    from ingest.fixtures.world_cup import load_wc_fixtures
+    from ingest.fixtures.world_cup import load_wc_fixtures, normalize_fixtures_df
 
     bundle = pickle.loads(_bundle_path().read_bytes())
-    fixtures = load_wc_fixtures()
+    fixtures = normalize_fixtures_df(load_wc_fixtures())
     if fixtures.empty:
         return None
 
@@ -180,6 +201,7 @@ def load_artifact() -> WcPredictor | None:
     predictor.collab_metrics = predictor.collaborative.metrics
     predictor.draw_model = bundle["draw_model"]
     predictor._draw_metrics = bundle["_draw_metrics"]
+    predictor.calibrator = bundle.get("calibrator")
     return predictor
 
 
@@ -192,6 +214,28 @@ def _touch_manifest_silver_fingerprint(manifest: dict) -> dict:
             encoding="utf-8",
         )
     return manifest
+
+
+def _touch_manifest_runtime_fingerprints(manifest: dict) -> dict:
+    """Atualiza fingerprints voláteis após load (silver, odds, FIFA, fixtures)."""
+    updated = dict(manifest)
+    changed = False
+    for key, fn in (
+        ("silver_fingerprint", silver_fingerprint),
+        ("odds_fingerprint", _odds_fingerprint),
+        ("fifa_fingerprint", fifa_rankings_fingerprint),
+        ("fixtures_fingerprint", fixtures_fingerprint),
+    ):
+        current = fn()
+        if updated.get(key) != current:
+            updated[key] = current
+            changed = True
+    if changed:
+        _manifest_path().write_text(
+            json.dumps(updated, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    return updated
 
 
 def _log_train_to_mlflow(manifest: dict) -> str | None:
@@ -224,10 +268,15 @@ def load_or_train_wc_predictor(
     from models.wc_train_progress import NullTrainProgressReporter
 
     reporter = progress or NullTrainProgressReporter()
+    mlflow_session = None
+    if enable_mlflow:
+        from pipelines.mlflow_live_train import attach_mlflow_live
+
+        reporter, mlflow_session = attach_mlflow_live(reporter)
     if not force:
         loaded = load_artifact()
         if loaded is not None:
-            manifest = _touch_manifest_silver_fingerprint(read_manifest() or {})
+            manifest = _touch_manifest_runtime_fingerprints(read_manifest() or {})
             manifest["loaded_from_cache"] = True
             logger.info("wc_artifact_loaded", created_at=manifest.get("created_at"))
             return loaded, manifest
@@ -252,12 +301,22 @@ def load_or_train_wc_predictor(
                 "ensemble_weights": manifest.get("ensemble_weights"),
             }
         )
-        if enable_mlflow:
+        if enable_mlflow and mlflow_session and mlflow_session.active:
+            from models.wc_train_progress import read_train_progress
+
+            progress = read_train_progress()
+            elapsed = progress.elapsed_sec if progress else None
+            run_id = mlflow_session.finalize(manifest, elapsed_sec=elapsed)
+            if run_id:
+                manifest["mlflow_run_id"] = run_id
+        elif enable_mlflow:
             run_id = _log_train_to_mlflow(manifest)
             if run_id:
                 manifest["mlflow_run_id"] = run_id
         return predictor, manifest
     except Exception as exc:
+        if mlflow_session and mlflow_session.active:
+            mlflow_session.fail(str(exc))
         reporter.fail(str(exc))
         raise
 

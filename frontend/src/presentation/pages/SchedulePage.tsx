@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getWcScheduleUseCase } from "@/application/container";
+import { getSuperbetLiveUseCase, getWcScheduleUseCase } from "@/application/container";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
@@ -19,6 +19,13 @@ export function SchedulePage() {
     queryKey: ["wc-schedule"],
     queryFn: () => getWcScheduleUseCase.execute(),
     staleTime: 10 * 60_000,
+  });
+
+  const liveQuery = useQuery({
+    queryKey: ["superbet-live-schedule"],
+    queryFn: () => getSuperbetLiveUseCase.execute({ rank: false }),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const roundCounts = useMemo(() => {
@@ -63,7 +70,11 @@ export function SchedulePage() {
     <PageTransition>
       <PageHeader
         title="Tabela de jogos"
-        subtitle={`${schedule.competition} · ${schedule.totalMatches} jogos na fase de grupos`}
+        subtitle={
+          schedule.predictionsSummary
+            ? `${schedule.competition} · ${schedule.totalMatches} jogos · ${schedule.predictionsSummary.draws} empates previstos`
+            : `${schedule.competition} · ${schedule.totalMatches} jogos na fase de grupos`
+        }
       />
 
       <section className="mb-8 space-y-3">
@@ -106,6 +117,7 @@ export function SchedulePage() {
           schedule={schedule}
           selectedRound={selectedRound}
           selectedGroup={selectedGroup}
+          liveEvents={liveQuery.data?.events ?? []}
         />
       </section>
     </PageTransition>

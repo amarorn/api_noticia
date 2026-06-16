@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "Bolão AI — Captura Superbet",
+  "version": "1.7.0",
+  "description": "Superbet → Bolão AI: captura, alerta contra modelo, painel ao vivo e montagem de bilhete.",
+  "permissions": ["activeTab", "storage", "notifications", "scripting", "tabs"],
+  "host_permissions": [
+    "https://superbet.com/*",
+    "https://*.superbet.com/*",
+    "https://superbet.com.br/*",
+    "https://*.superbet.com.br/*",
+    "https://superbet.bet.br/*",
+    "https://*.superbet.bet.br/*",
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*",
+    "http://127.0.0.1:5173/*",
+    "http://localhost:5173/*",
+    "https://*/api/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://127.0.0.1:5173/*",
+        "http://localhost:5173/*"
+      ],
+      "js": ["frontend_bridge.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://superbet.com/*",
+        "https://*.superbet.com/*",
+        "https://superbet.com.br/*",
+        "https://*.superbet.com.br/*",
+        "https://superbet.bet.br/*",
+        "https://*.superbet.bet.br/*"
+      ],
+      "js": ["event_id.js", "content_script.js", "live_market_panel.js", "ticket_builder.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

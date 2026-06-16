@@ -2,8 +2,9 @@ import argparse
 import json
 from pathlib import Path
 
-from models.wc_predictor import WcPredictor
+from models.wc_artifact import load_or_train_wc_predictor
 from schemas.national_teams import normalize_national_team
+from pipelines.wc_predict_utils import before_date_for_match, match_is_played
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
 
 DEFAULT_ROUND = Path("data/rounds/wc_2026.json")
@@ -38,11 +39,17 @@ def main() -> None:
     parser.add_argument("--away", type=str, help="Seleção visitante (palpite avulso)")
     parser.add_argument("--phase", type=str, default="group", help="Fase: group, round_16, quarter...")
     parser.add_argument("--json", action="store_true", help="Saída JSON")
+    parser.add_argument("--output", type=Path, help="Grava JSON em arquivo (usa com --json)")
     parser.add_argument("--quiet", action="store_true", help="Menos detalhes")
     parser.add_argument(
         "--kxl-json",
         type=Path,
         help="JSON com campo kxl_match (mesmo formato da API)",
+    )
+    parser.add_argument(
+        "--no-train",
+        action="store_true",
+        help="Falha se o artifact WC estiver ausente/desatualizado",
     )
     args = parser.parse_args()
 
@@ -52,7 +59,7 @@ def main() -> None:
         if "kxl_match" in payload:
             kxl_match = WcKxlMatchInput.model_validate(payload["kxl_match"])
 
-    predictor = WcPredictor()
+    predictor, _manifest = load_or_train_wc_predictor(allow_train=not args.no_train)
     results = []
 
     if args.home and args.away:
@@ -68,8 +75,16 @@ def main() -> None:
             home = normalize_national_team(match["home_team"])
             away = normalize_national_team(match["away_team"])
             match_phase = match.get("phase", phase)
+            if match_is_played(match):
+                continue
             pred = predictor.predict(
-                home, away, phase=match_phase, kxl_match=kxl_match
+                home,
+                away,
+                phase=match_phase,
+                kxl_match=kxl_match,
+                before_date=before_date_for_match(match),
+                season=round_data.get("season"),
+                group_name=match.get("group"),
             )
             results.append((pred, match))
 
@@ -97,7 +112,13 @@ def main() -> None:
                 "h2h": p.h2h_summary,
                 "models": p.model_breakdown,
             })
-        print(json.dumps(output, ensure_ascii=False, indent=2))
+        payload = json.dumps(output, ensure_ascii=False, indent=2)
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(payload, encoding="utf-8")
+            print(f"Palpites salvos: {args.output} ({len(output)} jogos)")
+        else:
+            print(payload)
     else:
         metrics = predictor.training_metrics
         print(f"Modelo treinado com {metrics.get('train_size', '?')} jogos históricos")

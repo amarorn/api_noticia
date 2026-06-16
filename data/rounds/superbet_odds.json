@@ -1,0 +1,44 @@
+{
+  "source": "superbet",
+  "competition": "mixed",
+  "matches": [
+    {
+      "home_team": "Japão (F)",
+      "away_team": "África do Sul (F)",
+      "phase": "friendly",
+      "bookmaker": "superbet",
+      "commence_time": "2026-06-09T06:30:00Z",
+      "superbet_event_id": 13309609,
+      "betradar_id": "71182722",
+      "odds": {
+        "1": 12.0,
+        "X": 3.5,
+        "2": 1.4
+      },
+      "implied": {
+        "1": 0.0769,
+        "X": 0.2637,
+        "2": 0.6593
+      },
+      "totals_implied": {
+        "1.5": {
+          "Mais de 1.5": 0.36250000000000004,
+          "Menos de 1.5": 0.6375000000000001
+        },
+        "2.5": {
+          "Mais de 2.5": 0.10714285714285715,
+          "Menos de 2.5": 0.8928571428571429
+        },
+        "3.5": {
+          "Mais de 3.5": 1.0
+        },
+        "4.5": {
+          "Mais de 4.5": 1.0
+        }
+      },
+      "corners_implied": {},
+      "captured_at": "2026-06-09T08:17:19.781525+00:00"
+    }
+  ],
+  "captured_at": "2026-06-09T08:17:19.783759+00:00"
+}

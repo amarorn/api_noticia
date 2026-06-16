@@ -90,7 +90,29 @@ export interface IWcRepository {
   getSuperbetLive(request?: {
     sportId?: number;
     allSports?: boolean;
+    rank?: boolean;
   }): Promise<import("@/domain/entities").SuperbetLiveFeed>;
+  getSuperbetEvent(request: {
+    eventId: number;
+    saveBronze?: boolean;
+  }): Promise<import("@/domain/entities").SuperbetEventSnapshot>;
+  getSuperbetLiveAdvice(request: {
+    eventId: number;
+    phase?: string;
+    bankroll?: number;
+    market?: string;
+    outcome?: string;
+    stake?: number;
+    oddsPlaced?: number;
+    fast?: boolean;
+    kickoff?: string;
+  }): Promise<import("@/domain/entities").SuperbetLiveAdvice>;
+  getComboTicket(request: {
+    homeTeam: string;
+    awayTeam: string;
+    bankroll?: number;
+    superbetEventId?: number;
+  }): Promise<import("@/domain/entities").WcComboTicket>;
   simulateMatch(request: {
     homeTeam: string;
     awayTeam: string;
@@ -99,6 +121,10 @@ export interface IWcRepository {
     fifaMatchId?: string;
     sofascoreEventId?: number;
   }): Promise<import("@/domain/entities").WcSimulation>;
+  getUserOpenBets(): Promise<import("@/domain/entities").UserOpenBetsList>;
+  registerComboProposal(
+    body: import("@/application/dtos/comboProposal").ComboProposalApiBody,
+  ): Promise<import("@/application/dtos/comboProposal").RegisterComboProposalResult>;
 }
 
 export interface IBrasileiraoRepository {
