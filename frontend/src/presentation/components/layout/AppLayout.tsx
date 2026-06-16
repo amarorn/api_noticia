@@ -105,17 +105,17 @@ export function AppLayout() {
           className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin"
           onScroll={handleScroll}
         >
-          {/* Header sticky com breadcrumb e banner */}
+          {/* Header sticky compacto com breadcrumb e banner */}
           <div className="sticky top-0 z-30">
             <div
               className="absolute inset-0 backdrop-blur-xl"
               style={{
-                background: "linear-gradient(to bottom, rgba(5,8,17,0.95) 0%, rgba(5,8,17,0.85) 60%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)",
-                maskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)",
+                background: "linear-gradient(to bottom, rgba(5,8,17,0.95) 0%, rgba(5,8,17,0.80) 50%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
               }}
             />
-            <div className="relative mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6">
+            <div className="relative mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4">
               {!healthPending && healthError && !bannerDismissed && (
                 <ApiOfflineBanner
                   onRetry={() => refetchHealth()}
@@ -129,7 +129,7 @@ export function AppLayout() {
           {/* Conteúdo da página */}
           <div
             id="main-content"
-            className="relative mx-auto max-w-7xl px-4 pb-6 sm:px-6 sm:pb-8"
+            className="relative mx-auto max-w-7xl px-4 pb-4 sm:px-6 sm:pb-6"
           >
             <AnimatedOutlet />
           </div>

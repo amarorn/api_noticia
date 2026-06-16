@@ -15,14 +15,14 @@ export function PageBreadcrumb() {
   if (crumbs.length <= 1) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-5">
-      <ol className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+    <nav aria-label="Breadcrumb" className="mb-3">
+      <ol className="flex flex-wrap items-center gap-1 text-[11px] text-slate-500">
         {crumbs.map((crumb, i) => {
           const isLast = i === crumbs.length - 1;
           return (
-            <li key={`${crumb.label}-${i}`} className="flex items-center gap-1.5">
+            <li key={`${crumb.label}-${i}`} className="flex items-center gap-1">
               {i > 0 && (
-                <IconChevronRight className="h-3 w-3 shrink-0 text-slate-700" aria-hidden />
+                <IconChevronRight className="h-2.5 w-2.5 shrink-0 text-neon-green/20" aria-hidden />
               )}
               {crumb.to && !isLast ? (
                 <Link

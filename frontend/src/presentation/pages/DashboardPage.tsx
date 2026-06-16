@@ -185,49 +185,34 @@ export function DashboardPage() {
   ];
 
   return (
-    <PageTransition className="space-y-8">
+    <PageTransition className="space-y-4">
       <HeroPageHeader
         title={roundMeta?.competition ?? "Copa do Mundo 2026"}
-        subtitle={`Fase de grupos · Temporada ${roundMeta?.season ?? 2026} · ${allPredictions.length}/72 jogos carregados`}
+        subtitle={`Fase de grupos · Temporada ${roundMeta?.season ?? 2026} · ${allPredictions.length}/72 jogos`}
         badges={[{ label: gamesLabel, color: "blue" }]}
       />
 
       <QuickActions />
 
-      <section className="info-panel glow-border relative space-y-3">
-        <p className="font-semibold text-white flex items-center gap-2">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-neon-green/10 text-neon-green text-xs">?</span>
+      <section className="info-panel glow-border relative space-y-2 p-3">
+        <p className="font-semibold text-white text-xs flex items-center gap-2">
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-neon-green/10 text-neon-green text-[10px]">?</span>
           Como ler estes palpites
         </p>
-        <ul className="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-slate-400">
-          <li>
-            <strong className="text-slate-300">Prob. palpite</strong> é a chance estimada do
-            resultado escolhido (1/X/2), não garantia de acerto.
-          </li>
-          <li>
-            Jogos com <strong className="text-amber-300">incerteza alta</strong> são equilibrados —
-            evite apostas grandes (ex.: margem &lt; 8 pp).
-          </li>
-          <li>
-            Palpite <strong className="text-sky-300">X por equilíbrio</strong> pode aparecer mesmo
-            quando casa/fora têm probabilidade ligeiramente maior.
-          </li>
+        <ul className="list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-slate-400">
+          <li><strong className="text-slate-300">Prob. palpite</strong> é a chance estimada do resultado (1/X/2).</li>
+          <li>Jogos com <strong className="text-amber-300">incerteza alta</strong> são equilibrados — evite apostas grandes.</li>
+          <li>Palpite <strong className="text-sky-300">X</strong> pode aparecer quando probabilidades estão próximas.</li>
           {finishedStats.total > 0 && (
             <li>
-              Jogos já realizados nesta tela:{" "}
-              <strong className="text-neon-green">
-                {finishedStats.hits}/{finishedStats.total} acertos
-              </strong>{" "}
-              ({((finishedStats.hits / finishedStats.total) * 100).toFixed(0)}%).
+              Acertos: <strong className="text-neon-green">{finishedStats.hits}/{finishedStats.total}</strong>
+              {" "}({((finishedStats.hits / finishedStats.total) * 100).toFixed(0)}%).
             </li>
           )}
         </ul>
       </section>
 
-      <section className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="section-label m-0">Rodada</p>
-        </div>
+      <section className="space-y-2">
         <RoundTabs tabs={tabs} active={activeRound} onChange={setActiveRound} />
       </section>
 
@@ -282,7 +267,7 @@ export function DashboardPage() {
             }
           />
         ) : (
-          <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <StaggerContainer className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filteredPredictions.map((pred: WcPrediction, i: number) => {
               const matchKey = `${pred.homeTeam}::${pred.awayTeam}`;
               const isSelected =
@@ -321,11 +306,11 @@ export function DashboardPage() {
 
       {selectedMatch && (
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.96 }}
+          initial={{ opacity: 0, y: 16, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 320, damping: 26 }}
-          className="fixed bottom-4 left-1/2 z-50 flex w-[min(100%-2rem,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-neon-purple/30 bg-[#12182a]/95 px-4 py-3 shadow-2xl backdrop-blur-md"
+          exit={{ opacity: 0, y: 8, scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 380, damping: 28 }}
+          className="fixed bottom-3 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-2.5 rounded-xl border border-neon-purple/25 bg-surface-100/95 px-3 py-2 shadow-lg backdrop-blur-xl"
         >
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-white">
