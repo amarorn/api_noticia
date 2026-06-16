@@ -48,6 +48,9 @@ export function AppLayout() {
         Ir para o conteúdo
       </a>
 
+      {/* Scanline overlay CLI */}
+      <div className="scanline-overlay" aria-hidden />
+
       <ToastContainer />
       <AmbientBackground />
 
@@ -81,11 +84,13 @@ export function AppLayout() {
           <AnimatedOutlet />
         </main>
 
-        <footer className="relative border-t border-white/[0.06] px-4 py-6 sm:px-6">
+        {/* Footer CLI */}
+        <footer className="relative border-t px-4 py-6 sm:px-6" style={{ borderColor: "rgba(0, 245, 160, 0.06)" }}>
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
             <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-neon-green/40" />
-              <p className="font-display text-xs tracking-wide text-slate-500">
+              <span className="h-2 w-2 rounded-full shadow-glow-sm" style={{ background: "rgba(0, 245, 160, 0.6)" }} />
+              <p className="font-mono text-xs tracking-wide text-slate-500">
+                <span style={{ color: "rgba(0, 245, 160, 0.5)" }}>{"// "}</span>
                 Bolão AI · Dixon-Coles + Logística + KXL
               </p>
             </div>
@@ -94,7 +99,7 @@ export function AppLayout() {
                 <Link
                   key={to}
                   to={to}
-                  className="text-xs text-slate-500 transition-colors duration-200 hover:text-neon-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 rounded"
+                  className="font-mono text-xs text-slate-500 transition-colors duration-200 hover:text-neon-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 rounded"
                 >
                   {label}
                 </Link>

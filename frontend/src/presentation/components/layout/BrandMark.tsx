@@ -11,9 +11,9 @@ export function BrandMark({ size = "md" }: BrandMarkProps) {
     lg: "h-12 w-12 text-lg",
   };
   const glows = {
-    sm: "blur-md",
-    md: "blur-lg",
-    lg: "blur-xl scale-110",
+    sm: "blur-lg",
+    md: "blur-xl",
+    lg: "blur-2xl",
   };
 
   return (
@@ -25,11 +25,15 @@ export function BrandMark({ size = "md" }: BrandMarkProps) {
         aria-hidden
       />
       <motion.div
-        whileHover={{ rotate: 180, scale: 1.08 }}
-        transition={{ type: "spring", stiffness: 320, damping: 20 }}
-        className={`relative flex ${dims[size]} items-center justify-center rounded-xl bg-gradient-to-br from-neon-green via-neon-blue to-neon-purple font-display font-black text-surface shadow-neon ring-1 ring-white/10`}
+        whileHover={{ rotate: 180, scale: 1.1 }}
+        transition={{ type: "spring", stiffness: 320, damping: 18 }}
+        className={`relative flex ${dims[size]} items-center justify-center rounded-xl font-display font-black shadow-neon ring-1 ring-white/10`}
+        style={{
+          background: "linear-gradient(135deg, #00f5a0, #00e0ff, #c084fc)",
+          color: "#050811",
+        }}
       >
-        <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">AI</span>
+        <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">AI</span>
       </motion.div>
     </div>
   );
