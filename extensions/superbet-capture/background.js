@@ -606,6 +606,13 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true;
   }
 
+  if (request.type === "CASHOUT_ALERT") {
+    const p = request.payload || {};
+    showNotification(p.title || "Bolão AI — cash-out", p.body || "Meta de cash-out atingida.");
+    sendResponse({ ok: true });
+    return true;
+  }
+
   if (request.type === "TICKET_BUILDER_RESULT") {
     const { okCount, total } = request.payload || {};
     if (okCount != null && total != null) {

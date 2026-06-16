@@ -77,7 +77,7 @@ export function SchedulePage() {
         }
       />
 
-      <section className="mb-8 space-y-3">
+      <section className="mb-4 space-y-3">
         <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
           Grupos
         </h2>

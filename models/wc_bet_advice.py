@@ -198,6 +198,9 @@ def is_premature_underdog_handicap_2h(
             "superestima fechamento do azarão."
         )
     return False, ""
+
+
+def _half_period_from_market(market: str) -> str | None:
     if market.startswith("ft_"):
         return "ft"
     if market.startswith("1h_"):

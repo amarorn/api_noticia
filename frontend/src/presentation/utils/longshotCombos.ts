@@ -166,6 +166,8 @@ function h2hConflictsHandicap(
   const side = h2hOutcomeSide(h2hOutcome);
   if (!side) return false;
   if (side === "draw") return h.line <= -0.5;
+  // Superbet Criar Aposta: 1X2 no mesmo time do handicap anula/rejeita a outra perna
+  if (side === h.side) return true;
   if (side === "home" && h.side === "away" && h.line <= -0.5) return true;
   if (side === "away" && h.side === "home" && h.line <= -0.5) return true;
   return false;
@@ -267,6 +269,33 @@ function handicapConflictsOppositeOffense(
   return false;
 }
 
+function samePeriod(a: string, b: string): boolean {
+  return a === b || (a === "ft" && b === "ft");
+}
+
+/** Handicap + gols do mesmo time — Superbet descarta uma perna no Criar Aposta. */
+function handicapConflictsSameTeamOffense(
+  hcapMarket: string,
+  otherMarket: string,
+  otherOutcome: string,
+): boolean {
+  const h = parseHandicapMarket(hcapMarket);
+  if (!h) return false;
+  if (!["yes", "sim"].includes(otherOutcome.toLowerCase())) return false;
+
+  const teamOver = parseTeamOverLine(otherMarket);
+  if (teamOver && teamOver.side === h.side && samePeriod(h.period, teamOver.period)) {
+    return true;
+  }
+
+  const exact = parseExactTeamGoals(otherMarket);
+  if (exact && exact.side === h.side && samePeriod(h.period, exact.period)) {
+    return true;
+  }
+
+  return false;
+}
+
 function legsCompatible(a: LongshotLeg, b: LongshotLeg): boolean {
   if (a.market === b.market) return a.outcome === b.outcome;
   if (bttsConflictsCorrectScore(a.market, b.market)) return false;
@@ -313,6 +342,13 @@ function legsCompatible(a: LongshotLeg, b: LongshotLeg): boolean {
     return false;
   }
   if (legFamily(b.market) === "handicap" && handicapConflictsOppositeOffense(b.market, a.market, a.outcome)) {
+    return false;
+  }
+
+  if (legFamily(a.market) === "handicap" && handicapConflictsSameTeamOffense(a.market, b.market, b.outcome)) {
+    return false;
+  }
+  if (legFamily(b.market) === "handicap" && handicapConflictsSameTeamOffense(b.market, a.market, a.outcome)) {
     return false;
   }
 

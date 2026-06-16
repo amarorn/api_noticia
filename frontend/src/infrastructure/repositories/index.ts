@@ -283,6 +283,14 @@ export class WcApiRepository implements IWcRepository {
     return mapUserOpenBets(raw);
   }
 
+  async refreshOpenBetsCashouts(eventId?: number) {
+    const qs = eventId != null ? `?event_id=${eventId}` : "";
+    return apiFetch<{ updated: number; skipped: number; errors: number }>(
+      `/user/open-bets/refresh-cashouts${qs}`,
+      { method: "POST", timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+  }
+
   async registerComboProposal(body: import("@/application/dtos/comboProposal").ComboProposalApiBody) {
     return apiFetch<import("@/application/dtos/comboProposal").RegisterComboProposalResult>(
       "/user/open-bets",

@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
@@ -24,6 +24,7 @@ import { LivePredictionEvolutionChart } from "@/presentation/components/live-das
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
 import { useLivePossessionHistory } from "@/presentation/hooks/useLivePossessionHistory";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
+import { resolveLiveAdvicePhase } from "@/presentation/utils/liveAdvicePhase";
 
 function LiveBootstrapHero({
   homeTeam,
@@ -68,6 +69,8 @@ function LiveBootstrapHero({
 
 export function LiveDashboardPage() {
   const { eventId: eventIdParam } = useParams();
+  const [searchParams] = useSearchParams();
+  const advicePhase = resolveLiveAdvicePhase(searchParams);
   const eventId = Number.parseInt(eventIdParam ?? "", 10);
 
   const {
@@ -81,7 +84,7 @@ export function LiveDashboardPage() {
     error,
     isFetching,
     refetch,
-  } = useLiveAdviceQueries(eventId);
+  } = useLiveAdviceQueries(eventId, 1000, null, advicePhase);
 
   const possessionHistory = useLivePossessionHistory(data);
   const recalibrationEvent = useLiveRecalibration(data, isFetching);

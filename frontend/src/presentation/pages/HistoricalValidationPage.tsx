@@ -54,7 +54,7 @@ export function HistoricalValidationPage() {
   };
 
   return (
-    <PageTransition className="space-y-8">
+    <PageTransition className="space-y-4">
       <HeroPageHeader
         title="Validar histórico"
         subtitle="Backtest jogo a jogo com recorte temporal — sem vazamento de dados futuros"
@@ -187,7 +187,7 @@ function ValidationResultPanel({
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
-      className="space-y-6"
+      className="space-y-3"
     >
       <motion.div
         initial={{ scale: 0.9 }}
@@ -228,7 +228,7 @@ function ValidationResultPanel({
         />
       </div>
 
-      <div className="glass-card space-y-6 p-6">
+      <div className="glass-card space-y-3 p-6">
         <h3 className="text-xl font-bold text-white">
           {match.homeTeam} x {match.awayTeam}
         </h3>

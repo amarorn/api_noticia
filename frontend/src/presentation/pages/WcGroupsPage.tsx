@@ -22,7 +22,7 @@ export function WcGroupsPage() {
   const artifact = healthQuery.data?.wcArtifact;
 
   return (
-    <PageTransition className="space-y-8">
+    <PageTransition className="space-y-4">
       <HeroPageHeader
         title="Classificação simulada"
         subtitle="Tabela por grupo: projeção do modelo (Pts) e pontos reais do dia (Pts R)."
