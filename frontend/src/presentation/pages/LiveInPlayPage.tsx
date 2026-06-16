@@ -702,7 +702,7 @@ export function LiveInPlayPage() {
                 )}
 
                 {trackBet && displayBets.length > 0 && (
-                  <div className="mb-4 space-y-6">
+                  <div className="mb-4 space-y-3">
                     {displayBets.map((bet, index) =>
                       formMode === bet.id ? null : (
                         <LiveOpenBetMonitor

@@ -740,7 +740,7 @@ export function CarteiraPage() {
         title="Carteira & Performance"
         subtitle="Suba seu CSV da Superbet e veja onde o modelo erra mais"
       />
-      <div className="mx-auto max-w-6xl space-y-6 p-4">
+      <div className="mx-auto max-w-6xl space-y-3 p-4">
         <div className="flex items-center gap-3">
           <label className="text-xs text-slate-400">Usuário:</label>
           <input

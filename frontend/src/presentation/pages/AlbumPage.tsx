@@ -295,7 +295,7 @@ export function AlbumPage() {
   const pct = Math.round((collected.size / TEAMS.length) * 100);
 
   return (
-    <PageTransition className="space-y-6">
+    <PageTransition className="space-y-3">
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl border border-yellow-500/20" style={{ minHeight: 160 }}>
         <img

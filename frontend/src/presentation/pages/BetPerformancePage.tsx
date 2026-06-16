@@ -290,7 +290,7 @@ export function BetPerformancePage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-3">
         <PageHeader
           title="Performance de Apostas"
           subtitle="Analise de ROI, padroes de perda e sugestoes de melhoria"

@@ -14,7 +14,6 @@ import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { QuickActions } from "@/presentation/components/layout/QuickActions";
 import { MatchCard } from "@/presentation/components/predictions/MatchCard";
 import { ValueBetsSection } from "@/presentation/components/predictions/ValueBetCard";
-import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
 import { RoundTabs } from "@/presentation/components/ui/RoundTabs";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
@@ -186,54 +185,53 @@ export function DashboardPage() {
 
   return (
     <PageTransition className="space-y-4">
+      {/* Hero compacto */}
       <HeroPageHeader
         title={roundMeta?.competition ?? "Copa do Mundo 2026"}
-        subtitle={`Fase de grupos · Temporada ${roundMeta?.season ?? 2026} · ${allPredictions.length}/72 jogos`}
-        badges={[{ label: gamesLabel, color: "blue" }]}
+        subtitle={`Fase de grupos · ${allPredictions.length}/72 jogos`}
+        badges={[
+          { label: gamesLabel, color: "blue" },
+          ...(finishedStats.total > 0
+            ? [{
+                label: `${finishedStats.hits}/${finishedStats.total} acertos`,
+                color: "green" as const,
+              }]
+            : []),
+        ]}
       />
 
-      <QuickActions />
-
-      <section className="info-panel glow-border relative space-y-2 p-3">
-        <p className="font-semibold text-white text-xs flex items-center gap-2">
-          <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-neon-green/10 text-neon-green text-[10px]">?</span>
-          Como ler estes palpites
-        </p>
-        <ul className="list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-slate-400">
-          <li><strong className="text-slate-300">Prob. palpite</strong> é a chance estimada do resultado (1/X/2).</li>
-          <li>Jogos com <strong className="text-amber-300">incerteza alta</strong> são equilibrados — evite apostas grandes.</li>
-          <li>Palpite <strong className="text-sky-300">X</strong> pode aparecer quando probabilidades estão próximas.</li>
-          {finishedStats.total > 0 && (
-            <li>
-              Acertos: <strong className="text-neon-green">{finishedStats.hits}/{finishedStats.total}</strong>
-              {" "}({((finishedStats.hits / finishedStats.total) * 100).toFixed(0)}%).
-            </li>
-          )}
-        </ul>
-      </section>
-
-      <section className="space-y-2">
+      {/* Barra de controle: rodada + filtro + ações */}
+      <div className="flex flex-wrap items-center gap-2">
         <RoundTabs tabs={tabs} active={activeRound} onChange={setActiveRound} />
-      </section>
+        <div className="h-5 w-px mx-1" style={{ background: "rgba(0,245,160,0.08)" }} />
+        <QuickActions />
+      </div>
 
+      {/* Filtro de grupo inline */}
       {groupIds.length > 0 && (
-        <FilterBar label="Filtrar por grupo">
-          <FilterChip
-            label="Todos"
-            active={selectedGroup === "all"}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-slate-600 mr-1">Grupo:</span>
+          <button
+            type="button"
             onClick={() => setSelectedGroup("all")}
-          />
+            className={`chip-filter ${selectedGroup === "all" ? "chip-filter-active" : "chip-filter-idle"}`}
+          >
+            Todos
+          </button>
           {groupIds.map((gid) => (
-            <FilterChip
+            <button
+              type="button"
               key={gid}
-              label={`Gr. ${gid}`}
-              active={selectedGroup === gid}
               onClick={() => setSelectedGroup(gid)}
-            />
+              className={`chip-filter ${selectedGroup === gid ? "chip-filter-active" : "chip-filter-idle"}`}
+            >
+              Gr. {gid}
+            </button>
           ))}
-        </FilterBar>
+        </div>
       )}
 
+      {/* Loading parcial */}
       {isFetchingCurrent && !isLoadingCurrent && (
         <SlowLoadingPanel
           active
@@ -242,8 +240,13 @@ export function DashboardPage() {
         />
       )}
 
+      {/* Grid de palpites — conteúdo principal */}
       <section>
-        <p className="section-label">Palpites</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="section-label !mb-0">
+            Palpites <span className="font-mono text-neon-blue/50">({filteredPredictions.length})</span>
+          </p>
+        </div>
         {filteredPredictions.length === 0 ? (
           <EmptyState
             title="Nenhum jogo neste filtro"
@@ -253,7 +256,7 @@ export function DashboardPage() {
                 : "Tente outro grupo ou rodada."
             }
             icon={isFetchingCurrent ? IconCalendar : IconFilter}
-            iconColor={isFetchingCurrent ? "#00d4ff" : "#a855f7"}
+            iconColor={isFetchingCurrent ? "#00e0ff" : "#c084fc"}
             action={
               selectedGroup !== "all" ? (
                 <button
@@ -296,6 +299,7 @@ export function DashboardPage() {
         )}
       </section>
 
+      {/* Value Bets — seção secundária */}
       <ValueBetsSection
         edges={valueQuery.data?.edges ?? []}
         matchedGames={valueQuery.data?.matchedGames ?? 0}
@@ -304,6 +308,23 @@ export function DashboardPage() {
         error={valueError}
       />
 
+      {/* Ajuda — colapsada no rodapé */}
+      <details className="group">
+        <summary className="flex cursor-pointer items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors select-none">
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded bg-neon-green/10 text-neon-green text-[10px]">?</span>
+          Como ler estes palpites
+          <span className="ml-auto text-[10px] opacity-50 group-open:hidden">[clique para expandir]</span>
+        </summary>
+        <div className="info-panel mt-2 p-3 text-[11px] leading-relaxed text-slate-400">
+          <ul className="list-disc space-y-1 pl-4">
+            <li><strong className="text-slate-300">Prob. palpite</strong> é a chance estimada do resultado (1/X/2).</li>
+            <li>Jogos com <strong className="text-amber-300">incerteza alta</strong> são equilibrados — evite apostas grandes.</li>
+            <li>Palpite <strong className="text-sky-300">X</strong> pode aparecer quando probabilidades estão próximas.</li>
+          </ul>
+        </div>
+      </details>
+
+      {/* FAB bilhetes */}
       {selectedMatch && (
         <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.97 }}

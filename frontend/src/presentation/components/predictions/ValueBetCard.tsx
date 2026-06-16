@@ -98,26 +98,27 @@ export function ValueBetsSection({
   const positiveEdges = edges.filter((e) => e.best && e.best.expectedValue > 0);
 
   return (
-    <section className="space-y-4">
-      <div className="relative overflow-hidden rounded-2xl border border-neon-yellow/15" style={{ minHeight: 100 }}>
-        <img
-          src="/images/value-bets-hero.png"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-20"
-          draggable={false}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-surface/95 via-surface/75 to-transparent" />
-        <div className="relative flex flex-wrap items-end justify-between gap-2 p-5">
+    <section className="space-y-3">
+      {/* Cabeçalho compacto */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="h-5 w-5 rounded-md bg-neon-yellow/10 border border-neon-yellow/20 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-neon-yellow">$</span>
+          </span>
           <div>
-            <h2 className="text-xl font-bold gradient-text">Value Bets (EV)</h2>
-            <p className="text-sm text-slate-400">
-              {matchedGames}/{totalGames} jogos com odds · {positiveEdges.length} com edge positivo
+            <h2 className="text-sm font-bold text-white">Value Bets</h2>
+            <p className="font-mono text-[10px] text-slate-500">
+              {matchedGames}/{totalGames} jogos · {positiveEdges.length} edge positivo
             </p>
           </div>
         </div>
+        {positiveEdges.length > 0 && (
+          <span className="badge-premium border-neon-yellow/20 text-neon-yellow">
+            +{positiveEdges.length} EV
+          </span>
+        )}
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {edges.map((match, i) => (
           <ValueBetCard key={`${match.homeTeam}-${match.awayTeam}`} match={match} index={i} />
         ))}
