@@ -14,7 +14,7 @@ interface AppSidebarProps {
 export function AppSidebar({ health, healthPending, healthError }: AppSidebarProps) {
   return (
     <aside
-      className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col backdrop-blur-2xl lg:flex"
+      className="fixed inset-y-0 left-0 z-40 hidden h-screen w-64 flex-col backdrop-blur-2xl lg:flex"
       style={{
         background: "rgba(5, 8, 17, 0.92)",
         borderRight: "1px solid rgba(0, 245, 160, 0.08)",

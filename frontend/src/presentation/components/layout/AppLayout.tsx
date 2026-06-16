@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getHealthUseCase } from "@/application/container";
@@ -14,6 +14,7 @@ import { allNavItems } from "./navConfig";
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const location = useLocation();
 
   const {
@@ -27,6 +28,24 @@ export function AppLayout() {
     staleTime: 60_000,
     retry: 1,
   });
+
+  // Monitora scroll para mostrar botão voltar ao topo
+  const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    const target = e.currentTarget;
+    setShowScrollTop(target.scrollTop > 400);
+    // Persiste posição de scroll para navegação de volta
+    sessionStorage.setItem(`scroll:${location.pathname}`, String(target.scrollTop));
+  }, [location.pathname]);
+
+  // Restaura scroll ao voltar
+  useEffect(() => {
+    const main = document.getElementById("main-scroll");
+    if (!main) return;
+    const saved = sessionStorage.getItem(`scroll:${location.pathname}`);
+    if (saved) {
+      main.scrollTop = Number(saved);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -42,8 +61,15 @@ export function AppLayout() {
     document.title = pageTitle(location.pathname);
   }, [location.pathname]);
 
+  const scrollToTop = useCallback(() => {
+    const main = document.getElementById("main-scroll");
+    if (main) {
+      main.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen">
+    <div className="flex h-screen w-screen overflow-hidden bg-surface">
       <a href="#main-content" className="skip-link">
         Ir para o conteúdo
       </a>
@@ -54,13 +80,16 @@ export function AppLayout() {
       <ToastContainer />
       <AmbientBackground />
 
+      {/* Sidebar Desktop — fixa e com scroll próprio */}
       <AppSidebar
         health={health}
         healthPending={healthPending}
         healthError={healthError}
       />
 
-      <div className="relative flex min-h-screen flex-col lg:pl-64">
+      {/* Área de conteúdo — scroll apenas aqui, margin para sidebar em desktop */}
+      <div className="relative flex flex-1 flex-col overflow-hidden lg:ml-64">
+        {/* Mobile Header */}
         <AppMobileHeader
           mobileOpen={mobileOpen}
           onToggle={() => setMobileOpen((v) => !v)}
@@ -70,43 +99,100 @@ export function AppLayout() {
           healthError={healthError}
         />
 
+        {/* Scroll wrapper com scroll inteligente */}
         <main
-          id="main-content"
-          className="relative mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8"
+          id="main-scroll"
+          className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin"
+          onScroll={handleScroll}
         >
-          {!healthPending && healthError && !bannerDismissed && (
-            <ApiOfflineBanner
-              onRetry={() => refetchHealth()}
-              onDismiss={() => setBannerDismissed(true)}
+          {/* Header sticky com breadcrumb e banner */}
+          <div className="sticky top-0 z-30">
+            <div
+              className="absolute inset-0 backdrop-blur-xl"
+              style={{
+                background: "linear-gradient(to bottom, rgba(5,8,17,0.95) 0%, rgba(5,8,17,0.85) 60%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)",
+              }}
             />
-          )}
-          <PageBreadcrumb />
-          <AnimatedOutlet />
+            <div className="relative mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6">
+              {!healthPending && healthError && !bannerDismissed && (
+                <ApiOfflineBanner
+                  onRetry={() => refetchHealth()}
+                  onDismiss={() => setBannerDismissed(true)}
+                />
+              )}
+              <PageBreadcrumb />
+            </div>
+          </div>
+
+          {/* Conteúdo da página */}
+          <div
+            id="main-content"
+            className="relative mx-auto max-w-7xl px-4 pb-6 sm:px-6 sm:pb-8"
+          >
+            <AnimatedOutlet />
+          </div>
+
+          {/* Footer dentro do scroll */}
+          <footer
+            className="relative z-20 border-t px-4 py-5 sm:px-6"
+            style={{ borderColor: "rgba(0, 245, 160, 0.06)" }}
+          >
+            <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2 w-2 rounded-full shadow-glow-sm"
+                  style={{ background: "rgba(0, 245, 160, 0.6)" }}
+                />
+                <p className="font-mono text-xs tracking-wide text-slate-500">
+                  <span style={{ color: "rgba(0, 245, 160, 0.5)" }}>{"// "}</span>
+                  Bolão AI · Dixon-Coles + Logística + KXL
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <nav
+                  className="flex flex-wrap justify-center gap-x-4 gap-y-1"
+                  aria-label="Rodapé"
+                >
+                  {allNavItems.slice(0, 4).map(({ to, label }) => (
+                    <Link
+                      key={to}
+                      to={to}
+                      className="font-mono text-xs text-slate-500 transition-colors duration-200 hover:text-neon-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 rounded"
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
+                <div
+                  className="hidden h-3 w-px sm:block"
+                  style={{ background: "rgba(0,245,160,0.15)" }}
+                />
+                {/* CLI Status mini */}
+                <span className="font-mono text-[10px] tracking-wider text-slate-600">
+                  {typeof health?.articlesSilver === "number"
+                    ? `${health.articlesSilver.toLocaleString("pt-BR")} ARTICLES`
+                    : "—"}
+                </span>
+              </div>
+            </div>
+          </footer>
         </main>
 
-        {/* Footer CLI */}
-        <footer className="relative border-t px-4 py-6 sm:px-6" style={{ borderColor: "rgba(0, 245, 160, 0.06)" }}>
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full shadow-glow-sm" style={{ background: "rgba(0, 245, 160, 0.6)" }} />
-              <p className="font-mono text-xs tracking-wide text-slate-500">
-                <span style={{ color: "rgba(0, 245, 160, 0.5)" }}>{"// "}</span>
-                Bolão AI · Dixon-Coles + Logística + KXL
-              </p>
-            </div>
-            <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1" aria-label="Rodapé">
-              {allNavItems.slice(0, 4).map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="font-mono text-xs text-slate-500 transition-colors duration-200 hover:text-neon-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 rounded"
-                >
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </footer>
+        {/* Botão voltar ao topo */}
+        <button
+          type="button"
+          onClick={scrollToTop}
+          aria-label="Voltar ao topo"
+          className={`fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-neon-green/20 bg-surface-100/90 backdrop-blur-xl text-neon-green shadow-neon-subtle transition-all duration-300 hover:border-neon-green/40 hover:shadow-neon ${
+            showScrollTop ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+          }`}
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
       </div>
     </div>
   );
@@ -117,7 +203,9 @@ function pageTitle(pathname: string): string {
     nav.end ? pathname === nav.to : pathname.startsWith(nav.to) && nav.to !== "/",
   );
   if (pathname === "/" || !item) {
-    return item?.label ? `${item.label} · Bolão AI` : "Bolão AI — Previsões Esportivas";
+    return item?.label
+      ? `${item.label} · Bolão AI`
+      : "Bolão AI — Previsões Esportivas";
   }
   return `${item.label} · Bolão AI`;
 }

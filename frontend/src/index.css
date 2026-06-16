@@ -40,6 +40,8 @@
 
   html {
     @apply scroll-smooth;
+    overflow: hidden; /* scroll controlado pelo #main-scroll */
+    height: 100%;
   }
 
   body {
@@ -49,6 +51,8 @@
       linear-gradient(175deg, #03050b 0%, #070b14 40%, #0a0f1c 100%);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow: hidden; /* scroll controlado pelo #main-scroll */
+    height: 100%;
   }
 
   ::selection {
