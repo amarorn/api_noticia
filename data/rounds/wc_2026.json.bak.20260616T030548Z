@@ -328,11 +328,7 @@
       "phase": "group",
       "kickoff": "2026-06-15T18:00:00-07:00",
       "venue": "Los Angeles Stadium",
-      "city": "Los Angeles",
-      "home_score": 2,
-      "away_score": 2,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-16T03:05:48.867840+00:00"
+      "city": "Los Angeles"
     },
     {
       "id": "G-r1-belgica-egito",
@@ -358,11 +354,7 @@
       "phase": "group",
       "kickoff": "2026-06-16T15:00:00-04:00",
       "venue": "New York New Jersey Stadium",
-      "city": "East Rutherford",
-      "home_score": 3,
-      "away_score": 1,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-16T21:43:30.011206+00:00"
+      "city": "East Rutherford"
     },
     {
       "id": "I-r1-iraque-noruega",
@@ -970,5 +962,5 @@
       "city": "Atlanta"
     }
   ],
-  "results_synced_at": "2026-06-16T21:43:30.011206+00:00"
+  "results_synced_at": "2026-06-16T00:08:00.647503+00:00"
 }

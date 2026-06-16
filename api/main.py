@@ -1874,9 +1874,13 @@ def list_user_open_bets(include_proposals: bool = True):
     }
 
 
-# ---------------------------------------------------------------------------
-# Apostas finalizadas (histórico para análise de performance)
-# ---------------------------------------------------------------------------
+@app.post("/user/open-bets/refresh-cashouts", response_model=dict)
+def refresh_user_open_bets_cashouts(event_id: int | None = None):
+    """Consulta cash-out na Superbet para bilhetes abertos com ``ticket_code``."""
+    from api.user_bets_store import refresh_open_bets_cashouts
+
+    summary = refresh_open_bets_cashouts(event_id=event_id)
+    return {"message": "Cash-out atualizado", **summary}
 
 
 @app.post("/user/settled-bets/batch", response_model=dict)

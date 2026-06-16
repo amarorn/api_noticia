@@ -186,7 +186,7 @@ start_api() {
 start_poll() {
   local poll_args=(--wc-copa --interval "$POLL_INTERVAL" --no-train)
   if [[ -n "${POLL_EVENT_IDS:-}" ]]; then
-    poll_args=(--event-ids "$POLL_EVENT_IDS" --interval "$POLL_INTERVAL" --no-train --phase "${POLL_PHASE:-friendly}")
+    poll_args=(--event-ids "$POLL_EVENT_IDS" --interval "$POLL_INTERVAL" --no-train --phase "${POLL_PHASE:-group}")
   fi
   _cyn
   echo "→ Poll Superbet (intervalo ${POLL_INTERVAL}s) — log: ${DEV_LOG_DIR}/poll.log"
