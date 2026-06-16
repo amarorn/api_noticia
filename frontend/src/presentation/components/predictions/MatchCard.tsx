@@ -119,7 +119,7 @@ export function MatchCard({
         style={{ backgroundColor: `${winnerColor}10`, borderBottom: `1px solid ${winnerColor}20` }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
+          <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
           {group && (
             <span className="rounded-md bg-neon-green/10 px-1.5 py-0.5 text-[10px] font-black text-neon-green">
               {group}

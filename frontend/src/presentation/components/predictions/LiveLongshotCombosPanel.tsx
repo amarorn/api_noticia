@@ -9,6 +9,10 @@ import {
   LONGSHOT_TIER_CONFIG,
   type LongshotCombo,
 } from "@/presentation/utils/longshotCombos";
+
+function isHandicapLeg(market: string): boolean {
+  return market.includes("hcap") || market.includes("_ah_");
+}
 import {
   sendSuperbetTicketToExtension,
   type SuperbetExtensionTicket,
@@ -116,7 +120,14 @@ function ComboCard({
             className="rounded-lg border border-white/6 bg-black/20 px-3 py-2"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
-              <span className="text-slate-200">{leg.label}</span>
+              <span className="text-slate-200">
+                {isHandicapLeg(leg.market) && (
+                  <span className="mr-1.5 rounded bg-violet-500/20 px-1 py-0.5 text-[9px] font-semibold uppercase text-violet-200">
+                    HC
+                  </span>
+                )}
+                {leg.label}
+              </span>
               <span className={`font-mono ${tier.oddClass}`}>@{leg.marketOdd.toFixed(2)}</span>
             </div>
             <p className="mt-0.5 text-[10px] text-slate-500">
@@ -179,6 +190,7 @@ export function LiveLongshotCombosPanel({ data }: LiveLongshotCombosPanelProps) 
             <span className="text-emerald-300">probabilidade do modelo × odd Superbet</span>.
             Ordenado da <strong className="text-white">maior chance</strong> para a menor — cards
             verdes = menor risco entre as opções @{(LONGSHOT_MIN_RETURN_BRL / LONGSHOT_STAKE_BRL).toFixed(0)}+.
+            Handicap não entra junto com vitória 1X2 ou gols do mesmo time (regra do Criar Aposta).
           </p>
         </div>
       </div>

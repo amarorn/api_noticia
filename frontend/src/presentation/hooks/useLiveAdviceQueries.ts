@@ -13,9 +13,11 @@ export function useLiveAdviceQueries(
   eventId: number,
   bankroll = 1000,
   kickoff?: string | null,
+  phase = "group",
 ) {
   const enabled = Number.isFinite(eventId) && eventId > 0;
   const kickoffKey = kickoff ?? "";
+  const phaseKey = phase || "group";
 
   const scoreTickQuery = useQuery({
     queryKey: ["superbet-event-score", eventId],
@@ -29,12 +31,12 @@ export function useLiveAdviceQueries(
   });
 
   const fastAdviceQuery = useQuery({
-    queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, "fast"],
+    queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, phaseKey, "fast"],
     queryFn: () =>
       getSuperbetLiveAdviceUseCase.execute({
         eventId,
         bankroll,
-        phase: "friendly",
+        phase: phaseKey,
         fast: true,
         ...(kickoff ? { kickoff } : {}),
       }),
@@ -47,12 +49,12 @@ export function useLiveAdviceQueries(
   });
 
   const fullAdviceQuery = useQuery({
-    queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, "full"],
+    queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, phaseKey, "full"],
     queryFn: () =>
       getSuperbetLiveAdviceUseCase.execute({
         eventId,
         bankroll,
-        phase: "friendly",
+        phase: phaseKey,
         fast: false,
         ...(kickoff ? { kickoff } : {}),
       }),

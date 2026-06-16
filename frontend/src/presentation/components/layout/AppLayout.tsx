@@ -83,9 +83,12 @@ export function AppLayout() {
 
         <footer className="relative border-t border-white/[0.06] px-4 py-6 sm:px-6">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
-            <p className="font-display text-xs tracking-wide text-slate-500">
-              Bolão AI · Dixon-Coles + Logística + KXL
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-neon-green/40" />
+              <p className="font-display text-xs tracking-wide text-slate-500">
+                Bolão AI · Dixon-Coles + Logística + KXL
+              </p>
+            </div>
             <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1" aria-label="Rodapé">
               {allNavItems.slice(0, 4).map(({ to, label }) => (
                 <Link

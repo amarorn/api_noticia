@@ -203,6 +203,14 @@ export class GetUserOpenBetsUseCase {
   }
 }
 
+export class RefreshOpenBetsCashoutsUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(eventId?: number) {
+    return this.repository.refreshOpenBetsCashouts(eventId);
+  }
+}
+
 export class RegisterComboProposalUseCase {
   constructor(private readonly repository: IWcRepository) {}
 

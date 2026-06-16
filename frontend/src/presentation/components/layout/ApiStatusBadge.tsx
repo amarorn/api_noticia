@@ -1,4 +1,3 @@
-import { IconWifi } from "@/presentation/components/ui/Icons";
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import type { HealthStatus } from "@/domain/entities";
 
@@ -50,15 +49,18 @@ export function ApiStatusBadge({
       className="flex items-center gap-2 rounded-xl border border-neon-green/20 bg-neon-green/5 px-3 py-1.5 text-xs"
       role="status"
     >
-      <IconWifi className="h-3 w-3 shrink-0 text-neon-green" aria-hidden />
-      <span className="font-medium text-neon-green">Online</span>
+      <span className="relative flex h-2 w-2 items-center justify-center" aria-hidden>
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-green/40 opacity-75" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neon-green" />
+      </span>
+      <span className="font-semibold text-neon-green">Online</span>
       {!compact && (
         <>
           <span className="text-white/20" aria-hidden>
             |
           </span>
-          <span className="text-slate-400">
-            {articlesSilver ?? 0} artigos
+          <span className="font-mono text-slate-400">
+            {typeof articlesSilver === "number" ? articlesSilver.toLocaleString("pt-BR") : 0} artigos
           </span>
         </>
       )}

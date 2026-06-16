@@ -7,10 +7,27 @@
     --brand-green: #00ff88;
     --brand-blue: #00d4ff;
     --brand-purple: #a855f7;
+    --brand-pink: #ec4899;
+    --brand-orange: #ff7730;
+    --brand-yellow: #fbbf24;
+
     --surface-base: #070b14;
+    --surface-50: #0d111f;
+    --surface-100: #111628;
+    --surface-200: #161d2f;
+    --surface-300: #1c2438;
+
     --surface-card: rgba(12, 18, 32, 0.72);
+    --surface-elevated: rgba(22, 32, 52, 0.65);
+
     --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-light: rgba(255, 255, 255, 0.05);
     --glass-highlight: rgba(255, 255, 255, 0.04);
+    --glass-glow: rgba(0, 255, 136, 0.08);
+
+    --spot-green: rgba(0, 255, 136, 0.15);
+    --spot-blue: rgba(0, 212, 255, 0.15);
+    --spot-purple: rgba(168, 85, 247, 0.15);
   }
 
   html {
@@ -20,13 +37,8 @@
   body {
     @apply min-h-screen bg-mesh-gradient text-slate-100 antialiased;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
-  }
-
-  h1,
-  h2,
-  h3 {
-    font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
-    letter-spacing: -0.02em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   ::selection {
@@ -34,23 +46,31 @@
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-neon-green/50 ring-offset-2 ring-offset-surface;
+    @apply outline-none ring-2 ring-neon-green/40 ring-offset-2 ring-offset-surface;
+  }
+
+  img, svg {
+    user-select: none;
+    -webkit-user-drag: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ambient-orb,
     .ambient-mesh,
-    .btn-primary::after {
+    .btn-primary::after,
+    .orb-drift,
+    .orb-breathe {
       animation: none !important;
     }
   }
 }
 
 @layer components {
+  /* Ambiente / Backgrounds */
   .ambient-mesh {
     background:
       radial-gradient(ellipse 80% 60% at 20% 10%, rgba(168, 85, 247, 0.12), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 85% 25%, rgba(0, 212, 255, 0.1), transparent 50%),
+      radial-gradient(ellipse 70% 50% at 85% 25%, rgba(0, 212, 255, 0.10), transparent 50%),
       radial-gradient(ellipse 60% 45% at 50% 90%, rgba(0, 255, 136, 0.08), transparent 55%);
     animation: meshShift 20s ease-in-out infinite alternate;
   }
@@ -63,6 +83,7 @@
     mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
   }
 
+  /* Cartões glassmorphism */
   .glass-card {
     @apply rounded-2xl border border-white/[0.08] bg-surface-card shadow-card backdrop-blur-xl;
     box-shadow:
@@ -73,30 +94,82 @@
   .glass-card-hover {
     @apply glass-card transition-all duration-300 ease-out;
   }
-
   .glass-card-hover:hover {
     @apply -translate-y-1 border-neon-green/25 shadow-neon;
   }
 
   .glass-card-blue {
-    @apply glass-card transition-all duration-300 hover:-translate-y-1 hover:border-neon-blue/30 hover:shadow-neon-blue;
+    @apply glass-card transition-all duration-300;
+  }
+  .glass-card-blue:hover {
+    @apply -translate-y-1 border-neon-blue/30 shadow-neon-blue;
   }
 
+  .glass-card-purple {
+    @apply glass-card transition-all duration-300;
+  }
+  .glass-card-purple:hover {
+    @apply -translate-y-1 border-neon-purple/30 shadow-neon-purple;
+  }
+
+  .glass-card-elevated {
+    @apply rounded-2xl border border-white/[0.08] bg-surface-elevated backdrop-blur-xl;
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.50),
+      0 2px 4px rgba(0, 0, 0, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Deep card para painéis importantes */
+  .deep-card {
+    @apply rounded-2xl border border-white/[0.06] bg-surface-100/90 backdrop-blur-xl;
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /* Indicador de borda com brilho sutil */
+  .glow-border {
+    position: relative;
+  }
+  .glow-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(0,255,136,0.25), rgba(0,212,255,0.15), rgba(168,85,247,0.25));
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+  }
+  .glow-border:hover::before {
+    opacity: 0.7;
+  }
+
+  /* Texto gradiente */
   .gradient-text {
     @apply bg-brand-gradient bg-clip-text font-display font-bold text-transparent;
     background-size: 200% auto;
   }
-
   .gradient-text-animated {
     @apply gradient-text;
     animation: shimmer 4s linear infinite;
   }
+  .gradient-text-subtle {
+    @apply bg-brand-gradient-subtle bg-clip-text font-display font-bold text-transparent;
+  }
 
+  /* Botões premium */
   .btn-primary {
     @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-surface shadow-neon transition-all duration-300;
     background-size: 200% auto;
   }
-
   .btn-primary::after {
     content: "";
     @apply absolute inset-0 opacity-0 transition-opacity duration-300;
@@ -109,20 +182,16 @@
     background-size: 200% 100%;
     animation: shimmer 2.8s linear infinite;
   }
-
   .btn-primary:hover:not(:disabled) {
     @apply scale-[1.02] shadow-glow;
     background-position: right center;
   }
-
   .btn-primary:hover:not(:disabled)::after {
     @apply opacity-100;
   }
-
   .btn-primary:active:not(:disabled) {
     @apply scale-[0.98];
   }
-
   .btn-primary:disabled {
     @apply cursor-not-allowed opacity-50;
   }
@@ -131,29 +200,42 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-[0.98];
   }
 
+  .btn-ghost-blue {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-neon-blue/20 bg-neon-blue/5 px-4 py-2 text-sm font-medium text-neon-blue/80 transition-all duration-200 hover:border-neon-blue/30 hover:bg-neon-blue/10 hover:text-neon-blue active:scale-[0.98];
+  }
+
+  .btn-ghost-purple {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-neon-purple/20 bg-neon-purple/5 px-4 py-2 text-sm font-medium text-neon-purple/80 transition-all duration-200 hover:border-neon-purple/30 hover:bg-neon-purple/10 hover:text-neon-purple active:scale-[0.98];
+  }
+
   .btn-icon {
     @apply inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-2 text-slate-400 transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-95;
   }
 
+  /* Inputs */
   .input-field {
     @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-slate-500 transition-all duration-200 focus:border-neon-blue/50 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-neon-blue/20;
   }
-
   .select-field {
     @apply input-field appearance-none cursor-pointer;
   }
 
+  /* Seção e rótulos */
   .section-label {
     @apply mb-4 flex items-center gap-2 font-display text-xs font-semibold uppercase tracking-[0.18em] text-slate-500;
   }
-
   .section-label::after {
     @apply block h-px flex-1 bg-gradient-to-r from-white/10 to-transparent;
     content: "";
   }
 
+  /* Elementos de dados */
   .stat-pill {
     @apply rounded-lg border border-white/[0.04] bg-white/[0.04] px-3 py-2 text-center transition-colors duration-200 hover:border-white/10 hover:bg-white/[0.06];
+  }
+
+  .stat-pill-glow {
+    @apply rounded-lg border border-neon-green/10 bg-neon-green/5 px-3 py-2 text-center text-neon-green/90 transition-all duration-200 hover:border-neon-green/20 hover:bg-neon-green/10;
   }
 
   .team-avatar {
@@ -164,54 +246,85 @@
     @apply h-full w-px bg-white/5;
   }
 
+  /* Chips de filtro */
   .chip-filter {
     @apply rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95;
   }
-
   .chip-filter-active {
     @apply bg-neon-green/15 text-neon-green ring-1 ring-neon-green/30 shadow-[0_0_16px_rgba(0,255,136,0.12)];
   }
-
   .chip-filter-idle {
     @apply bg-white/5 text-slate-400 hover:bg-white/[0.08] hover:text-slate-300;
   }
 
+  /* Scrollbar */
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
   }
-
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
-
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.12);
     border-radius: 9999px;
   }
-
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.22);
   }
 
+  /* Skip link */
   .skip-link {
     @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-neon-green focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-surface;
   }
 
+  /* Nav links */
   .nav-link {
     @apply relative overflow-hidden;
   }
-
   .nav-link-active {
     @apply text-white;
   }
-
   .nav-link-active .nav-link-icon {
     @apply text-neon-green;
+  }
+
+  /* Badges premium */
+  .badge-premium {
+    @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300;
+  }
+
+  .badge-live {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-400;
+  }
+  .badge-live::before {
+    content: "";
+    @apply h-1.5 w-1.5 rounded-full bg-red-500;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Linha decorativa */
+  .divider-glow {
+    @apply h-px bg-gradient-to-r from-transparent via-neon-green/20 to-transparent;
+  }
+
+  /* Orb flutuante decorativo */
+  .orb-drift {
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .orb-breathe {
+    animation: breathe 8s ease-in-out infinite;
+  }
+
+  /* Caixa de aviso/amostra */
+  .info-panel {
+    @apply rounded-2xl border border-neon-blue/15 bg-neon-blue/[0.04] p-4 text-sm text-slate-300;
+  }
+  .tip-panel {
+    @apply rounded-2xl border border-neon-purple/15 bg-neon-purple/[0.04] p-4 text-sm text-slate-300;
   }
 }

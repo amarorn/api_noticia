@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import {
   getValueBetsUseCase,
@@ -193,9 +194,12 @@ export function DashboardPage() {
 
       <QuickActions />
 
-      <section className="glass-card space-y-2 p-4 text-sm text-slate-300">
-        <p className="font-semibold text-white">Como ler estes palpites</p>
-        <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-slate-400">
+      <section className="info-panel glow-border relative space-y-3">
+        <p className="font-semibold text-white flex items-center gap-2">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-neon-green/10 text-neon-green text-xs">?</span>
+          Como ler estes palpites
+        </p>
+        <ul className="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-slate-400">
           <li>
             <strong className="text-slate-300">Prob. palpite</strong> é a chance estimada do
             resultado escolhido (1/X/2), não garantia de acerto.
@@ -316,7 +320,13 @@ export function DashboardPage() {
       />
 
       {selectedMatch && (
-        <div className="fixed bottom-4 left-1/2 z-50 flex w-[min(100%-2rem,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-violet-400/35 bg-[#12182a]/95 px-4 py-3 shadow-2xl backdrop-blur-md">
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 320, damping: 26 }}
+          className="fixed bottom-4 left-1/2 z-50 flex w-[min(100%-2rem,28rem)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-neon-purple/30 bg-[#12182a]/95 px-4 py-3 shadow-2xl backdrop-blur-md"
+        >
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-white">
               {selectedMatch.homeTeam} × {selectedMatch.awayTeam}
@@ -325,13 +335,13 @@ export function DashboardPage() {
           </div>
           <Link
             to={buildMatchTicketsPath(selectedMatch.homeTeam, selectedMatch.awayTeam)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-violet-400/40 bg-violet-500/20 px-3 py-2 text-xs font-semibold text-violet-100"
+            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-neon-purple/40 bg-neon-purple/15 px-3 py-2 text-xs font-semibold text-neon-purple/90 transition-all hover:bg-neon-purple/25"
           >
             <IconWallet className="h-3.5 w-3.5" />
             Ver bilhetes
             <IconChevronRight className="h-3 w-3" />
           </Link>
-        </div>
+        </motion.div>
       )}
     </PageTransition>
   );

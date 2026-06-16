@@ -1,5 +1,7 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { formatPercent } from "@/presentation/theme";
+import { CashoutAlertProgress } from "@/presentation/components/predictions/CashoutAlertProgress";
+import { getCashoutAlertConfig } from "@/presentation/utils/cashoutAlertStorage";
 
 export interface RegisteredBet {
   market: string;
@@ -130,6 +132,8 @@ export function LiveOpenBetMonitor({
   onAutoMonitorChange,
 }: LiveOpenBetMonitorProps) {
   const autoMonitor = bet.autoMonitor;
+  const alertConfig = getCashoutAlertConfig(bet.id);
+  const currentCashout = bet.offeredCashout ?? bet.cashoutValue ?? null;
   const pick = pickLabel(data, bet);
   const marketLabel = MARKET_LABELS[bet.market] ?? bet.market;
   const modelP = modelProbForBet(data, bet);
@@ -157,11 +161,6 @@ export function LiveOpenBetMonitor({
               Aposta R$ {bet.stake.toFixed(2)} · odd {bet.oddsPlaced.toFixed(2)} · ganho potencial R${" "}
               {(bet.potentialReturn ?? bet.stake * bet.oddsPlaced).toFixed(2)}
             </p>
-            {bet.offeredCashout != null && bet.offeredCashout > 0 && (
-              <p className="mt-1 font-mono text-sm text-neon-green">
-                Cash-out Superbet: R$ {bet.offeredCashout.toFixed(2)}
-              </p>
-            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {autoMonitor && data.isLive && (
@@ -199,6 +198,8 @@ export function LiveOpenBetMonitor({
           Monitorar automaticamente (reanalisa cash-out a cada {pollSeconds}s)
         </label>
       </div>
+
+      <CashoutAlertProgress config={alertConfig} currentCashout={currentCashout} />
 
       <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.05] p-4">
         <p className="text-[10px] font-bold uppercase tracking-widest text-violet-300/80">

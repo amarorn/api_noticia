@@ -122,6 +122,11 @@ export interface IWcRepository {
     sofascoreEventId?: number;
   }): Promise<import("@/domain/entities").WcSimulation>;
   getUserOpenBets(): Promise<import("@/domain/entities").UserOpenBetsList>;
+  refreshOpenBetsCashouts(eventId?: number): Promise<{
+    updated: number;
+    skipped: number;
+    errors: number;
+  }>;
   registerComboProposal(
     body: import("@/application/dtos/comboProposal").ComboProposalApiBody,
   ): Promise<import("@/application/dtos/comboProposal").RegisterComboProposalResult>;
