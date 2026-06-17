@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
 from config import settings
+from ingest.superbet.client import SuperbetClient, SuperbetClientError
 from ingest.superbet.parser import SuperbetEventSnapshot
 from schemas.national_teams import normalize_national_team
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_SUPERBET_ODDS = Path("data/rounds/superbet_odds.json")
 
@@ -38,6 +42,25 @@ def load_latest_snapshot(event_id: int) -> SuperbetEventSnapshot | None:
 
     data = json.loads(path.read_text(encoding="utf-8"))
     return parse_superbet_event(_snapshot_to_raw_event(data))
+
+
+def fetch_event_with_stale_fallback(
+    client: SuperbetClient,
+    event_id: int,
+) -> tuple[SuperbetEventSnapshot, bool]:
+    """Busca evento na Superbet; em falha de rede usa bronze ``latest.json``."""
+    try:
+        return client.fetch_event(event_id), False
+    except SuperbetClientError as exc:
+        stale = load_latest_snapshot(event_id)
+        if stale is None:
+            raise
+        logger.warning(
+            "superbet_fetch_using_stale_snapshot event_id=%s: %s",
+            event_id,
+            exc,
+        )
+        return stale, True
 
 
 def _snapshot_to_raw_event(data: dict) -> dict:

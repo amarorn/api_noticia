@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     superbet_base_url: str = "https://production-superbet-offer-br.freetls.fastly.net"
     superbet_locale: str = "pt-BR"
     superbet_timeout_sec: float = 45.0
+    superbet_fetch_retries: int = 2
+    superbet_stale_max_age_sec: int = 600
     superbet_odds_path: Path = Path("data/rounds/superbet_odds.json")
     sofascore_min_interval_sec: float = Field(
         default=0.12,

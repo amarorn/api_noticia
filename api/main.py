@@ -416,6 +416,8 @@ class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
     status: str | None = None
     is_finished: bool = False
     is_live: bool = True
+    superbet_stale: bool = False
+    superbet_error: str | None = None
     h2h_odds: dict[str, float] = Field(default_factory=dict)
     h2h_implied: dict[str, float] = Field(default_factory=dict)
     h2h_overround: float | None = None
@@ -511,6 +513,7 @@ class WcSuperbetEventResponse(BaseModel):
     generosity_probs: dict[str, float]
     raw_market_count: int
     captured_at: str
+    superbet_stale: bool = False
 
 
 class WcSuperbetPostmortemTipSummary(BaseModel):
@@ -1640,14 +1643,17 @@ async def worldcup_superbet_event(
 ):
     """Snapshot Superbet: estado ao vivo, odds e probabilidades implícitas."""
     from ingest.superbet.client import SuperbetClient, SuperbetClientError
-    from ingest.superbet.store import merge_snapshot_into_odds_file, save_event_snapshot
+    from ingest.superbet.store import fetch_event_with_stale_fallback, merge_snapshot_into_odds_file, save_event_snapshot
 
+    client = SuperbetClient()
     try:
-        snapshot = await asyncio.to_thread(SuperbetClient().fetch_event, event_id)
+        snapshot, superbet_stale = await asyncio.to_thread(
+            fetch_event_with_stale_fallback, client, event_id
+        )
     except SuperbetClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    if save_bronze:
+    if save_bronze and not superbet_stale:
         await asyncio.to_thread(save_event_snapshot, snapshot)
     if merge_odds and snapshot.h2h_odds:
         await asyncio.to_thread(merge_snapshot_into_odds_file, snapshot)
@@ -1655,7 +1661,9 @@ async def worldcup_superbet_event(
 
         load_match_odds_index.cache_clear()
 
-    return WcSuperbetEventResponse(**snapshot.to_dict())
+    payload = snapshot.to_dict()
+    payload["superbet_stale"] = superbet_stale
+    return WcSuperbetEventResponse(**payload)
 
 
 @app.get(
@@ -1722,7 +1730,7 @@ def worldcup_handicap_analysis(
 ):
     """Análise de handicap asiático: probabilidades modelo × odds Superbet."""
     from ingest.superbet.client import SuperbetClient, SuperbetClientError
-    from ingest.superbet.store import save_event_snapshot
+    from ingest.superbet.store import fetch_event_with_stale_fallback, save_event_snapshot
     from models.wc_handicap_analysis import build_handicap_analysis
     from models.wc_inplay import inplay_from_predictor
 
@@ -1732,7 +1740,7 @@ def worldcup_handicap_analysis(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     try:
-        snapshot = SuperbetClient().fetch_event(event_id)
+        snapshot, _stale = fetch_event_with_stale_fallback(SuperbetClient(), event_id)
     except SuperbetClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

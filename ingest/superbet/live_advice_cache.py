@@ -1,14 +1,18 @@
 """Cache em memória para respostas de advice ao vivo (evita recomputar Poisson a cada poll)."""
 from __future__ import annotations
 
+import copy
 import threading
 import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 
+from config import settings
+
 T = TypeVar("T")
 
 _CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
+_EVENT_LATEST: dict[int, tuple[float, dict[str, Any]]] = {}
 _INFLIGHT: dict[tuple[Any, ...], tuple[threading.Event, dict[str, Any] | None, BaseException | None]] = {}
 _LOCK = threading.Lock()
 
@@ -56,6 +60,36 @@ def get_cached_advice(key: tuple[Any, ...]) -> dict[str, Any] | None:
 def set_cached_advice(key: tuple[Any, ...], payload: dict[str, Any], *, ttl_sec: float) -> None:
     with _LOCK:
         _CACHE[key] = (time.monotonic() + ttl_sec, payload)
+        event_id = key[0]
+        if isinstance(event_id, int):
+            stale_ttl = max(ttl_sec, float(settings.superbet_stale_max_age_sec))
+            _EVENT_LATEST[event_id] = (
+                time.monotonic() + stale_ttl,
+                copy.deepcopy(payload),
+            )
+
+
+def get_stale_advice_for_event(
+    event_id: int,
+    *,
+    max_age_sec: float | None = None,
+) -> dict[str, Any] | None:
+    """Última resposta de advice conhecida para o evento (fallback offline)."""
+    with _LOCK:
+        entry = _EVENT_LATEST.get(event_id)
+        if entry is None:
+            return None
+        expires_at, payload = entry
+        now = time.monotonic()
+        if max_age_sec is not None:
+            max_expires = now + float(max_age_sec)
+            if expires_at > max_expires:
+                expires_at = max_expires
+        if now > expires_at:
+            if _EVENT_LATEST.get(event_id) == entry:
+                del _EVENT_LATEST[event_id]
+            return None
+        return copy.deepcopy(payload)
 
 
 def run_with_advice_cache(
@@ -127,6 +161,7 @@ def run_with_advice_cache(
 __all__ = [
     "advice_cache_key",
     "get_cached_advice",
+    "get_stale_advice_for_event",
     "run_with_advice_cache",
     "set_cached_advice",
 ]

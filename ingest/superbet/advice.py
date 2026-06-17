@@ -10,9 +10,9 @@ from ingest.superbet.benchmark import h2h_overround, market_benchmark
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
 from ingest.superbet.live_ticks import append_live_tick
 from ingest.superbet.live_stats_payload import build_live_stats_payload
-from ingest.superbet.live_advice_cache import advice_cache_key, run_with_advice_cache
+from ingest.superbet.live_advice_cache import advice_cache_key, get_stale_advice_for_event, run_with_advice_cache
 from ingest.superbet.parser import SuperbetEventSnapshot
-from ingest.superbet.store import save_event_snapshot
+from ingest.superbet.store import fetch_event_with_stale_fallback, save_event_snapshot
 from config import settings
 from models.wc_against_model import build_against_model_alerts
 from models.wc_bet_advice import UserBetInput, build_bet_advice_report
@@ -148,8 +148,18 @@ def run_live_advice(
     kickoff: str | None = None,
 ) -> dict[str, Any]:
     superbet_client = client or SuperbetClient()
-    snapshot = superbet_client.fetch_event(event_id)
-    if save_bronze:
+    try:
+        snapshot, superbet_stale = fetch_event_with_stale_fallback(superbet_client, event_id)
+    except SuperbetClientError as exc:
+        cached = get_stale_advice_for_event(event_id)
+        if cached is None:
+            raise
+        cached = dict(cached)
+        cached["superbet_stale"] = True
+        cached["superbet_error"] = str(exc)
+        return cached
+
+    if save_bronze and not superbet_stale:
         save_event_snapshot(snapshot)
 
     home = normalize_national_team(snapshot.home_team)
@@ -200,7 +210,11 @@ def run_live_advice(
             kickoff=kickoff,
         )
 
-    return run_with_advice_cache(cache_key, _compute, fast=fast)
+    payload = run_with_advice_cache(cache_key, _compute, fast=fast)
+    if superbet_stale:
+        payload = dict(payload)
+        payload["superbet_stale"] = True
+    return payload
 
 
 def _build_live_advice_payload(

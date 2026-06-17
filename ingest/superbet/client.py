@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 
 import httpx
 
@@ -12,6 +13,14 @@ from ingest.superbet.parser import (
     SuperbetLiveEventSummary,
     parse_live_event_summary,
     parse_superbet_event,
+)
+
+_TRANSIENT_HTTP_ERRORS = (
+    httpx.ConnectError,
+    httpx.ReadTimeout,
+    httpx.WriteTimeout,
+    httpx.PoolTimeout,
+    httpx.RemoteProtocolError,
 )
 
 
@@ -32,6 +41,24 @@ class SuperbetClient:
         self.timeout_sec = timeout_sec or settings.superbet_timeout_sec
 
     def fetch_event(self, event_id: int) -> SuperbetEventSnapshot:
+        attempts = max(1, settings.superbet_fetch_retries + 1)
+        last_exc: Exception | None = None
+        for attempt in range(attempts):
+            try:
+                return self._fetch_event_once(event_id)
+            except _TRANSIENT_HTTP_ERRORS as exc:
+                last_exc = exc
+                if attempt + 1 < attempts:
+                    time.sleep(0.35 * (attempt + 1))
+                    continue
+                raise SuperbetClientError(
+                    f"Falha ao buscar evento Superbet {event_id}: {exc}"
+                ) from exc
+            except SuperbetClientError:
+                raise
+        raise SuperbetClientError(f"Falha ao buscar evento Superbet {event_id}: {last_exc}")
+
+    def _fetch_event_once(self, event_id: int) -> SuperbetEventSnapshot:
         url = f"{self.base_url}/v3/subscription/{self.locale}/events"
         params = {"events": str(event_id)}
         headers = {
@@ -44,6 +71,8 @@ class SuperbetClient:
                 response.raise_for_status()
                 payload = _parse_sse_payload(response.text)
         except httpx.HTTPError as exc:
+            if isinstance(exc, _TRANSIENT_HTTP_ERRORS):
+                raise
             raise SuperbetClientError(f"Falha ao buscar evento Superbet {event_id}: {exc}") from exc
 
         if not payload:
@@ -56,6 +85,28 @@ class SuperbetClient:
         sport_id: int | None = 5,
     ) -> list[SuperbetLiveEventSummary]:
         """Busca lista de eventos ao vivo via SSE streaming (lê primeira mensagem e fecha)."""
+        attempts = max(1, settings.superbet_fetch_retries + 1)
+        last_exc: Exception | None = None
+        for attempt in range(attempts):
+            try:
+                return self._fetch_live_events_once(sport_id=sport_id)
+            except _TRANSIENT_HTTP_ERRORS as exc:
+                last_exc = exc
+                if attempt + 1 < attempts:
+                    time.sleep(0.35 * (attempt + 1))
+                    continue
+                raise SuperbetClientError(
+                    f"Falha ao buscar jogos ao vivo Superbet: {exc}"
+                ) from exc
+            except SuperbetClientError:
+                raise
+        raise SuperbetClientError(f"Falha ao buscar jogos ao vivo Superbet: {last_exc}")
+
+    def _fetch_live_events_once(
+        self,
+        *,
+        sport_id: int | None,
+    ) -> list[SuperbetLiveEventSummary]:
         url = f"{self.base_url}/v3/subscription/{self.locale}/live"
         headers = {
             "Accept": "application/json",
@@ -65,10 +116,11 @@ class SuperbetClient:
             with httpx.Client(timeout=self.timeout_sec, follow_redirects=True) as client:
                 with client.stream("GET", url, headers=headers) as response:
                     response.raise_for_status()
-                    # SSE: lê apenas a primeira linha 'data:' (snapshot completo)
                     text = _read_first_sse_data(response)
                 raw_events = _parse_sse_array_payload(text)
         except httpx.HTTPError as exc:
+            if isinstance(exc, _TRANSIENT_HTTP_ERRORS):
+                raise
             raise SuperbetClientError(f"Falha ao buscar jogos ao vivo Superbet: {exc}") from exc
 
         summaries: list[SuperbetLiveEventSummary] = []
@@ -102,12 +154,10 @@ def _read_first_sse_data(response: httpx.Response) -> str:
     buffer = ""
     for chunk in response.iter_text():
         buffer += chunk
-        # Procura o prefixo 'data:' e tenta parsear o conteúdo da primeira linha
         idx = buffer.find("data:")
         if idx == -1:
             continue
         after_prefix = buffer[idx + 5:]
-        # Pega só até a próxima newline (se houver), para não misturar mensagens SSE
         newline_pos = after_prefix.find("\n")
         if newline_pos != -1:
             raw = after_prefix[:newline_pos].strip()
@@ -119,10 +169,7 @@ def _read_first_sse_data(response: httpx.Response) -> str:
             json.loads(raw)
             return buffer
         except json.JSONDecodeError:
-            # Se já temos uma newline após data: e ainda falha, é erro de formato
-            # Se não temos newline, o JSON pode estar incompleto (chunk parcial)
             if newline_pos != -1:
-                # Linha completa mas JSON inválido — tentar regex fallback
                 return buffer
             continue
     return buffer

@@ -113,6 +113,45 @@ def _resolve_event_ids(
     return ids[:max_events] if max_events else ids
 
 
+def _resolve_event_ids_resilient(
+    client: SuperbetClient,
+    *,
+    event_ids: list[int] | None,
+    auto: bool,
+    sport_id: int,
+    max_events: int | None = None,
+    filter_international: bool = False,
+    last_auto_ids: list[int] | None = None,
+) -> tuple[list[int], list[int] | None]:
+    """Resolve IDs do ciclo; em falha de rede reutiliza último snapshot auto."""
+    try:
+        ids = _resolve_event_ids(
+            client,
+            event_ids=event_ids,
+            auto=auto,
+            sport_id=sport_id,
+            max_events=max_events,
+            filter_international=filter_international,
+        )
+    except SuperbetClientError as exc:
+        cached = list(last_auto_ids or [])
+        logger.warning(
+            "superbet_resolve_event_ids_failed: %s (cached=%d)",
+            exc,
+            len(cached),
+        )
+        print(f"Superbet indisponível: {exc}")
+        if cached:
+            print(f"Reutilizando {len(cached)} evento(s) do último ciclo OK.")
+            return cached, last_auto_ids
+        print("Nenhum evento em cache; aguardando próximo ciclo.")
+        return [], last_auto_ids
+
+    if auto and not event_ids and ids:
+        return ids, list(ids)
+    return ids, last_auto_ids
+
+
 def poll_once(
     event_ids: list[int],
     predictor,
@@ -206,6 +245,7 @@ def poll_loop(
     predictor, _manifest = load_or_train_wc_predictor(allow_train=allow_train)
     client = SuperbetClient()
     cycle = 0
+    last_auto_ids: list[int] | None = None
 
     print(f"Ticks parquet: {live_ticks_path()}")
     print(f"Intervalo: {interval_sec}s | auto={auto} | sport_id={sport_id}")
@@ -213,13 +253,14 @@ def poll_loop(
     while True:
         cycle += 1
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        ids = _resolve_event_ids(
+        ids, last_auto_ids = _resolve_event_ids_resilient(
             client,
             event_ids=event_ids,
             auto=auto,
             sport_id=sport_id,
             max_events=max_events,
             filter_international=filter_international,
+            last_auto_ids=last_auto_ids,
         )
 
         print(f"\n--- Ciclo {cycle} @ {ts} | {len(ids)} evento(s) ---")
@@ -330,14 +371,18 @@ def main() -> int:
     # Execução única
     predictor, _ = load_or_train_wc_predictor(allow_train=not args.no_train)
     client = SuperbetClient()
-    ids = _resolve_event_ids(
-        client,
-        event_ids=event_ids,
-        auto=args.auto,
-        sport_id=args.sport_id,
-        max_events=args.max_events,
-        filter_international=args.filter_international,
-    )
+    try:
+        ids = _resolve_event_ids(
+            client,
+            event_ids=event_ids,
+            auto=args.auto,
+            sport_id=args.sport_id,
+            max_events=args.max_events,
+            filter_international=args.filter_international,
+        )
+    except SuperbetClientError as exc:
+        print(f"Superbet indisponível: {exc}")
+        return 1
     if not ids:
         print("Nenhum evento ao vivo encontrado.")
         return 0

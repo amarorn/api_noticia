@@ -32,10 +32,14 @@ def test_superbet_mirror_lines():
     assert mirror_line_key("m0_5") == "p0_5"
     assert paired_handicap_line_keys("m0_5") == ("m0_5", "p0_5")
     assert superbet_handicap_line_label("home", "m0_5") == "-0.5"
-    assert superbet_handicap_line_label("away", "m0_5") == "+0.5"
+    assert superbet_handicap_line_label("away", "m0_5") == "-0.5"
+    from models.wc_handicap_score import model_prob_key_for_book_handicap
+
+    assert model_prob_key_for_book_handicap("away", "m0_5") == "away_p0_5"
+    assert model_prob_key_for_book_handicap("home", "p1_5") == "home_p1_5"
     help_text = superbet_handicap_help("Negele", "Hawassa", "away", "m0_5")
-    assert "+0.5" in help_text
-    assert "−0.5" in help_text or "-0.5" in help_text
+    assert "-0.5" in help_text
+    assert "vencer" in help_text.lower()
 
 
 def test_away_minus_half_losing_blocks_unrealistic_comeback():

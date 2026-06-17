@@ -13,6 +13,7 @@ from models.wc_handicap_score import (
     format_handicap_label_with_score,
     handicap_blocked_by_score,
     handicap_line_from_key,
+    model_prob_key_for_book_handicap,
     paired_handicap_line_keys,
     parse_any_handicap_market,
     parse_period_handicap_market,
@@ -258,7 +259,10 @@ def _prob_from_half_market(inplay: dict[str, Any], market: str, outcome: str) ->
         if len(parts) != 2:
             return None
         side, line = parts
-        return inplay.get(cfg["handicap"], {}).get(f"{side}_{line}")
+        prob_key = model_prob_key_for_book_handicap(side, line)
+        if prob_key is None:
+            return None
+        return inplay.get(cfg["handicap"], {}).get(prob_key)
 
     if suffix.startswith("ah_"):
         rest = suffix[len("ah_") :]
@@ -420,11 +424,14 @@ def _half_aporte_specs(
             for side in sides:
                 team_name = home_team if side == "home" else away_team
                 line_label = superbet_handicap_line_label(side, line)
+                prob_key = model_prob_key_for_book_handicap(side, line)
+                if prob_key is None:
+                    continue
                 specs.append((
                     f"{period}_hcap_{side}_{line}",
                     "yes",
                     f"{period_label} — {team_name} handicap {line_label}",
-                    lambda s=side, lk=line, ck=hcap_cfg: inplay.get(ck, {}).get(f"{s}_{lk}"),
+                    lambda pk=prob_key, ck=hcap_cfg: inplay.get(ck, {}).get(pk),
                 ))
 
         ah_cfg = cfg.get("asian_handicap")

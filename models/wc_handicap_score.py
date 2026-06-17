@@ -300,12 +300,25 @@ def paired_handicap_line_keys(line_key: str) -> tuple[str, str]:
 
 def superbet_handicap_line_label(side: str, line_key: str) -> str:
     """Rótulo da linha como aparece no botão Superbet daquele time."""
-    home_key, away_key = paired_handicap_line_keys(line_key)
-    key = home_key if side == "home" else away_key
-    val = handicap_line_from_key(key)
+    _ = side  # lado já está implícito na chave gravada pelo parser
+    val = handicap_line_from_key(line_key)
     if val is None:
         return line_key
-    return f"{val:+.1f}".replace("+", "+")
+    return f"{val:+.1f}"
+
+
+def model_prob_key_for_book_handicap(side: str, line_key: str) -> str | None:
+    """Mapeia botão Superbet (lado + linha exibida) → chave do modelo in-play."""
+    displayed = handicap_line_from_key(line_key)
+    if displayed is None:
+        return None
+    model_line = displayed if side == "home" else -displayed
+    if model_line == 0.0:
+        model_lk = "0"
+    else:
+        sign = "p" if model_line > 0 else "m"
+        model_lk = f"{sign}{abs(model_line):g}".replace(".", "_")
+    return f"{side}_{model_lk}"
 
 
 def superbet_handicap_help(
@@ -314,21 +327,17 @@ def superbet_handicap_help(
     side: str,
     line_key: str,
 ) -> str:
-    """Explica diferença entre botão Superbet (+0.5) e vitória pura (−0.5)."""
+    """Explica o que o botão Superbet exige dado o placar."""
     btn = superbet_handicap_line_label(side, line_key)
-    home_key, away_key = paired_handicap_line_keys(line_key)
-    neg_val = handicap_line_from_key(home_key if home_key.startswith("m") else away_key)
     team = home_team if side == "home" else away_team
-    if (
-        side == "away"
-        and home_key != away_key
-        and neg_val is not None
-        and neg_val <= -0.5
-    ):
+    val = handicap_line_from_key(line_key)
+    if val is not None and val >= 0.5:
         return (
-            f"Botão Superbet: {team} {btn}. "
-            f"Vitória pura ({team} {neg_val:+.1f}) ≠ botão {btn} — empate também cobre {btn}."
+            f"Botão Superbet: {team} {btn} — cobre com empate ou vitória "
+            f"(não perder por {int(val) + 1}+)."
         )
+    if val is not None and val <= -0.5:
+        return f"Botão Superbet: {team} {btn} — precisa vencer por {int(abs(val)) + 1}+ gols."
     return f"Botão Superbet: {team} {btn}"
 
 
