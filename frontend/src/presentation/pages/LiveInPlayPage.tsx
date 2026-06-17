@@ -21,6 +21,7 @@ import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTic
 import { LiveHalfTicketsPanel } from "@/presentation/components/predictions/LiveHalfTicketsPanel";
 import { LiveRemaining2hMarketsPanel } from "@/presentation/components/predictions/LiveRemaining2hMarketsPanel";
 import { LiveLongshotCombosPanel } from "@/presentation/components/predictions/LiveLongshotCombosPanel";
+import { LiveTopReturnPanel } from "@/presentation/components/predictions/LiveTopReturnPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
 import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
 import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
@@ -563,6 +564,9 @@ export function LiveInPlayPage() {
 
           {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
+
+          {/* ── 2a-top. RETORNO ESPERADO (EV × stake, filtro odd) ── */}
+          <LiveTopReturnPanel data={data} />
 
           {/* ── 2a. BILHETES 1T / 2T (modelo × mercado) ── */}
           <LiveHalfTicketsPanel data={data} />

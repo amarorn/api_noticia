@@ -45,54 +45,141 @@
     return m ? m[1] : null;
   }
 
-  function classifyPick(marketRaw, pickRaw) {
-    let market = "other";
-    let outcome = pickRaw;
+  const PERIOD_1H_RE = /1\s*[º°o]?\s*tempo|primeiro\s*tempo|\b1\s*t\b|1st\s*half|total de gols\s*\(\s*1/i;
+  const PERIOD_2H_RE = /2\s*[º°o]?\s*tempo|segundo\s*tempo|\b2\s*t\b|2nd\s*half|total de gols\s*\(\s*2/i;
+  const LINE_RE = /([+\-−]?\s*\d+[.,]\d+|[+\-−]?\s*\d+)/;
 
-    if (/Resultado Final|Match Result|1X2|Vencedor|Winner|Moneyline/i.test(marketRaw)) {
-      market = "h2h";
+  function detectPeriod(...texts) {
+    const combined = texts.filter(Boolean).join(" ");
+    if (PERIOD_2H_RE.test(combined)) return "2h";
+    if (PERIOD_1H_RE.test(combined)) return "1h";
+    return "ft";
+  }
+
+  function handicapLineKey(line) {
+    if (Math.abs(line) < 1e-9) return "0";
+    if (line < 0) return "m" + String(Math.abs(line)).replace(".", "_");
+    return "p" + String(line).replace(".", "_");
+  }
+
+  function parseLineValue(text) {
+    const match = (text || "").match(LINE_RE);
+    if (!match) return null;
+    const raw = match[1].replace(/−/g, "-").replace(",", ".").replace(/\s/g, "");
+    const val = parseFloat(raw);
+    return Number.isFinite(val) ? val : null;
+  }
+
+  function detectSide(text, homeTeam, awayTeam) {
+    const lower = (text || "").toLowerCase();
+    const homeL = (homeTeam || "").toLowerCase().trim();
+    const awayL = (awayTeam || "").toLowerCase().trim();
+    if (homeL && lower.includes(homeL)) return "home";
+    if (awayL && lower.includes(awayL)) return "away";
+    if (homeL) {
+      const token = homeL.split(/\s+/)[0];
+      if (token.length >= 4 && lower.includes(token)) return "home";
+    }
+    if (awayL) {
+      const token = awayL.split(/\s+/)[0];
+      if (token.length >= 4 && lower.includes(token)) return "away";
+    }
+    if (/\b(casa|mandante|home)\b/i.test(lower)) return "home";
+    if (/\b(fora|visitante|away)\b/i.test(lower)) return "away";
+    return null;
+  }
+
+  function classifyPick(marketRaw, pickRaw, homeTeam = "", awayTeam = "") {
+    const period = detectPeriod(marketRaw, pickRaw);
+    const combined = `${marketRaw} ${pickRaw}`;
+
+    if (/Resultado Final|Match Result|1X2|Vencedor|Winner|Moneyline|Resultado\s*\(?1X2\)?/i.test(combined)) {
+      const market = period === "1h" || period === "2h" ? `${period}_h2h` : "h2h";
+      let outcome = pickRaw;
       if (/^1$/.test(pickRaw)) outcome = "home";
       else if (/^2$/.test(pickRaw)) outcome = "away";
       else if (/^X$/i.test(pickRaw) || /empate/i.test(pickRaw)) outcome = "draw";
       else if (/^1X$/i.test(pickRaw)) outcome = "home_or_draw";
       else if (/^X2$/i.test(pickRaw)) outcome = "draw_or_away";
       else if (/^12$/i.test(pickRaw)) outcome = "home_or_away";
-    } else if (/Total de Gols|Over.*Under|Total Goals|Gols/i.test(marketRaw)) {
-      const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
-      const valMatch = pickRaw.match(/([\d.]+)/);
-      market = valMatch ? `totals_${valMatch[1]}` : "totals";
-      outcome = isOver ? "over" : "under";
-    } else if (/Escanteio|Corner/i.test(marketRaw)) {
-      const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
-      const valMatch = pickRaw.match(/([\d.,]+)/);
-      market = "corners_total";
-      outcome = isOver ? "over" : "under";
-      if (valMatch) {
-        return {
-          market,
-          outcome,
-          target_value: valMatch[1].replace(",", "."),
-        };
-      }
-    } else if (/Par.*Ímpar|Odd.*Even|Par\/Ímpar/i.test(marketRaw)) {
-      market = /Escanteio|Corner/i.test(marketRaw) ? "odd_even_corners" : "odd_even_goals";
-      outcome = /Ímpar|Impar|Odd/i.test(pickRaw) && !/^Par$/i.test(pickRaw.trim()) ? "odd" : "even";
-    } else if (/Ambas.*Marcam|Both.*Score|BTTS/i.test(marketRaw)) {
-      market = "btts";
-      outcome = /Sim|Yes/i.test(pickRaw) ? "yes" : "no";
-    } else if (/Próximo Gol|Next Goal/i.test(marketRaw)) {
-      market = "next_goal";
-    } else if (/Handicap|Handicap Asiático/i.test(marketRaw)) {
-      market = "handicap";
-    } else if (/Dupla\s*Chance/i.test(marketRaw)) {
-      market = "double_chance";
+      return { market, outcome };
     }
 
-    return { market, outcome };
+    if (/Total de Gols|Over.*Under|Total Goals|\bGols\b/i.test(combined) &&
+        !/Escanteio|Corner|Cart[aã]o|Chute/i.test(combined)) {
+      const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
+      const lineVal = parseLineValue(pickRaw) ?? parseLineValue(marketRaw);
+      const lineStr = lineVal != null ? String(lineVal) : "2.5";
+      if (period === "1h" || period === "2h") {
+        const lineKey = lineStr.replace(".", "_");
+        return {
+          market: `${period}_over_${lineKey}`,
+          outcome: isOver ? "yes" : "no",
+          target_value: lineStr,
+        };
+      }
+      return {
+        market: `totals_${lineStr}`,
+        outcome: isOver ? "over" : "under",
+        target_value: lineStr,
+      };
+    }
+
+    if (/Handicap/i.test(combined)) {
+      const isAsian = /Asi[aá]tico|Asian/i.test(combined);
+      const lineVal = parseLineValue(pickRaw) ?? parseLineValue(marketRaw);
+      const side = detectSide(pickRaw, homeTeam, awayTeam) || detectSide(marketRaw, homeTeam, awayTeam);
+      const hcapKind = isAsian ? "ah" : "hcap";
+      const lineStr = lineVal != null ? String(lineVal) : null;
+      if (side && lineVal != null) {
+        return {
+          market: `${period}_${hcapKind}_${side}_${handicapLineKey(lineVal)}`,
+          outcome: "yes",
+          target_value: lineStr,
+        };
+      }
+      if (lineVal != null) {
+        return { market: "handicap", outcome: "yes", target_value: lineStr };
+      }
+      return { market: "handicap", outcome: pickRaw };
+    }
+
+    if (/Escanteio|Corner/i.test(combined)) {
+      const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
+      const lineVal = parseLineValue(pickRaw) ?? parseLineValue(marketRaw);
+      return {
+        market: "corners_total",
+        outcome: isOver ? "over" : "under",
+        target_value: lineVal != null ? String(lineVal) : undefined,
+      };
+    }
+
+    if (/Par.*Ímpar|Odd.*Even|Par\/Ímpar/i.test(combined)) {
+      return {
+        market: /Escanteio|Corner/i.test(combined) ? "odd_even_corners" : "odd_even_goals",
+        outcome: /Ímpar|Impar|Odd/i.test(pickRaw) && !/^Par$/i.test(pickRaw.trim()) ? "odd" : "even",
+      };
+    }
+
+    if (/Ambas.*Marcam|Both.*Score|BTTS/i.test(combined)) {
+      const market = /algum dos tempos|any half/i.test(combined) ? "btts_any_half" : "btts";
+      return { market, outcome: /Sim|Yes/i.test(pickRaw) ? "yes" : "no" };
+    }
+
+    if (/Pr[oó]ximo Gol|Next Goal|2\s*[º°o]?\s*Gol/i.test(combined)) {
+      const side = detectSide(pickRaw, homeTeam, awayTeam);
+      return { market: "next_goal", outcome: side || pickRaw };
+    }
+
+    if (/Dupla\s*Chance/i.test(combined)) {
+      return { market: "double_chance", outcome: pickRaw };
+    }
+
+    return { market: "other", outcome: pickRaw };
   }
 
-  function pushParsedPick(picks, marketRaw, pickRaw, oddPlaced, rawLine) {
-    const classified = classifyPick(marketRaw, pickRaw);
+  function pushParsedPick(picks, marketRaw, pickRaw, oddPlaced, rawLine, homeTeam = "", awayTeam = "") {
+    const classified = classifyPick(marketRaw, pickRaw, homeTeam, awayTeam);
     const market = classified.market;
     const outcome = classified.outcome;
     const pick = {
@@ -158,7 +245,9 @@
           mSuperbet[1].trim(),
           mSuperbet[2].trim(),
           parseFloat(mSuperbet[3].replace(",", ".")),
-          line
+          line,
+          homeTeam,
+          awayTeam
         );
         continue;
       }
@@ -169,30 +258,34 @@
         const oddPlaced = parseFloat(mEndAt[2].replace(",", "."));
         const dash = left.match(/^(.+?)\s*[—–-]\s*(.+)$/);
         if (dash) {
-          pushParsedPick(picks, dash[1].trim(), dash[2].trim(), oddPlaced, line);
+          pushParsedPick(picks, dash[1].trim(), dash[2].trim(), oddPlaced, line, homeTeam, awayTeam);
         } else if (/^[12X]$|^1X$|^X2$|^12$/i.test(left)) {
-          pushParsedPick(picks, "Resultado Final", left, oddPlaced, line);
+          pushParsedPick(picks, "Resultado Final", left, oddPlaced, line, homeTeam, awayTeam);
         } else {
-          pushParsedPick(picks, "Mercado", left, oddPlaced, line);
+          pushParsedPick(picks, "Mercado", left, oddPlaced, line, homeTeam, awayTeam);
         }
         continue;
       }
 
-      if (/Resultado Final|Match Result|1X2/i.test(line)) {
+      const dashPick = line.match(/^(.+?)\s*[—–-]\s*(.+)$/);
+      if (dashPick) {
+        const classified = classifyPick(dashPick[1].trim(), dashPick[2].trim(), homeTeam, awayTeam);
+        picks.push({ ...classified, raw: line });
+      } else if (/Resultado Final|Match Result|1X2/i.test(line)) {
         const m = line.match(/[–\-:]\s*([1X2]|1X|X2|12)/i);
-        if (m) picks.push({ market: "h2h", outcome: m[1], raw: line });
+        if (m) {
+          const classified = classifyPick("Resultado Final", m[1], homeTeam, awayTeam);
+          picks.push({ ...classified, raw: line });
+        }
       } else if (/Ambas.*Marcam|Both.*Score|BTTS/i.test(line)) {
-        const yes = /Sim|Yes/i.test(line);
-        picks.push({ market: "btts", outcome: yes ? "yes" : "no", raw: line });
+        const classified = classifyPick("Ambas as Equipes Marcam", line, homeTeam, awayTeam);
+        picks.push({ ...classified, raw: line });
       } else if (/Total de Gols|Over\/Under|Total Goals/i.test(line)) {
-        const more = /Mais|Over|Acima/i.test(line);
-        const valMatch = line.match(/([\d.]+)/);
-        picks.push({
-          market: valMatch ? `totals_${valMatch[1]}` : "totals",
-          outcome: more ? "over" : "under",
-          target_value: valMatch ? valMatch[1] : "2.5",
-          raw: line,
-        });
+        const classified = classifyPick("Total de Gols", line, homeTeam, awayTeam);
+        picks.push({ ...classified, raw: line });
+      } else if (/Handicap/i.test(line)) {
+        const classified = classifyPick("Handicap", line, homeTeam, awayTeam);
+        picks.push({ ...classified, raw: line });
       }
     }
 
@@ -209,7 +302,9 @@
           marketRaw,
           pickRaw,
           parseFloat(mAt[1].replace(",", ".")),
-          `${marketRaw} / ${pickRaw} @ ${mAt[1]}`
+          `${marketRaw} / ${pickRaw} @ ${mAt[1]}`,
+          homeTeam,
+          awayTeam
         );
       }
     }

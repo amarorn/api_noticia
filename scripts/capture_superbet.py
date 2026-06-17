@@ -29,13 +29,13 @@ API_BASE = "http://127.0.0.1:8000"
 
 def parse_clipboard(text: str) -> dict | None:
     """Extrai dados da aposta a partir do texto copiado da Superbet."""
+    from models.bet_pick_classify import classify_superbet_pick
+
     lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
     if not lines:
         return None
 
-    # Primeira linha com nomes do evento
     event_line = lines[0]
-    # Tentar separar por ·, —, -, vs, x
     teams = None
     for sep in ("·", "—", " - ", " vs ", " x "):
         if sep in event_line:
@@ -47,39 +47,28 @@ def parse_clipboard(text: str) -> dict | None:
     if not teams:
         return None
 
-    # Linhas com "CRIAR APOSTA" → combo
-    # Linhas com "Total de Gols" → over/under
-    # Linhas com "Ambas as Equipes Marcam" → btts
-    # Linhas com "Resultado Final" → h2h
     picks = []
     import re
+
     for ln in lines:
+        m = re.match(r"(.+?)\s*[—–-]\s*(.+?)(?:\s*@\s*[\d.,]+)?$", ln.strip())
+        if m:
+            classified = classify_superbet_pick(
+                m.group(1).strip(),
+                m.group(2).strip(),
+                home_team=teams[0],
+                away_team=teams[1],
+            )
+            pick = {
+                "market": classified["market"],
+                "outcome": classified["outcome"],
+            }
+            if classified.get("target_value"):
+                pick["target_value"] = classified["target_value"]
+            picks.append(pick)
+            continue
         ln_lower = ln.lower()
-        if "resultado final" in ln_lower:
-            m = re.search(r"resultado final.*[-—]\s*([1X2])", ln, re.I)
-            outcome = m.group(1) if m else None
-            picks.append({"market": "h2h", "outcome": outcome or "1"})
-        elif "total de gols" in ln_lower:
-            m = re.search(r"(?:mais|menos) de ([\d.]+)", ln_lower)
-            val = m.group(1) if m else "2.5"
-            over = "mais" in ln_lower
-            picks.append({"market": f"over_{val}", "outcome": "yes" if over else "no", "target_value": val})
-        elif "ambas as equipes marcam" in ln_lower:
-            yes = "sim" in ln_lower
-            picks.append({"market": "btts_any_half" if "algum dos tempos" in ln_lower else "btts", "outcome": "yes" if yes else "no"})
-        elif re.search(r"\w+\s*-\s*vence|vencer", ln_lower):
-            picks.append({"market": "h2h", "outcome": "home" if teams[0].lower() in ln_lower else "away"})
-        elif "próximo gol" in ln_lower or "proximo gol" in ln_lower or "2º gol" in ln_lower:
-            m = re.search(r"-\s*(\w+)", ln)
-            outcome = None
-            if m:
-                name = m.group(1).strip().lower()
-                if name in ("1", teams[0].lower().split()[0]):
-                    outcome = "home"
-                elif name in ("2", teams[1].lower().split()[0]):
-                    outcome = "away"
-            picks.append({"market": "next_goal", "outcome": outcome or "home"})
-        elif "criar aposta" in ln_lower:
+        if "criar aposta" in ln_lower:
             picks.append({"market": "combo", "outcome": "combo"})
 
     # Extrair valor apostado

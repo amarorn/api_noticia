@@ -403,11 +403,7 @@
       "phase": "group",
       "kickoff": "2026-06-16T21:00:00-07:00",
       "venue": "San Francisco Bay Area Stadium",
-      "city": "Santa Clara",
-      "home_score": 3,
-      "away_score": 1,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-17T06:11:58.168888+00:00"
+      "city": "Santa Clara"
     },
     {
       "id": "L-r1-gana-panama",
@@ -982,5 +978,5 @@
       "city": "Atlanta"
     }
   ],
-  "results_synced_at": "2026-06-17T06:11:58.168888+00:00"
+  "results_synced_at": "2026-06-17T03:02:07.856978+00:00"
 }
