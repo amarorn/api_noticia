@@ -202,6 +202,29 @@ export interface WcInPlayPrediction {
     h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
     totals?: Record<string, { marketOver: number; modelOver: number; edgeOver: number }>;
   } | null;
+  handicapProbs?: Record<string, number>;
+}
+
+export interface HandicapLine {
+  line: number;
+  side: "home" | "away";
+  modelProb: number;
+  superbetOdd: number | null;
+  ev: number | null;
+  kellyStake: number;
+  recommendation: "bet" | "avoid" | "watch" | string;
+}
+
+export interface HandicapAnalysis {
+  eventId: number;
+  homeTeam: string;
+  awayTeam: string;
+  currentScore: string;
+  minute: number;
+  phase: string;
+  lines: HandicapLine[];
+  bestBet: HandicapLine | null;
+  timestamp: string;
 }
 
 export interface MonteCarloBreakdown {

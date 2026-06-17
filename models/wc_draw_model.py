@@ -199,7 +199,12 @@ def build_draw_training_rows(
     fixtures_df: pd.DataFrame,
     train_df: pd.DataFrame,
 ) -> tuple[list[list[float]], list[int]]:
-    from pipelines.wc_stats import build_match_features, group_pressure_from_features, precompute_elo_timeline
+    from pipelines.wc_stats import (
+        build_match_features,
+        group_pressure_from_features,
+        precompute_elo_timeline,
+        row_group_name,
+    )
 
     elo_timeline = precompute_elo_timeline(fixtures_df)
     x_rows: list[list[float]] = []
@@ -216,7 +221,7 @@ def build_draw_training_rows(
             phase=row.get("phase", "group"),
             is_neutral=bool(row.get("is_neutral", True)),
             season=int(row["season"]),
-            group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
+            group_name=gcol,
             elo_timeline=elo_timeline,
         )
         pressure = group_pressure_from_features(feats)

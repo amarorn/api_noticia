@@ -85,6 +85,14 @@ export class PredictWcInPlayUseCase {
   }
 }
 
+export class GetHandicapAnalysisUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: { eventId: number; bankroll?: number; phase?: string }) {
+    return this.repository.getHandicapAnalysis(dto);
+  }
+}
+
 export class ResolveSofascoreEventUseCase {
   constructor(private readonly repository: IWcRepository) {}
 

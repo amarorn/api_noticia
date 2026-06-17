@@ -22,6 +22,7 @@ import {
   mapSuperbetLiveAdvice,
   mapSuperbetEvent,
   mapComboTicket,
+  mapHandicapAnalysis,
   mapWcSimulation,
   mapUserOpenBets,
 } from "../mappers";
@@ -116,6 +117,18 @@ export class WcApiRepository implements IWcRepository {
       },
     );
     return mapWcInPlayPrediction(raw);
+  }
+
+  async getHandicapAnalysis(dto: { eventId: number; bankroll?: number; phase?: string }) {
+    const params = new URLSearchParams();
+    if (dto.bankroll != null) params.set("bankroll", String(dto.bankroll));
+    if (dto.phase) params.set("phase", dto.phase);
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapHandicapAnalysis>[0]>(
+      `/worldcup/handicap/${dto.eventId}${qs}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapHandicapAnalysis(raw);
   }
 
   async resolveSofascoreEvent(dto: {

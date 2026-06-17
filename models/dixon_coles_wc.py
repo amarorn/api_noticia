@@ -89,7 +89,7 @@ class DixonColesWcModel:
                 phase=row.get("phase", "group"),
                 is_neutral=bool(row.get("is_neutral", True)),
                 season=int(row["season"]),
-                group_name=gcol if gcol is not None and not pd.isna(gcol) else None,
+                group_name=gcol,
                 elo_timeline=elo_timeline,
             )
             lam_home, lam_away = expected_lambdas(

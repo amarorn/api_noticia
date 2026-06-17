@@ -6,6 +6,7 @@ import type {
   NewsSyncResult,
   SofascoreResolvedEvent,
   ValueBetsReport,
+  HandicapAnalysis,
   WcCornersPrediction,
   WcInPlayPrediction,
   WcPrediction,
@@ -74,6 +75,11 @@ export interface IWcRepository {
     matchMinutes?: number;
     superbetEventId?: number;
   }): Promise<WcInPlayPrediction>;
+  getHandicapAnalysis(request: {
+    eventId: number;
+    bankroll?: number;
+    phase?: string;
+  }): Promise<HandicapAnalysis>;
   resolveSofascoreEvent(request: {
     homeTeam: string;
     awayTeam: string;

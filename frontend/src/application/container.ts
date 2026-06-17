@@ -25,6 +25,7 @@ import {
   GetWcSquadUseCase,
   GetWcTeamsUseCase,
   GetWcFriendliesUseCase,
+  GetHandicapAnalysisUseCase,
   GetSuperbetLiveUseCase,
   GetSuperbetLiveAdviceUseCase,
   GetSuperbetEventUseCase,
@@ -51,6 +52,7 @@ export const getWcSquadUseCase = new GetWcSquadUseCase(wcRepository);
 export const predictWcMatchUseCase = new PredictWcMatchUseCase(wcRepository);
 export const predictWcCornersUseCase = new PredictWcCornersUseCase(wcRepository);
 export const predictWcInPlayUseCase = new PredictWcInPlayUseCase(wcRepository);
+export const getHandicapAnalysisUseCase = new GetHandicapAnalysisUseCase(wcRepository);
 export const resolveSofascoreEventUseCase = new ResolveSofascoreEventUseCase(wcRepository);
 export const getWcTeamsUseCase = new GetWcTeamsUseCase(wcRepository);
 export const getWcFriendliesUseCase = new GetWcFriendliesUseCase(wcRepository);

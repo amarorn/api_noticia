@@ -251,6 +251,95 @@ def test_worldcup_inplay_endpoint(monkeypatch):
     assert 0 <= data["prob_final_draw"] <= 1
     assert "final_line_probs" in data
     assert data["n_simulations"] == 1000
+    assert "handicap_probs" in data
+    assert len(data["handicap_probs"]) > 0
+
+
+def test_worldcup_handicap_endpoint(monkeypatch):
+    monkeypatch.setattr("config.settings.api_key", None)
+
+    from ingest.superbet.parser import SuperbetEventSnapshot, SuperbetInPlayState
+    from models.wc_inplay import simulate_inplay
+
+    class FakePredictor:
+        fixtures = []
+        dixon_coles = type("DC", (), {"rho": -0.1})()
+        _dc_metrics = {"rho": -0.1}
+
+    fake_snapshot = SuperbetEventSnapshot(
+        event_id=999,
+        home_team="Brasil",
+        away_team="Egito",
+        event_name="Brasil·Egito",
+        utc_date=None,
+        betradar_id=None,
+        is_live=True,
+        inplay=SuperbetInPlayState(
+            home_score=1,
+            away_score=0,
+            minute=30,
+            stoppage_time=None,
+            home_corners=2,
+            away_corners=1,
+            home_yellow_cards=0,
+            away_yellow_cards=1,
+            ht_home_score=None,
+            ht_away_score=None,
+            period_label="1T",
+            status="LIVE",
+        ),
+        h2h_odds={"1": 1.9, "X": 3.4, "2": 4.2},
+        h2h_implied={},
+        totals={},
+        totals_implied={},
+        corners={},
+        corners_implied={},
+        combo_markets={},
+        btts_odds={},
+        next_goal_odds={},
+        generosity_probs={},
+        team_totals={"home": {}, "away": {}},
+        first_half_totals={},
+        second_half_totals={},
+        yellow_cards={},
+        first_half_yellow_cards={},
+        team_shots={"home": {}, "away": {}},
+        team_shots_on_target={"home": {}, "away": {}},
+        half_markets={},
+        handicap_odds={"home_-1.5": 2.1, "away_+1.5": 1.75},
+        handicap_implied={},
+        raw_market_count=10,
+        captured_at="2026-06-15T12:00:00Z",
+    )
+
+    class FakeClient:
+        def fetch_event(self, _event_id):
+            return fake_snapshot
+
+    def fake_inplay(_predictor, **kwargs):
+        return simulate_inplay(
+            home_team=kwargs["home_team"],
+            away_team=kwargs["away_team"],
+            home_score=kwargs["home_score"],
+            away_score=kwargs["away_score"],
+            minute=kwargs["minute"],
+            lambda_full_home=2.5,
+            lambda_full_away=1.8,
+            n_simulations=800,
+        )
+
+    monkeypatch.setattr("ingest.superbet.client.SuperbetClient", FakeClient)
+    monkeypatch.setattr("ingest.superbet.store.save_event_snapshot", lambda _s: None)
+    monkeypatch.setattr("models.wc_inplay.inplay_from_predictor", fake_inplay)
+    monkeypatch.setattr("api.main._get_wc_predictor", lambda: FakePredictor())
+
+    response = client.get("/worldcup/handicap/999?bankroll=1000&phase=group")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["event_id"] == 999
+    assert data["home_team"] == "Brasil"
+    assert len(data["lines"]) > 0
+    assert data["current_score"] == "1x0"
 
 
 def test_worldcup_sofascore_statistics_endpoint(monkeypatch):

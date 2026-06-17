@@ -943,6 +943,7 @@ interface ApiWcInPlayPrediction {
   combo_markets: Record<string, number>;
   btts_final: number;
   n_simulations: number;
+  handicap_probs?: Record<string, number>;
   market_benchmark?: {
     h2h?: Record<string, { market: number; model: number; edge: number; odds?: number }>;
     totals?: Record<string, { market_over: number; model_over: number; edge_over: number }>;
@@ -982,6 +983,7 @@ export function mapWcInPlayPrediction(raw: ApiWcInPlayPrediction): WcInPlayPredi
     comboMarkets: raw.combo_markets,
     bttsFinal: raw.btts_final,
     nSimulations: raw.n_simulations,
+    handicapProbs: raw.handicap_probs,
     marketBenchmark: raw.market_benchmark
       ? {
           h2h: raw.market_benchmark.h2h,
@@ -999,6 +1001,54 @@ export function mapWcInPlayPrediction(raw: ApiWcInPlayPrediction): WcInPlayPredi
             : undefined,
         }
       : null,
+  };
+}
+
+interface ApiHandicapLine {
+  line: number;
+  side: string;
+  model_prob: number;
+  superbet_odd: number | null;
+  ev: number | null;
+  kelly_stake: number;
+  recommendation: string;
+}
+
+interface ApiHandicapAnalysis {
+  event_id: number;
+  home_team: string;
+  away_team: string;
+  current_score: string;
+  minute: number;
+  phase: string;
+  lines: ApiHandicapLine[];
+  best_bet: ApiHandicapLine | null;
+  timestamp: string;
+}
+
+function mapHandicapLine(raw: ApiHandicapLine) {
+  return {
+    line: raw.line,
+    side: raw.side as "home" | "away",
+    modelProb: raw.model_prob,
+    superbetOdd: raw.superbet_odd,
+    ev: raw.ev,
+    kellyStake: raw.kelly_stake,
+    recommendation: raw.recommendation,
+  };
+}
+
+export function mapHandicapAnalysis(raw: ApiHandicapAnalysis) {
+  return {
+    eventId: raw.event_id,
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    currentScore: raw.current_score,
+    minute: raw.minute,
+    phase: raw.phase,
+    lines: raw.lines.map(mapHandicapLine),
+    bestBet: raw.best_bet ? mapHandicapLine(raw.best_bet) : null,
+    timestamp: raw.timestamp,
   };
 }
 

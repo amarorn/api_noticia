@@ -8,6 +8,8 @@ from typing import Any
 
 from schemas.national_teams import normalize_national_team
 
+import re
+
 
 @dataclass
 class SuperbetInPlayState:
@@ -102,6 +104,8 @@ class SuperbetEventSnapshot:
     team_shots: dict[str, dict[str, dict[str, float]]]
     team_shots_on_target: dict[str, dict[str, dict[str, float]]]
     half_markets: dict[str, dict[str, Any]]
+    handicap_odds: dict[str, float]
+    handicap_implied: dict[str, float]
     raw_market_count: int
     captured_at: str
 
@@ -146,6 +150,8 @@ class SuperbetEventSnapshot:
             "team_shots": self.team_shots,
             "team_shots_on_target": self.team_shots_on_target,
             "half_markets": self.half_markets,
+            "handicap_odds": self.handicap_odds,
+            "handicap_implied": self.handicap_implied,
             "raw_market_count": self.raw_market_count,
             "captured_at": self.captured_at,
         }
@@ -191,6 +197,60 @@ def _devig(probs: dict[str, float]) -> dict[str, float]:
 def _implied_from_prices(prices: dict[str, float]) -> dict[str, float]:
     raw = {k: 1.0 / max(float(v), 1.01) for k, v in prices.items()}
     return _devig(raw)
+
+
+def _parse_handicap_line_value(raw: str) -> float | None:
+    text = str(raw or "").strip().replace(",", ".")
+    match = re.search(r"([+-]?\d+(?:\.\d+)?)", text)
+    if not match:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:
+        return None
+
+
+def _extract_handicap_odds(
+    markets: list[dict],
+    home_team: str,
+    away_team: str,
+) -> dict[str, float]:
+    """Extrai odds de handicap asiático (casa/fora por linha)."""
+    from models.wc_handicap import format_handicap_key
+
+    out: dict[str, float] = {}
+    home_l = home_team.lower()
+    away_l = away_team.lower()
+    keywords = ("handicap asiático", "handicap asiatico", "asian handicap", "handicap")
+    for market in markets:
+        name = str(market.get("name") or "").lower()
+        if not any(k in name for k in keywords):
+            continue
+        if "escanteio" in name or "cart" in name:
+            continue
+        for odd in market.get("odds") or []:
+            if not isinstance(odd, dict):
+                continue
+            price = odd.get("price")
+            if not isinstance(price, (int, float)) or price <= 1.0:
+                continue
+            md = odd.get("metadata") or {}
+            line_raw = str(md.get("special_bet_value") or md.get("info") or md.get("name") or "")
+            line = _parse_handicap_line_value(line_raw)
+            if line is None:
+                continue
+            label = str(md.get("name") or md.get("info") or "").lower()
+            code = str(md.get("code") or md.get("name") or "").upper()
+            side: str | None = None
+            if code in {"1", "HOME"} or home_l in label or "casa" in label:
+                side = "home"
+            elif code in {"2", "AWAY"} or away_l in label or "fora" in label or "visit" in label:
+                side = "away"
+            if side is None:
+                continue
+            key = format_handicap_key(side, line)  # type: ignore[arg-type]
+            out[key] = float(price)
+    return out
 
 
 def _find_market(markets: list[dict], name: str) -> dict | None:
@@ -861,6 +921,9 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
     if away_sot_mkt:
         team_shots_on_target["away"] = _extract_line_odds(away_sot_mkt)
 
+    handicap_odds = _extract_handicap_odds(markets, home_team, away_team)
+    handicap_implied = _implied_from_prices(handicap_odds) if handicap_odds else {}
+
     return SuperbetEventSnapshot(
         event_id=int(ev.get("event_id") or fixture.get("event_id") or 0),
         home_team=home_team,
@@ -888,6 +951,8 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         team_shots=team_shots,
         team_shots_on_target=team_shots_on_target,
         half_markets=half_markets,
+        handicap_odds=handicap_odds,
+        handicap_implied=handicap_implied,
         raw_market_count=len(markets),
         captured_at=datetime.now(timezone.utc).isoformat(),
     )

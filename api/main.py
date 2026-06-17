@@ -377,6 +377,7 @@ class WcInPlayResponse(BaseModel):
     top_ht_ft: dict[str, float]
     combo_markets: dict[str, float]
     btts_final: float
+    handicap_probs: dict[str, float] = Field(default_factory=dict)
     n_simulations: int
     market_benchmark: dict | None = None
     superbet: dict | None = None
@@ -434,6 +435,30 @@ class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
     halftime_report: dict | None = None
     half_tickets: dict | None = None
     viable_2h_markets: dict | None = None
+
+
+class HandicapLineResponse(BaseModel):
+    line: float
+    side: str
+    model_prob: float
+    superbet_odd: float | None = None
+    ev: float | None = None
+    kelly_stake: float = 0.0
+    recommendation: str
+
+
+class HandicapAnalysisResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    current_score: str
+    minute: int
+    phase: str
+    lines: list[HandicapLineResponse]
+    best_bet: HandicapLineResponse | None = None
+    model_probs: dict[str, float] = Field(default_factory=dict)
+    superbet_odds: dict[str, float] = Field(default_factory=dict)
+    timestamp: str
 
 
 class WcSuperbetLiveEventResponse(BaseModel):
@@ -1095,6 +1120,7 @@ def root():
             "/worldcup/superbet/live/{event_id}/advice",
             "/worldcup/superbet/events/{event_id}",
             "/worldcup/superbet/events/{event_id}/postmortem",
+            "/worldcup/handicap/{event_id}",
             "/worldcup/bet/advice",
             "/worldcup/round",
             "/worldcup/schedule",
@@ -1686,6 +1712,66 @@ async def worldcup_combo_ticket(
         bankroll=bankroll,
         snapshot=snapshot,
     )
+
+
+@app.get("/worldcup/handicap/{event_id}", response_model=HandicapAnalysisResponse)
+def worldcup_handicap_analysis(
+    event_id: int,
+    bankroll: float = Query(default=1000.0, ge=10.0),
+    phase: str = Query(default="group"),
+):
+    """Análise de handicap asiático: probabilidades modelo × odds Superbet."""
+    from ingest.superbet.client import SuperbetClient, SuperbetClientError
+    from ingest.superbet.store import save_event_snapshot
+    from models.wc_handicap_analysis import build_handicap_analysis
+    from models.wc_inplay import inplay_from_predictor
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    try:
+        snapshot = SuperbetClient().fetch_event(event_id)
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    save_event_snapshot(snapshot)
+    home = normalize_national_team(snapshot.home_team)
+    away = normalize_national_team(snapshot.away_team)
+
+    if snapshot.inplay:
+        ip = snapshot.inplay
+        home_score, away_score, minute = ip.home_score, ip.away_score, ip.minute
+        ht_h, ht_a = ip.ht_home_score, ip.ht_away_score
+    else:
+        home_score = away_score = minute = 0
+        ht_h = ht_a = None
+
+    result = inplay_from_predictor(
+        predictor,
+        home_team=home,
+        away_team=away,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        phase=phase,
+        is_neutral=True,
+        ht_home_score=ht_h,
+        ht_away_score=ht_a,
+    )
+    payload = build_handicap_analysis(
+        event_id=event_id,
+        home_team=home,
+        away_team=away,
+        current_score=f"{home_score}x{away_score}",
+        minute=minute,
+        model_probs=result.handicap_probs,
+        snapshot=snapshot,
+        bankroll=bankroll,
+        phase=phase,
+    )
+    return HandicapAnalysisResponse(**payload)
 
 
 @app.post("/worldcup/bet/advice", response_model=WcBetAdviceResponse)

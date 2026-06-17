@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 
 from config import settings
+from models.wc_handicap import handicap_probs_from_samples
 from models.wc_monte_carlo import _sample_poisson_bivariate
 from pipelines.wc_intensity_profile import compute_half_lambdas_nhpp
 
@@ -108,6 +109,7 @@ class InPlayResult:
     top_ht_ft: dict[str, float]
     combo_markets: dict[str, float]
     btts_final: float
+    handicap_probs: dict[str, float]
     n_simulations: int
     ft_handicap_probs: dict[str, float] = field(default_factory=dict)
     ft_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
@@ -165,6 +167,7 @@ class InPlayResult:
             "top_ht_ft": self.top_ht_ft,
             "combo_markets": {k: round(v, 4) for k, v in self.combo_markets.items()},
             "btts_final": round(self.btts_final, 4),
+            "handicap_probs": {k: round(v, 4) for k, v in self.handicap_probs.items()},
             "n_simulations": self.n_simulations,
         }
         if self.ensemble_shadow:
@@ -744,7 +747,6 @@ def simulate_inplay(
         a_2h=a_2h,
         n=n,
     )
-
     # --- P0.2: Override determinístico de linhas já garantidas ---
     current_total = home_score + away_score
     final_lp = _line_probs_from_totals(total_final, [1.5, 2.5, 3.5, 4.5])
@@ -770,6 +772,7 @@ def simulate_inplay(
     )
     ft_handicap = _handicap_probs(final_h, final_a, n, lines=_FT_HANDICAP_LINES)
     ft_asian = _asian_handicap_probs(final_h, final_a, n)
+    handicap_probs = handicap_probs_from_samples(final_h, final_a)
 
     return InPlayResult(
         home_team=home_team,
@@ -819,6 +822,7 @@ def simulate_inplay(
         top_ht_ft=_top_ht_ft(ht_h, ht_a, final_h, final_a, n),
         combo_markets=combo,
         btts_final=btts,
+        handicap_probs=handicap_probs,
         n_simulations=n,
         halftime_adjustment=halftime_adj_dict,
     )
