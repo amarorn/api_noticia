@@ -1,5 +1,13 @@
 import { useSyncExternalStore } from "react";
 
+export interface SuperbetLivePulse {
+  lastCaptureAt: string | null;
+  liveEventsCount: number;
+  primaryEventId: number | null;
+  stale: boolean;
+  pollIntervalSec: number;
+}
+
 export interface DataPulse {
   pulseAt: string;
   articlesSilver: number;
@@ -7,6 +15,7 @@ export interface DataPulse {
   wcModelsReady: boolean;
   collectionsLastRun: string | null;
   latestSilverAt: string | null;
+  superbetLive: SuperbetLivePulse | null;
 }
 
 let snapshot: DataPulse | null = null;
@@ -14,6 +23,24 @@ const listeners = new Set<() => void>();
 
 function emit() {
   listeners.forEach((fn) => fn());
+}
+
+function parseSuperbetLiveFromHeaders(headers: Headers): SuperbetLivePulse {
+  const lastCaptureAt = headers.get("X-Superbet-Last-Capture-At");
+  const primaryEventRaw = headers.get("X-Superbet-Primary-Event-Id");
+  const primaryEventId =
+    primaryEventRaw && primaryEventRaw.length > 0
+      ? Number.parseInt(primaryEventRaw, 10)
+      : null;
+
+  return {
+    lastCaptureAt: lastCaptureAt && lastCaptureAt.length > 0 ? lastCaptureAt : null,
+    liveEventsCount: Number.parseInt(headers.get("X-Superbet-Live-Events") ?? "0", 10) || 0,
+    primaryEventId: Number.isFinite(primaryEventId) ? primaryEventId : null,
+    stale: headers.get("X-Superbet-Stale") === "true",
+    pollIntervalSec:
+      Number.parseInt(headers.get("X-Superbet-Poll-Interval-Sec") ?? "0", 10) || 0,
+  };
 }
 
 export function applyDataPulseFromHeaders(headers: Headers): void {
@@ -32,6 +59,7 @@ export function applyDataPulseFromHeaders(headers: Headers): void {
     wcModelsReady: headers.get("X-WC-Models-Ready") === "true",
     collectionsLastRun: lastRun && lastRun.length > 0 ? lastRun : null,
     latestSilverAt: latestSilver && latestSilver.length > 0 ? latestSilver : null,
+    superbetLive: parseSuperbetLiveFromHeaders(headers),
   };
   emit();
 }
@@ -49,4 +77,18 @@ export function useDataPulse(): DataPulse | null {
     () => snapshot,
     () => snapshot,
   );
+}
+
+export function formatSuperbetCaptureAge(
+  lastCaptureAt: string | null,
+  nowMs: number = Date.now(),
+): string | null {
+  if (!lastCaptureAt) return null;
+  const capturedMs = Date.parse(lastCaptureAt);
+  if (!Number.isFinite(capturedMs)) return null;
+  const ageSec = Math.max(0, Math.round((nowMs - capturedMs) / 1000));
+  if (ageSec < 60) return `${ageSec}s`;
+  const minutes = Math.floor(ageSec / 60);
+  const seconds = ageSec % 60;
+  return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
 }

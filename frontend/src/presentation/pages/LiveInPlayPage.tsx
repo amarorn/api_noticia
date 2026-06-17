@@ -7,6 +7,7 @@ import {
   refreshOpenBetsCashoutsUseCase,
 } from "@/application/container";
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
+import { SuperbetPulseBadge } from "@/presentation/components/layout/SuperbetPulseBadge";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
@@ -34,6 +35,7 @@ import { LivePredictionEvolutionChart } from "@/presentation/components/live-das
 import LiveHedgeAlert from "@/presentation/components/predictions/LiveHedgeAlert";
 import LiveAgainstModelAlert from "@/presentation/components/predictions/LiveAgainstModelAlert";
 import { LiveP0GuardBanner } from "@/presentation/components/predictions/LiveP0GuardBanner";
+import { LiveBetBuilderGuardPanel } from "@/presentation/components/predictions/LiveBetBuilderGuardPanel";
 import { LiveRecalibrationBanner } from "@/presentation/components/predictions/LiveRecalibrationBanner";
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
@@ -180,6 +182,7 @@ export function LiveInPlayPage() {
     error: adviceError,
     isFetching: adviceFetching,
     refetch: refetchAdvice,
+    pollMs,
   } = useLiveAdviceQueries(eventId, appliedBankroll, kickoffFromUrl, advicePhase);
 
   const recalibrationEvent = useLiveRecalibration(data, adviceFetching);
@@ -384,6 +387,12 @@ export function LiveInPlayPage() {
               Modelo WC indisponível
             </span>
           )}
+          <SuperbetPulseBadge
+            eventId={eventId}
+            compact
+            adaptivePollMs={pollMs.fast}
+            adaptivePollTier={pollMs.tier}
+          />
           <span>
             Superbet #{eventId}
             {data?.betradarId ? ` · Betradar ${data.betradarId}` : ""}
@@ -566,6 +575,9 @@ export function LiveInPlayPage() {
 
           {/* ── 2b. REGRAS P0 ── */}
           <LiveP0GuardBanner guardrails={data.betGuardrails} />
+
+          {/* ── 2b1. CRIAR APOSTA / over 1T ── */}
+          <LiveBetBuilderGuardPanel guardrails={data.betGuardrails} />
 
           {/* ── 2b. ALERTA — aposta contra palpite do modelo ── */}
           <LiveAgainstModelAlert alerts={againstModelAlerts} />

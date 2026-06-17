@@ -868,6 +868,19 @@ export interface SuperbetLiveAdvice {
     pregameProb: number | null;
     inplayPalpite: OutcomeLabel | null;
     inplayProb: number | null;
+    htTrapWarnings: Array<{
+      severity: string;
+      code: string;
+      title: string;
+      reason: string;
+      market?: string;
+      outcome?: string;
+      label?: string;
+      minute?: number;
+      currentGoals?: number;
+      line?: number;
+    }>;
+    betBuilderRules: string[];
   } | null;
   liveStats: LiveMatchStats | null;
   trendReport: LiveTrendReport | null;

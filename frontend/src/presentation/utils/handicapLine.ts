@@ -61,6 +61,26 @@ export function modelProbKey(side: "home" | "away", lineKey: string): string {
   return `${side}_${lineKey}`;
 }
 
+/** Alinha chave do modelo in-play com botão Superbet (espelho visitante +1.5 → away_m1_5). */
+export function bookModelProbKey(side: "home" | "away", lineKey: string): string {
+  const displayed = lineFromKeyForModel(lineKey);
+  if (displayed == null) return modelProbKey(side, lineKey);
+  const modelLine = side === "home" ? displayed : -displayed;
+  if (modelLine === 0) return `${side}_0`;
+  const sign = modelLine > 0 ? "p" : "m";
+  const body = `${sign}${Math.abs(modelLine)}`.replace(".", "_");
+  return `${side}_${body}`;
+}
+
+function lineFromKeyForModel(lineKey: string): number | null {
+  if (lineKey === "0") return 0;
+  const match = lineKey.match(/^([mp])([\d_]+)$/);
+  if (!match) return null;
+  const n = Number.parseFloat(match[2].replace("_", "."));
+  if (!Number.isFinite(n)) return null;
+  return match[1] === "m" ? -n : n;
+}
+
 /** Texto explicando botão Superbet vs linha “vitória pura” (−0.5). */
 export function superbetHandicapHelp(
   homeTeam: string,

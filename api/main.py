@@ -516,6 +516,30 @@ class WcSuperbetEventResponse(BaseModel):
     superbet_stale: bool = False
 
 
+class BetBuilderLegInput(BaseModel):
+    market: str = ""
+    outcome: str = "yes"
+    label: str | None = None
+
+
+class BetBuilderValidateRequest(BaseModel):
+    legs: list[BetBuilderLegInput] = Field(..., min_length=1)
+    minute: int | None = Field(None, ge=0, le=120)
+    home_score: int = Field(0, ge=0)
+    away_score: int = Field(0, ge=0)
+    ht_home_score: int | None = Field(None, ge=0)
+    ht_away_score: int | None = Field(None, ge=0)
+    combined_odd: float | None = Field(None, gt=1)
+
+
+class BetBuilderValidateResponse(BaseModel):
+    valid: bool
+    errors: list[dict] = Field(default_factory=list)
+    warnings: list[dict] = Field(default_factory=list)
+    legs_count: int
+    bet_builder_rules: list[str] = Field(default_factory=list)
+
+
 class WcSuperbetPostmortemTipSummary(BaseModel):
     total_ticks_with_tip: int
     unique_tips: int | None = None
@@ -1664,6 +1688,24 @@ async def worldcup_superbet_event(
     payload = snapshot.to_dict()
     payload["superbet_stale"] = superbet_stale
     return WcSuperbetEventResponse(**payload)
+
+
+@app.post("/worldcup/superbet/validate-builder", response_model=BetBuilderValidateResponse)
+def worldcup_superbet_validate_builder(req: BetBuilderValidateRequest):
+    """Valida pernas do Criar Aposta antes de montar na Superbet."""
+    from models.inplay_bet_builder_guard import validate_bet_builder
+
+    legs = [leg.model_dump() for leg in req.legs]
+    result = validate_bet_builder(
+        legs,
+        minute=req.minute,
+        home_score=req.home_score,
+        away_score=req.away_score,
+        ht_home=req.ht_home_score,
+        ht_away=req.ht_away_score,
+        combined_odd=req.combined_odd,
+    )
+    return BetBuilderValidateResponse(**result)
 
 
 @app.get(

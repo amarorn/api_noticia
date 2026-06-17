@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 _HCAP_MARKET_RE = re.compile(r"^(ft|1h|2h)_(hcap|ah)_(home|away)_(.+)$")
 _HCAP_ANY_RE = _HCAP_MARKET_RE
@@ -296,6 +297,22 @@ def paired_handicap_line_keys(line_key: str) -> tuple[str, str]:
     if val < 0:
         return line_key, mirror_line_key(line_key)
     return mirror_line_key(line_key), line_key
+
+
+def handicap_button_on_book(
+    half_markets: dict[str, Any] | None,
+    *,
+    period: str,
+    side: str,
+    line_key: str,
+    asian: bool = False,
+) -> bool:
+    """True se o botão exato (time + linha) existe no snapshot Superbet."""
+    if not half_markets:
+        return False
+    bucket = "asian_handicap" if asian else "handicap"
+    lines = (half_markets.get(period) or {}).get(bucket) or {}
+    return side in (lines.get(line_key) or {})
 
 
 def superbet_handicap_line_label(side: str, line_key: str) -> str:

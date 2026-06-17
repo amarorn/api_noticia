@@ -388,11 +388,7 @@
       "phase": "group",
       "kickoff": "2026-06-16T20:00:00-05:00",
       "venue": "Kansas City Stadium",
-      "city": "Kansas City",
-      "home_score": 3,
-      "away_score": 0,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-17T03:02:07.856978+00:00"
+      "city": "Kansas City"
     },
     {
       "id": "J-r1-austria-jordania",
@@ -978,5 +974,5 @@
       "city": "Atlanta"
     }
   ],
-  "results_synced_at": "2026-06-17T03:02:07.856978+00:00"
+  "results_synced_at": "2026-06-17T00:03:01.025878+00:00"
 }

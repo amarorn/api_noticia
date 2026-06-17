@@ -1750,6 +1750,23 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
             raw.bet_guardrails.inplay_prob != null
               ? Number(raw.bet_guardrails.inplay_prob)
               : null,
+          htTrapWarnings: (
+            (raw.bet_guardrails.ht_trap_warnings as Array<Record<string, unknown>>) ?? []
+          ).map((t) => ({
+            severity: String(t.severity ?? "medium"),
+            code: String(t.code ?? ""),
+            title: String(t.title ?? ""),
+            reason: String(t.reason ?? ""),
+            market: t.market != null ? String(t.market) : undefined,
+            outcome: t.outcome != null ? String(t.outcome) : undefined,
+            label: t.label != null ? String(t.label) : undefined,
+            minute: t.minute != null ? Number(t.minute) : undefined,
+            currentGoals: t.current_goals != null ? Number(t.current_goals) : undefined,
+            line: t.line != null ? Number(t.line) : undefined,
+          })),
+          betBuilderRules: (
+            (raw.bet_guardrails.bet_builder_rules as string[]) ?? []
+          ).map(String),
         }
       : null,
     liveStats: mapLiveStats(raw.live_stats as Record<string, unknown> | null),

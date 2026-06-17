@@ -161,6 +161,8 @@ class Settings(BaseSettings):
     live_block_minute: int = 45  # P0: sem novos aportes FT após 45' (hit rate histórico)
     live_block_2h_minute: int = 82  # mercados 2T até ~82' (tempo restante mínimo)
     live_hard_stop_minute: int = 88  # bloqueia TODAS as apostas novas (hit 0% em 90+')
+    live_ht_over_trap_minute: int = 35  # aviso over 1T com poucos minutos restantes
+    live_ht_over_trap_block_dead: bool = True  # bloqueia registro de over 1T já morto
     live_2h_viable_min_prob: float = 0.06  # painel 2T: prob. mínima para listar
     live_2h_viable_max_markets: int = 12
     bet_guardrails_enabled: bool = True

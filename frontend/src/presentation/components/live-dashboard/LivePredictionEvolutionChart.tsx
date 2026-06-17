@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from "echarts";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
@@ -16,6 +16,11 @@ import {
   pickPrimaryHandicapLine,
   superbetHandicapHelp,
 } from "@/presentation/utils/handicapLine";
+import {
+  chartLineKeyForPick,
+  pickMatchesChartLine,
+  pickSuggestedHandicap,
+} from "@/presentation/utils/handicapCover";
 import { defaultDataZoom, goalMarkLineData } from "@/presentation/utils/liveChartUtils";
 import { outcomeColors } from "@/presentation/theme";
 
@@ -276,6 +281,7 @@ function TabChart({
   data,
   handicapLine,
   asianLine,
+  suggestedPick,
 }: {
   tab: TabId;
   history: ReturnType<typeof useLivePredictionHistory>["history"];
@@ -283,6 +289,7 @@ function TabChart({
   data: SuperbetLiveAdvice;
   handicapLine: string;
   asianLine: string;
+  suggestedPick: ReturnType<typeof pickSuggestedHandicap>;
 }) {
   const h2hPoints = useMemo(() => buildH2hChartPoints(history), [history]);
   const totalsPoints = useMemo(() => buildTotalsChartPoints(history), [history]);
@@ -333,8 +340,18 @@ function TabChart({
 
   const kind = tab === "handicap" ? "handicap" : "asian";
   const lineKey = tab === "handicap" ? handicapLine : asianLine;
-  const points = buildHandicapChartPoints(history, kind, lineKey);
+  const points = buildHandicapChartPoints(history, kind, lineKey, {
+    homeTeam: data.homeTeam,
+    awayTeam: data.awayTeam,
+    suggestedPick,
+    htHome: data.halftimeReport?.frozenStats?.htHomeScore,
+    htAway: data.halftimeReport?.frozenStats?.htAwayScore,
+  });
   const pair = pairedHandicapKeys(lineKey);
+  const showSuggestedTrack =
+    suggestedPick != null &&
+    suggestedPick.kind === (kind === "handicap" ? "hcap" : "ah") &&
+    pickMatchesChartLine(suggestedPick, lineKey);
   const helpText =
     tab === "handicap"
       ? superbetHandicapHelp(data.homeTeam, data.awayTeam, pair.homeLineKey, pair.awayLineKey)
@@ -347,6 +364,9 @@ function TabChart({
       title={tab === "handicap" ? "Handicap europeu" : "Handicap asiático"}
       helpText={helpText}
       goalEvents={goalEvents}
+      suggestedPick={suggestedPick}
+      showSuggestedTrack={showSuggestedTrack}
+      height={showSuggestedTrack ? 400 : 360}
     />
   );
 }
@@ -358,6 +378,7 @@ interface LivePredictionEvolutionChartProps {
 /** Painel unificado ECharts: 1X2, Over 2.5, Handicap EU e Asiático com marcas de gol. */
 export function LivePredictionEvolutionChart({ data }: LivePredictionEvolutionChartProps) {
   const { history, goalEvents } = useLivePredictionHistory(data);
+  const suggestedPick = useMemo(() => pickSuggestedHandicap(data), [data]);
   const ft = data.halfMarkets?.ft;
   const handicapLines = Object.keys(ft?.handicap ?? {});
   const asianLines = Object.keys(ft?.asian_handicap ?? {});
@@ -365,6 +386,19 @@ export function LivePredictionEvolutionChart({ data }: LivePredictionEvolutionCh
   const [tab, setTab] = useState<TabId>("h2h");
   const [handicapLine, setHandicapLine] = useState(() => pickPrimaryHandicapLine(handicapLines) ?? "0");
   const [asianLine, setAsianLine] = useState(() => pickPrimaryHandicapLine(asianLines) ?? "0");
+  const [userPickedLine, setUserPickedLine] = useState(false);
+
+  useEffect(() => {
+    if (!suggestedPick || userPickedLine) return;
+    const line = chartLineKeyForPick(suggestedPick);
+    if (suggestedPick.kind === "hcap" && handicapLines.includes(line)) {
+      setHandicapLine(line);
+      setTab("handicap");
+    } else if (suggestedPick.kind === "ah" && asianLines.includes(line)) {
+      setAsianLine(line);
+      setTab("asian");
+    }
+  }, [suggestedPick, handicapLines, asianLines, userPickedLine]);
 
   const activeHandicap =
     handicapLines.includes(handicapLine) ? handicapLine : pickPrimaryHandicapLine(handicapLines) ?? handicapLine;
@@ -372,6 +406,10 @@ export function LivePredictionEvolutionChart({ data }: LivePredictionEvolutionCh
     asianLines.includes(asianLine) ? asianLine : pickPrimaryHandicapLine(asianLines) ?? asianLine;
 
   const lineOptions = tab === "handicap" ? handicapLines : tab === "asian" ? asianLines : [];
+  const suggestedLineKey =
+    suggestedPick && tab === (suggestedPick.kind === "hcap" ? "handicap" : "asian")
+      ? chartLineKeyForPick(suggestedPick)
+      : null;
 
   return (
     <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 backdrop-blur-sm">
@@ -379,10 +417,16 @@ export function LivePredictionEvolutionChart({ data }: LivePredictionEvolutionCh
         <div>
           <h2 className="text-sm font-semibold text-white">Evolução de mercados</h2>
           <p className="text-[11px] text-slate-500">
-            Candlestick + modelo + edge · gols marcados no eixo · zoom no slider
+            Candlestick + modelo + edge · gols marcados no eixo · aba Handicap mostra trilha do
+            palpite indicado
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {suggestedPick && (
+            <span className="rounded-full border border-neon-green/30 bg-neon-green/10 px-2 py-0.5 text-[10px] text-neon-green">
+              Palpite HC: {suggestedPick.label}
+            </span>
+          )}
           {goalEvents.length > 0 && (
             <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-200">
               {goalEvents.length} gol{goalEvents.length > 1 ? "s" : ""} no gráfico
@@ -417,14 +461,19 @@ export function LivePredictionEvolutionChart({ data }: LivePredictionEvolutionCh
             <button
               key={lk}
               type="button"
-              onClick={() => (tab === "handicap" ? setHandicapLine(lk) : setAsianLine(lk))}
+              onClick={() => {
+                setUserPickedLine(true);
+                if (tab === "handicap") setHandicapLine(lk);
+                else setAsianLine(lk);
+              }}
               className={`rounded-lg border px-2 py-1 font-mono text-[10px] transition ${
                 (tab === "handicap" ? activeHandicap : activeAsian) === lk
                   ? "border-sky-400/40 bg-sky-400/10 text-sky-300"
                   : "border-white/10 text-slate-500"
-              }`}
+              } ${suggestedLineKey === lk ? "ring-1 ring-neon-green/50" : ""}`}
             >
               {formatHandicapLineKey(lk)}
+              {suggestedLineKey === lk ? " ★" : ""}
             </button>
           ))}
         </div>
@@ -437,6 +486,7 @@ export function LivePredictionEvolutionChart({ data }: LivePredictionEvolutionCh
         data={data}
         handicapLine={activeHandicap}
         asianLine={activeAsian}
+        suggestedPick={suggestedPick}
       />
     </section>
   );

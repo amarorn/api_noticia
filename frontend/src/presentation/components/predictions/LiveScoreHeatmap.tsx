@@ -1,6 +1,21 @@
 import { useMemo } from "react";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 
+/** Backend usa 2x0; aceita também 2-0, 2×0, 2:0. */
+function parseScoreKey(score: string): [number, number] | null {
+  const normalized = score.trim().toLowerCase().replace("×", "x");
+  const match = normalized.match(/^(\d+)[x:\-–](\d+)$/);
+  if (!match) return null;
+  const h = Number(match[1]);
+  const a = Number(match[2]);
+  if (!Number.isFinite(h) || !Number.isFinite(a)) return null;
+  return [h, a];
+}
+
+function formatScoreDisplay(h: number, a: number): string {
+  return `${h}–${a}`;
+}
+
 // ── Aproximação Poisson ────────────────────────────────────────────────────
 
 function poissonProb(lambda: number, k: number): number {
@@ -67,32 +82,36 @@ export function LiveScoreHeatmap({ data }: LiveScoreHeatmapProps) {
   const s = data.inplaySummary;
 
   const { matrix, maxProb, isApprox, topEntries } = useMemo(() => {
-    // Preferência: scores vindos do backend (Monte Carlo)
+    const [lh, la] = estimateLambdas(s.probFinalHome, s.probFinalAway);
+    const matrix = buildScoreMatrix(lh, la, 4, 4);
+    let isApprox = true;
+
     if (s.topFinalScores && Object.keys(s.topFinalScores).length > 0) {
-      const matrix: number[][] = Array.from({ length: 5 }, () => Array(5).fill(0));
+      isApprox = false;
       Object.entries(s.topFinalScores).forEach(([score, prob]) => {
-        const [h, a] = score.split("-").map(Number);
-        if (h >= 0 && h <= 4 && a >= 0 && a <= 4) matrix[h][a] = prob;
+        const parsed = parseScoreKey(score);
+        if (!parsed) return;
+        const [h, a] = parsed;
+        if (h >= 0 && h <= 4 && a >= 0 && a <= 4) {
+          matrix[h][a] = prob;
+        }
       });
-      const flat = matrix.flat().filter(Boolean);
-      const max = flat.length > 0 ? Math.max(...flat) : 0.01;
       const entries = Object.entries(s.topFinalScores)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5);
-      return { matrix, maxProb: max, isApprox: false, topEntries: entries };
+      const flat = matrix.flat().filter((v) => v > 0);
+      const max = flat.length > 0 ? Math.max(...flat) : 0.01;
+      return { matrix, maxProb: max, isApprox, topEntries: entries };
     }
 
-    // Fallback: estimativa Poisson a partir das probabilidades finais
-    const [lh, la] = estimateLambdas(s.probFinalHome, s.probFinalAway);
-    const mat = buildScoreMatrix(lh, la, 4, 4);
-    const flat = mat.flat();
+    const flat = matrix.flat();
     const max = Math.max(...flat, 0.01);
     const entries: [string, number][] = [];
-    mat.forEach((row, h) =>
-      row.forEach((prob, a) => entries.push([`${h}-${a}`, prob])),
+    matrix.forEach((row, h) =>
+      row.forEach((prob, a) => entries.push([`${h}x${a}`, prob])),
     );
     entries.sort((a, b) => b[1] - a[1]);
-    return { matrix: mat, maxProb: max, isApprox: true, topEntries: entries.slice(0, 5) };
+    return { matrix, maxProb: max, isApprox, topEntries: entries.slice(0, 5) };
   }, [s]);
 
   const awayLabels = [0, 1, 2, 3, 4];
@@ -111,7 +130,10 @@ export function LiveScoreHeatmap({ data }: LiveScoreHeatmapProps) {
         </div>
         {/* Top 3 placares */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {topEntries.slice(0, 3).map(([score, prob], i) => (
+          {topEntries.slice(0, 3).map(([score, prob], i) => {
+            const parsed = parseScoreKey(score);
+            const label = parsed ? formatScoreDisplay(parsed[0], parsed[1]) : score;
+            return (
             <span
               key={score}
               className={`rounded-lg border px-2.5 py-1 font-mono text-xs font-semibold ${
@@ -120,12 +142,13 @@ export function LiveScoreHeatmap({ data }: LiveScoreHeatmapProps) {
                   : "border-white/8 bg-white/[0.03] text-slate-300"
               }`}
             >
-              {score.replace("-", "–")}{" "}
+              {label}{" "}
               <span className="text-[10px] font-normal text-slate-400">
                 {(prob * 100).toFixed(1)}%
               </span>
             </span>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -165,7 +188,10 @@ export function LiveScoreHeatmap({ data }: LiveScoreHeatmapProps) {
                   const alpha = Math.min(0.75, intensity * 0.75);
                   const isTopScore = topEntries
                     .slice(0, 3)
-                    .some(([k]) => k === `${h}-${a}`);
+                    .some(([k]) => {
+                      const p = parseScoreKey(k);
+                      return p != null && p[0] === h && p[1] === a;
+                    });
 
                   return (
                     <td key={a} className="p-0.5">
@@ -174,7 +200,7 @@ export function LiveScoreHeatmap({ data }: LiveScoreHeatmapProps) {
                           isTopScore ? "ring-1 ring-white/25" : ""
                         }`}
                         style={{ backgroundColor: `rgba(${r},${g},${b},${alpha})` }}
-                        title={`${h}–${a}: ${(prob * 100).toFixed(1)}%`}
+                        title={`${formatScoreDisplay(h, a)}: ${(prob * 100).toFixed(1)}%`}
                       >
                         <span
                           className={`font-mono text-[10px] font-bold ${
@@ -211,9 +237,13 @@ export function LiveScoreHeatmap({ data }: LiveScoreHeatmapProps) {
           <span className="h-2.5 w-4 rounded bg-sky-400/40" />
           {data.awayTeam} vence
         </span>
-        {isApprox && (
+        {isApprox ? (
           <span className="text-slate-600">
-            · estimativa independente do modelo in-play; atualiza com backend
+            · estimativa Poisson (sem placares MC do backend)
+          </span>
+        ) : (
+          <span className="text-slate-600">
+            · células MC do modelo; demais células = Poisson de apoio
           </span>
         )}
       </div>

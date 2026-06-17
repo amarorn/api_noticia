@@ -28,7 +28,19 @@ def test_away_minus_half_losing_needs_win():
     assert "precisa vencer" in assessment.score_hint.lower()
 
 
-def test_superbet_mirror_lines():
+def test_handicap_button_on_book():
+    from models.wc_handicap_score import handicap_button_on_book
+
+    half_markets = {
+        "ft": {
+            "handicap": {
+                "m1_5": {"home": 1.97},
+                "p1_5": {"away": 1.80},
+            },
+        },
+    }
+    assert handicap_button_on_book(half_markets, period="ft", side="away", line_key="p1_5")
+    assert not handicap_button_on_book(half_markets, period="ft", side="home", line_key="p1_5")
     assert mirror_line_key("m0_5") == "p0_5"
     assert paired_handicap_line_keys("m0_5") == ("m0_5", "p0_5")
     assert superbet_handicap_line_label("home", "m0_5") == "-0.5"

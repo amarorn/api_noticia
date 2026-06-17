@@ -157,6 +157,9 @@ def run_live_advice(
         cached = dict(cached)
         cached["superbet_stale"] = True
         cached["superbet_error"] = str(exc)
+        from ingest.superbet.live_pulse_registry import record_from_advice_payload
+
+        record_from_advice_payload(cached, superbet_stale=True)
         return cached
 
     if save_bronze and not superbet_stale:
@@ -214,6 +217,9 @@ def run_live_advice(
     if superbet_stale:
         payload = dict(payload)
         payload["superbet_stale"] = True
+    from ingest.superbet.live_pulse_registry import record_from_advice_payload
+
+    record_from_advice_payload(payload, superbet_stale=superbet_stale)
     return payload
 
 
@@ -493,12 +499,6 @@ def _build_live_advice_payload(
         pregame_prediction = pre.prediction
     from models.bet_guardrails import build_bet_guardrails_payload
 
-    bet_guardrails = build_bet_guardrails_payload(
-        minute=minute,
-        pregame_prediction=pregame_prediction,
-        pregame_probs=pregame_probs,
-        inplay_probs=inplay_probs,
-    )
     aportes_out = report.get("aportes", [])
 
     strategy_report = build_bet_strategy_report(
@@ -514,6 +514,18 @@ def _build_live_advice_payload(
         confidence=report.get("confidence"),
         event_id=event_id,
         fast=fast,
+    )
+
+    bet_guardrails = build_bet_guardrails_payload(
+        minute=minute,
+        pregame_prediction=pregame_prediction,
+        pregame_probs=pregame_probs,
+        inplay_probs=inplay_probs,
+        home_score=home_score,
+        away_score=away_score,
+        ht_home=ht_h,
+        ht_away=ht_a,
+        market_scan=strategy_report.get("market_scan") or [],
     )
 
     half_tickets = None

@@ -3,9 +3,16 @@ import { buildOhlc, impliedPctFromOdd } from "@/presentation/utils/liveChartUtil
 import {
   formatHandicapLineKey,
   handicapOddForSide,
-  modelProbKey,
+  bookModelProbKey,
   pairedHandicapKeys,
 } from "@/presentation/utils/handicapLine";
+import {
+  assessHandicapCover,
+  type HandicapCoverStatus,
+  type SuggestedHandicapPick,
+  pickMatchesChartLine,
+  coverTrajectoryValue,
+} from "@/presentation/utils/handicapCover";
 
 export type MarketKind = "handicap" | "asian";
 
@@ -55,6 +62,11 @@ export interface HandicapChartPoint {
   homeEdgePp: number | null;
   awayEdgePp: number | null;
   homeOhlc: [number, number, number, number] | null;
+  /** Palpite indicado (quando linha do gráfico = palpite). */
+  suggestedCoverStatus?: HandicapCoverStatus | null;
+  suggestedCoverHint?: string | null;
+  suggestedModelPct?: number | null;
+  suggestedTrajectory?: number | null;
 }
 
 export function buildH2hChartPoints(history: LivePredictionTick[]): H2hChartPoint[] {
@@ -111,27 +123,65 @@ export function buildHandicapChartPoints(
   history: LivePredictionTick[],
   kind: MarketKind,
   lineKey: string,
+  options?: {
+    homeTeam?: string;
+    awayTeam?: string;
+    suggestedPick?: SuggestedHandicapPick | null;
+    htHome?: number;
+    htAway?: number;
+  },
 ): HandicapChartPoint[] {
   const oddsKey = kind === "handicap" ? "handicap" : "asianHandicap";
   const modelKey = kind === "handicap" ? "modelHandicap" : "modelAsian";
   const { homeLineKey, awayLineKey } = pairedHandicapKeys(lineKey);
   let prevHomeOdd: number | null = null;
+  const homeTeam = options?.homeTeam ?? "Casa";
+  const awayTeam = options?.awayTeam ?? "Fora";
+  const suggested = options?.suggestedPick;
+  const showSuggested =
+    suggested != null &&
+    suggested.kind === (kind === "handicap" ? "hcap" : "ah") &&
+    pickMatchesChartLine(suggested, lineKey);
 
   return history.map((sample) => {
     const book = sample[oddsKey];
     const homeOdd = handicapOddForSide(book, "home", homeLineKey);
     const awayOdd = handicapOddForSide(book, "away", awayLineKey);
-    const homeModel = sample[modelKey]?.[modelProbKey("home", homeLineKey)] ?? null;
-    const awayModel = sample[modelKey]?.[modelProbKey("away", awayLineKey)] ?? null;
+    const homeModel = sample[modelKey]?.[bookModelProbKey("home", homeLineKey)] ?? null;
+    const awayModel = sample[modelKey]?.[bookModelProbKey("away", awayLineKey)] ?? null;
     const awayWinModel =
       awayLineKey !== homeLineKey
-        ? sample[modelKey]?.[modelProbKey("away", homeLineKey)] ?? null
+        ? sample[modelKey]?.[bookModelProbKey("away", homeLineKey)] ?? null
         : awayModel;
     const homeImpliedPct = impliedPctFromOdd(homeOdd);
     const awayImpliedPct = impliedPctFromOdd(awayOdd);
     const homeModelPct = homeModel != null ? homeModel * 100 : null;
     const awayModelPct = awayModel != null ? awayModel * 100 : null;
     const awayWinModelPct = awayWinModel != null ? awayWinModel * 100 : null;
+
+    let suggestedCoverStatus: HandicapCoverStatus | null = null;
+    let suggestedCoverHint: string | null = null;
+    let suggestedModelPct: number | null = null;
+    let suggestedTrajectory: number | null = null;
+
+    if (showSuggested && suggested) {
+      const cover = assessHandicapCover(suggested, {
+        homeScore: sample.homeScore,
+        awayScore: sample.awayScore,
+        minute: sample.minute,
+        homeTeam,
+        awayTeam,
+        htHome: options?.htHome,
+        htAway: options?.htAway,
+      });
+      suggestedCoverStatus = cover.status;
+      suggestedCoverHint = cover.hint;
+      const probKey = bookModelProbKey(suggested.side, suggested.lineKey);
+      const raw = sample[modelKey]?.[probKey];
+      suggestedModelPct = raw != null ? raw * 100 : null;
+      suggestedTrajectory = coverTrajectoryValue(cover.status);
+    }
+
     const point: HandicapChartPoint = {
       minute: sample.minute,
       label: sample.label,
@@ -150,6 +200,10 @@ export function buildHandicapChartPoints(
       awayEdgePp:
         awayModelPct != null && awayImpliedPct != null ? awayModelPct - awayImpliedPct : null,
       homeOhlc: buildOhlc(prevHomeOdd, homeOdd),
+      suggestedCoverStatus,
+      suggestedCoverHint,
+      suggestedModelPct,
+      suggestedTrajectory,
     };
     if (homeOdd != null) prevHomeOdd = homeOdd;
     return point;

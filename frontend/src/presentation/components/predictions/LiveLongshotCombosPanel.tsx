@@ -169,8 +169,11 @@ function ComboCard({
 
 export function LiveLongshotCombosPanel({ data }: LiveLongshotCombosPanelProps) {
   const combos = useMemo(
-    () => buildLongshotCombos(data.strategy?.marketScan),
-    [data.strategy?.marketScan],
+    () =>
+      buildLongshotCombos(data.strategy?.marketScan, {
+        halfMarkets: data.halfMarkets,
+      }),
+    [data.strategy?.marketScan, data.halfMarkets],
   );
 
   if (data.isFinished || combos.length === 0) return null;
@@ -191,6 +194,7 @@ export function LiveLongshotCombosPanel({ data }: LiveLongshotCombosPanelProps) 
             Ordenado da <strong className="text-white">maior chance</strong> para a menor — cards
             verdes = menor risco entre as opções @{(LONGSHOT_MIN_RETURN_BRL / LONGSHOT_STAKE_BRL).toFixed(0)}+.
             Handicap não entra junto com vitória 1X2 ou gols do mesmo time (regra do Criar Aposta).
+            Só linhas que existem na Superbet — ex.: Argentina +1,5 FT não aparece se a casa só oferece +0,5.
           </p>
         </div>
       </div>

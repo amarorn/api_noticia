@@ -95,6 +95,68 @@ def test_half_market_prob_and_odd_mapping():
     assert _market_odd(snap, "1h_hcap_home_m0_5", "yes") == 1.90
 
 
+def test_handicap_odd_requires_exact_book_button():
+    """Não usar linha espelhada: Argentina +1.5 inexistente ≠ odd do -1.5."""
+    from ingest.superbet.parser import SuperbetEventSnapshot, SuperbetInPlayState
+
+    snap = SuperbetEventSnapshot(
+        event_id=1,
+        home_team="Argentina",
+        away_team="Argélia",
+        event_name="Argentina - Argélia",
+        utc_date=None,
+        betradar_id=None,
+        is_live=True,
+        inplay=SuperbetInPlayState(
+            home_score=1,
+            away_score=0,
+            minute=55,
+            stoppage_time=None,
+            home_corners=0,
+            away_corners=0,
+            home_yellow_cards=0,
+            away_yellow_cards=0,
+            ht_home_score=1,
+            ht_away_score=0,
+            period_label="2H",
+            status="live",
+        ),
+        h2h_odds={"1": 1.5, "X": 4.0, "2": 6.0},
+        h2h_implied={},
+        totals={},
+        totals_implied={},
+        corners={},
+        corners_implied={},
+        combo_markets={},
+        btts_odds={},
+        next_goal_odds={},
+        generosity_probs={},
+        team_totals={},
+        first_half_totals={},
+        second_half_totals={},
+        yellow_cards={},
+        first_half_yellow_cards={},
+        team_shots={},
+        team_shots_on_target={},
+        half_markets={
+            "ft": {
+                "handicap": {
+                    "m1_5": {"home": 1.97},
+                    "p0_5": {"home": 1.004},
+                    "p1_5": {"away": 1.80},
+                },
+            },
+        },
+        handicap_odds={},
+        handicap_implied={},
+        raw_market_count=1,
+        captured_at="2026-06-16T00:00:00Z",
+    )
+    assert _market_odd(snap, "ft_hcap_away_p1_5", "yes") == 1.80
+    assert _market_odd(snap, "ft_hcap_home_p1_5", "yes") is None
+    assert _market_odd(snap, "ft_hcap_home_m1_5", "yes") == 1.97
+
+
 def test_advise_aportes_includes_half_markets_when_edge():
     raw = json.loads(HALF_FIXTURE.read_text(encoding="utf-8"))
     snap = parse_superbet_event(raw)

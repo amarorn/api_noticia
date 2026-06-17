@@ -14,7 +14,6 @@ from models.wc_handicap_score import (
     handicap_blocked_by_score,
     handicap_line_from_key,
     model_prob_key_for_book_handicap,
-    paired_handicap_line_keys,
     parse_any_handicap_market,
     parse_period_handicap_market,
     superbet_handicap_line_label,
@@ -321,12 +320,7 @@ def _market_odd_half(
             return None
         side, line = parts
         hcap = period_markets.get("handicap", {})
-        odd = hcap.get(line, {}).get(side)
-        if odd is not None:
-            return odd
-        home_key, away_key = paired_handicap_line_keys(line)
-        paired_line = home_key if side == "home" else away_key
-        return hcap.get(paired_line, {}).get(side)
+        return hcap.get(line, {}).get(side)
 
     if suffix.startswith("ah_"):
         rest = suffix[len("ah_") :]
@@ -335,12 +329,7 @@ def _market_odd_half(
             return None
         side, line = parts
         ah = period_markets.get("asian_handicap", {})
-        odd = ah.get(line, {}).get(side)
-        if odd is not None:
-            return odd
-        home_key, away_key = paired_handicap_line_keys(line)
-        paired_line = home_key if side == "home" else away_key
-        return ah.get(paired_line, {}).get(side)
+        return ah.get(line, {}).get(side)
 
     return None
 
@@ -422,6 +411,8 @@ def _half_aporte_specs(
             if not hcap_cfg:
                 continue
             for side in sides:
+                if _market_odd_half(snapshot, f"{period}_hcap_{side}_{line}", "yes") is None:
+                    continue
                 team_name = home_team if side == "home" else away_team
                 line_label = superbet_handicap_line_label(side, line)
                 prob_key = model_prob_key_for_book_handicap(side, line)
@@ -439,6 +430,8 @@ def _half_aporte_specs(
             if not ah_cfg:
                 continue
             for side in sides:
+                if _market_odd_half(snapshot, f"{period}_ah_{side}_{line}", "yes") is None:
+                    continue
                 team_name = home_team if side == "home" else away_team
                 specs.append((
                     f"{period}_ah_{side}_{line}",

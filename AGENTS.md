@@ -16,7 +16,7 @@
 - API REST em FastAPI que serve previsões, notícias, validação histórica, odds ao vivo e **painel in-play Superbet** com recomendações de aporte/cash-out.
 - Frontend web em React + TypeScript + Tailwind CSS + Vite, com tela **Ao Vivo** (`/ao-vivo/:eventId`) para orientação de apostas em tempo real.
 - Foco atual: **Copa do Mundo 2026** (48 seleções, 12 grupos, 72 jogos), com suporte contínuo ao Brasileirão.
-- **Integração ao vivo:** Superbet API (curl_cffi) → snapshot → modelo Poisson in-play → EV/Kelly → cash-out / aporte → frontend em cards interativos.
+- **Integração ao vivo:** Superbet API (httpx, SSE) → snapshot → modelo Poisson in-play → EV/Kelly → cash-out / aporte → frontend em cards interativos (handicap asiático incluído).
 
 ---
 
@@ -78,12 +78,13 @@ api_noticia/
 │   ├── sofascore/          # Cliente curl_cffi, FEPT, stats, histórico, amistosos
 │   │   └── friendlies.py   # list_team_friendlies, merge FIFA+Sofascore, snapshot JSON
 │   ├── superbet/           # Cliente ao vivo, parser, advice, benchmark, store, live_ticks
-│   │   ├── client.py       # HTTP Superbet (curl_cffi) — fetch_event
-│   │   ├── parser.py       # SuperbetEventSnapshot — h2h, totals, btts, combos
+│   │   ├── client.py       # HTTP Superbet (httpx + retries) — fetch_event, fetch_live_events
+│   │   ├── parser.py       # SuperbetEventSnapshot — h2h, totals, btts, combos, handicap_odds
 │   │   ├── advice.py       # run_live_advice → in-play + EV + cash-out + strategy
+│   │   ├── live_advice_cache.py # Cache TTL in-memory + fallback stale por event_id
 │   │   ├── benchmark.py    # h2h_overround, market_benchmark
-│   │   ├── live_ticks.py   # append_live_tick → Parquet (bronze superbet/live_poll)
-│   │   └── store.py        # save_event_snapshot
+│   │   ├── live_ticks.py   # append_live_tick → Parquet (bronze/superbet/live_ticks.parquet)
+│   │   └── store.py        # save/load snapshot bronze; fetch_event_with_stale_fallback
 │   ├── fifa/               # APIs inside.fifa.com / api.fifa.com
 │   │   ├── client.py       # HTTP FIFA
 │   │   ├── match_ingest.py # detalhes de jogo, load_fifa_window_matches (cache)
@@ -103,6 +104,7 @@ api_noticia/
 │   ├── cli.py              # run-pipeline (silver / gold / export / all)
 │   ├── flows/daily.py      # Flow diário (Prefect opcional)
 │   ├── wc_*.py             # ~30 módulos WC (stats, benchmark, value, KXL, etc.)
+│   ├── poll_superbet_live.py # Poll CLI — captura ao vivo resiliente (--wc-copa, --auto)
 │   └── bolao_*.py          # Pipelines do Brasileirão
 ├── models/                 # Modelos preditivos e treinamento
 │   ├── baseline.py         # Heurística baseline (posição, forma, sentimento)
@@ -117,6 +119,9 @@ api_noticia/
 │   ├── wc_match_simulator.py # simulate_match: FIFA + Sofascore + ensemble WC
 │   ├── ev_value.py         # Expected Value + Kelly
 │   ├── wc_inplay.py        # Mercados in-play condicionados ao placar/minuto (Poisson + MC)
+│   ├── wc_handicap.py      # Handicap asiático FT — Monte Carlo + EV/Kelly por linha
+│   ├── wc_handicap_analysis.py # build_handicap_analysis — endpoint GET /worldcup/handicap
+│   ├── wc_handicap_score.py    # Mapeamento linha Superbet ↔ prob modelo (evita espelhamento errado)
 │   ├── wc_bet_advice.py    # Recomendações cash-out e aporte in-play vs mercado
 │   ├── wc_bet_strategy.py  # Plano de apostas: posture, shields, watch list, rules
 │   ├── wc_monte_carlo.py   # _sample_poisson_bivariada com correlação rho (Dixon-Coles)
@@ -154,7 +159,7 @@ api_noticia/
 │   ├── sources.yaml        # Configuração declarativa de fontes RSS
 │   ├── rounds/             # Rodadas planejadas (current.json, wc_2026.json)
 │   └── wc/                 # Dados estáticos WC (squads, baselines, rankings, odds)
-├── scripts/                # Utilitários (dev-api.sh, docker-dev.sh, cron_collect.sh)
+├── scripts/                # Utilitários (dev-api.sh, dev-full.sh, docker-dev.sh, cron_collect.sh)
 ├── docs/                   # Documentação em português
 ├── config.py               # Settings central (pydantic-settings)
 ├── pyproject.toml          # Dependências, scripts, ruff, pytest
@@ -202,11 +207,14 @@ ruff format .         # formatação
 
 ### Rodar API localmente
 ```bash
-./scripts/dev-api.sh          # reload apenas em api/ (evita reinício ao gravar parquet)
-./scripts/dev-api-stable.sh   # reload em api/, models/, ingest/, pipelines/ (amistosos/simulate)
+./scripts/dev-full.sh           # API + frontend + poll Superbet (--wc-copa --auto)
+./scripts/dev-full.sh stop      # para serviços iniciados pelo script
+./scripts/dev-api.sh            # reload apenas em api/ (evita reinício ao gravar parquet)
+./scripts/dev-api-stable.sh     # reload em api/, models/, ingest/, pipelines/ (amistosos/simulate)
 # ou manualmente:
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
+- `dev-full.sh` honra `SKIP_POLL=1`, `POLL_EVENT_IDS`, `SUPERBET_POLL_INTERVAL_SEC` (ver cabeçalho do script).
 
 ### Rodar frontend localmente
 ```bash
@@ -328,7 +336,9 @@ collect-news            # só bronze
 ingest-sofascore --history --all-teams   # stats xG (últimos jogos por seleção)
 ingest-sofascore --all                   # fixtures WC (since-year 2018) + seleções
 ingest-sofascore --backfill-dates        # preenche match_date via Sofascore API
-poll-superbet-live --event-ids 13127506  # captura ao vivo → bronze/superbet/live_poll/
+poll-superbet-live --event-ids 13127506  # captura ao vivo → bronze/superbet/events + live_ticks.parquet
+poll-superbet-live --wc-copa --interval 120   # auto seleções Copa (resiliente a falha de rede)
+./scripts/poll-wc-live.sh                 # atalho --wc-copa
 ```
 
 ---
@@ -364,11 +374,13 @@ poll-superbet-live --event-ids 13127506  # captura ao vivo → bronze/superbet/l
 - Fixtures WC: `data/lake/fixtures/world_cup_<season>.parquet` (local) ou `silver_fixtures` no GCS
 - Sofascore stats: `data/lake/sofascore/match_stats.parquet` (local) ou `silver_sofascore` no GCS
 - Ingest em massa Sofascore usa `match_stats_batch_write()` para um único upload GCS por execução.
+- Bronze Superbet: `data/lake/bronze/superbet/events/{event_id}/latest.json` + `live_ticks.parquet`.
 
 ### Configuração
 - Toda configuração sensível ou variável por ambiente vai para `config.py` (Pydantic Settings) e é sobrescrita via `.env`.
 - Chaves relevantes do lake: `LAKE_ROOT`, `LAKE_PRIMARY` (`local` | `cloud`), `LAKE_SYNC_BQ_ON_WRITE`, `GCS_BUCKET`, `GCP_PROJECT`, `BQ_DATASET`, `GOOGLE_APPLICATION_CREDENTIALS`.
 - Cache FIFA (dev offline): `fifa_rankings_cache_path` (`data/lake/fifa/rankings_live.json`), `fifa_window_cache_path` (`data/lake/fifa/window_matches.json`). Falha de rede não deve derrubar endpoints — usar cache antigo ou retornar só Sofascore.
+- Superbet (dev instável): `superbet_fetch_retries` (padrão 2), `superbet_stale_max_age_sec` (padrão 600). Fallback bronze em `data/lake/bronze/superbet/events/{event_id}/latest.json`; respostas API podem incluir `superbet_stale: true`. Poll: `POLL_EVENT_IDS` evita listagem `--auto` a cada ciclo.
 - Nunca hardcode chaves de API ou caminhos absolutos em código de produção.
 - Nunca commitar `.env` nem `credentials/`.
 
@@ -427,26 +439,40 @@ poll-superbet-live --event-ids 13127506  # captura ao vivo → bronze/superbet/l
 ### Persistência de artefatos
 - `models/wc_artifact.py` serializa o `WcPredictor` treinado em pickle e um manifest JSON com fingerprints dos dados de entrada.  
 - A API recarrega o artifact no startup (em background thread para não bloquear health checks).  
+- Após `train-wc --force`, reinicie a API (`dev-full.sh stop && dev-full.sh`) para carregar o predictor novo.
 - Se o artifact estiver desatualizado ou ausente, retrain automático é disparado.
 
 ### In-Play / Ao Vivo (Superbet)
-Fluxo para orientação de apostas em eventos Superbet ao vivo (`phase=friendly`, `source=friendly` no frontend).
+Fluxo para orientação de apostas em eventos Superbet ao vivo (`phase=group` para Copa, `phase=friendly` para amistosos).
 
 | Camada | Responsabilidade |
 |--------|------------------|
-| `ingest/superbet/client.py` | HTTP Superbet via curl_cffi — `fetch_event(event_id)` |
-| `ingest/superbet/parser.py` | `SuperbetEventSnapshot` — h2h, totals, BTTS, combos, next_goal, generosity, overround |
+| `ingest/superbet/client.py` | HTTP Superbet via **httpx** (SSE) — `fetch_event`, `fetch_live_events`; retries em erros transitórios |
+| `ingest/superbet/store.py` | Bronze JSON por evento; `load_latest_snapshot`, `fetch_event_with_stale_fallback` |
+| `ingest/superbet/live_advice_cache.py` | Cache TTL (8–12s) + `get_stale_advice_for_event` (fallback memória) |
+| `ingest/superbet/parser.py` | `SuperbetEventSnapshot` — h2h, totals, BTTS, combos, `handicap_odds` |
 | `ingest/superbet/advice.py` | `run_live_advice()` — orquestra snapshot → modelo in-play → JSON de resposta |
 | `ingest/superbet/benchmark.py` | `market_benchmark()`, `h2h_overround()` — comparação modelo vs casa |
-| `ingest/superbet/live_ticks.py` | `append_live_tick()` — persiste snapshot + modelo + aporte em Parquet (`bronze/superbet/live_poll`) |
-| `models/wc_inplay.py` | `simulate_inplay()` — Monte Carlo Poisson bivariada com rho (Dixon-Coles), condicionado ao placar e minuto |
-| `models/wc_bet_advice.py` | `advise_aportes()` / `advise_cashout()` / `scan_all_market_edges()` — EV, Kelly, stake |
-| `models/wc_bet_strategy.py` | `build_bet_strategy_report()` — posture, shields, watch_list, rules, correlation warnings |
-| `models/ev_value.py` | `evaluate_outcome()` — EV = P × O - 1, Kelly fraction, fair odd |
+| `ingest/superbet/live_ticks.py` | `append_live_tick()` — histórico Parquet (`bronze/superbet/live_ticks.parquet`) |
+| `pipelines/poll_superbet_live.py` | Poll contínuo resiliente (`_resolve_event_ids_resilient` reutiliza último ciclo OK) |
+| `models/wc_inplay.py` | `simulate_inplay()` — MC Poisson + `handicap_probs_from_samples` |
+| `models/wc_handicap.py` | Probabilidades handicap asiático FT + EV/Kelly por linha |
+| `models/wc_handicap_score.py` | `superbet_handicap_line_label`, `model_prob_key_for_book_handicap` — alinha botão Superbet com prob do modelo |
+| `models/wc_bet_advice.py` | `advise_aportes()` / cash-out / meio-mercado handicap |
+| `models/wc_bet_strategy.py` | `build_bet_strategy_report()` — posture, shields, watch_list |
+| `models/inplay_bet_builder_guard.py` | Over 1T morto (`ht_over_dead`), correlação narrativa, `validate_bet_builder()` |
+| `models/bet_guardrails.py` | P0 guardrails + `ht_trap_warnings` / bloqueio cadastro combo inválido |
+| `models/ev_value.py` | `evaluate_outcome()` — EV = P × O - 1, Kelly fraction |
+
+**Resiliência offline (Superbet instável):**
+1. Cliente retenta `ConnectError`/timeout (`SUPERBET_FETCH_RETRIES`).
+2. Falha na API → bronze `latest.json` → resposta **200** com `superbet_stale: true` (não 502).
+3. Sem bronze → último advice em memória (`SUPERBET_STALE_MAX_AGE_SEC`).
+4. Poll não encerra em falha de `fetch_live_events`; reutiliza IDs do último ciclo auto.
 
 **Fluxo de dados ao vivo:**
 ```
-Superbet API → client.fetch_event() → parser.SuperbetEventSnapshot
+Superbet API → fetch_event_with_stale_fallback() → SuperbetEventSnapshot
                                               ↓
                                     models.wc_inplay.simulate_inplay()
                                               ↓
@@ -460,17 +486,24 @@ Superbet API → client.fetch_event() → parser.SuperbetEventSnapshot
 ```
 
 **Endpoints API:**
-- `GET /worldcup/superbet/live` — lista eventos Superbet ao vivo com IDs
-- `GET /worldcup/superbet/live/{event_id}/advice` — resposta completa: inplay_summary, market_scan, strategy, cashout, aportes
-- `GET /worldcup/superbet/events/{event_id}` — dados brutos do evento
+- `GET /worldcup/superbet/live` — lista eventos ao vivo
+- `GET /worldcup/superbet/live/{event_id}/advice` — inplay_summary, strategy, cashout, aportes (`?fast=true` pula bronze/tick)
+- `GET /worldcup/superbet/events/{event_id}` — snapshot bruto (`superbet_stale` quando fallback bronze)
+- `GET /worldcup/handicap/{event_id}` — análise handicap asiático (modelo × odds Superbet)
+- `POST /worldcup/superbet/validate-builder` — valida pernas do Criar Aposta (correlação, over 1T morto)
 
 **Frontend (`/ao-vivo`, `/ao-vivo/:eventId`):**
-- `LiveInPlayPage.tsx` — Hero CTA, cards de mercado, barras de probabilidade, guia colapsável, monitor de cash-out
-- Componentes: `LiveActionNowPanel`, `LiveMarketCards`, `LiveModelPanel`, `LivePlainGuide`, `LiveOpenBetMonitor`, `BetStrategyPanel`
-- Layout: 2 colunas (mercados | modelo) em desktop, Hero CTA em destaque, seções colapsáveis
+- `LiveInPlayPage.tsx` — Hero CTA, cards de mercado, guia colapsável, monitor de cash-out
+- Componentes: `LiveActionNowPanel`, `LiveMarketCards`, `LiveModelPanel`, `LiveHandicapPanel`, `LiveBetBuilderGuardPanel`, `LivePlainGuide`, `LiveOpenBetMonitor`, `BetStrategyPanel`, `InPlayPanel`
+- Layout: 2 colunas (mercados | modelo) em desktop
+
+**Handicap asiático — regra crítica:**
+- Rótulo e probabilidade devem usar a **linha real do botão** na Superbet (ex.: Noruega **-1.5**), não a linha espelhada (+1.5).
+- Sempre mapear odd Superbet → chave correta em `ft_handicap_probs` via `model_prob_key_for_book_handicap()` antes de calcular EV.
 
 **Limitações conhecidas:**
-- O modelo in-play usa λ (força de ataque) **fixo do pré-jogo** — não se adapta a eventos reais (gol, cartão, substituição, posse de bola). Melhorias planejadas: Bayesian update de λ, momentum por placar/minuto, integração de eventos Sofascore ao vivo. Ver `docs/analise-inplay-backend.md`.
+- O modelo in-play usa λ (força de ataque) **fixo do pré-jogo** — não se adapta a eventos reais (gol, cartão, substituição, posse). Ver `docs/analise-inplay-backend.md`.
+- Fallback stale serve dados desatualizados; poll precisa capturar ao menos um tick para popular bronze.
 
 ### Amistosos internacionais (Sofascore + FIFA)
 Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no frontend).
@@ -507,7 +540,7 @@ Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no fro
 
 - **Não assuma** que o leitor conhece o projeto. Documente o propósito de novas funções/classes em português.
 - **Mantenha a arquitetura em camadas**: ingest → pipelines → models → api. Não crie dependências circulares (ex: `api/` não deve importar `ingest/` diretamente; use `pipelines/` ou `models/`).
-- **Adicione testes** para qualquer lógica nova em `models/`, `pipelines/` ou `api/`.
+- **Adicione testes** para qualquer lógica nova em `models/`, `pipelines/` ou `api/` (ex.: `test_wc_handicap.py`, `test_poll_superbet_live.py`, `test_superbet_store.py`).
 - **Respeite o `.env`**: novas configurações devem ser adicionadas a `config.py` (com defaults sensatos) e documentadas em `.env.example`.
 - **Pydantic para schemas**: qualquer contrato de dados público (request/response da API, linhas do lake) deve ter um schema Pydantic em `schemas/`.
 - **Parquet para lake**: dados tabulares vão para Parquet (particionado localmente; snapshot consolidado no GCS). JSON/JSONL apenas para configs, FEPT, exemplos ou export de treino.
@@ -518,6 +551,8 @@ Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no fro
 - **Frontend**: mantenha a arquitetura limada (domain → application → infrastructure → presentation). Novas páginas adicionam rota em `App.tsx`, use case em `application/`, repositório em `infrastructure/`, e componentes em `presentation/`.
 - **Amistosos**: não bloquear UX quando FIFA estiver offline — `load_fifa_window_matches()` com cache + fallback; merge FIFA em `list_team_friendlies` dentro de `try/except`. Resolver `event_id`/`match_date` da URL no frontend (`resolvedSofascoreEventId`, `resolvedMatchDate`).
 - **Simulate**: ao estender `simulate_match`, manter ordem FIFA → rankings → resolve contexto Sofascore → enrich → stats → FEPT fallback para escalações.
+- **Superbet offline**: não retornar 502 se houver bronze ou advice em cache — usar `fetch_event_with_stale_fallback` e marcar `superbet_stale: true`. Poll deve sobreviver a falhas de rede (`poll_superbet_live._resolve_event_ids_resilient`).
+- **Handicap**: nunca misturar linha espelhada (+1.5) com odd do botão oposto (-1.5); usar `wc_handicap_score.py` para mapeamento prob ↔ mercado.
 - **Dev Container**: `.devcontainer/Dockerfile` remove repo Yarn inválido antes do `apt-get` (evita `NO_PUBKEY` no build).
 
 ---
@@ -536,6 +571,8 @@ Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no fro
 | Deploy Fly.io | `docs/deploy-fly.md` |
 | Dev Container | `.devcontainer/devcontainer.json` |
 | In-Play / Superbet | `docs/analise-inplay-backend.md`, `ingest/superbet/advice.py`, `models/wc_inplay.py` |
+| Handicap asiático | `docs/prompt-implementacao-handicap.md`, `models/wc_handicap.py`, `GET /worldcup/handicap/{event_id}` |
+| Poll ao vivo | `pipelines/poll_superbet_live.py`, `./scripts/dev-full.sh`, `tests/test_poll_superbet_live.py` |
 | Amistosos (ingest) | `ingest/sofascore/friendlies.py`, `ingest/fifa/friendlies.py` |
 | Simulate WC | `models/wc_match_simulator.py`, `POST /worldcup/simulate` |
 | Docker compose | `docker-compose.yml`, `scripts/docker-dev.sh` |

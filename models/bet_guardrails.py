@@ -274,6 +274,23 @@ def find_duplicate_open_bet(
     return None
 
 
+def _scores_from_local_event(event_id: int) -> tuple[int, int, int | None, int | None]:
+    """Placar e HT do último snapshot bronze."""
+    path = Path(settings.lake_root) / "bronze" / "superbet" / "events" / str(event_id) / "latest.json"
+    if not path.exists():
+        return 0, 0, None, None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return 0, 0, None, None
+    inplay = payload.get("inplay") or {}
+    home = int(inplay.get("home_score") or 0)
+    away = int(inplay.get("away_score") or 0)
+    ht_h = inplay.get("ht_home_score")
+    ht_a = inplay.get("ht_away_score")
+    return home, away, (int(ht_h) if ht_h is not None else None), (int(ht_a) if ht_a is not None else None)
+
+
 def validate_register_open_bet(
     *,
     existing_bets: list[dict[str, Any]],
@@ -345,6 +362,60 @@ def validate_register_open_bet(
                 f"(minuto atual: {minute}'). Use apenas cash-out em bilhetes abertos.",
             )
 
+        if settings.live_ht_over_trap_block_dead and minute is not None:
+            from models.inplay_bet_builder_guard import assess_ht_over_trap, infer_market_from_label
+
+            home_score, away_score, ht_h, ht_a = (0, 0, None, None)
+            if superbet_event_id:
+                home_score, away_score, ht_h, ht_a = _scores_from_local_event(superbet_event_id)
+
+            for p in picks:
+                market = str(p.get("market") or "")
+                outcome = str(p.get("outcome") or "yes")
+                if market in {"other", "combo", "totals"} or not market:
+                    inferred = infer_market_from_label(
+                        str(p.get("target_value") or p.get("label") or "")
+                    )
+                    if inferred:
+                        market, outcome = inferred
+                trap = assess_ht_over_trap(
+                    market,
+                    outcome,
+                    minute=minute,
+                    home_score=home_score,
+                    away_score=away_score,
+                    ht_home=ht_h,
+                    ht_away=ht_a,
+                    label=p.get("target_value") or p.get("label"),
+                )
+                if trap and trap.get("severity") == "critical":
+                    raise BetGuardrailError("ht_over_dead", trap["reason"])
+
+        if len(picks) >= 2 and minute is not None:
+            from models.inplay_bet_builder_guard import validate_bet_builder
+
+            home_score, away_score, ht_h, ht_a = (0, 0, None, None)
+            if superbet_event_id:
+                home_score, away_score, ht_h, ht_a = _scores_from_local_event(superbet_event_id)
+
+            validation = validate_bet_builder(
+                picks,
+                minute=minute,
+                home_score=home_score,
+                away_score=away_score,
+                ht_home=ht_h,
+                ht_away=ht_a,
+                combined_odd=None,
+            )
+            for err in validation.get("errors") or []:
+                if err.get("code") == "ht_over_dead":
+                    raise BetGuardrailError("ht_over_dead", str(err.get("reason", "")))
+                if err.get("code") in {"legs_incompatible", "combo_invalid"}:
+                    raise BetGuardrailError(
+                        "combo_invalid",
+                        str(err.get("reason", "Combo inválido na Superbet.")),
+                    )
+
     if not allow_duplicate and settings.bet_one_per_market_enabled:
         dup = find_duplicate_open_bet(
             existing_bets,
@@ -385,6 +456,8 @@ class BetGuardrailsPayload:
     pregame_prob: float | None = None
     inplay_palpite: str | None = None
     inplay_prob: float | None = None
+    ht_trap_warnings: list[dict[str, Any]] | None = None
+    bet_builder_rules: list[str] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -402,6 +475,8 @@ class BetGuardrailsPayload:
             "pregame_prob": self.pregame_prob,
             "inplay_palpite": self.inplay_palpite,
             "inplay_prob": self.inplay_prob,
+            "ht_trap_warnings": self.ht_trap_warnings or [],
+            "bet_builder_rules": self.bet_builder_rules or [],
         }
 
 
@@ -411,8 +486,14 @@ def build_bet_guardrails_payload(
     pregame_prediction: str | None = None,
     pregame_probs: dict[str, float] | None = None,
     inplay_probs: dict[str, float] | None = None,
+    home_score: int = 0,
+    away_score: int = 0,
+    ht_home: int | None = None,
+    ht_away: int | None = None,
+    market_scan: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Payload para frontend Ao Vivo."""
+    from models.inplay_bet_builder_guard import scan_ht_over_traps, _bet_builder_rules_text
     from models.inplay_market_period import allow_2h_suggestions
     from models.wc_draw_model import resolve_wc_outcome
 
@@ -453,6 +534,15 @@ def build_bet_guardrails_payload(
     if pregame_prediction and pregame_probs:
         pre_p = pregame_probs.get(pregame_prediction)
 
+    ht_traps = scan_ht_over_traps(
+        market_scan or [],
+        minute=minute,
+        home_score=home_score,
+        away_score=away_score,
+        ht_home=ht_home,
+        ht_away=ht_away,
+    )
+
     return BetGuardrailsPayload(
         enabled=settings.bet_guardrails_enabled,
         block_new_bets=block_ft or hard_stop,
@@ -468,6 +558,8 @@ def build_bet_guardrails_payload(
         pregame_prob=round(pre_p, 4) if pre_p is not None else None,
         inplay_palpite=inplay_pal,
         inplay_prob=round(inplay_p, 4) if inplay_p is not None else None,
+        ht_trap_warnings=ht_traps,
+        bet_builder_rules=_bet_builder_rules_text(),
     ).to_dict()
 
 

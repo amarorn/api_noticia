@@ -495,6 +495,8 @@ def _classify_half_market(name: str, home_team: str, away_team: str) -> tuple[st
     if " ou " in lower and "resultado" in lower:
         return period, None
     if "handicap" in lower:
+        if re.search(r"handicap\s*3\s*-?\s*way|3-way|3way", lower):
+            return period, None
         if "asiático" in lower or "asiatico" in lower:
             return period, "asian_handicap"
         return period, "handicap"

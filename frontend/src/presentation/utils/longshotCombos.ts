@@ -143,6 +143,24 @@ function parseHandicapMarket(market: string): ParsedHandicap | null {
   return { period: match[1], side: match[2] as "home" | "away", line };
 }
 
+type HalfMarkets = SuperbetLiveAdvice["halfMarkets"];
+
+/** Só aceita handicap se o botão exato existir no snapshot Superbet. */
+export function isHandicapLegOnBook(
+  halfMarkets: HalfMarkets | undefined,
+  market: string,
+): boolean {
+  const match = market.match(/^(ft|1h|2h)_(hcap|ah)_(home|away)_(.+)$/);
+  if (!match) return true;
+  const [, period, kind, side, lineKey] = match;
+  const bucket = kind === "ah" ? "asian_handicap" : "handicap";
+  const pm = halfMarkets?.[period] as
+    | Record<string, Record<string, Record<string, number>>>
+    | undefined;
+  const lines = pm?.[bucket];
+  return lines?.[lineKey]?.[side] != null;
+}
+
 /** Espelhos (-1.5 casa vs +1.5 fora) e múltiplos handicaps no mesmo período. */
 function handicapsConflict(aMarket: string, bMarket: string): boolean {
   const ha = parseHandicapMarket(aMarket);
@@ -391,11 +409,15 @@ function toLeg(row: MarketScanRow): LongshotLeg {
 }
 
 /** Prioriza pernas com boa prob. individual e odd útil para montar @80+. */
-function collectCandidateLegs(scan: MarketScanRow[]): LongshotLeg[] {
+function collectCandidateLegs(
+  scan: MarketScanRow[],
+  halfMarkets?: HalfMarkets,
+): LongshotLeg[] {
   const byKey = new Map<string, LongshotLeg>();
   for (const row of scan) {
     if (row.marketOdd < 1.8 || row.modelProb <= 0) continue;
     if (!isSuperbetBetBuilderMarket(row.market)) continue;
+    if (!isHandicapLegOnBook(halfMarkets, row.market)) continue;
     const key = `${row.market}:${row.outcome}`;
     const leg = toLeg(row);
     const prev = byKey.get(key);
@@ -457,6 +479,7 @@ export function buildLongshotCombos(
     minReturn?: number;
     maxCombos?: number;
     maxLegs?: number;
+    halfMarkets?: HalfMarkets;
   },
 ): LongshotCombo[] {
   if (!scan?.length) return [];
@@ -467,7 +490,7 @@ export function buildLongshotCombos(
   const maxCombos = options?.maxCombos ?? 6;
   const maxLegs = options?.maxLegs ?? 6;
 
-  const pool = collectCandidateLegs(scan).slice(0, 22);
+  const pool = collectCandidateLegs(scan, options?.halfMarkets).slice(0, 22);
   if (pool.length < 2) return [];
 
   const seen = new Set<string>();

@@ -3,13 +3,17 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getSuperbetLiveUseCase } from "@/application/container";
 import type { SuperbetLiveEvent } from "@/domain/entities";
+import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
+import { useAdaptivePollClock } from "@/presentation/hooks/useAdaptivePollClock";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
+import { SuperbetPulseBadge } from "@/presentation/components/layout/SuperbetPulseBadge";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconChevronRight } from "@/presentation/components/ui/Icons";
+import { resolveAdaptiveLivePollMs } from "@/presentation/utils/adaptiveLivePoll";
 import { buildInPlayLink } from "@/presentation/utils/matchSuperbetEvent";
 import { formatScheduleDate, formatScheduleTime } from "@/presentation/utils/sofascore";
 
@@ -263,6 +267,12 @@ export function LivePage() {
   const [sportFilter, setSportFilter] = useState<SportFilter>("esport_fifa");
   const [nationalOnly, setNationalOnly] = useState(false);
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const pulse = useDataPulse();
+  const pollClock = useAdaptivePollClock(true);
+  const listPollMs = useMemo(() => {
+    void pollClock;
+    return resolveAdaptiveLivePollMs(pulse?.superbetLive).list;
+  }, [pollClock, pulse]);
 
   const liveQuery = useQuery({
     queryKey: ["superbet-live", sportFilter],
@@ -273,7 +283,7 @@ export function LivePage() {
         rank: true,
       }),
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: listPollMs,
   });
 
   const baseEvents = useMemo(() => {
@@ -327,7 +337,9 @@ export function LivePage() {
       <PageHeader
         title="Ao vivo"
         subtitle="Jogos em andamento na Superbet — ordenados por melhor oportunidade de palpite"
-      />
+      >
+        <SuperbetPulseBadge />
+      </PageHeader>
 
       <section className="mb-6 space-y-4">
         <FilterBar label="Esporte">

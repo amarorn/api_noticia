@@ -97,3 +97,27 @@ def test_worldcup_superbet_postmortem_404(monkeypatch, tmp_path):
     client = _client(monkeypatch)
     resp = client.get("/worldcup/superbet/events/999999/postmortem")
     assert resp.status_code == 404
+
+
+def test_worldcup_superbet_validate_builder(monkeypatch):
+    client = _client(monkeypatch)
+    resp = client.post(
+        "/worldcup/superbet/validate-builder",
+        json={
+            "legs": [
+                {"market": "1h_over_1_5", "outcome": "yes", "label": "Over 1.5 1T"},
+                {"market": "h2h", "outcome": "1", "label": "Casa"},
+            ],
+            "minute": 45,
+            "home_score": 1,
+            "away_score": 0,
+            "combined_odd": 7.5,
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["valid"] is False
+    assert data["legs_count"] == 2
+    codes = {e.get("code") for e in data["errors"]} | {w.get("code") for w in data["warnings"]}
+    assert "ht_over_dead" in codes
+    assert len(data["bet_builder_rules"]) >= 3

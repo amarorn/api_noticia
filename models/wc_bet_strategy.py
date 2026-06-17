@@ -519,6 +519,19 @@ def build_bet_strategy_report(
             )
         )
         shields.extend(_correlation_warnings(opportunities))
+        from models.inplay_bet_builder_guard import scan_ht_over_traps, traps_to_strategy_shields
+
+        hs, aws = _score_from_inplay(inplay)
+        ht_home, ht_away = _ht_scores_from_inplay(inplay)
+        ht_traps = scan_ht_over_traps(
+            all_edges,
+            minute=minute,
+            home_score=hs,
+            away_score=aws,
+            ht_home=ht_home,
+            ht_away=ht_away,
+        )
+        shields.extend(traps_to_strategy_shields(ht_traps))
         shields.extend(
             _hedge_suggestions(user_bet, inplay, snapshot, threshold=threshold, minute=minute)
         )

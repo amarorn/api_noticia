@@ -1,13 +1,21 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSuperbetEventUseCase, getSuperbetLiveAdviceUseCase } from "@/application/container";
-import type { SuperbetEventSnapshot, SuperbetLiveAdvice } from "@/domain/entities";
+import type { SuperbetLiveAdvice } from "@/domain/entities";
+import { getDataPulseSnapshot, useDataPulse } from "@/infrastructure/api/dataPulseStore";
+import { useAdaptivePollClock } from "@/presentation/hooks/useAdaptivePollClock";
+import { resolveAdaptiveLivePollMs } from "@/presentation/utils/adaptiveLivePoll";
 import { mergeLiveAdvice } from "@/presentation/utils/liveRecalibration";
 
-const FAST_POLL_MS = 10_000;
-const FULL_POLL_MS = 60_000;
-const SCORE_POLL_MS = 5_000;
 const STALE_MS = 8_000;
+
+function resolvePollForQuery(
+  eventId: number,
+  localCapturedAt: string | null | undefined,
+  pulse = getDataPulseSnapshot()?.superbetLive,
+) {
+  return resolveAdaptiveLivePollMs(pulse, { eventId, localCapturedAt });
+}
 
 export function useLiveAdviceQueries(
   eventId: number,
@@ -18,8 +26,8 @@ export function useLiveAdviceQueries(
   const enabled = Number.isFinite(eventId) && eventId > 0;
   const kickoffKey = kickoff ?? "";
   const phaseKey = phase || "group";
+  const pulse = useDataPulse();
 
-  // 1. Score tick — mais rápido, mostra placar imediatamente
   const scoreTickQuery = useQuery({
     queryKey: ["superbet-event-score", eventId],
     queryFn: () => getSuperbetEventUseCase.execute({ eventId, saveBronze: false }),
@@ -27,11 +35,11 @@ export function useLiveAdviceQueries(
     staleTime: STALE_MS,
     refetchInterval: (q) => {
       const d = q.state.data;
-      return d?.isLive ? SCORE_POLL_MS : false;
+      if (!d?.isLive) return false;
+      return resolvePollForQuery(eventId, d.capturedAt).score;
     },
   });
 
-  // 2. Fast advice — mostra dados básicos rapidamente
   const fastAdviceQuery = useQuery({
     queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, phaseKey, "fast"],
     queryFn: () =>
@@ -46,11 +54,11 @@ export function useLiveAdviceQueries(
     staleTime: STALE_MS,
     refetchInterval: (q) => {
       const d = q.state.data as SuperbetLiveAdvice | undefined;
-      return d?.isLive && !d?.isFinished ? FAST_POLL_MS : false;
+      if (!d?.isLive || d?.isFinished) return false;
+      return resolvePollForQuery(eventId, d.capturedAt).fast;
     },
   });
 
-  // 3. Full advice — só carrega depois do fast, em background
   const fullAdviceQuery = useQuery({
     queryKey: ["superbet-live-advice", eventId, bankroll, kickoffKey, phaseKey, "full"],
     queryFn: () =>
@@ -65,9 +73,16 @@ export function useLiveAdviceQueries(
     staleTime: STALE_MS,
     refetchInterval: (q) => {
       const d = q.state.data as SuperbetLiveAdvice | undefined;
-      return d?.isLive && !d?.isFinished ? FULL_POLL_MS : false;
+      if (!d?.isLive || d?.isFinished) return false;
+      return resolvePollForQuery(eventId, d.capturedAt).full;
     },
   });
+
+  const isLiveSession = Boolean(
+    scoreTickQuery.data?.isLive ||
+      (fastAdviceQuery.data?.isLive && !fastAdviceQuery.data?.isFinished),
+  );
+  const pollClock = useAdaptivePollClock(enabled && isLiveSession);
 
   const data = useMemo(() => {
     const merged = mergeLiveAdvice(fastAdviceQuery.data, fullAdviceQuery.data);
@@ -110,7 +125,28 @@ export function useLiveAdviceQueries(
 
   const scoreTick = scoreTickQuery.data ?? null;
 
-  // Loading progressivo: mostra algo assim que score ou fast chegar
+  const pollMs = useMemo(() => {
+    void pollClock;
+    void pulse;
+    return resolveAdaptiveLivePollMs(pulse?.superbetLive, {
+      eventId,
+      localCapturedAt:
+        liveHeader?.capturedAt ??
+        data?.capturedAt ??
+        scoreTick?.capturedAt ??
+        fastAdviceQuery.data?.capturedAt ??
+        null,
+    });
+  }, [
+    pollClock,
+    pulse,
+    eventId,
+    liveHeader?.capturedAt,
+    data?.capturedAt,
+    scoreTick?.capturedAt,
+    fastAdviceQuery.data?.capturedAt,
+  ]);
+
   const hasAnyData = Boolean(scoreTick || fastAdviceQuery.data);
   const isLoading = !hasAnyData && (scoreTickQuery.isLoading || fastAdviceQuery.isLoading);
   const isAdvicePending = !data && fastAdviceQuery.isLoading;
@@ -130,8 +166,8 @@ export function useLiveAdviceQueries(
       void fastAdviceQuery.refetch();
       void fullAdviceQuery.refetch();
     },
-    pollMs: { fast: FAST_POLL_MS, full: FULL_POLL_MS, score: SCORE_POLL_MS },
+    pollMs,
   };
 }
 
-export type LiveAdviceScoreTick = SuperbetEventSnapshot | null;
+export type LiveAdviceScoreTick = import("@/domain/entities").SuperbetEventSnapshot | null;

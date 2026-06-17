@@ -12,6 +12,7 @@ from starlette.responses import Response
 from api.lake_cache import get_lake_counts
 from config import settings
 from ingest.meta import collection_stats
+from ingest.superbet.live_pulse_registry import get_superbet_pulse_summary
 
 _SKIP_PREFIXES = ("/health/live", "/docs", "/redoc", "/openapi.json")
 _META_TTL_SECONDS = 15.0
@@ -62,6 +63,7 @@ def build_pulse_snapshot(
     global _last_snapshot
     articles_silver, fixtures = get_lake_counts(force=force_lake_counts)
     stats = _cached_collections()
+    superbet_live = get_superbet_pulse_summary()
     snapshot = {
         "status": "ok",
         "pulse_at": datetime.now(UTC).isoformat(),
@@ -71,6 +73,7 @@ def build_pulse_snapshot(
         "latest_silver_at": _cached_latest_silver_at(),
         "collections": stats,
         "wc_models_ready": wc_models_ready,
+        "superbet_live": superbet_live,
         "actions": {
             "sync_news": {"method": "POST", "path": "/news/sync"},
             "feed": {"method": "GET", "path": "/news/all"},
@@ -87,14 +90,22 @@ def get_last_pulse_snapshot() -> dict[str, Any] | None:
 def pulse_response_headers(snapshot: dict[str, Any]) -> dict[str, str]:
     collections = snapshot.get("collections") or {}
     last_run = collections.get("last_run")
-    return {
+    superbet = snapshot.get("superbet_live") or {}
+    primary_event_id = superbet.get("primary_event_id")
+    headers = {
         "X-Data-Pulse-At": str(snapshot["pulse_at"]),
         "X-Articles-Silver": str(snapshot["articles_silver"]),
         "X-Fixtures": str(snapshot["fixtures"]),
         "X-WC-Models-Ready": "true" if snapshot.get("wc_models_ready") else "false",
         "X-Collections-Last-Run": last_run if last_run else "",
         "X-Latest-Silver-At": snapshot.get("latest_silver_at") or "",
+        "X-Superbet-Last-Capture-At": superbet.get("last_capture_at") or "",
+        "X-Superbet-Live-Events": str(int(superbet.get("live_events_count") or 0)),
+        "X-Superbet-Stale": "true" if superbet.get("primary_stale") else "false",
+        "X-Superbet-Primary-Event-Id": str(primary_event_id) if primary_event_id else "",
+        "X-Superbet-Poll-Interval-Sec": str(int(superbet.get("poll_interval_sec") or 0)),
     }
+    return headers
 
 
 class DataPulseMiddleware(BaseHTTPMiddleware):
