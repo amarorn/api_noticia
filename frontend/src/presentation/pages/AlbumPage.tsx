@@ -11,6 +11,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { IconSearch, IconCheck } from "@/presentation/components/ui/Icons";
 import { TEAMS_WITH_ROSTER } from "@/data/albumPlayers";
+import {
+  REWARD_COPY,
+  albumProgress,
+  getRewardEvents,
+} from "@/presentation/utils/albumRewards";
 
 // ─── Dados reais dos 48 times — índices KXL do backend ────────────────────────
 
@@ -293,9 +298,25 @@ export function AlbumPage() {
   }, [filter, search, collected]);
 
   const pct = Math.round((collected.size / TEAMS.length) * 100);
+  const rewardEvents = useMemo(() => getRewardEvents(), [collected.size]);
+  const progress = albumProgress(collected, TEAMS.length);
 
   return (
     <PageTransition className="space-y-3">
+      {collected.size === 0 && (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 text-sm text-amber-100/90">
+          <p className="font-semibold text-amber-300">Nenhuma figurinha coletada ainda</p>
+          <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-amber-100/80">
+            <li>{REWARD_COPY.first_prediction}</li>
+            <li>{REWARD_COPY.correct_result}</li>
+            <li>{REWARD_COPY.round_complete}</li>
+            <li>{REWARD_COPY.win_streak}</li>
+          </ul>
+          <p className="mt-2 text-xs text-slate-400">
+            Você também pode clicar nas cartas para marcar manualmente ({progress.total} seleções).
+          </p>
+        </div>
+      )}
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl border border-yellow-500/20" style={{ minHeight: 160 }}>
         <img
@@ -368,6 +389,22 @@ export function AlbumPage() {
           Clique na figurinha para coletar
         </div>
       </div>
+
+      {rewardEvents.length > 0 && (
+        <div className="rounded-xl border border-neon-green/20 bg-neon-green/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-neon-green">
+            Recompensas recentes
+          </p>
+          <ul className="mt-2 space-y-1 text-xs text-slate-300">
+            {rewardEvents.slice(0, 5).map((event) => (
+              <li key={event.id}>
+                {event.label}
+                {event.team ? ` · ${event.team}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Filtros + busca */}
       <div className="flex flex-wrap items-center gap-3">

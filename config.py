@@ -126,6 +126,7 @@ class Settings(BaseSettings):
     lgn_min_samples: int = 30
     lgn_bootstrap_samples: int = 2000
     ev_min_edge: float = 0.03
+    ev_recommendation_min_threshold: float = 0.05
     live_ev_min_edge: float = 0.055
     coase_bookmaker_margin: float = 0.05
     coase_transaction_cost: float = 0.0
@@ -168,6 +169,10 @@ class Settings(BaseSettings):
     bet_guardrails_enabled: bool = True
     bet_one_per_market_enabled: bool = True
     bet_max_stake: float = 50.0  # teto por bilhete (R$) — evita overexposure manual
+    bet_default_stake_brl: float = 10.0
+    bet_use_fractional_kelly: bool = False
+    bet_max_stake_pct: float = 5.0
+    bet_stop_loss_brl: float = 200.0
     bet_require_minute_extension: bool = True  # extensão precisa minuto resolvível
     bet_block_multis_late: bool = True  # múltiplas/combos bloqueados após live_block_minute
     dixit_sigma: float = 2.0

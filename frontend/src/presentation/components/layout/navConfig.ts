@@ -75,16 +75,16 @@ export const navGroups: NavGroup[] = [
         description: "Figurinhas KXL",
       },
       {
-        to: "/predict",
+        to: "/palpite-avulso",
         label: "Palpite avulso",
         Icon: IconZap,
-        description: "Confronto oficial",
+        description: "Confronto oficial + EV",
       },
       {
-        to: "/validate",
+        to: "/historico",
         label: "Histórico",
         Icon: IconHistory,
-        description: "Backtest WC",
+        description: "Palpites e resultados",
       },
     ],
   },
@@ -93,7 +93,7 @@ export const navGroups: NavGroup[] = [
     label: "Mais",
     items: [
       {
-        to: "/news",
+        to: "/noticias",
         label: "Notícias",
         Icon: IconNewspaper,
         description: "Feed com sentimento",

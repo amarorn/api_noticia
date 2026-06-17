@@ -6,7 +6,9 @@ import { DashboardPage } from "@/presentation/pages/DashboardPage";
 import { PredictPage } from "@/presentation/pages/PredictPage";
 import { BrasileiraoPage } from "@/presentation/pages/BrasileiraoPage";
 import { MatchDetailPage } from "@/presentation/pages/MatchDetailPage";
+import { AnalysisPage } from "@/presentation/pages/AnalysisPage";
 import { HistoricalValidationPage } from "@/presentation/pages/HistoricalValidationPage";
+import { HistoricoPage } from "@/presentation/pages/HistoricoPage";
 import { NewsFeedPage } from "@/presentation/pages/NewsFeedPage";
 import { SquadsPage } from "@/presentation/pages/SquadsPage";
 import { WcGroupsPage } from "@/presentation/pages/WcGroupsPage";
@@ -21,6 +23,7 @@ import { CarteiraPage } from "@/presentation/pages/CarteiraPage";
 import { BetPerformancePage } from "@/presentation/pages/BetPerformancePage";
 import { ModelBenchmarkPage } from "@/presentation/pages/ModelBenchmarkPage";
 import { MatchTicketsPage } from "@/presentation/pages/MatchTicketsPage";
+import { NotFoundPage } from "@/presentation/pages/NotFoundPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,8 +42,14 @@ export function App() {
           <Routes>
             <Route element={<AppLayout />}>
               <Route index element={<DashboardPage />} />
-              <Route path="news" element={<NewsFeedPage />} />
-              <Route path="predict" element={<PredictPage />} />
+              {/* Rotas PT-BR (canônicas no menu) */}
+              <Route path="historico" element={<HistoricoPage />} />
+              <Route path="noticias" element={<NewsFeedPage />} />
+              <Route path="palpite-avulso" element={<PredictPage />} />
+              <Route path="analise/:mandante/:visitante" element={<AnalysisPage />} />
+              {/* Aliases legados EN */}
+              <Route path="news" element={<Navigate to="/noticias" replace />} />
+              <Route path="predict" element={<Navigate to="/palpite-avulso" replace />} />
               <Route path="validate" element={<HistoricalValidationPage />} />
               <Route path="brasileirao" element={<BrasileiraoPage />} />
               <Route path="match/:home/:away" element={<MatchDetailPage />} />
@@ -57,7 +66,7 @@ export function App() {
               <Route path="carteira" element={<CarteiraPage />} />
               <Route path="performance" element={<BetPerformancePage />} />
               <Route path="modelos" element={<ModelBenchmarkPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

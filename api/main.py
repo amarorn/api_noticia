@@ -2058,7 +2058,18 @@ def get_user_bet_performance():
 
     bets_data = [b.model_dump(mode="json") for b in bets]
     report = analyze_performance(bets_data)
+    from models.bet_observability import update_roi_by_market
+
+    update_roi_by_market({m.market: m.roi_pct for m in report.by_market})
     return {"error": None, "report": performance_report_to_dict(report)}
+
+
+@app.get("/observability/bets")
+def bet_observability_metrics():
+    """Métricas de palpites gerados, bloqueios EV e ROI por mercado."""
+    from models.bet_observability import get_bet_observability_metrics
+
+    return get_bet_observability_metrics()
 
 
 # ---------------------------------------------------------------------------

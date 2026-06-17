@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/infrastructure/api/client";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
@@ -146,7 +147,9 @@ function MarketTable({ markets }: { markets: MarketPerf[] }) {
             {markets.map((m) => (
               <tr
                 key={m.market}
-                className="border-b border-slate-700/30 hover:bg-slate-700/30"
+                className={`border-b border-slate-700/30 hover:bg-slate-700/30 ${
+                  m.market === "unknown" || m.roi_pct < 0 ? "bg-red-500/5" : ""
+                }`}
               >
                 <td className="px-4 py-2 font-medium text-white capitalize">
                   {m.market}
@@ -277,6 +280,68 @@ function Suggestions({ items }: { items: string[] }) {
   );
 }
 
+function PerformanceAlerts({ summary }: { summary: PerformanceData["summary"] }) {
+  const alerts: string[] = [];
+  if (summary.roi_pct < 0) {
+    alerts.push(`ROI negativo (${summary.roi_pct.toFixed(1)}%) — revise mercados unknown e EV mínimo.`);
+  }
+  if (summary.win_rate_pct < 35) {
+    alerts.push(`Hit rate baixo (${summary.win_rate_pct.toFixed(0)}%) — abaixo do mínimo aceitável (35%).`);
+  }
+  if (summary.net_profit < -100) {
+    alerts.push(`Stop loss operacional: lucro líquido ${formatBRL(summary.net_profit)}.`);
+  }
+  if (!alerts.length) return null;
+  return (
+    <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+      <h3 className="text-sm font-semibold text-red-300 mb-2">Alertas de performance</h3>
+      <ul className="space-y-1 text-xs text-red-200/90">
+        {alerts.map((a) => (
+          <li key={a}>• {a}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function EquityCurve({ bets }: { bets: Array<{ settled_at?: string; profit?: number }> }) {
+  const points = useMemo(() => {
+    const sorted = [...bets]
+      .filter((b) => b.settled_at)
+      .sort((a, b) => String(a.settled_at).localeCompare(String(b.settled_at)));
+    let cumulative = 0;
+    return sorted.map((bet, idx) => {
+      cumulative += bet.profit ?? 0;
+      return { x: idx + 1, y: cumulative };
+    });
+  }, [bets]);
+
+  if (points.length < 2) return null;
+  const minY = Math.min(...points.map((p) => p.y), 0);
+  const maxY = Math.max(...points.map((p) => p.y), 0);
+  const range = maxY - minY || 1;
+
+  const path = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * 100;
+      const y = 100 - ((p.y - minY) / range) * 100;
+      return `${i === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+
+  return (
+    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-4">
+      <h3 className="text-sm font-semibold text-white mb-3">Equity curve</h3>
+      <svg viewBox="0 0 100 100" className="h-32 w-full" preserveAspectRatio="none">
+        <path d={path} fill="none" stroke="#34d399" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <p className="mt-2 text-xs text-slate-500">
+        Final: {formatBRL(points[points.length - 1]?.y ?? 0)} em {points.length} apostas
+      </p>
+    </div>
+  );
+}
+
 // ─── Pagina Principal ───────────────────────────────────────────────────────
 
 export function BetPerformancePage() {
@@ -286,6 +351,13 @@ export function BetPerformancePage() {
       apiFetch<{ report: PerformanceData | null; message?: string }>(
         "/user/bet-performance",
       ),
+  });
+
+  const settledQuery = useQuery({
+    queryKey: ["user-settled-bets-performance"],
+    queryFn: () => apiFetch<{ bets: Array<{ settled_at?: string; profit?: number }> }>(
+      "/user/settled-bets",
+    ),
   });
 
   return (
@@ -320,12 +392,15 @@ export function BetPerformancePage() {
 
         {data?.report && (
           <>
+            <PerformanceAlerts summary={data.report.summary} />
             <SummaryCards data={data.report.summary} />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <EquityCurve bets={settledQuery.data?.bets ?? []} />
               <MarketTable markets={data.report.by_market} />
-              <OddRangeTable ranges={data.report.by_odd_range} />
             </div>
+
+            <OddRangeTable ranges={data.report.by_odd_range} />
 
             <LossPatterns patterns={data.report.loss_patterns} />
             <Suggestions items={data.report.suggestions} />

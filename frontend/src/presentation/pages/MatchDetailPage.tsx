@@ -31,8 +31,14 @@ import { formatPercent, outcomeColors } from "@/presentation/theme";
 import { findMatchInSchedule, kickoffDateFromIso } from "@/presentation/utils/sofascore";
 import { predictWithOptionalSofascore } from "@/presentation/utils/sofascorePredict";
 
-export function MatchDetailPage() {
-  const { home, away } = useParams<{ home: string; away: string }>();
+export function MatchDetailPage({
+  routeHomeKey = "home",
+  routeAwayKey = "away",
+}: {
+  routeHomeKey?: string;
+  routeAwayKey?: string;
+} = {}) {
+  const params = useParams<Record<string, string | undefined>>();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const sofascoreFromUrl = searchParams.get("sofascore") === "1";
@@ -46,8 +52,8 @@ export function MatchDetailPage() {
     ? (location.state as { prediction?: WcPrediction } | null)?.prediction
     : undefined;
 
-  const homeTeam = decodeURIComponent(home ?? "");
-  const awayTeam = decodeURIComponent(away ?? "");
+  const homeTeam = decodeURIComponent(params[routeHomeKey] ?? params.home ?? "");
+  const awayTeam = decodeURIComponent(params[routeAwayKey] ?? params.away ?? "");
 
   const [useSofascore, setUseSofascore] = useState(sofascoreFromUrl);
   const [sofascoreEventIdInput, setSofascoreEventIdInput] = useState("");

@@ -67,6 +67,8 @@ class AporteAdvice:
     suggested_stake_pct: float
     action: str
     score_context: str | None = None
+    classification: str = "value_bet"
+    suggested_stake_brl: float | None = None
 
 
 _INPLAY_HALF_CFG: dict[str, dict[str, Any]] = {
@@ -1104,9 +1106,29 @@ def advise_aportes(
             continue
         if ev.expected_value < threshold:
             continue
+        from models.bet_decision import assess_bet_recommendation
+
+        decision = assess_bet_recommendation(
+            market=market,
+            outcome=outcome,
+            ev=ev.expected_value,
+            edge_pp=edge_pp,
+            model_prob=prob,
+            odd=odd,
+            bankroll=bankroll,
+            kelly_quarter=ev.kelly_quarter,
+            confidence_score=confidence_score,
+            min_ev_threshold=max(threshold, settings.ev_recommendation_min_threshold),
+        )
+        if not decision.allowed:
+            continue
         kelly_q = ev.kelly_quarter
-        suggested_pct = round(min(5.0, kelly_q * 100), 2)
-        action = "aportar" if ev.expected_value >= threshold * 2 else "aportar_pequeno"
+        suggested_pct = decision.suggested_stake_pct or round(min(5.0, kelly_q * 100), 2)
+        action = (
+            "aportar"
+            if decision.classification in {"high_confidence", "value_bet"}
+            else "aportar_pequeno"
+        )
         out.append(
             AporteAdvice(
                 market=market,
@@ -1121,6 +1143,8 @@ def advise_aportes(
                 suggested_stake_pct=suggested_pct,
                 action=action,
                 score_context=score_context,
+                classification=decision.classification,
+                suggested_stake_brl=decision.suggested_stake_brl,
             )
         )
 

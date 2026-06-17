@@ -39,6 +39,7 @@ import { predictWithOptionalSofascore } from "@/presentation/utils/sofascorePred
 import { motion } from "framer-motion";
 import { useToast } from "@/presentation/components/ui/toast";
 import { LineupPitchView } from "@/presentation/components/squads/LineupPitchView";
+import { StandaloneEvPanel } from "@/presentation/components/predictions/StandaloneEvPanel";
 import { teamColor } from "@/data/teamColors";
 
 export function PredictPage() {
@@ -798,6 +799,16 @@ export function PredictPage() {
                 <p className="section-label">Contexto pré-jogo</p>
                 <MatchContextPanel prediction={predictMutation.data} />
               </div>
+
+              <StandaloneEvPanel
+                homeTeam={predictMutation.data.homeTeam}
+                awayTeam={predictMutation.data.awayTeam}
+                probabilities={{
+                  "1": predictMutation.data.probHome,
+                  X: predictMutation.data.probDraw,
+                  "2": predictMutation.data.probAway,
+                }}
+              />
             </motion.div>
           )}
 
