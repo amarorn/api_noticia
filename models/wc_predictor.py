@@ -52,6 +52,18 @@ from schemas.models import BolaoLabel
 from schemas.wc_kxl_dynamic import WcKxlMatchInput
 
 
+def _resolve_xg_calibration(
+    home_team: str,
+    away_team: str,
+    before_date: datetime | None,
+):
+    if not settings.wc_xg_lambda_blend_enabled:
+        return None
+    from models.xg_lambda_blend import build_xg_calibration
+
+    return build_xg_calibration(home_team, away_team, before_date=before_date)
+
+
 def _apply_draw_floor(probs: dict[str, float], floor: float) -> dict[str, float]:
     if floor <= 0:
         return probs
@@ -489,6 +501,7 @@ class WcPredictor:
             features=features,
             before_date=cutoff,
             rho=self.dixon_coles.rho,
+            xg_calibration=_resolve_xg_calibration(home_team, away_team, cutoff),
         )
 
         history = self.fixtures

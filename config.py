@@ -121,6 +121,9 @@ class Settings(BaseSettings):
     inplay_trailing_chase_boost: bool = True
     inplay_use_calibrated_coefficients: bool = True
     inplay_use_calibrated_nhpp: bool = False
+    wc_xg_lambda_blend_enabled: bool = True
+    wc_xg_lambda_blend_weight: float = 0.35
+    inplay_tune_min_snapshots: int = 50
     inplay_use_ensemble: bool = True
     inplay_ensemble_hawkes: bool = True
     inplay_ensemble_gbm: bool = True

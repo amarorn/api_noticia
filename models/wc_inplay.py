@@ -924,6 +924,13 @@ def inplay_from_predictor(
     rho = predictor.dixon_coles.rho
     if rho is None and predictor._dc_metrics:
         rho = predictor._dc_metrics.get("rho", 0.0)
+
+    xg_calibration = None
+    if settings.wc_xg_lambda_blend_enabled:
+        from models.xg_lambda_blend import build_xg_calibration
+
+        xg_calibration = build_xg_calibration(home_team, away_team, before_date=cutoff)
+
     factors = goal_model_factors(
         predictor.fixtures,
         home_team,
@@ -931,6 +938,7 @@ def inplay_from_predictor(
         features=features,
         before_date=cutoff,
         rho=rho,
+        xg_calibration=xg_calibration,
     )
     seed = hash((home_team, away_team, home_score, away_score, minute)) % (2**32)
     sim_kwargs = dict(

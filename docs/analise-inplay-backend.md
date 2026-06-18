@@ -17,11 +17,10 @@
 | **P1** Time decay / threshold por minuto | ✅ Feito | `config.py` (`live_midgame_*`, `live_late_game_*`) |
 | **P1** λ ao vivo (posse, SOT, timeline) | ✅ Feito | `models/wc_inplay_live_adjust.py` + ScoreAlarm |
 | **P1** Cash-out + momentum de mercado | ✅ Feito | `apply_trend_to_cashout` ← `wc_trend_advisor` |
-| **P2** xG Sofascore calibrando λ pré-jogo | 🟡 Parcial | nudge em `wc_predictor`; blend Poisson pendente |
+| **P2** xG Sofascore calibrando λ pré-jogo | ✅ Feito | `models/xg_lambda_blend.py` → `goal_model_factors` / `inplay_from_predictor` |
 | **P2** Eventos Sofascore ao vivo | 🟡 Parcial | `ingest/sofascore/live_events.py`, `live_momentum` |
-| **P3** KXL dinâmico in-play | ❌ Pendente | só pré-jogo hoje |
-| **P3** Próximo gol dedicado (NHPP) | 🟡 Parcial | usa λ pós-momentum; `inplay_use_nhpp` opcional |
-| **Validação** benchmark_inplay CLI | ❌ Pendente | usar `inplay_bet_filter_backtest` + ticks |
+| **P2** MLE momentum com live_ticks | ✅ Feito | `tune-inplay --source ticks|both`; `wc_inplay_ticks_dataset.py` |
+| **Validação** benchmark_inplay CLI | ✅ Feito | `benchmark-inplay` (+ `--ab-momentum`, `--tune-ticks`) |
 
 **Config operacional (ganhos):** respeitar `LIVE_BLOCK_MINUTE=45`, `LIVE_HARD_STOP_MINUTE=88`, `LIVE_CASHOUT_USE_TREND=true`.
 

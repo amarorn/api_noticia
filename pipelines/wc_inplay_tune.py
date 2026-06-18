@@ -247,32 +247,74 @@ def fit_nhpp_weights(
     ]
 
 
+def _merge_training_timelines(
+    *,
+    min_train_season: int,
+    eval_season: int,
+    include_fixtures: bool,
+    include_ticks: bool,
+) -> pd.DataFrame:
+    """Combina timeline de fixtures e/ou live_ticks para treino MLE."""
+    import pandas as pd
+
+    parts: list[pd.DataFrame] = []
+    if include_fixtures:
+        fx = build_timeline_from_fixtures(
+            min_season=min_train_season,
+            max_season=eval_season - 1,
+        )
+        if not fx.empty:
+            fx = fx.copy()
+            fx["source"] = "fixtures"
+            parts.append(fx)
+    if include_ticks:
+        from pipelines.wc_inplay_ticks_dataset import build_timeline_from_live_ticks
+
+        ticks = build_timeline_from_live_ticks()
+        if not ticks.empty:
+            parts.append(ticks)
+    if not parts:
+        return pd.DataFrame()
+    return pd.concat(parts, ignore_index=True)
+
+
 def run_inplay_tune(
     eval_season: int = 2022,
     min_train_season: int = 2010,
     regularization: float = 0.1,
     verbose: bool = True,
+    *,
+    source: str = "fixtures",
 ) -> InPlayCoefficients:
     """Executa calibração completa: momentum MLE + NHPP MLE.
 
-    Treina em seasons < eval_season; reporta holdout metrics em eval_season.
-
-    Returns:
-        InPlayCoefficients com β's e pesos calibrados.
+    Treina em seasons < eval_season (fixtures) e/ou live_ticks; reporta holdout.
     """
-    # Dataset de treino (tudo menos eval_season)
-    train_df = build_timeline_from_fixtures(
-        min_season=min_train_season, max_season=eval_season - 1,
+    from config import settings
+
+    include_fixtures = source in {"fixtures", "both"}
+    include_ticks = source in {"ticks", "both"}
+
+    train_df = _merge_training_timelines(
+        min_train_season=min_train_season,
+        eval_season=eval_season,
+        include_fixtures=include_fixtures,
+        include_ticks=include_ticks,
     )
-    if train_df.empty or len(train_df) < 100:
+    min_rows = settings.inplay_tune_min_snapshots
+    if train_df.empty or len(train_df) < min_rows:
         raise ValueError(
             f"Dataset de treino insuficiente: {len(train_df)} snapshots "
-            f"(seasons {min_train_season}–{eval_season - 1})"
+            f"(mínimo {min_rows}, source={source}). "
+            "Para ticks: rode poll-superbet-live e aguarde jogos finalizados."
         )
 
     if verbose:
-        print(f"Dataset treino: {len(train_df)} snapshots de "
-              f"{train_df['match_id'].nunique()} jogos")
+        src_counts = train_df["source"].value_counts().to_dict() if "source" in train_df.columns else {}
+        print(
+            f"Dataset treino ({source}): {len(train_df)} snapshots de "
+            f"{train_df['match_id'].nunique()} jogos — {src_counts}"
+        )
 
     # 1. MLE do momentum
     betas, se = fit_momentum_mle(train_df, regularization=regularization)
@@ -335,7 +377,13 @@ def run_inplay_tune(
     )
 
     timeline_path = app_settings.lake_root / "silver" / "wc_timeline" / "timeline.parquet"
+    from ingest.superbet.live_ticks import live_ticks_path
     from models.wc_inplay_coefficients import compute_dataset_hash
+
+    ticks_path = live_ticks_path()
+    dataset_hash = compute_dataset_hash(timeline_path.parent)
+    if include_ticks and ticks_path.exists():
+        dataset_hash = f"{dataset_hash}:{ticks_path.stat().st_size}"
 
     coefficients = InPlayCoefficients(
         momentum_betas=momentum_betas,
@@ -345,7 +393,7 @@ def run_inplay_tune(
         in_sample_loglik=round(in_sample_ll, 2),
         holdout_brier=calibrated_holdout.brier_overall,
         holdout_brier_baseline=baseline_holdout.brier_overall,
-        dataset_hash=compute_dataset_hash(timeline_path.parent),
+        dataset_hash=dataset_hash,
     )
 
     path = save_inplay_coefficients(coefficients)
@@ -367,6 +415,12 @@ def main() -> int:
     parser.add_argument("--eval-season", type=int, default=2022)
     parser.add_argument("--min-train-season", type=int, default=2010)
     parser.add_argument("--regularization", type=float, default=0.1)
+    parser.add_argument(
+        "--source",
+        choices=("fixtures", "ticks", "both"),
+        default="fixtures",
+        help="fixtures=Copa histórica; ticks=live_ticks.parquet; both=concatena",
+    )
     parser.add_argument("--save-timeline", action="store_true", default=True)
     parser.add_argument("--verbose", "-v", action="store_true", default=True)
     args = parser.parse_args()
@@ -388,6 +442,7 @@ def main() -> int:
         min_train_season=args.min_train_season,
         regularization=args.regularization,
         verbose=args.verbose,
+        source=args.source,
     )
     return 0
 
