@@ -61,6 +61,30 @@ def _apply_draw_floor(probs: dict[str, float], floor: float) -> dict[str, float]
     return {"1": probs["1"] * scale, "X": px, "2": probs["2"] * scale}
 
 
+def _apply_favorite_prob_cap(probs: dict[str, float]) -> dict[str, float]:
+    """Evita favorito > cap no pré-jogo; redistribui excedente para empate e zebra."""
+    cap = settings.wc_favorite_prob_cap
+    if cap <= 0 or cap >= 1.0:
+        return probs
+    p1, px, p2 = probs["1"], probs["X"], probs["2"]
+    fav_side = "1" if p1 >= p2 else "2"
+    fav_p = p1 if fav_side == "1" else p2
+    if fav_p <= cap:
+        return probs
+    excess = fav_p - cap
+    draw_share = settings.wc_favorite_draw_share
+    new_draw = px + excess * draw_share
+    underdog_key = "2" if fav_side == "1" else "1"
+    new_under = probs[underdog_key] + excess * (1.0 - draw_share)
+    out = {"1": p1, "X": new_draw, "2": p2}
+    out[fav_side] = cap
+    out[underdog_key] = new_under
+    total = sum(out.values())
+    if total <= 0:
+        return probs
+    return {k: v / total for k, v in out.items()}
+
+
 @dataclass
 class WcPrediction:
     home_team: str
@@ -439,6 +463,7 @@ class WcPredictor:
             {"1": prob_home, "X": prob_draw, "2": prob_away},
             hp.draw_prob_floor,
         )
+        probs = _apply_favorite_prob_cap(probs)
         prob_home, prob_draw, prob_away = probs["1"], probs["X"], probs["2"]
 
         # Calibração pós-hoc (Fase 0.1): ajusta probabilidades se calibrador disponível

@@ -29,6 +29,35 @@ from schemas.national_teams import normalize_national_team
 logger = logging.getLogger(__name__)
 
 _FINISHED_STATUSES = {"FINISHED", "ENDED", "CLOSED", "CANCELLED", "ABANDONED"}
+_FINISHED_LABEL_HINTS = ("END", "FIM", "ENCERR", "FINAL", "FT", "TERMIN")
+
+
+def _match_is_finished(
+    *,
+    status: str | None,
+    period_label: str | None,
+    minute: int,
+    match_minutes: int = 90,
+    is_live_snapshot: bool = True,
+    home_score: int = 0,
+    away_score: int = 0,
+) -> bool:
+    st = str(status or "").upper()
+    if st in _FINISHED_STATUSES:
+        return True
+    lbl = str(period_label or "").upper()
+    if lbl and any(h in lbl for h in _FINISHED_LABEL_HINTS):
+        return True
+    if minute >= match_minutes + 15:
+        return True
+    # Saiu do feed ao vivo mas bronze ainda tem stats de fim de jogo
+    if (
+        not is_live_snapshot
+        and minute >= max(85, match_minutes - 5)
+        and (home_score + away_score > 0 or minute > 50)
+    ):
+        return True
+    return False
 
 
 def _build_hedge_report(
@@ -300,6 +329,32 @@ def _build_live_advice_payload(
                 logger.warning("sofascore_momentum_falha event_id=%s: %s", event_id, exc)
                 sofascore_skipped = "Sofascore indisponível — posse estimada por escanteios."
 
+    scorealarm_context: dict | None = None
+    if snapshot.inplay and settings.scorealarm_enabled and not fast:
+        try:
+            from ingest.superbet.scorealarm.service import (
+                fetch_scorealarm_context,
+                scorealarm_to_live_stats,
+            )
+
+            scorealarm_context = fetch_scorealarm_context(
+                event_id,
+                home_team=home,
+                away_team=away,
+            )
+            if scorealarm_context:
+                sa_live = scorealarm_to_live_stats(scorealarm_context)
+                for key, value in sa_live.items():
+                    if value is not None and live_stats.get(key) is None:
+                        live_stats[key] = value
+                from models.wc_inplay_live_adjust import scorealarm_timeline_to_momentum_events
+
+                momentum_events.extend(
+                    scorealarm_timeline_to_momentum_events(scorealarm_context.get("timeline"))
+                )
+        except Exception as exc:
+            logger.warning("scorealarm_context_falha event_id=%s: %s", event_id, exc)
+
     if snapshot.inplay:
         ip = snapshot.inplay
         for _ in range(ip.home_corners):
@@ -344,6 +399,15 @@ def _build_live_advice_payload(
 
     halftime_stats = load_or_freeze_halftime(event_id, snapshot) if snapshot.inplay else None
 
+    inplay_live_stats = (
+        {k: float(v) for k, v in live_stats.items() if v is not None}
+        if live_stats
+        else None
+    )
+    inplay_live_timeline = (
+        (scorealarm_context or {}).get("timeline") if scorealarm_context else None
+    )
+
     result = inplay_from_predictor(
         predictor,
         home_team=home,
@@ -360,6 +424,8 @@ def _build_live_advice_payload(
         away_corners=ip.away_corners if snapshot.inplay else 0,
         market_probs=market_probs,
         halftime_stats=halftime_stats,
+        live_stats=inplay_live_stats,
+        live_timeline=inplay_live_timeline,
         n_simulations=settings.inplay_fast_mc_simulations if fast else None,
         use_ensemble=False if fast else None,
         before_date=model_before_date,
@@ -393,35 +459,71 @@ def _build_live_advice_payload(
     else:
         corner_lambda_home: float | None = None
         corner_lambda_away: float | None = None
-        if halftime_stats is not None:
-            try:
-                from models.corners_predictor import CornersPredictor
+        try:
+            from models.corners_predictor import CornersPredictor
 
-                cp = CornersPredictor(fixtures_df=predictor.fixtures)
-                corner_pred = cp.predict(home, away, phase=effective_phase)
-                corner_lambda_home = corner_pred.factors.lambda_home
-                corner_lambda_away = corner_pred.factors.lambda_away
-            except Exception:
-                pass
+            cp = CornersPredictor(fixtures_df=predictor.fixtures)
+            corner_pred = cp.predict(home, away, phase=effective_phase)
+            corner_lambda_home = corner_pred.factors.lambda_home
+            corner_lambda_away = corner_pred.factors.lambda_away
+        except Exception:
+            pass
 
-        halftime_report_obj = build_halftime_report(
-            halftime_stats,
-            lambda_full_home=result.lambda_full_home,
-            lambda_full_away=result.lambda_full_away,
-            corner_lambda_home=corner_lambda_home,
-            corner_lambda_away=corner_lambda_away,
-            corner_lines=tuple(float(k) for k in snapshot.corners.keys()) if snapshot.corners else None,
-            card_lines=tuple(float(k) for k in snapshot.yellow_cards.keys()) if snapshot.yellow_cards else None,
+        corner_lines = (
+            tuple(float(k) for k in snapshot.corners.keys()) if snapshot.corners else None
         )
-        if halftime_report_obj is not None:
-            ht_report = halftime_report_obj.to_dict()
-            inplay_dict["corner_line_probs"] = ht_report.get("corner_line_probs") or {}
-            inplay_dict["card_line_probs"] = ht_report.get("card_line_probs") or {}
+
+        if halftime_stats is not None:
+            halftime_report_obj = build_halftime_report(
+                halftime_stats,
+                lambda_full_home=result.lambda_full_home,
+                lambda_full_away=result.lambda_full_away,
+                corner_lambda_home=corner_lambda_home,
+                corner_lambda_away=corner_lambda_away,
+                corner_lines=corner_lines,
+                card_lines=tuple(float(k) for k in snapshot.yellow_cards.keys())
+                if snapshot.yellow_cards
+                else None,
+            )
+            if halftime_report_obj is not None:
+                ht_report = halftime_report_obj.to_dict()
+                inplay_dict["corner_line_probs"] = ht_report.get("corner_line_probs") or {}
+                inplay_dict["card_line_probs"] = ht_report.get("card_line_probs") or {}
+            else:
+                ht_report = None
+        elif (
+            snapshot.inplay
+            and corner_lambda_home is not None
+            and corner_lambda_away is not None
+        ):
+            from models.wc_halftime_adjust import project_live_corners
+
+            live_corner_lines = corner_lines or (7.5, 8.5, 9.5, 10.5, 11.5)
+            corners_proj = project_live_corners(
+                home_corners=int(snapshot.inplay.home_corners),
+                away_corners=int(snapshot.inplay.away_corners),
+                minute=minute,
+                lambda_home_ft=corner_lambda_home,
+                lambda_away_ft=corner_lambda_away,
+                lines=live_corner_lines,
+            )
+            inplay_dict["corners_projection"] = corners_proj
+            inplay_dict["corner_line_probs"] = corners_proj.get("line_probs") or {}
+            ht_report = None
         else:
             ht_report = None
     shadow = inplay_dict.get("ensemble_shadow") or {}
     tick_extra["ens_prob_final_home"] = shadow.get("prob_final_home")
     tick_extra["ens_prob_l1_delta"] = shadow.get("prob_l1_delta")
+    snapshot_dict = snapshot.to_dict()
+    trend_report = None
+    if not fast:
+        trend_report = _build_trend_report(
+            event_id=event_id,
+            home_team=home,
+            away_team=away,
+            event_snapshot_raw=snapshot_dict,
+        )
     report = build_bet_advice_report(
         home_team=home,
         away_team=away,
@@ -431,9 +533,18 @@ def _build_live_advice_payload(
         minute=minute,
         bankroll=bankroll,
         features=result.features,
+        trend_report=trend_report,
     )
+    if scorealarm_context and scorealarm_context.get("prematch"):
+        from ingest.superbet.scorealarm.prematch import apply_prematch_confidence_boost
 
-    snapshot_dict = snapshot.to_dict()
+        boosted = apply_prematch_confidence_boost(
+            report.get("confidence"),
+            scorealarm_context.get("prematch"),
+        )
+        if boosted is not None:
+            report["confidence"] = boosted
+
     if save_tick:
         try:
             append_live_tick(
@@ -446,7 +557,15 @@ def _build_live_advice_payload(
         except Exception as exc:
             logger.warning("Falha ao gravar live_ticks parquet (event_id=%s): %s", event_id, exc)
 
-    is_finished = str(status or "").upper() in _FINISHED_STATUSES
+    is_finished = _match_is_finished(
+        status=status,
+        period_label=period_label,
+        minute=minute,
+        match_minutes=int(inplay_dict.get("match_minutes") or 90),
+        is_live_snapshot=snapshot.is_live,
+        home_score=home_score,
+        away_score=away_score,
+    )
 
     finalize_info = None
     if not fast:
@@ -546,6 +665,16 @@ def _build_live_advice_payload(
         remaining_fraction=inplay_dict.get("remaining_fraction"),
     )
 
+    from ingest.superbet.score_stale import detect_score_stale, load_last_live_tick
+
+    score_stale_report = detect_score_stale(
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        scorealarm_timeline=(scorealarm_context or {}).get("timeline") if scorealarm_context else None,
+        last_tick=load_last_live_tick(event_id) if not fast else None,
+    )
+
     return {
         "home_team": home,
         "away_team": away,
@@ -555,6 +684,7 @@ def _build_live_advice_payload(
         "status": status,
         "is_finished": is_finished,
         "is_live": snapshot.is_live and not is_finished,
+        "score_stale": score_stale_report,
         "sofascore_event_id": sofascore_event_id,
         "n_momentum_events": len(momentum_events),
         "event_finalize": finalize_info,
@@ -622,6 +752,7 @@ def _build_live_advice_payload(
             "yellow_cards": bool(snapshot.yellow_cards),
         },
         "halftime_report": ht_report,
+        "corners_projection": inplay_dict.get("corners_projection"),
         "hedge_report": None
         if fast
         else _build_hedge_report(
@@ -643,14 +774,7 @@ def _build_live_advice_payload(
             before_date=model_before_date,
         ),
         "bet_guardrails": bet_guardrails,
-        "trend_report": None
-        if fast
-        else _build_trend_report(
-            event_id=event_id,
-            home_team=home,
-            away_team=away,
-            event_snapshot_raw=snapshot_dict,
-        ),
+        "trend_report": trend_report if not fast else None,
         "live_stats": build_live_stats_payload(
             snapshot=snapshot,
             live_stats=live_stats,
@@ -659,7 +783,22 @@ def _build_live_advice_payload(
             sofascore_skipped=sofascore_skipped,
             prob_next_goal_home=float(inplay_dict.get("prob_next_goal_home") or 0),
             prob_next_goal_away=float(inplay_dict.get("prob_next_goal_away") or 0),
+            scorealarm_stats=(scorealarm_context or {}).get("stats"),
+            scorealarm_stale=bool((scorealarm_context or {}).get("stale")),
         ),
+        "scorealarm": None
+        if fast or not scorealarm_context
+        else {
+            "available": scorealarm_context.get("available"),
+            "stale": scorealarm_context.get("stale"),
+            "timeline": scorealarm_context.get("timeline") or [],
+            "h2h": scorealarm_context.get("h2h"),
+            "prematch": scorealarm_context.get("prematch"),
+            "players": scorealarm_context.get("players") or [],
+            "social": scorealarm_context.get("social"),
+            "stats": scorealarm_context.get("stats") or {},
+            "scores_id": scorealarm_context.get("scores_id"),
+        },
     }
 
 

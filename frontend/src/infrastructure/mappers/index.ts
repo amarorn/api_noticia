@@ -1094,6 +1094,12 @@ interface ApiSuperbetLiveAdvice {
   status: string | null;
   is_finished: boolean;
   is_live: boolean;
+  score_stale?: {
+    score_stale?: boolean;
+    warnings?: string[];
+    scorealarm_goals?: number;
+    snapshot_goals?: number;
+  } | null;
   superbet_event_id: number;
   betradar_id: string | null;
   captured_at: string | null;
@@ -1139,8 +1145,10 @@ interface ApiSuperbetLiveAdvice {
   half_tickets?: Record<string, unknown> | null;
   viable_2h_markets?: Record<string, unknown> | null;
   halftime_report?: Record<string, unknown> | null;
+  corners_projection?: Record<string, unknown> | null;
   trend_report?: Record<string, unknown> | null;
   live_stats?: Record<string, unknown> | null;
+  scorealarm?: Record<string, unknown> | null;
 }
 
 function mapPatternAccuracy(raw: Record<string, unknown> | null | undefined) {
@@ -1457,6 +1465,8 @@ function mapLiveStats(raw: Record<string, unknown> | null | undefined) {
       raw.possession_source != null ? String(raw.possession_source) : null,
     sofascoreEventId: raw.sofascore_event_id != null ? Number(raw.sofascore_event_id) : null,
     sofascoreAvailable: Boolean(raw.sofascore_available),
+    scorealarmAvailable: Boolean(raw.scorealarm_available),
+    scorealarmStale: Boolean(raw.scorealarm_stale),
     homeXg: raw.home_xg != null ? Number(raw.home_xg) : null,
     awayXg: raw.away_xg != null ? Number(raw.away_xg) : null,
     homePossessionPct:
@@ -1474,6 +1484,102 @@ function mapLiveStats(raw: Record<string, unknown> | null | undefined) {
     awayYellowCards:
       raw.away_yellow_cards != null ? Number(raw.away_yellow_cards) : null,
     warnings: ((raw.warnings as string[]) ?? []).map(String),
+  };
+}
+
+function mapScorealarm(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const h2hRaw = raw.h2h as Record<string, unknown> | null | undefined;
+  const prematchRaw = raw.prematch as Record<string, unknown> | null | undefined;
+  const socialRaw = raw.social as Record<string, unknown> | null | undefined;
+  const mapTeamForm = (teamRaw: Record<string, unknown> | undefined) => ({
+    team: String(teamRaw?.team ?? ""),
+    form: String(teamRaw?.form ?? ""),
+    wins: Number(teamRaw?.wins ?? 0),
+    draws: Number(teamRaw?.draws ?? 0),
+    losses: Number(teamRaw?.losses ?? 0),
+    goalsAvg: Number(teamRaw?.goals_avg ?? 0),
+    concededAvg: Number(teamRaw?.conceded_avg ?? 0),
+    coach: teamRaw?.coach != null ? String(teamRaw.coach) : null,
+    lastMatches: ((teamRaw?.last_matches as Array<Record<string, unknown>>) ?? []).map(
+      (m) => ({
+        opponent: String(m.opponent ?? ""),
+        score: String(m.score ?? ""),
+        result: String(m.result ?? ""),
+        goalsFor: Number(m.goals_for ?? 0),
+        goalsAgainst: Number(m.goals_against ?? 0),
+      }),
+    ),
+  });
+  return {
+    available: Boolean(raw.available),
+    stale: Boolean(raw.stale),
+    scoresId: raw.scores_id != null ? String(raw.scores_id) : null,
+    timeline: ((raw.timeline as Array<Record<string, unknown>>) ?? []).map((e) => ({
+      minute: Number(e.minute ?? 0),
+      addedTime: e.added_time != null ? Number(e.added_time) : null,
+      team: String(e.team ?? ""),
+      side: Number(e.side ?? 0),
+      type: Number(e.type ?? 0),
+      subtype: Number(e.subtype ?? 0),
+      label: String(e.label ?? "Evento"),
+      icon: String(e.icon ?? "•"),
+      score: e.score != null ? String(e.score) : null,
+    })),
+    h2h: h2hRaw
+      ? {
+          homeWins: Number(h2hRaw.home_wins ?? 0),
+          draws: Number(h2hRaw.draws ?? 0),
+          awayWins: Number(h2hRaw.away_wins ?? 0),
+          sinceYear: h2hRaw.since_year != null ? Number(h2hRaw.since_year) : null,
+        }
+      : null,
+    prematch: prematchRaw
+      ? {
+          home: mapTeamForm(prematchRaw.home as Record<string, unknown>),
+          away: mapTeamForm(prematchRaw.away as Record<string, unknown>),
+          h2hMatches: (
+            (prematchRaw.h2h_matches as Array<Record<string, unknown>>) ?? []
+          ).map((m) => ({
+            homeTeam: String(m.home_team ?? ""),
+            awayTeam: String(m.away_team ?? ""),
+            score: String(m.score ?? ""),
+          })),
+        }
+      : null,
+    players: ((raw.players as Array<Record<string, unknown>>) ?? []).map((p) => ({
+      name: String(p.name ?? ""),
+      team: String(p.team ?? ""),
+      side: Number(p.side ?? 0),
+      jersey: String(p.jersey ?? ""),
+      positionLabel: String(p.position_label ?? ""),
+      stats: Object.fromEntries(
+        Object.entries((p.stats as Record<string, unknown>) ?? {})
+          .filter(([, v]) => v != null && !Number.isNaN(Number(v)))
+          .map(([k, v]) => [k, Number(v)]),
+      ),
+      highlights: ((p.highlights as string[]) ?? []).map(String),
+    })),
+    social: socialRaw
+      ? {
+          available: Boolean(socialRaw.available),
+          source: String(socialRaw.source ?? "social-front"),
+          reason: socialRaw.reason != null ? String(socialRaw.reason) : null,
+          picks: ((socialRaw.picks as Array<Record<string, unknown>>) ?? []).map((pick) => ({
+            label: String(pick.label ?? ""),
+            market: String(pick.market ?? ""),
+            outcome: String(pick.outcome ?? ""),
+            odd: pick.odd != null ? Number(pick.odd) : null,
+            betCount: pick.bet_count != null ? Number(pick.bet_count) : null,
+            sharePct: pick.share_pct != null ? Number(pick.share_pct) : null,
+          })),
+        }
+      : null,
+    stats: Object.fromEntries(
+      Object.entries((raw.stats as Record<string, unknown>) ?? {})
+        .filter(([, v]) => v != null && !Number.isNaN(Number(v)))
+        .map(([k, v]) => [k, Number(v)]),
+    ),
   };
 }
 
@@ -1509,6 +1615,27 @@ function mapTrendReport(raw: Record<string, unknown> | null | undefined) {
     bestOpportunities: ((raw.best_opportunities as Array<Record<string, unknown>>) ?? []).map(
       (item) => ({ ...item }),
     ),
+  };
+}
+
+function mapCornersProjection(raw: Record<string, unknown>) {
+  const lineProbs = (raw.line_probs as Record<string, number>) ?? {};
+  return {
+    source: String(raw.source ?? "live_poisson"),
+    minute: Number(raw.minute ?? 0),
+    observedHome: Number(raw.observed_home ?? 0),
+    observedAway: Number(raw.observed_away ?? 0),
+    observedTotal: Number(raw.observed_total ?? 0),
+    expectedRemainingHome: Number(raw.expected_remaining_home ?? 0),
+    expectedRemainingAway: Number(raw.expected_remaining_away ?? 0),
+    expectedFtHome: Number(raw.expected_ft_home ?? 0),
+    expectedFtAway: Number(raw.expected_ft_away ?? 0),
+    expectedFtTotal: Number(raw.expected_ft_total ?? 0),
+    probHomeMoreCorners: Number(raw.prob_home_more_corners ?? 0),
+    probDrawCorners: Number(raw.prob_draw_corners ?? 0),
+    probAwayMoreCorners: Number(raw.prob_away_more_corners ?? 0),
+    mostLikelyCorners: String(raw.most_likely_corners ?? ""),
+    lineProbs,
   };
 }
 
@@ -1567,6 +1694,20 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
     status: raw.status,
     isFinished: raw.is_finished,
     isLive: raw.is_live,
+    scoreStale: raw.score_stale
+      ? {
+          scoreStale: Boolean((raw.score_stale as Record<string, unknown>).score_stale),
+          warnings: (
+            ((raw.score_stale as Record<string, unknown>).warnings as string[]) ?? []
+          ).map(String),
+          scorealarmGoals: (raw.score_stale as Record<string, unknown>).scorealarm_goals as
+            | number
+            | undefined,
+          snapshotGoals: (raw.score_stale as Record<string, unknown>).snapshot_goals as
+            | number
+            | undefined,
+        }
+      : null,
     superbetEventId: raw.superbet_event_id,
     betradarId: raw.betradar_id,
     capturedAt: raw.captured_at,
@@ -1614,6 +1755,9 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
           remainingEv: Number(cash.remaining_ev),
           estimatedFairCashout: Number(cash.estimated_fair_cashout),
           potentialReturn: Number(cash.potential_return),
+          trendInfluenced: cash.trend_influenced === true,
+          trendUrgency:
+            cash.trend_urgency != null ? String(cash.trend_urgency) : undefined,
         }
       : null,
     aportes: (raw.aportes ?? []).map((a) => ({
@@ -1673,6 +1817,31 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
             ).map(String),
           }
         : undefined,
+      lambdaAdjustment: summary.lambda_adjustment
+        ? {
+            lambdaPriorHome: Number(
+              (summary.lambda_adjustment as Record<string, unknown>).lambda_prior_home ?? 0,
+            ),
+            lambdaPriorAway: Number(
+              (summary.lambda_adjustment as Record<string, unknown>).lambda_prior_away ?? 0,
+            ),
+            lambdaFullHome: Number(
+              (summary.lambda_adjustment as Record<string, unknown>).lambda_full_home ?? 0,
+            ),
+            lambdaFullAway: Number(
+              (summary.lambda_adjustment as Record<string, unknown>).lambda_full_away ?? 0,
+            ),
+            deltaHome: Number(
+              (summary.lambda_adjustment as Record<string, unknown>).delta_home ?? 0,
+            ),
+            deltaAway: Number(
+              (summary.lambda_adjustment as Record<string, unknown>).delta_away ?? 0,
+            ),
+            steps: ((summary.lambda_adjustment as Record<string, unknown>).steps as unknown[])?.map(
+              (step) => step as Record<string, unknown>,
+            ),
+          }
+        : undefined,
       modelBeforeDate:
         typeof summary.model_before_date === "string" ? summary.model_before_date : null,
     },
@@ -1697,6 +1866,9 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
       : null,
     halftimeReport: raw.halftime_report
       ? mapHalftimeReport(raw.halftime_report as Record<string, unknown>)
+      : null,
+    cornersProjection: raw.corners_projection
+      ? mapCornersProjection(raw.corners_projection as Record<string, unknown>)
       : null,
     hedgeReport: (raw.hedge_report as SuperbetLiveAdvice["hedgeReport"]) ?? null,
     againstModelAlerts: ((raw.against_model_alerts as Array<Record<string, unknown>>) ?? []).map(
@@ -1770,6 +1942,7 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
         }
       : null,
     liveStats: mapLiveStats(raw.live_stats as Record<string, unknown> | null),
+    scorealarm: mapScorealarm(raw.scorealarm as Record<string, unknown> | null),
     trendReport: mapTrendReport(raw.trend_report as Record<string, unknown> | null),
     halfTickets: mapHalfTickets(raw.half_tickets as Record<string, unknown> | null),
     viable2hMarkets: mapViable2hMarkets(raw.viable_2h_markets as Record<string, unknown> | null),

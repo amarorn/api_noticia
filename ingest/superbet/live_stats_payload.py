@@ -25,16 +25,24 @@ def build_live_stats_payload(
     sofascore_skipped: str | None = None,
     prob_next_goal_home: float | None = None,
     prob_next_goal_away: float | None = None,
+    scorealarm_stats: dict[str, float | None] | None = None,
+    scorealarm_stale: bool = False,
 ) -> dict[str, Any]:
     ip = snapshot.inplay
-    home_corners = int(tick_extra.get("home_corners") or 0)
-    away_corners = int(tick_extra.get("away_corners") or 0)
-    home_yellow = int(ip.home_yellow_cards) if ip else 0
-    away_yellow = int(ip.away_yellow_cards) if ip else 0
+    sa = scorealarm_stats or {}
+    home_corners = int(sa.get("home_corners") or tick_extra.get("home_corners") or 0)
+    away_corners = int(sa.get("away_corners") or tick_extra.get("away_corners") or 0)
+    home_yellow = int(sa.get("home_yellow_cards") or (ip.home_yellow_cards if ip else 0))
+    away_yellow = int(sa.get("away_yellow_cards") or (ip.away_yellow_cards if ip else 0))
 
-    home_poss = live_stats.get("home_possession_pct")
-    away_poss = live_stats.get("away_possession_pct")
-    possession_source: str | None = "sofascore" if home_poss is not None else None
+    home_poss = sa.get("home_possession_pct")
+    away_poss = sa.get("away_possession_pct")
+    possession_source: str | None = "scorealarm" if home_poss is not None else None
+
+    if home_poss is None:
+        home_poss = live_stats.get("home_possession_pct")
+        away_poss = live_stats.get("away_possession_pct")
+        possession_source = "sofascore" if home_poss is not None else None
 
     if home_poss is None:
         proxy = possession_from_corners(home_corners, away_corners)
@@ -52,29 +60,42 @@ def build_live_stats_payload(
             home_poss, away_poss = 50.0, 50.0
             possession_source = "neutral"
 
+    home_shots = sa.get("home_shots_on_target")
+    if home_shots is None:
+        home_shots = live_stats.get("home_shots_on_target")
+    away_shots = sa.get("away_shots_on_target")
+    if away_shots is None:
+        away_shots = live_stats.get("away_shots_on_target")
+
     warnings: list[str] = []
-    if sofascore_skipped:
+    if scorealarm_stale and possession_source == "scorealarm":
+        warnings.append("Stats ScoreAlarm em cache (API indisponível).")
+    if sofascore_skipped and possession_source != "scorealarm":
         warnings.append(sofascore_skipped)
     elif possession_source == "corners_proxy":
         warnings.append(
-            "Posse estimada pela proporção de escanteios (Sofascore indisponível)."
+            "Posse estimada pela proporção de escanteios (ScoreAlarm/Sofascore indisponíveis)."
         )
     elif possession_source == "momentum_proxy":
         warnings.append(
-            "Posse estimada pelo momentum de próximo gol (Sofascore/escanteios indisponíveis)."
+            "Posse estimada pelo momentum de próximo gol (ScoreAlarm/Sofascore indisponíveis)."
         )
 
+    data_source = "scorealarm" if sa else ("sofascore" if live_stats else "superbet")
+
     return {
-        "source": "sofascore" if live_stats else "superbet",
+        "source": data_source,
         "possession_source": possession_source,
         "sofascore_event_id": sofascore_event_id,
         "sofascore_available": possession_source == "sofascore",
+        "scorealarm_available": possession_source == "scorealarm",
+        "scorealarm_stale": scorealarm_stale,
         "home_xg": live_stats.get("home_xg"),
         "away_xg": live_stats.get("away_xg"),
         "home_possession_pct": home_poss,
         "away_possession_pct": away_poss,
-        "home_shots_on_target": live_stats.get("home_shots_on_target"),
-        "away_shots_on_target": live_stats.get("away_shots_on_target"),
+        "home_shots_on_target": home_shots,
+        "away_shots_on_target": away_shots,
         "home_corners": home_corners,
         "away_corners": away_corners,
         "home_yellow_cards": home_yellow,

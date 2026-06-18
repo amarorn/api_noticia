@@ -1,39 +1,19 @@
 import { useEffect } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
-import { pageVariants, pageVariantsReduced } from "@/presentation/theme/motion";
 
+/**
+ * Renderiza a rota filha com remount garantido a cada navegação.
+ * Sem Framer Motion — evita página invisível (opacity 0) em browsers reais.
+ */
 export function AnimatedOutlet() {
   const location = useLocation();
-  const reduced = useReducedMotion();
-  const variants = reduced ? pageVariantsReduced : pageVariants;
 
-  // Scroll restauração inteligente — apenas ao topo quando a rota MUDA,
-  // não em transições de query/tab dentro da mesma página
   useEffect(() => {
-    const isNewPage = !location.state?.noScroll;
-    if (isNewPage) {
-      const main = document.getElementById("main-content");
-      if (main) {
-        main.scrollTop = 0;
-      }
-      // Scroll window sempre suave para o topo ao mudar de página
-      window.scrollTo({ top: 0, behavior: reduced ? "instant" : "smooth" });
-    }
-  }, [location.pathname, location.key, reduced]);
+    const main = document.getElementById("main-scroll");
+    if (!main || location.state?.noScroll) return;
+    main.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [location.key, location.pathname, location.state]);
 
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        variants={variants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="w-full"
-      >
-        <Outlet />
-      </motion.div>
-    </AnimatePresence>
-  );
+  return <Outlet key={location.key} />;
 }

@@ -4,7 +4,16 @@ import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { IconArrowLeft } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
+import { LiveModelVsMarketHero } from "@/presentation/components/predictions/LiveModelVsMarketHero";
+import { LiveEvRealPanel } from "@/presentation/components/predictions/LiveEvRealPanel";
+import { LiveStatsCompactBar } from "@/presentation/components/predictions/LiveStatsCompactBar";
+import { LiveCornersPanel } from "@/presentation/components/predictions/LiveCornersPanel";
+import { LiveTimelinePanel } from "@/presentation/components/predictions/LiveTimelinePanel";
+import { LiveFormH2hPanel } from "@/presentation/components/predictions/LiveFormH2hPanel";
+import { LivePlayerStatsPanel } from "@/presentation/components/predictions/LivePlayerStatsPanel";
+import { LiveSocialRadarPanel } from "@/presentation/components/predictions/LiveSocialRadarPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
+import { LiveBestCombosPanel } from "@/presentation/components/predictions/LiveBestCombosPanel";
 import { LiveHalfTicketsPanel } from "@/presentation/components/predictions/LiveHalfTicketsPanel";
 import { LiveRemaining2hMarketsPanel } from "@/presentation/components/predictions/LiveRemaining2hMarketsPanel";
 import { LiveLongshotCombosPanel } from "@/presentation/components/predictions/LiveLongshotCombosPanel";
@@ -84,6 +93,7 @@ export function LiveDashboardPage() {
     error,
     isFetching,
     refetch,
+    timelineReactive,
   } = useLiveAdviceQueries(eventId, 1000, null, advicePhase);
 
   const possessionHistory = useLivePossessionHistory(data);
@@ -156,9 +166,35 @@ export function LiveDashboardPage() {
 
               <LiveDirectionKpis data={data} />
 
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <LiveModelVsMarketHero data={data} />
+                <div className="flex flex-col gap-4">
+                  <LiveStatsCompactBar data={data} eventId={eventId} />
+                  <LiveEvRealPanel data={data} />
+                </div>
+              </div>
+
+              <LiveCornersPanel data={data} />
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <LiveTimelinePanel
+                  data={data}
+                  highlightGoalMinute={timelineReactive.latestGoalMinute}
+                  reactiveBoosted={timelineReactive.boosted}
+                />
+                <LiveFormH2hPanel data={data} />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <LivePlayerStatsPanel data={data} />
+                <LiveSocialRadarPanel data={data} />
+              </div>
+
               <LiveActionNowPanel data={data} trackBet={false} />
 
               <LiveHalfTicketsPanel data={data} />
+
+              <LiveBestCombosPanel data={data} />
 
               <LiveRemaining2hMarketsPanel data={data} />
 

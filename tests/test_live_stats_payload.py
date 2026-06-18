@@ -44,6 +44,8 @@ def _minimal_snapshot(**overrides) -> SuperbetEventSnapshot:
         team_shots={"home": {}, "away": {}},
         team_shots_on_target={"home": {}, "away": {}},
         half_markets={},
+        handicap_odds={},
+        handicap_implied={},
         raw_market_count=0,
         captured_at="2026-06-13T15:00:00Z",
     )
@@ -101,3 +103,26 @@ def test_build_live_stats_momentum_proxy_when_no_corners():
     assert payload["possession_source"] == "momentum_proxy"
     assert payload["home_possession_pct"] == 57.5
     assert payload["away_possession_pct"] == 42.5
+
+
+def test_build_live_stats_prefers_scorealarm_possession():
+    payload = build_live_stats_payload(
+        snapshot=_minimal_snapshot(),
+        live_stats={},
+        tick_extra={"home_corners": 1, "away_corners": 4},
+        sofascore_event_id=None,
+        scorealarm_stats={
+            "home_possession_pct": 49.0,
+            "away_possession_pct": 51.0,
+            "home_shots_on_target": 1.0,
+            "away_shots_on_target": 4.0,
+            "home_corners": 3.0,
+            "away_corners": 3.0,
+        },
+        scorealarm_stale=False,
+    )
+    assert payload["possession_source"] == "scorealarm"
+    assert payload["source"] == "scorealarm"
+    assert payload["home_possession_pct"] == 49.0
+    assert payload["home_shots_on_target"] == 1.0
+    assert payload["home_corners"] == 3

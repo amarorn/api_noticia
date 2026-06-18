@@ -418,7 +418,11 @@
       "phase": "group",
       "kickoff": "2026-06-17T19:00:00-04:00",
       "venue": "Toronto Stadium",
-      "city": "Toronto"
+      "city": "Toronto",
+      "home_score": 1,
+      "away_score": 0,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-18T02:11:06.947085+00:00"
     },
     {
       "id": "L-r1-inglaterra-croacia",
@@ -451,7 +455,11 @@
       "phase": "group",
       "kickoff": "2026-06-17T20:00:00-06:00",
       "venue": "Mexico City Stadium",
-      "city": "Cidade do México"
+      "city": "Cidade do México",
+      "home_score": 1,
+      "away_score": 3,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-18T04:17:10.848085+00:00"
     },
     {
       "id": "A-r2-republica-tc-africa-do-su",
@@ -982,5 +990,5 @@
       "city": "Atlanta"
     }
   ],
-  "results_synced_at": "2026-06-17T06:11:58.168888+00:00"
+  "results_synced_at": "2026-06-18T04:17:10.848085+00:00"
 }

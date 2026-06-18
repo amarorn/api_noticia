@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 import numpy as np
@@ -118,6 +119,7 @@ class InPlayResult:
     features: Any = None
     ensemble_shadow: dict[str, Any] | None = None
     halftime_adjustment: dict[str, Any] | None = None
+    lambda_adjustment: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = {
@@ -174,6 +176,8 @@ class InPlayResult:
             payload["ensemble_shadow"] = self.ensemble_shadow
         if self.halftime_adjustment:
             payload["halftime_adjustment"] = self.halftime_adjustment
+        if self.lambda_adjustment:
+            payload["lambda_adjustment"] = self.lambda_adjustment
         return payload
 
 
@@ -498,11 +502,17 @@ def _has_sofascore_momentum(momentum_events: list[dict] | None) -> bool:
 
 
 def _use_score_lambda_adjust(momentum_events: list[dict] | None) -> bool:
-    """Ajuste por placar: global ou só quando há eventos Sofascore ao vivo."""
+    """Ajuste por placar: global, Sofascore ou ScoreAlarm ao vivo."""
     if settings.inplay_score_lambda_adjust:
         return True
     if settings.inplay_score_lambda_adjust_with_sofascore:
-        return _has_sofascore_momentum(momentum_events)
+        if _has_sofascore_momentum(momentum_events):
+            return True
+    if settings.inplay_score_lambda_adjust_with_scorealarm:
+        from models.wc_inplay_live_adjust import has_scorealarm_momentum
+
+        if has_scorealarm_momentum(momentum_events):
+            return True
     return False
 
 
@@ -530,6 +540,8 @@ def simulate_inplay(
     use_market_shrinkage: bool | None = None,
     use_momentum: bool | None = None,
     halftime_stats: Any | None = None,
+    live_stats: dict[str, float] | None = None,
+    live_timeline: list[dict[str, Any]] | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
@@ -547,6 +559,7 @@ def simulate_inplay(
     # --- P0.1: Bayesian update de λ com gols observados ---
     lambda_prior_home = lambda_full_home
     lambda_prior_away = lambda_full_away
+    lambda_adjust_steps: list[dict[str, Any]] = []
     if bayesian_update and minute > 0:
         lambda_full_home = bayesian_lambda_update(
             lambda_prior=lambda_prior_home,
@@ -560,6 +573,24 @@ def simulate_inplay(
             minutes_elapsed=minute,
             match_minutes=match_minutes,
         )
+        lambda_adjust_steps.append(
+            {
+                "step": "bayesian",
+                "lambda_home": round(lambda_full_home, 3),
+                "lambda_away": round(lambda_full_away, 3),
+            }
+        )
+
+    if settings.inplay_live_stats_lambda_adjust and live_stats and minute > 0:
+        from models.wc_inplay_live_adjust import adjust_lambdas_from_live_stats
+
+        lambda_full_home, lambda_full_away, live_adj = adjust_lambdas_from_live_stats(
+            lambda_full_home,
+            lambda_full_away,
+            live_stats=live_stats,
+        )
+        if live_adj.get("applied"):
+            lambda_adjust_steps.append({"step": "live_stats", **live_adj})
 
     # Favorito pré-jogo perdendo por 1 gol: limita super-reação ao placar
     if minute >= 15 and abs(home_score - away_score) == 1:
@@ -584,6 +615,7 @@ def simulate_inplay(
             # Fora vencendo: fora ganha boost, casa penalizada
             lambda_full_away *= surplus_factors[abs_diff]
             lambda_full_home *= deficit_factors[abs_diff]
+        lambda_adjust_steps.append({"step": "score_diff", "abs_diff": abs_diff})
 
     # --- P1c: Market shrinkage (mistura λ modelo com λ implícito do mercado) ---
     if shrinkage_enabled and market_probs is not None:
@@ -636,6 +668,20 @@ def simulate_inplay(
 
     lam_h = lam_rem_1h_h + lam_2h_h
     lam_a = lam_rem_1h_a + lam_2h_a
+
+    if settings.inplay_trailing_chase_boost and live_timeline and minute > 0:
+        from models.wc_inplay_live_adjust import apply_trailing_chase_boost
+
+        lam_h, lam_a, chase = apply_trailing_chase_boost(
+            lam_h,
+            lam_a,
+            minute=minute,
+            home_score=home_score,
+            away_score=away_score,
+            timeline=live_timeline,
+        )
+        if chase:
+            lambda_adjust_steps.append({"step": "trailing_chase", **chase})
 
     # --- P1a: Momentum aplicado sobre λ_remaining (não λ_full) ---
     if momentum_enabled and minute > 0:
@@ -774,6 +820,8 @@ def simulate_inplay(
     ft_asian = _asian_handicap_probs(final_h, final_a, n)
     handicap_probs = handicap_probs_from_samples(final_h, final_a)
 
+    from models.wc_inplay_live_adjust import build_lambda_adjustment_report
+
     return InPlayResult(
         home_team=home_team,
         away_team=away_team,
@@ -825,6 +873,13 @@ def simulate_inplay(
         handicap_probs=handicap_probs,
         n_simulations=n,
         halftime_adjustment=halftime_adj_dict,
+        lambda_adjustment=build_lambda_adjustment_report(
+            lambda_prior_home=lambda_prior_home,
+            lambda_prior_away=lambda_prior_away,
+            lambda_full_home=lambda_full_home,
+            lambda_full_away=lambda_full_away,
+            steps=lambda_adjust_steps,
+        ),
     )
 
 
@@ -848,6 +903,8 @@ def inplay_from_predictor(
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
     halftime_stats: Any | None = None,
+    live_stats: dict[str, float] | None = None,
+    live_timeline: list[dict[str, Any]] | None = None,
     before_date: datetime | None = None,
 ) -> InPlayResult:
     from datetime import datetime, timezone
@@ -895,6 +952,8 @@ def inplay_from_predictor(
         away_corners=away_corners,
         market_probs=market_probs,
         halftime_stats=halftime_stats,
+        live_stats=live_stats,
+        live_timeline=live_timeline,
     )
     effective_use_ensemble = (
         use_ensemble if use_ensemble is not None else settings.inplay_use_ensemble
@@ -949,6 +1008,8 @@ def simulate_inplay_ensemble(
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
     halftime_stats: Any | None = None,
+    live_stats: dict[str, float] | None = None,
+    live_timeline: list[dict[str, Any]] | None = None,
 ) -> InPlayResult:
     """simulate_inplay com blend do ensemble (Hawkes + GBM + Market).
 
@@ -981,6 +1042,8 @@ def simulate_inplay_ensemble(
         away_corners=away_corners,
         market_probs=market_probs,
         halftime_stats=halftime_stats,
+        live_stats=live_stats,
+        live_timeline=live_timeline,
     )
 
     if not settings.inplay_use_ensemble or minute <= 0:

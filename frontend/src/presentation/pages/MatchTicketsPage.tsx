@@ -8,6 +8,7 @@ import {
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
+import { LiveBestCombosPanel } from "@/presentation/components/predictions/LiveBestCombosPanel";
 import { LiveLongshotCombosPanel } from "@/presentation/components/predictions/LiveLongshotCombosPanel";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
@@ -134,7 +135,10 @@ export function MatchTicketsPage() {
       {liveListQuery.isLoading && <DashboardSkeleton />}
 
       {isLive && liveAdvice.data && (
-        <LiveLongshotCombosPanel data={liveAdvice.data} />
+        <>
+          <LiveBestCombosPanel data={liveAdvice.data} />
+          <LiveLongshotCombosPanel data={liveAdvice.data} />
+        </>
       )}
 
       {!isLive && !liveListQuery.isLoading && (

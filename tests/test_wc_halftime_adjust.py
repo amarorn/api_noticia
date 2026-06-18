@@ -17,6 +17,7 @@ from models.wc_halftime_adjust import (
     adjust_second_half_goal_lambdas,
     build_halftime_report,
     project_halftime_corners,
+    project_live_corners,
 )
 from models.wc_inplay import simulate_inplay
 
@@ -53,6 +54,21 @@ def test_project_halftime_corners_ft_above_observed():
     proj = project_halftime_corners(stats, lambda_home_ft=5.0, lambda_away_ft=5.0)
     assert proj["expected_ft_total"] > stats.home_corners_1h + stats.away_corners_1h
     assert proj["expected_ft_total"] > 7.0
+
+
+def test_project_live_corners_mid_match():
+    proj = project_live_corners(
+        home_corners=2,
+        away_corners=1,
+        minute=38,
+        lambda_home_ft=5.5,
+        lambda_away_ft=4.2,
+        lines=(7.5, 8.5, 9.5),
+    )
+    assert proj["observed_total"] == 3
+    assert proj["expected_ft_total"] > 3.0
+    assert proj["prob_home_more_corners"] > proj["prob_away_more_corners"]
+    assert proj["line_probs"]["over_7_5"] > 0.5
 
 
 def test_build_halftime_report_from_fixture():

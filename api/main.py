@@ -1426,7 +1426,8 @@ def worldcup_sofascore_resolve(
 ):
     from datetime import date as date_type
 
-    from ingest.sofascore.client import SofascoreClient, SofascoreClientError
+    from api.sofascore_http import ensure_sofascore_not_in_cooldown, raise_sofascore_http_error
+    from ingest.sofascore.client import SofascoreClient
     from ingest.sofascore.event_helpers import find_event_id
     from ingest.sofascore.teams import event_team_names
 
@@ -1436,6 +1437,8 @@ def worldcup_sofascore_resolve(
         match_date = date_type.fromisoformat(date)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Data inválida; use YYYY-MM-DD") from exc
+
+    ensure_sofascore_not_in_cooldown()
 
     try:
         client = SofascoreClient()
@@ -1447,8 +1450,8 @@ def worldcup_sofascore_resolve(
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except SofascoreClientError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        raise_sofascore_http_error(exc)
 
     event_home, event_away = event_team_names(event)
     return WcSofascoreResolveResponse(
@@ -1471,7 +1474,7 @@ def worldcup_sofascore_statistics(
 ):
     from datetime import datetime, timezone
 
-    from ingest.sofascore.client import SofascoreClientError
+    from api.sofascore_http import ensure_sofascore_not_in_cooldown, raise_sofascore_http_error
     from ingest.sofascore.stats_ingest import ingest_match_stats, load_match_stats
 
     if not refresh:
@@ -1503,14 +1506,16 @@ def worldcup_sofascore_statistics(
                 cached=True,
             )
 
+    ensure_sofascore_not_in_cooldown()
+
     try:
         result = ingest_match_stats(event_id=event_id, save=True)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except SofascoreClientError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise_sofascore_http_error(exc)
 
     payload = result.to_payload()
     stats = {

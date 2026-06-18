@@ -1,20 +1,34 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSuperbetEventUseCase, getSuperbetLiveAdviceUseCase } from "@/application/container";
-import type { SuperbetLiveAdvice } from "@/domain/entities";
+import type { ScorealarmTimelineEvent, SuperbetLiveAdvice } from "@/domain/entities";
 import { getDataPulseSnapshot, useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import { useAdaptivePollClock } from "@/presentation/hooks/useAdaptivePollClock";
-import { resolveAdaptiveLivePollMs } from "@/presentation/utils/adaptiveLivePoll";
+import { useTimelineReactiveRefetch } from "@/presentation/hooks/useTimelineReactiveRefetch";
+import {
+  applyReactivePollBoost,
+  resolveAdaptiveLivePollMs,
+} from "@/presentation/utils/adaptiveLivePoll";
 import { mergeLiveAdvice } from "@/presentation/utils/liveRecalibration";
+import {
+  isReactivePollBoostActive,
+  REACTIVE_GOAL_BOOST_MS,
+} from "@/presentation/utils/liveTimelineReactive";
 
 const STALE_MS = 8_000;
+const SCORE_REFETCH_DEBOUNCE_MS = 2_000;
+const EMPTY_TIMELINE: ScorealarmTimelineEvent[] = [];
 
 function resolvePollForQuery(
   eventId: number,
   localCapturedAt: string | null | undefined,
+  reactiveBoostUntil: number,
   pulse = getDataPulseSnapshot()?.superbetLive,
 ) {
-  return resolveAdaptiveLivePollMs(pulse, { eventId, localCapturedAt });
+  return applyReactivePollBoost(
+    resolveAdaptiveLivePollMs(pulse, { eventId, localCapturedAt }),
+    reactiveBoostUntil,
+  );
 }
 
 export function useLiveAdviceQueries(
@@ -36,7 +50,7 @@ export function useLiveAdviceQueries(
     refetchInterval: (q) => {
       const d = q.state.data;
       if (!d?.isLive) return false;
-      return resolvePollForQuery(eventId, d.capturedAt).score;
+      return resolvePollForQuery(eventId, d.capturedAt, reactiveBoostUntilRef.current).score;
     },
   });
 
@@ -55,7 +69,7 @@ export function useLiveAdviceQueries(
     refetchInterval: (q) => {
       const d = q.state.data as SuperbetLiveAdvice | undefined;
       if (!d?.isLive || d?.isFinished) return false;
-      return resolvePollForQuery(eventId, d.capturedAt).fast;
+      return resolvePollForQuery(eventId, d.capturedAt, reactiveBoostUntilRef.current).fast;
     },
   });
 
@@ -74,7 +88,7 @@ export function useLiveAdviceQueries(
     refetchInterval: (q) => {
       const d = q.state.data as SuperbetLiveAdvice | undefined;
       if (!d?.isLive || d?.isFinished) return false;
-      return resolvePollForQuery(eventId, d.capturedAt).full;
+      return resolvePollForQuery(eventId, d.capturedAt, reactiveBoostUntilRef.current).full;
     },
   });
 
@@ -83,6 +97,15 @@ export function useLiveAdviceQueries(
       (fastAdviceQuery.data?.isLive && !fastAdviceQuery.data?.isFinished),
   );
   const pollClock = useAdaptivePollClock(enabled && isLiveSession);
+  const [reactiveBoostUntil, setReactiveBoostUntil] = useState(0);
+  const reactiveBoostUntilRef = useRef(0);
+  const lastScoreRefetchAtRef = useRef(0);
+
+  const bumpReactiveBoost = useCallback(() => {
+    const until = Date.now() + REACTIVE_GOAL_BOOST_MS;
+    reactiveBoostUntilRef.current = until;
+    setReactiveBoostUntil(until);
+  }, []);
 
   const data = useMemo(() => {
     const merged = mergeLiveAdvice(fastAdviceQuery.data, fullAdviceQuery.data);
@@ -125,18 +148,62 @@ export function useLiveAdviceQueries(
 
   const scoreTick = scoreTickQuery.data ?? null;
 
+  const triggerReactiveRefetch = useCallback(() => {
+    void scoreTickQuery.refetch();
+    void fastAdviceQuery.refetch();
+    void fullAdviceQuery.refetch();
+  }, [scoreTickQuery, fastAdviceQuery, fullAdviceQuery]);
+
+  const timelineEvents =
+    fullAdviceQuery.data?.scorealarm?.timeline ??
+    data?.scorealarm?.timeline ??
+    EMPTY_TIMELINE;
+
+  const timelineReactive = useTimelineReactiveRefetch({
+    enabled: enabled && isLiveSession,
+    isFetching: fastAdviceQuery.isFetching || fullAdviceQuery.isFetching,
+    isFinished: Boolean(data?.isFinished),
+    timeline: timelineEvents,
+    onReactiveRefetch: () => {
+      bumpReactiveBoost();
+      triggerReactiveRefetch();
+    },
+  });
+
+  useEffect(() => {
+    if (!scoreTick?.currentScore || !data?.currentScore) return;
+    if (scoreTick.currentScore === data.currentScore) return;
+    if (fastAdviceQuery.isFetching || fullAdviceQuery.isFetching || data.isFinished) return;
+    const now = Date.now();
+    if (now - lastScoreRefetchAtRef.current < SCORE_REFETCH_DEBOUNCE_MS) return;
+    lastScoreRefetchAtRef.current = now;
+    bumpReactiveBoost();
+    triggerReactiveRefetch();
+  }, [
+    scoreTick?.currentScore,
+    data?.currentScore,
+    data?.isFinished,
+    fastAdviceQuery.isFetching,
+    fullAdviceQuery.isFetching,
+    triggerReactiveRefetch,
+    bumpReactiveBoost,
+  ]);
+
   const pollMs = useMemo(() => {
     void pollClock;
     void pulse;
-    return resolveAdaptiveLivePollMs(pulse?.superbetLive, {
-      eventId,
-      localCapturedAt:
-        liveHeader?.capturedAt ??
-        data?.capturedAt ??
-        scoreTick?.capturedAt ??
-        fastAdviceQuery.data?.capturedAt ??
-        null,
-    });
+    return applyReactivePollBoost(
+      resolveAdaptiveLivePollMs(pulse?.superbetLive, {
+        eventId,
+        localCapturedAt:
+          liveHeader?.capturedAt ??
+          data?.capturedAt ??
+          scoreTick?.capturedAt ??
+          fastAdviceQuery.data?.capturedAt ??
+          null,
+      }),
+      reactiveBoostUntil,
+    );
   }, [
     pollClock,
     pulse,
@@ -145,11 +212,16 @@ export function useLiveAdviceQueries(
     data?.capturedAt,
     scoreTick?.capturedAt,
     fastAdviceQuery.data?.capturedAt,
+    reactiveBoostUntil,
   ]);
 
   const hasAnyData = Boolean(scoreTick || fastAdviceQuery.data);
   const isLoading = !hasAnyData && (scoreTickQuery.isLoading || fastAdviceQuery.isLoading);
   const isAdvicePending = !data && fastAdviceQuery.isLoading;
+  const reactiveBoosted = useMemo(
+    () => isReactivePollBoostActive(reactiveBoostUntil),
+    [reactiveBoostUntil, pollClock],
+  );
 
   return {
     data,
@@ -161,12 +233,12 @@ export function useLiveAdviceQueries(
     isError: fastAdviceQuery.isError && scoreTickQuery.isError,
     error: fastAdviceQuery.error ?? scoreTickQuery.error,
     isFetching: fastAdviceQuery.isFetching || fullAdviceQuery.isFetching,
-    refetch: () => {
-      void scoreTickQuery.refetch();
-      void fastAdviceQuery.refetch();
-      void fullAdviceQuery.refetch();
-    },
+    refetch: triggerReactiveRefetch,
     pollMs,
+    timelineReactive: {
+      ...timelineReactive,
+      boosted: reactiveBoosted,
+    },
   };
 }
 

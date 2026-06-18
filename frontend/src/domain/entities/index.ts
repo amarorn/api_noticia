@@ -496,6 +496,24 @@ export interface HalftimeAdjustReport {
   cardLineProbs: Record<string, number>;
 }
 
+export interface CornersProjection {
+  source: string;
+  minute: number;
+  observedHome: number;
+  observedAway: number;
+  observedTotal: number;
+  expectedRemainingHome: number;
+  expectedRemainingAway: number;
+  expectedFtHome: number;
+  expectedFtAway: number;
+  expectedFtTotal: number;
+  probHomeMoreCorners: number;
+  probDrawCorners: number;
+  probAwayMoreCorners: number;
+  mostLikelyCorners: string;
+  lineProbs: Record<string, number>;
+}
+
 export interface SuperbetLiveAdvice {
   homeTeam: string;
   awayTeam: string;
@@ -505,6 +523,12 @@ export interface SuperbetLiveAdvice {
   status: string | null;
   isFinished: boolean;
   isLive: boolean;
+  scoreStale?: {
+    scoreStale: boolean;
+    warnings: string[];
+    scorealarmGoals?: number;
+    snapshotGoals?: number;
+  } | null;
   superbetEventId: number;
   betradarId: string | null;
   capturedAt: string | null;
@@ -729,6 +753,8 @@ export interface SuperbetLiveAdvice {
     remainingEv: number;
     estimatedFairCashout: number;
     potentialReturn: number;
+    trendInfluenced?: boolean;
+    trendUrgency?: string | null;
   } | null;
   aportes: Array<{
     label: string;
@@ -757,6 +783,7 @@ export interface SuperbetLiveAdvice {
     yellowCards?: boolean;
   } | null;
   halftimeReport?: HalftimeAdjustReport | null;
+  cornersProjection?: CornersProjection | null;
   halfMarkets?: Record<
     string,
     {
@@ -804,6 +831,15 @@ export interface SuperbetLiveAdvice {
       home2hFactor?: number;
       away2hFactor?: number;
       reasons?: string[];
+    };
+    lambdaAdjustment?: {
+      lambdaPriorHome: number;
+      lambdaPriorAway: number;
+      lambdaFullHome: number;
+      lambdaFullAway: number;
+      deltaHome: number;
+      deltaAway: number;
+      steps?: Array<Record<string, unknown>>;
     };
     modelBeforeDate?: string | null;
   };
@@ -883,6 +919,7 @@ export interface SuperbetLiveAdvice {
     betBuilderRules: string[];
   } | null;
   liveStats: LiveMatchStats | null;
+  scorealarm: ScorealarmContext | null;
   trendReport: LiveTrendReport | null;
   halfTickets: InplayHalfTickets | null;
   viable2hMarkets: Viable2hMarketsPanel | null;
@@ -964,6 +1001,8 @@ export interface LiveMatchStats {
   possessionSource: string | null;
   sofascoreEventId: number | null;
   sofascoreAvailable: boolean;
+  scorealarmAvailable: boolean;
+  scorealarmStale: boolean;
   homeXg: number | null;
   awayXg: number | null;
   homePossessionPct: number | null;
@@ -975,6 +1014,95 @@ export interface LiveMatchStats {
   homeYellowCards: number | null;
   awayYellowCards: number | null;
   warnings: string[];
+}
+
+export interface ScorealarmTimelineEvent {
+  minute: number;
+  addedTime: number | null;
+  team: string;
+  side: number;
+  type: number;
+  subtype: number;
+  label: string;
+  icon: string;
+  score: string | null;
+}
+
+export interface ScorealarmH2h {
+  homeWins: number;
+  draws: number;
+  awayWins: number;
+  sinceYear: number | null;
+}
+
+export interface ScorealarmLastMatch {
+  opponent: string;
+  score: string;
+  result: string;
+  goalsFor: number;
+  goalsAgainst: number;
+}
+
+export interface ScorealarmTeamForm {
+  team: string;
+  form: string;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsAvg: number;
+  concededAvg: number;
+  coach: string | null;
+  lastMatches: ScorealarmLastMatch[];
+}
+
+export interface ScorealarmH2hMatch {
+  homeTeam: string;
+  awayTeam: string;
+  score: string;
+}
+
+export interface ScorealarmPrematch {
+  home: ScorealarmTeamForm;
+  away: ScorealarmTeamForm;
+  h2hMatches: ScorealarmH2hMatch[];
+}
+
+export interface ScorealarmTopPlayer {
+  name: string;
+  team: string;
+  side: number;
+  jersey: string;
+  positionLabel: string;
+  stats: Record<string, number>;
+  highlights: string[];
+}
+
+export interface ScorealarmSocialPick {
+  label: string;
+  market: string;
+  outcome: string;
+  odd: number | null;
+  betCount: number | null;
+  sharePct: number | null;
+}
+
+export interface ScorealarmSocial {
+  available: boolean;
+  source: string;
+  reason: string | null;
+  picks: ScorealarmSocialPick[];
+}
+
+export interface ScorealarmContext {
+  available: boolean;
+  stale: boolean;
+  timeline: ScorealarmTimelineEvent[];
+  h2h: ScorealarmH2h | null;
+  prematch: ScorealarmPrematch | null;
+  players: ScorealarmTopPlayer[];
+  social: ScorealarmSocial | null;
+  stats: Record<string, number>;
+  scoresId: string | null;
 }
 
 export interface LiveTrendReport {

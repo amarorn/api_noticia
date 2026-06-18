@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getHealthUseCase } from "@/application/container";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getHealthUseCase, getWcScheduleUseCase } from "@/application/container";
 import { AppSidebar } from "./AppSidebar";
 import { AppMobileHeader } from "./AppMobileHeader";
 import { PageBreadcrumb } from "./PageBreadcrumb";
@@ -16,6 +16,7 @@ export function AppLayout() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   const {
     data: health,
@@ -37,15 +38,20 @@ export function AppLayout() {
     sessionStorage.setItem(`scroll:${location.pathname}`, String(target.scrollTop));
   }, [location.pathname]);
 
-  // Restaura scroll ao voltar
+  // Restaura scroll ao voltar; em rota nova, força topo (evita “página em branco”)
   useEffect(() => {
     const main = document.getElementById("main-scroll");
     if (!main) return;
+    if (location.state?.noScroll) return;
+
     const saved = sessionStorage.getItem(`scroll:${location.pathname}`);
     if (saved) {
       main.scrollTop = Number(saved);
+    } else {
+      main.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
-  }, [location.pathname]);
+  }, [location.pathname, location.key, location.state]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -60,6 +66,15 @@ export function AppLayout() {
   useEffect(() => {
     document.title = pageTitle(location.pathname);
   }, [location.pathname]);
+
+  // Pré-carrega calendário WC em background — Jogos abre rápido na sidebar
+  useEffect(() => {
+    void queryClient.prefetchQuery({
+      queryKey: ["wc-schedule"],
+      queryFn: () => getWcScheduleUseCase.execute(),
+      staleTime: 10 * 60_000,
+    });
+  }, [queryClient]);
 
   const scrollToTop = useCallback(() => {
     const main = document.getElementById("main-scroll");

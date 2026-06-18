@@ -1,8 +1,29 @@
 # Análise: Modelo In-Play vs Superbet — Onde Estamos e Onde Podemos Melhorar
 
-> Data: 2026-06-08
+> Data: 2026-06-08 · **Atualização status: 2026-06-17**
 > Analista: Verdent
 > Branch: `feature/superbet-live-inplay`
+
+---
+
+## 0. Status de implementação (2026-06-17)
+
+| Item doc | Status | Onde |
+|----------|--------|------|
+| **P0** Bayesian update λ | ✅ Feito | `models/wc_inplay.py` → `bayesian_lambda_update` |
+| **P0** Linha garantida (totals) | ✅ Feito | `_apply_guaranteed_lines`, `_apply_team_guaranteed_lines` |
+| **P0** Mercados mortos BTTS/Over | ✅ Feito | `models/inplay_dead_market.py` + filtro em `wc_bet_advice` |
+| **P1** Momentum placar/minuto/eventos | ✅ Feito | `models/wc_live_momentum.py` |
+| **P1** Time decay / threshold por minuto | ✅ Feito | `config.py` (`live_midgame_*`, `live_late_game_*`) |
+| **P1** λ ao vivo (posse, SOT, timeline) | ✅ Feito | `models/wc_inplay_live_adjust.py` + ScoreAlarm |
+| **P1** Cash-out + momentum de mercado | ✅ Feito | `apply_trend_to_cashout` ← `wc_trend_advisor` |
+| **P2** xG Sofascore calibrando λ pré-jogo | 🟡 Parcial | nudge em `wc_predictor`; blend Poisson pendente |
+| **P2** Eventos Sofascore ao vivo | 🟡 Parcial | `ingest/sofascore/live_events.py`, `live_momentum` |
+| **P3** KXL dinâmico in-play | ❌ Pendente | só pré-jogo hoje |
+| **P3** Próximo gol dedicado (NHPP) | 🟡 Parcial | usa λ pós-momentum; `inplay_use_nhpp` opcional |
+| **Validação** benchmark_inplay CLI | ❌ Pendente | usar `inplay_bet_filter_backtest` + ticks |
+
+**Config operacional (ganhos):** respeitar `LIVE_BLOCK_MINUTE=45`, `LIVE_HARD_STOP_MINUTE=88`, `LIVE_CASHOUT_USE_TREND=true`.
 
 ---
 
@@ -77,9 +98,11 @@
 
 ## 3. Onde Estamos Errando ou Sub-otimizando
 
-### 3.1. O modelo não vê o jogo que está acontecendo agora (ERRO CRÍTICO)
+### 3.1. O modelo não vê o jogo que está acontecendo agora (ERRO CRÍTICO — mitigado)
 
-**Problema:** `inplay_from_predictor()` usa `lambda_full_home` e `lambda_full_away` **fixos** calculados das estatísticas históricas pré-jogo. A função `simulate_inplay()` simplesmente multiplica λ pela fração restante do jogo.
+**Problema original:** λ fixo pré-jogo.
+
+**Mitigações ativas (2026-06-17):** Bayes com gols observados, momentum (`wc_live_momentum`), ajuste ScoreAlarm (posse/SOT), boost pós-gol na timeline, ajuste HT (`wc_halftime_adjust`). λ ainda não incorpora substituições táticas nem xG acumulado Sofascore em tempo real.
 
 ```python
 # Em wc_inplay.py (simplificado):
@@ -102,16 +125,16 @@ result = inplay_from_predictor(
 
 ### 3.2. Dados reais do jogo ignorados completamente
 
-A Superbet envia `SuperbetEventSnapshot` com os mercados e odds, **mas não envia eventos táticos**. Mesmo que enviasse (ou se pegássemos via Sofascore/FIFA ao vivo), o pipeline **não consome nada disso**.
+**Atualização 2026-06-17:** parcialmente resolvido via ScoreAlarm + Sofascore live.
 
-| Dado real disponível | Usado no pipeline? | Onde poderia entrar |
+| Dado real disponível | Usado no pipeline? | Onde entra |
 |---|---|---|
-| Eventos (cartão, substituição, lesão) | **Não** | Ajustar λ em tempo real |
-| Posse de bola | **Não** | Ajustar λ via pesos |
-| xG acumulado (Sofascore) | **Não** | Recalibrar λ via goleiros/stats |
-| Momento de jogo (ataque vs defesa) | **Não** | Modulador de λ por período |
-| Vento, temperatura (rearquim) | **Não** | Modulador de xG |
-| Árbitro, público, emoção | **Não** | KXL poderia entrar aqui |
+| Eventos (gol, cartão vermelho) | **Sim** | timeline → `wc_live_momentum` |
+| Posse de bola | **Sim** | `adjust_lambdas_from_live_stats` |
+| Chutes no gol (overview) | **Sim** | ScoreAlarm → `live_stats` |
+| xG acumulado (Sofascore) | **Parcial** | pré-jogo; ao vivo limitado |
+| Substituição ofensiva/defensiva | **Não** | pendente feed FIFA/Sofascore |
+| Vento, KXL emoção | **Não** | só pré-jogo |
 
 ### 3.3. O "próximo gol" usa regra de equipamento, não tática
 
@@ -128,7 +151,11 @@ Isso assume que o próximo gol segue a proporção de força pré-jogo. Se a equ
 
 ### 3.4. Cash-out usa probabilidade estática, não momentum
 
-O cashout compara `current_model_prob` com `placed_implied_prob`. Mas `current_model_prob` vem do MC estático, não do **momentum** real. Se há um time pressionando intensamente nos últimos 10 min, a probabilidade de gol está subestimada.
+~~O cashout compara `current_model_prob` com `placed_implied_prob`. Mas `current_model_prob` vem do MC estático, não do **momentum** real.~~
+
+**Atualização 2026-06-17:** `advise_cashout()` aplica `apply_trend_to_cashout()` quando `LIVE_CASHOUT_USE_TREND=true`, fundindo `trend_report` (`wc_trend_advisor`: colapso de odds, sequência de gols, mercado decidido). A prob mecânica continua vinda do MC; a **decisão de saída** sobe de grau (`manter` → `cashout_parcial` → `cashout`) se o copiloto detectar conflito crítico com a aposta aberta.
+
+Resposta API: `cashout.trend_influenced`, `cashout.trend_urgency`.
 
 ### 3.5. Oportunidades não diferenciam fase do jogo
 
@@ -143,9 +170,7 @@ Uma oportunidade de 1X2 no minuto 80' é muito mais volátil do que no minuto 20
 
 ### 3.6. Totais de gols não ajustam por placar atual
 
-Se o jogo está 2×0 aos 70', a probabilidade de Over 2.5 gols deveria estar **próxima de 100%** (já aconteceu). O modelo calcula Over 2.5 da simulação completa, que pode dar 60%. Isso gera:
-- Alerta falso de "sem valor" para over 2.5 (quando na verdade é garantido)
-- Oportunidade perdida para over 3.5 ou próximo gol
+**Resolvido (P0):** `_apply_guaranteed_lines` + `inplay_dead_market` — Over já batido não aparece como “sem valor”; BTTS/Over mortos são filtrados em `advise_aportes`.
 
 ### 3.7. Configuração `live_ev_min_edge=4%` pode ser muito conservadora
 
@@ -284,7 +309,8 @@ Sofascore API → eventos ao vivo (gol, cartão, sub, lesão, penalti)
 | **P0** | Bayesian update de λ com gols observados | `models/wc_inplay.py` | 4h |
 | **P0** | Mercado "linha garantida" para totais | `models/wc_inplay.py` / `wc_bet_advice.py` | 2h |
 | **P1** | Momentum por placar + minuto | `models/wc_live_momentum.py` (novo) | 6h |
-| **P1** | Time decay de confiança em fase final | `models/wc_bet_strategy.py` | 2h |
+| **P1** | Time decay de confiança em fase final | `wc_bet_strategy.py` / `config.py` | ✅ Feito |
+| **P1** | Cash-out + trend advisor | `wc_bet_advice.apply_trend_to_cashout` | ✅ Feito |
 | **P2** | xG recente calibrando λ pré-jogo | `models/poisson_wc.py` | 8h |
 | **P2** | Integrar eventos Sofascore ao vivo | `ingest/sofascore/live_events.py` (novo) | 16h |
 | **P3** | KXL dinâmico em tempo real | `pipelines/wc_kxl_collision.py` | 20h |
@@ -325,12 +351,13 @@ python -m tests.benchmark_inplay --ab-test momentum
 - Blindagens (correlation, house trap, late game) protegem bem o apostador
 
 ### O que precisa de atenção agora
-1. **O modelo é cego ao jogo real** — usa λ pré-jogo fixo. Isso é o maior gargalo.
-2. **Sem ajuste por momentum** (placar, minuto, eventos) → previsões frágeis após gol
-3. **Totais ignoram placar atual** → linhas "garantidas" aparecem como "sem valor"
+1. **Calibrar coeficientes de momentum** com `live_ticks.parquet` (MLE em `wc_inplay_coefficients.json`).
+2. **Blend xG Sofascore** no λ pré-jogo (`poisson_wc.py`) — P2.
+3. **Benchmark Brier in-play** automatizado — §6 ainda manual.
+4. **KXL dinâmico** — P3 longo prazo.
 
-### Maior alavanca de melhoria
-**Implementar P0 (Bayesian update de λ + linha garantida)** — esses dois items sozinhos reduziriam significativamente o erro de previsão em fases tardias do jogo, onde o modelo hoje é mais fraco. São também os mais baratos de implementar (6h no total, com testes).
+### Maior alavanca de melhoria (atualizada)
+**Operação + calibração:** respeitar filtros de minuto (45'/88'), usar cash-out com `trend_influenced`, e calibrar β do momentum com ticks reais da Copa. P0/P1 de código estão largamente implementados.
 
 ### Visão de longo prazo
 A convergência final é integrar:

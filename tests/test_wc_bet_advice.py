@@ -1,7 +1,9 @@
 from models.wc_bet_advice import (
     UserBetInput,
+    CashoutAdvice,
     advise_cashout,
     advise_aportes,
+    apply_trend_to_cashout,
     build_bet_advice_report,
     _prob_from_inplay,
     _market_odd,
@@ -93,6 +95,18 @@ def test_half_market_prob_and_odd_mapping():
     prob_hcap = _prob_from_inplay(inplay, "1h_hcap_home_m0_5", "yes")
     assert prob_hcap is not None
     assert _market_odd(snap, "1h_hcap_home_m0_5", "yes") == 1.90
+
+
+def test_1h_totals_odd_respects_over_under_outcome():
+    """1T under não pode herdar a odd do over (ex.: menos 1.5 @ 15 quando é o mais)."""
+    raw = json.loads(HALF_FIXTURE.read_text(encoding="utf-8"))
+    snap = parse_superbet_event(raw)
+    over_odd = _market_odd(snap, "1h_over_1_5", "yes")
+    under_odd = _market_odd(snap, "1h_over_1_5", "no")
+    assert over_odd is not None
+    assert under_odd is not None
+    assert over_odd != under_odd
+    assert _market_odd(snap, "1h_over_0_5", "yes") != _market_odd(snap, "1h_over_0_5", "no")
 
 
 def test_handicap_odd_requires_exact_book_button():
@@ -198,3 +212,84 @@ def test_advise_aportes_blocked_after_cutoff():
     }
     aportes = advise_aportes(inplay, None, live=True, minute=90, confidence_score=1.0)
     assert aportes == []
+
+
+def _trend_exit_report(urgency: str = "critical", confidence: float = 0.85) -> dict:
+    return {
+        "position_advice": {
+            "action": "exit",
+            "urgency": urgency,
+            "confidence": confidence,
+            "reasoning": "Mercado colapsou contra sua posição nos últimos ticks.",
+        }
+    }
+
+
+def test_cashout_trend_upgrades_manter_to_cashout():
+    bet = UserBetInput(market="h2h", outcome="X", stake=50, odds_placed=3.5)
+    inplay = {
+        "prob_final_home": 0.55,
+        "prob_final_draw": 0.30,
+        "prob_final_away": 0.15,
+        "final_line_probs": {},
+        "combo_markets": {},
+        "btts_final": 0.5,
+    }
+    advice = advise_cashout(
+        bet,
+        inplay,
+        minute=70,
+        trend_report=_trend_exit_report("critical", 0.9),
+    )
+    assert advice.action == "cashout"
+    assert advice.trend_influenced is True
+    assert "Copiloto de tendência" in advice.reason
+
+
+def test_apply_trend_high_urgency_upgrades_aguardar():
+    base = CashoutAdvice(
+        action="aguardar",
+        confidence=0.5,
+        reason="Neutro.",
+        current_model_prob=0.4,
+        placed_implied_prob=0.35,
+        remaining_ev=-0.02,
+        estimated_fair_cashout=40.0,
+        potential_return=100.0,
+    )
+    merged = apply_trend_to_cashout(base, _trend_exit_report("high", 0.55))
+    assert merged.action == "cashout"
+    assert merged.trend_influenced is True
+
+
+def test_apply_trend_medium_urgency_partial_from_manter():
+    base = CashoutAdvice(
+        action="manter",
+        confidence=0.7,
+        reason="Valor.",
+        current_model_prob=0.6,
+        placed_implied_prob=0.45,
+        remaining_ev=0.08,
+        estimated_fair_cashout=70.0,
+        potential_return=110.0,
+    )
+    merged = apply_trend_to_cashout(base, _trend_exit_report("medium", 0.6))
+    assert merged.action == "cashout_parcial"
+    assert merged.trend_influenced is True
+
+
+def test_cashout_trend_disabled(monkeypatch):
+    monkeypatch.setattr("config.settings.live_cashout_use_trend", False)
+    base = CashoutAdvice(
+        action="manter",
+        confidence=0.8,
+        reason="Valor.",
+        current_model_prob=0.7,
+        placed_implied_prob=0.5,
+        remaining_ev=0.1,
+        estimated_fair_cashout=80.0,
+        potential_return=120.0,
+    )
+    merged = apply_trend_to_cashout(base, _trend_exit_report("critical", 0.95))
+    assert merged.action == "manter"
+    assert merged.trend_influenced is False

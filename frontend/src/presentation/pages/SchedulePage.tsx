@@ -26,6 +26,7 @@ export function SchedulePage() {
     queryFn: () => getSuperbetLiveUseCase.execute({ rank: false }),
     staleTime: 30_000,
     refetchInterval: 60_000,
+    enabled: scheduleQuery.isSuccess,
   });
 
   const roundCounts = useMemo(() => {

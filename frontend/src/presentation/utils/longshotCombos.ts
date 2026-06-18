@@ -408,14 +408,15 @@ function toLeg(row: MarketScanRow): LongshotLeg {
   };
 }
 
-/** Prioriza pernas com boa prob. individual e odd útil para montar @80+. */
+/** Prioriza pernas com boa prob. individual e odd útil para montar múltiplas. */
 function collectCandidateLegs(
   scan: MarketScanRow[],
   halfMarkets?: HalfMarkets,
+  minLegOdd = 1.8,
 ): LongshotLeg[] {
   const byKey = new Map<string, LongshotLeg>();
   for (const row of scan) {
-    if (row.marketOdd < 1.8 || row.modelProb <= 0) continue;
+    if (row.marketOdd < minLegOdd || row.modelProb <= 0) continue;
     if (!isSuperbetBetBuilderMarket(row.market)) continue;
     if (!isHandicapLegOnBook(halfMarkets, row.market)) continue;
     const key = `${row.market}:${row.outcome}`;
@@ -471,26 +472,61 @@ function diversifyCombos(combos: LongshotCombo[], maxCombos: number): LongshotCo
   return picked;
 }
 
-/** Monta múltiplas @80+ ordenadas pela probabilidade do modelo (maior chance primeiro). */
-export function buildLongshotCombos(
+export type ComboSortMode = "prob" | "ev" | "balanced";
+
+export interface ComboBuildConfig {
+  stake?: number;
+  minCombinedOdd?: number;
+  maxCombinedOdd?: number;
+  minCombinedProb?: number;
+  minCombinedEv?: number;
+  maxCombos?: number;
+  maxLegs?: number;
+  minLegOdd?: number;
+  halfMarkets?: HalfMarkets;
+  sortBy?: ComboSortMode;
+}
+
+function comboBalancedScore(combo: LongshotCombo): number {
+  return combo.combinedProb * Math.log(Math.max(combo.combinedOdd, 1.01));
+}
+
+function sortCombos(combos: LongshotCombo[], sortBy: ComboSortMode): LongshotCombo[] {
+  return [...combos].sort((a, b) => {
+    if (sortBy === "ev") {
+      if (b.combinedEv !== a.combinedEv) return b.combinedEv - a.combinedEv;
+      return b.combinedProb - a.combinedProb;
+    }
+    if (sortBy === "balanced") {
+      const scoreA = comboBalancedScore(a);
+      const scoreB = comboBalancedScore(b);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return b.combinedProb - a.combinedProb;
+    }
+    if (b.combinedProb !== a.combinedProb) return b.combinedProb - a.combinedProb;
+    if (a.combinedOdd !== b.combinedOdd) return a.combinedOdd - b.combinedOdd;
+    return a.legs.length - b.legs.length;
+  });
+}
+
+/** Enumera múltiplas compatíveis com filtros de odd/prob/EV e ordenação configurável. */
+export function buildScannedCombos(
   scan: MarketScanRow[] | undefined,
-  options?: {
-    stake?: number;
-    minReturn?: number;
-    maxCombos?: number;
-    maxLegs?: number;
-    halfMarkets?: HalfMarkets;
-  },
+  config: ComboBuildConfig = {},
 ): LongshotCombo[] {
   if (!scan?.length) return [];
 
-  const stake = options?.stake ?? LONGSHOT_STAKE_BRL;
-  const minReturn = options?.minReturn ?? LONGSHOT_MIN_RETURN_BRL;
-  const minOdd = minReturn / stake;
-  const maxCombos = options?.maxCombos ?? 6;
-  const maxLegs = options?.maxLegs ?? 6;
+  const stake = config.stake ?? LONGSHOT_STAKE_BRL;
+  const minOdd = config.minCombinedOdd ?? 3;
+  const maxOdd = config.maxCombinedOdd ?? Number.POSITIVE_INFINITY;
+  const minProb = config.minCombinedProb ?? 0;
+  const minEv = config.minCombinedEv ?? Number.NEGATIVE_INFINITY;
+  const maxCombos = config.maxCombos ?? 4;
+  const maxLegs = config.maxLegs ?? 4;
+  const minLegOdd = config.minLegOdd ?? 1.25;
+  const sortBy = config.sortBy ?? "prob";
 
-  const pool = collectCandidateLegs(scan, options?.halfMarkets).slice(0, 22);
+  const pool = collectCandidateLegs(scan, config.halfMarkets, minLegOdd).slice(0, 24);
   if (pool.length < 2) return [];
 
   const seen = new Set<string>();
@@ -501,7 +537,7 @@ export function buildLongshotCombos(
       if (!comboCompatible(legs)) continue;
 
       const combinedOdd = legs.reduce((acc, leg) => acc * leg.marketOdd, 1);
-      if (combinedOdd < minOdd) continue;
+      if (combinedOdd < minOdd || combinedOdd > maxOdd) continue;
 
       const key = legs
         .map((leg) => `${leg.market}:${leg.outcome}`)
@@ -511,7 +547,10 @@ export function buildLongshotCombos(
       seen.add(key);
 
       const combinedProb = legs.reduce((acc, leg) => acc * leg.modelProb, 1);
+      if (combinedProb < minProb) continue;
+
       const combinedEv = combinedProb * combinedOdd - 1;
+      if (combinedEv < minEv) continue;
 
       results.push({
         id: key,
@@ -527,14 +566,35 @@ export function buildLongshotCombos(
     }
   }
 
-  results.sort((a, b) => {
-    if (b.combinedProb !== a.combinedProb) return b.combinedProb - a.combinedProb;
-    if (a.combinedOdd !== b.combinedOdd) return a.combinedOdd - b.combinedOdd;
-    return a.legs.length - b.legs.length;
-  });
+  const sorted = sortCombos(results, sortBy);
+  const diversified = diversifyCombos(sorted, maxCombos);
+  return assignRiskTiers(
+    diversified.map((combo, index) => ({ ...combo, rank: index + 1 })),
+  );
+}
 
-  const diversified = diversifyCombos(results, maxCombos);
-  return assignRiskTiers(diversified);
+/** Monta múltiplas @80+ ordenadas pela probabilidade do modelo (maior chance primeiro). */
+export function buildLongshotCombos(
+  scan: MarketScanRow[] | undefined,
+  options?: {
+    stake?: number;
+    minReturn?: number;
+    maxCombos?: number;
+    maxLegs?: number;
+    halfMarkets?: HalfMarkets;
+  },
+): LongshotCombo[] {
+  const stake = options?.stake ?? LONGSHOT_STAKE_BRL;
+  const minReturn = options?.minReturn ?? LONGSHOT_MIN_RETURN_BRL;
+  return buildScannedCombos(scan, {
+    stake,
+    minCombinedOdd: minReturn / stake,
+    maxCombos: options?.maxCombos ?? 6,
+    maxLegs: options?.maxLegs ?? 6,
+    minLegOdd: 1.8,
+    halfMarkets: options?.halfMarkets,
+    sortBy: "prob",
+  });
 }
 
 /** Formata probabilidade pequena sem arredondar para 0,00%. */

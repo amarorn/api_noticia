@@ -51,6 +51,93 @@ class CashoutAdvice:
     remaining_ev: float
     estimated_fair_cashout: float
     potential_return: float
+    trend_influenced: bool = False
+    trend_urgency: str | None = None
+
+
+_CASHOUT_ACTION_RANK: dict[str, int] = {
+    "manter": 0,
+    "aguardar": 1,
+    "cashout_parcial": 2,
+    "cashout": 3,
+}
+
+
+def _trend_exit_target(urgency: str, trend_conf: float, current_action: str) -> str | None:
+    """Define ação mínima de cash-out sugerida pelo copiloto de tendência."""
+    current_rank = _CASHOUT_ACTION_RANK.get(current_action, 0)
+    if urgency == "critical":
+        return "cashout"
+    if urgency == "high":
+        if trend_conf >= 0.8 or current_rank < 2:
+            return "cashout"
+        return "cashout_parcial"
+    if urgency == "medium" and current_rank < 2:
+        return "cashout_parcial"
+    if urgency == "low" and current_rank < 1:
+        return "aguardar"
+    return None
+
+
+def apply_trend_to_cashout(
+    advice: CashoutAdvice,
+    trend_report: dict[str, Any] | None,
+) -> CashoutAdvice:
+    """Funde sinais de fluxo (ticks/odds) na decisão mecânica de cash-out."""
+    if not settings.live_cashout_use_trend or not trend_report:
+        return advice
+
+    pa = trend_report.get("position_advice")
+    if not pa or not isinstance(pa, dict):
+        return advice
+
+    trend_action = pa.get("action")
+    if trend_action != "exit":
+        return advice
+
+    urgency = str(pa.get("urgency") or "low")
+    trend_conf = float(pa.get("confidence") or 0)
+    reasoning = str(pa.get("reasoning") or "").strip()
+    trend_note = (
+        f" Copiloto de tendência ({urgency}): {reasoning[:240]}"
+        if reasoning
+        else f" Copiloto de tendência recomenda saída ({urgency})."
+    )
+
+    target = _trend_exit_target(urgency, trend_conf, advice.action)
+    current_rank = _CASHOUT_ACTION_RANK.get(advice.action, 0)
+    target_rank = _CASHOUT_ACTION_RANK.get(target, current_rank) if target else current_rank
+
+    if target_rank <= current_rank:
+        return CashoutAdvice(
+            action=advice.action,
+            confidence=advice.confidence,
+            reason=advice.reason + trend_note,
+            current_model_prob=advice.current_model_prob,
+            placed_implied_prob=advice.placed_implied_prob,
+            remaining_ev=advice.remaining_ev,
+            estimated_fair_cashout=advice.estimated_fair_cashout,
+            potential_return=advice.potential_return,
+            trend_influenced=False,
+            trend_urgency=urgency,
+        )
+
+    new_confidence = min(
+        0.98,
+        max(advice.confidence, trend_conf, 0.72 if urgency == "critical" else 0.62),
+    )
+    return CashoutAdvice(
+        action=target or advice.action,
+        confidence=round(new_confidence, 3),
+        reason=advice.reason + trend_note,
+        current_model_prob=advice.current_model_prob,
+        placed_implied_prob=advice.placed_implied_prob,
+        remaining_ev=advice.remaining_ev,
+        estimated_fair_cashout=advice.estimated_fair_cashout,
+        potential_return=advice.potential_return,
+        trend_influenced=True,
+        trend_urgency=urgency,
+    )
 
 
 @dataclass
@@ -561,7 +648,9 @@ def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: st
         line = market.replace("1h_over_", "").replace("_", ".")
         prices = ht_totals.get(line, {})
         for name, price in prices.items():
-            if "mais" in name.lower():
+            if outcome in {"yes", "sim"} and "mais" in name.lower():
+                return price
+            if outcome in {"no", "não", "nao"} and "menos" in name.lower():
                 return price
         return None
     # --- Combos (extraídos do parser) ---
@@ -624,6 +713,7 @@ def advise_cashout(
     *,
     minute: int = 0,
     book_margin: float = 0.08,
+    trend_report: dict[str, Any] | None = None,
 ) -> CashoutAdvice:
     current_p = _prob_from_inplay(inplay, bet.market, bet.outcome)
     if current_p is None:
@@ -675,7 +765,7 @@ def advise_cashout(
         )
         confidence = 0.5
 
-    return CashoutAdvice(
+    base = CashoutAdvice(
         action=action,
         confidence=round(confidence, 3),
         reason=reason,
@@ -685,6 +775,7 @@ def advise_cashout(
         estimated_fair_cashout=round(estimated_fair, 2),
         potential_return=round(potential, 2),
     )
+    return apply_trend_to_cashout(base, trend_report)
 
 
 def _is_comeback_unrealistic(
@@ -917,6 +1008,16 @@ def _aporte_candidates(
             continue
         blocked_ud, _ = is_premature_underdog_handicap_2h(market, inplay, minute=minute)
         if blocked_ud:
+            continue
+        from models.inplay_dead_market import is_dead_inplay_market
+
+        dead, _dead_reason = is_dead_inplay_market(
+            market,
+            outcome,
+            home_score=home_score,
+            away_score=away_score,
+        )
+        if dead:
             continue
         score_context: str | None = None
         if parse_any_handicap_market(market) or parse_period_handicap_market(market):
@@ -1162,10 +1263,16 @@ def build_bet_advice_report(
     minute: int = 0,
     bankroll: float | None = None,
     features: Any = None,
+    trend_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     cashout = None
     if user_bet is not None:
-        cashout = advise_cashout(user_bet, inplay, minute=minute)
+        cashout = advise_cashout(
+            user_bet,
+            inplay,
+            minute=minute,
+            trend_report=trend_report,
+        )
 
     # Calcular confiança da previsão
     score_parts = str(inplay.get("current_score", "0x0")).split("x")
@@ -1227,6 +1334,8 @@ def build_bet_advice_report(
             "remaining_ev": cashout.remaining_ev,
             "estimated_fair_cashout": cashout.estimated_fair_cashout,
             "potential_return": cashout.potential_return,
+            "trend_influenced": cashout.trend_influenced,
+            "trend_urgency": cashout.trend_urgency,
         },
         "aportes": [
             {

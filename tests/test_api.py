@@ -342,6 +342,45 @@ def test_worldcup_handicap_endpoint(monkeypatch):
     assert data["current_score"] == "1x0"
 
 
+def test_worldcup_sofascore_resolve_503_during_waf_cooldown(monkeypatch):
+    monkeypatch.setattr("config.settings.api_key", None)
+
+    class _Blocked:
+        @staticmethod
+        def is_globally_blocked() -> bool:
+            return True
+
+        @staticmethod
+        def waf_cooldown_remaining_sec() -> float:
+            return 600.0
+
+    monkeypatch.setattr("api.sofascore_http.SofascoreClient", _Blocked)
+    response = client.get(
+        "/worldcup/sofascore/resolve?home_team=Brasil&away_team=Argentina&date=2026-06-17"
+    )
+    assert response.status_code == 503
+    assert "cooldown" in response.json()["detail"].lower()
+    assert response.headers.get("retry-after") == "600"
+
+
+def test_worldcup_sofascore_statistics_503_during_waf_cooldown(monkeypatch):
+    monkeypatch.setattr("config.settings.api_key", None)
+
+    class _Blocked:
+        @staticmethod
+        def is_globally_blocked() -> bool:
+            return True
+
+        @staticmethod
+        def waf_cooldown_remaining_sec() -> float:
+            return 120.0
+
+    monkeypatch.setattr("api.sofascore_http.SofascoreClient", _Blocked)
+    response = client.get("/worldcup/sofascore/99/statistics?refresh=true")
+    assert response.status_code == 503
+    assert response.headers.get("retry-after") == "120"
+
+
 def test_worldcup_sofascore_statistics_endpoint(monkeypatch):
     from ingest.sofascore.stats_ingest import MatchStatsIngestResult
 

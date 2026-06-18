@@ -77,8 +77,11 @@ function mergeFastWithFullProps(
       },
       halftimeAdjustment:
         full.inplaySummary.halftimeAdjustment ?? fast.inplaySummary.halftimeAdjustment,
+      lambdaAdjustment:
+        full.inplaySummary.lambdaAdjustment ?? fast.inplaySummary.lambdaAdjustment,
     },
     halftimeReport: full.halftimeReport ?? fast.halftimeReport,
+    cornersProjection: full.cornersProjection ?? fast.cornersProjection,
     halfTickets: fast.halfTickets ?? full.halfTickets,
     strategy: fast.strategy
       ? {

@@ -56,6 +56,28 @@ def is_event_finalized(event_id: int) -> bool:
     return str(event_id) in _load_registry().get("events", {})
 
 
+def list_pending_watch_event_ids(*, max_events: int | None = None) -> list[int]:
+    """Eventos com bronze Superbet ainda não finalizados no gold."""
+    events_root = settings.bronze_path / "superbet" / "events"
+    if not events_root.is_dir():
+        return []
+    registry = _load_registry().get("events", {})
+    pending: list[int] = []
+    for path in sorted(events_root.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not path.is_dir() or not path.name.isdigit():
+            continue
+        eid = int(path.name)
+        if str(eid) in registry:
+            continue
+        latest = path / "latest.json"
+        if not latest.exists():
+            continue
+        pending.append(eid)
+        if max_events is not None and len(pending) >= max_events:
+            break
+    return pending
+
+
 def _count_bronze_snapshots(event_id: int) -> int:
     base = settings.bronze_path / "superbet" / "events" / str(event_id)
     if not base.exists():
@@ -371,6 +393,7 @@ def maybe_finalize_finished_event(
 
 __all__ = [
     "is_event_finalized",
+    "list_pending_watch_event_ids",
     "maybe_finalize_finished_event",
     "save_finished_event_record",
 ]

@@ -18,11 +18,20 @@ import { useToast } from "@/presentation/components/ui/toast/ToastContext";
 import { CashoutAlertSetup } from "@/presentation/components/predictions/CashoutAlertSetup";
 import { BetStrategyPanel } from "@/presentation/components/predictions/BetStrategyPanel";
 import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
+import { LiveBestCombosPanel } from "@/presentation/components/predictions/LiveBestCombosPanel";
 import { LiveHalfTicketsPanel } from "@/presentation/components/predictions/LiveHalfTicketsPanel";
 import { LiveRemaining2hMarketsPanel } from "@/presentation/components/predictions/LiveRemaining2hMarketsPanel";
 import { LiveLongshotCombosPanel } from "@/presentation/components/predictions/LiveLongshotCombosPanel";
 import { LiveTopReturnPanel } from "@/presentation/components/predictions/LiveTopReturnPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
+import { LiveModelVsMarketHero } from "@/presentation/components/predictions/LiveModelVsMarketHero";
+import { LiveEvRealPanel } from "@/presentation/components/predictions/LiveEvRealPanel";
+import { LiveCornersPanel } from "@/presentation/components/predictions/LiveCornersPanel";
+import { LiveStatsCompactBar } from "@/presentation/components/predictions/LiveStatsCompactBar";
+import { LiveTimelinePanel } from "@/presentation/components/predictions/LiveTimelinePanel";
+import { LiveFormH2hPanel } from "@/presentation/components/predictions/LiveFormH2hPanel";
+import { LivePlayerStatsPanel } from "@/presentation/components/predictions/LivePlayerStatsPanel";
+import { LiveSocialRadarPanel } from "@/presentation/components/predictions/LiveSocialRadarPanel";
 import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
 import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
 import {
@@ -184,22 +193,10 @@ export function LiveInPlayPage() {
     isFetching: adviceFetching,
     refetch: refetchAdvice,
     pollMs,
+    timelineReactive,
   } = useLiveAdviceQueries(eventId, appliedBankroll, kickoffFromUrl, advicePhase);
 
   const recalibrationEvent = useLiveRecalibration(data, adviceFetching);
-
-  useEffect(() => {
-    if (!scoreTick?.currentScore || !data?.currentScore) return;
-    if (scoreTick.currentScore === data.currentScore) return;
-    if (adviceFetching || data.isFinished) return;
-    refetchAdvice();
-  }, [
-    scoreTick?.currentScore,
-    data?.currentScore,
-    data?.isFinished,
-    adviceFetching,
-    refetchAdvice,
-  ]);
 
   const apiBets: RegisteredBetEntry[] = useMemo(() => {
     if (!openBetsQuery.data?.bets) return [];
@@ -380,7 +377,7 @@ export function LiveInPlayPage() {
             to={`/ao-vivo/${eventId}/painel`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-neon-blue/30 bg-neon-blue/10 px-3 py-1.5 text-xs font-medium text-neon-blue transition hover:border-neon-blue/50"
           >
-            Painel visual
+            Painel completo
           </Link>
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
           {pulse?.wcModelsReady === false && (
@@ -560,6 +557,28 @@ export function LiveInPlayPage() {
             )}
           </section>
 
+          {/* ── 1b. ODDS + EV + STATS AO VIVO ── */}
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            <LiveModelVsMarketHero data={data} />
+            <div className="flex flex-col gap-3">
+              <LiveStatsCompactBar data={data} eventId={eventId} />
+              <LiveEvRealPanel data={data} />
+            </div>
+          </div>
+          <LiveCornersPanel data={data} />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <LiveTimelinePanel
+              data={data}
+              highlightGoalMinute={timelineReactive.latestGoalMinute}
+              reactiveBoosted={timelineReactive.boosted}
+            />
+            <LiveFormH2hPanel data={data} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <LivePlayerStatsPanel data={data} />
+            <LiveSocialRadarPanel data={data} />
+          </div>
+
           <LiveRecalibrationBanner event={recalibrationEvent} />
 
           {/* ── 2. HERO CTA ── */}
@@ -570,6 +589,9 @@ export function LiveInPlayPage() {
 
           {/* ── 2a. BILHETES 1T / 2T (modelo × mercado) ── */}
           <LiveHalfTicketsPanel data={data} />
+
+          {/* ── 2a0. MELHOR COMBO (seguro / equilibrado / longshot) ── */}
+          <LiveBestCombosPanel data={data} />
 
           {/* ── 2a1. MERCADOS 2T VIÁVEIS (tempo restante) ── */}
           <LiveRemaining2hMarketsPanel data={data} />

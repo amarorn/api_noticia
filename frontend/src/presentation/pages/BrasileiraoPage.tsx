@@ -10,6 +10,8 @@ export function BrasileiraoPage() {
   const query = useQuery({
     queryKey: ["brasileirao-round"],
     queryFn: () => getBrasileiraoRoundUseCase.execute(),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
   });
 
   if (query.isLoading) {

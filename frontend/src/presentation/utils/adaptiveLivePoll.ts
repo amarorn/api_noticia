@@ -102,6 +102,16 @@ export function resolveAdaptiveLivePollMs(
   return { ...preset, tier };
 }
 
+/** Força tier urgente enquanto a janela reativa (ex.: gol na timeline) estiver ativa. */
+export function applyReactivePollBoost(
+  intervals: LivePollIntervals,
+  boostUntilMs: number,
+  nowMs = Date.now(),
+): LivePollIntervals {
+  if (boostUntilMs <= nowMs) return intervals;
+  return { ...LIVE_POLL_URGENT, tier: "urgent" };
+}
+
 export function livePollTierLabel(tier: LivePollTier): string {
   switch (tier) {
     case "urgent":

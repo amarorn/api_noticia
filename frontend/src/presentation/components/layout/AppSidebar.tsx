@@ -1,5 +1,4 @@
 import { NavLink } from "react-router-dom";
-import { motion } from "framer-motion";
 import { navGroups } from "./navConfig";
 import { ApiStatusBadge } from "./ApiStatusBadge";
 import { BrandMark } from "./BrandMark";
@@ -70,10 +69,8 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
                       {({ isActive }) => (
                         <>
                           {isActive && (
-                            <motion.span
-                              layoutId="sidebar-active"
+                            <span
                               className="absolute inset-0 rounded-xl"
-                              transition={{ type: "spring", stiffness: 380, damping: 32 }}
                               style={{
                                 background: "rgba(0, 245, 160, 0.08)",
                                 border: "1px solid rgba(0, 245, 160, 0.18)",

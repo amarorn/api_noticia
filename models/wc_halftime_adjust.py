@@ -119,6 +119,52 @@ def _over_under_probs_from_total(total_lam: float, observed: int, lines: tuple[f
     return probs
 
 
+def project_live_corners(
+    *,
+    home_corners: int,
+    away_corners: int,
+    minute: int,
+    lambda_home_ft: float,
+    lambda_away_ft: float,
+    lines: tuple[float, ...] = DEFAULT_LINES,
+    match_minutes: int = 90,
+) -> dict[str, Any]:
+    """Projeta escanteios FT condicionados ao placar de cantos e minuto atual (ao vivo)."""
+    minute_clamped = max(1, min(int(minute), match_minutes))
+    elapsed_frac = max(minute_clamped / float(match_minutes), 0.12)
+    prior_weight = 2.0
+
+    implied_rate_home = home_corners / elapsed_frac
+    implied_rate_away = away_corners / elapsed_frac
+    ft_home = (implied_rate_home + prior_weight * lambda_home_ft) / (1 + prior_weight)
+    ft_away = (implied_rate_away + prior_weight * lambda_away_ft) / (1 + prior_weight)
+
+    pred = predict_corners(ft_home, ft_away, lines=lines)
+
+    observed_total = home_corners + away_corners
+    line_probs = _over_under_probs_from_total(ft_home + ft_away, observed_total, lines)
+    remaining_home = max(0.0, ft_home - home_corners)
+    remaining_away = max(0.0, ft_away - away_corners)
+
+    return {
+        "source": "live_poisson",
+        "minute": minute_clamped,
+        "observed_home": home_corners,
+        "observed_away": away_corners,
+        "observed_total": observed_total,
+        "expected_remaining_home": round(remaining_home, 3),
+        "expected_remaining_away": round(remaining_away, 3),
+        "expected_ft_home": round(ft_home, 3),
+        "expected_ft_away": round(ft_away, 3),
+        "expected_ft_total": round(ft_home + ft_away, 3),
+        "prob_home_more_corners": round(pred.prob_home_more, 4),
+        "prob_draw_corners": round(pred.prob_draw_corners, 4),
+        "prob_away_more_corners": round(pred.prob_away_more, 4),
+        "most_likely_corners": pred.most_likely_score,
+        "line_probs": line_probs,
+    }
+
+
 def project_halftime_corners(
     stats: HalftimeFrozenStats,
     *,

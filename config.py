@@ -39,6 +39,16 @@ class Settings(BaseSettings):
     superbet_timeout_sec: float = 45.0
     superbet_fetch_retries: int = 2
     superbet_stale_max_age_sec: int = 600
+    scorealarm_base_url: str = "https://scorealarm-stats.freetls.fastly.net"
+    scorealarm_brand: str = "brsuperbetsport"
+    scorealarm_locale: str = "pt-BR"
+    scorealarm_timeout_sec: float = 12.0
+    scorealarm_fetch_retries: int = 1
+    scorealarm_enabled: bool = True
+    social_top_picks_enabled: bool = False
+    social_top_picks_base_url: str = "https://social-front.freetls.fastly.net"
+    social_top_picks_origin: str = "https://superbet.bet.br"
+    social_top_picks_timeout_sec: float = 8.0
     superbet_odds_path: Path = Path("data/rounds/superbet_odds.json")
     sofascore_min_interval_sec: float = Field(
         default=0.12,
@@ -92,6 +102,8 @@ class Settings(BaseSettings):
     wc_rho_max: float = 0.05
     wc_rho_step: float = 0.005
     wc_draw_prob_floor: float = 0.18
+    wc_favorite_prob_cap: float = 0.78
+    wc_favorite_draw_share: float = 0.55
     wc_draw_pick_min_prob: float = 0.26
     wc_draw_balance_gap: float = 0.18
     wc_draw_competitive_margin: float = 0.035
@@ -103,6 +115,10 @@ class Settings(BaseSettings):
     inplay_momentum_on_remaining: bool = True
     inplay_score_lambda_adjust: bool = False
     inplay_score_lambda_adjust_with_sofascore: bool = True
+    inplay_score_lambda_adjust_with_scorealarm: bool = True
+    inplay_live_stats_lambda_adjust: bool = True
+    inplay_live_stats_max_shift: float = 0.12
+    inplay_trailing_chase_boost: bool = True
     inplay_use_calibrated_coefficients: bool = True
     inplay_use_calibrated_nhpp: bool = False
     inplay_use_ensemble: bool = True
@@ -143,6 +159,8 @@ class Settings(BaseSettings):
     superbet_poll_wc_enabled: bool = True
     superbet_poll_interval_sec: int = 120
     superbet_poll_wc_phase: str = "group"
+    superbet_poll_watchlist_enabled: bool = True
+    superbet_poll_watchlist_max: int = 24
     # Widget Sportradar LMT Plus (mesmo feed Betradar da Superbet — requer licença)
     sportradar_client_id: str | None = None
     sportradar_language: str = "pt_br"
@@ -162,6 +180,7 @@ class Settings(BaseSettings):
     live_block_minute: int = 45  # P0: sem novos aportes FT após 45' (hit rate histórico)
     live_block_2h_minute: int = 82  # mercados 2T até ~82' (tempo restante mínimo)
     live_hard_stop_minute: int = 88  # bloqueia TODAS as apostas novas (hit 0% em 90+')
+    live_cashout_use_trend: bool = True  # funde wc_trend_advisor em advise_cashout
     live_ht_over_trap_minute: int = 35  # aviso over 1T com poucos minutos restantes
     live_ht_over_trap_block_dead: bool = True  # bloqueia registro de over 1T já morto
     live_2h_viable_min_prob: float = 0.06  # painel 2T: prob. mínima para listar
