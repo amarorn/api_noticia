@@ -49,6 +49,7 @@ import { useTicket, type TicketLeg } from "@/presentation/hooks/useTicket";
 import { TicketSimulator, AddBtn, FloatingTicketBadge } from "@/presentation/components/ticket/TicketSimulator";
 import { useOddsDropMonitor, type OddsDropAlert } from "@/presentation/hooks/useOddsDropMonitor";
 import { LiveOddsDropAlert } from "@/presentation/components/predictions/LiveOddsDropAlert";
+import { LiveOpenBetsPanel } from "@/presentation/components/predictions/LiveOpenBetsPanel";
 
 // ─── Tab types ───────────────────────────────────────────────────────────────
 
@@ -467,7 +468,7 @@ export function LiveDashboardPage() {
               {/* ══ ABA: MEU BILHETE ══ */}
               {activeTab === "bilhete" && (
                 <div className="space-y-4">
-                  {/* Monitor de risco ao vivo */}
+                  {/* 1. Monitor de risco ao vivo */}
                   {riskAlerts.length > 0 && (
                     <LiveOddsDropAlert
                       alerts={riskAlerts}
@@ -477,10 +478,17 @@ export function LiveDashboardPage() {
                     />
                   )}
 
-                  {/* Bilhetes otimizados pelo modelo */}
+                  {/* 2. Apostas abertas na Superbet (capturadas pela extensão) */}
+                  <LiveOpenBetsPanel
+                    eventId={eventId}
+                    homeTeam={data?.homeTeam}
+                    awayTeam={data?.awayTeam}
+                  />
+
+                  {/* 3. Bilhetes otimizados pelo modelo */}
                   {data && <LiveOptimizedTicketsPanel data={data} />}
 
-                  {/* Bilhete manual (simulador) */}
+                  {/* 4. Bilhete manual (simulador) */}
                   <TicketSimulator ticket={ticket} suggestions={liveSuggestions} />
                 </div>
               )}
