@@ -113,10 +113,18 @@ export function LiveOptimizedTicketsPanel({ data }: LiveOptimizedTicketsPanelPro
   const totalTickets = allTickets.reduce((sum, g) => sum + g.tickets.length, 0);
   if (totalTickets === 0) return null;
 
+  const superbetEventId = data.superbetEventId || 0;
+
+  const openSuperbetTab = () => {
+    if (!superbetEventId) return;
+    window.open(`https://superbet.bet.br/evento/${superbetEventId}`, "_blank");
+  };
+
   const handleSendToExtension = async (ticket: OptimizedTicket) => {
+    // Tenta via extensão primeiro; se falhar, abre a aba diretamente
     const result = await sendSuperbetTicketToExtension({
       id: `opt-${Date.now()}`,
-      superbetEventId: data.superbetEventId || 0,
+      superbetEventId,
       homeTeam: data.homeTeam,
       awayTeam: data.awayTeam,
       title: `Bilhete ${PERIOD_LABELS[ticket.periodMix] || ticket.periodMix}`,
@@ -135,18 +143,30 @@ export function LiveOptimizedTicketsPanel({ data }: LiveOptimizedTicketsPanelPro
     });
 
     if (!result.ok) {
-      alert(result.error || "Falha ao enviar à extensão");
+      // Fallback: abre a aba da Superbet para o usuário montar manualmente
+      openSuperbetTab();
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <IconZap className="h-4 w-4 text-neon-green" />
-        <h3 className="text-sm font-semibold text-white">Bilhetes Otimizados</h3>
-        <span className="rounded-full bg-neon-green/15 px-2 py-0.5 text-[10px] font-bold text-neon-green">
-          {totalTickets}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <IconZap className="h-4 w-4 text-neon-green" />
+          <h3 className="text-sm font-semibold text-white">Bilhetes Otimizados</h3>
+          <span className="rounded-full bg-neon-green/15 px-2 py-0.5 text-[10px] font-bold text-neon-green">
+            {totalTickets}
+          </span>
+        </div>
+        {superbetEventId > 0 && (
+          <button
+            type="button"
+            onClick={openSuperbetTab}
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-medium text-slate-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+          >
+            Abrir na Superbet →
+          </button>
+        )}
       </div>
 
       {allTickets.map(
