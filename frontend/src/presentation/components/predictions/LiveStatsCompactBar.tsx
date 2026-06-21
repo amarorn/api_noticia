@@ -115,7 +115,7 @@ export function LiveStatsCompactBar({ data, eventId }: LiveStatsCompactBarProps)
           </span>
         </div>
         <Link
-          to={`/ao-vivo/${eventId}/painel`}
+          to={`/ao-vivo/${eventId}`}
           className="text-[10px] font-medium text-neon-blue transition hover:text-sky-300"
         >
           Painel completo →

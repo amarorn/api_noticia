@@ -17,8 +17,9 @@ export interface SuperbetExtensionTicket {
   combinedOdd: number;
   potentialReturn: number;
   combinedProb?: number;
+  bonusEligible?: boolean;
   legs: SuperbetExtensionTicketLeg[];
-  source: "longshot" | "inplay_combo" | "bolao_proposal";
+  source: "longshot" | "inplay_combo" | "bolao_proposal" | "super_multipla";
 }
 
 export interface SendSuperbetTicketResult {

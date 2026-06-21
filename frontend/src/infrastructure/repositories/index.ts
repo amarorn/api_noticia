@@ -26,6 +26,10 @@ import {
   mapWcSimulation,
   mapUserOpenBets,
 } from "../mappers";
+import {
+  mapSuperMultiplaCalculate,
+  type SuperMultiplaCalculateLeg,
+} from "@/presentation/utils/superMultipla";
 
 export class WcApiRepository implements IWcRepository {
   async getRound(matchday?: number) {
@@ -236,6 +240,34 @@ export class WcApiRepository implements IWcRepository {
       { timeoutMs: 30_000 },
     );
     return mapComboTicket(raw)!;
+  }
+
+  async calculateSuperMultipla(dto: {
+    legs: SuperMultiplaCalculateLeg[];
+    stake: number;
+    betType?: "SIMPLE" | "MULTIPLE";
+    minute?: number;
+    homeScore?: number;
+    awayScore?: number;
+    superbetEventId?: number;
+  }) {
+    const raw = await apiFetch<Record<string, unknown>>(
+      "/worldcup/superbet/multiple/calculate",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          legs: dto.legs,
+          stake: dto.stake,
+          bet_type: dto.betType ?? "MULTIPLE",
+          minute: dto.minute,
+          home_score: dto.homeScore ?? 0,
+          away_score: dto.awayScore ?? 0,
+          superbet_event_id: dto.superbetEventId,
+        }),
+        timeoutMs: 15_000,
+      },
+    );
+    return mapSuperMultiplaCalculate(raw);
   }
 
   async getSuperbetLiveAdvice(dto: {

@@ -221,10 +221,10 @@ export function HistoricoPage() {
             <thead className="border-b border-slate-700/50 text-slate-400">
               <tr>
                 <th className="px-3 py-2">Jogo</th>
-                <th className="px-3 py-2">Mercado</th>
+                <th className="hidden px-3 py-2 sm:table-cell">Mercado</th>
                 <th className="px-3 py-2">Palpite</th>
-                <th className="px-3 py-2">Odd</th>
-                <th className="px-3 py-2">Stake</th>
+                <th className="hidden px-3 py-2 sm:table-cell">Odd</th>
+                <th className="hidden px-3 py-2 sm:table-cell">Stake</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">P&L</th>
               </tr>
@@ -235,14 +235,14 @@ export function HistoricoPage() {
                   <td className="px-3 py-2 text-white">
                     {row.home_team} × {row.away_team}
                   </td>
-                  <td className="px-3 py-2 font-mono text-slate-300">{row.market || "—"}</td>
+                  <td className="hidden px-3 py-2 font-mono text-slate-300 sm:table-cell">{row.market || "—"}</td>
                   <td className="px-3 py-2">
                     {row.outcome ||
                       ("predicted_outcome" in row ? row.predicted_outcome : undefined) ||
                       "—"}
                   </td>
-                  <td className="px-3 py-2 font-mono">{row.odd?.toFixed(2) ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono">{formatBRL(row.stake ?? 0)}</td>
+                  <td className="hidden px-3 py-2 font-mono sm:table-cell">{row.odd?.toFixed(2) ?? "—"}</td>
+                  <td className="hidden px-3 py-2 font-mono sm:table-cell">{formatBRL(row.stake ?? 0)}</td>
                   <td className="px-3 py-2 capitalize">{String(row.status)}</td>
                   <td className="px-3 py-2 font-mono">
                     {row.profit != null ? formatBRL(row.profit) : "—"}

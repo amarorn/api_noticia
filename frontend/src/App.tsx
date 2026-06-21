@@ -15,14 +15,17 @@ import { WcGroupsPage } from "@/presentation/pages/WcGroupsPage";
 import { SchedulePage } from "@/presentation/pages/SchedulePage";
 import { FriendliesPage } from "@/presentation/pages/FriendliesPage";
 import { LivePage } from "@/presentation/pages/LivePage";
-import { LiveInPlayPage } from "@/presentation/pages/LiveInPlayPage";
 import { LiveDashboardPage } from "@/presentation/pages/LiveDashboardPage";
 import { AlbumPage } from "@/presentation/pages/AlbumPage";
 import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
 import { CarteiraPage } from "@/presentation/pages/CarteiraPage";
 import { BetPerformancePage } from "@/presentation/pages/BetPerformancePage";
+import { BetQueryPage } from "@/presentation/pages/BetQueryPage";
+import { BetSimulatorPage } from "@/presentation/pages/BetSimulatorPage";
 import { ModelBenchmarkPage } from "@/presentation/pages/ModelBenchmarkPage";
 import { MatchTicketsPage } from "@/presentation/pages/MatchTicketsPage";
+import { PreGameAnalysisPage } from "@/presentation/pages/PreGameAnalysisPage";
+import { CopaCentralPage } from "@/presentation/pages/CopaCentralPage";
 import { NotFoundPage } from "@/presentation/pages/NotFoundPage";
 
 const queryClient = new QueryClient({
@@ -58,14 +61,18 @@ export function App() {
               <Route path="jogos" element={<SchedulePage />} />
               <Route path="amistosos" element={<FriendliesPage />} />
               <Route path="ao-vivo" element={<LivePage />} />
-              <Route path="ao-vivo/:eventId/painel" element={<LiveDashboardPage />} />
-              <Route path="ao-vivo/:eventId" element={<LiveInPlayPage />} />
+              <Route path="ao-vivo/:eventId" element={<LiveDashboardPage />} />
+              <Route path="ao-vivo/:eventId/painel" element={<Navigate to="/ao-vivo/:eventId" replace />} />
               <Route path="convocacoes" element={<SquadsPage />} />
               <Route path="grupos" element={<WcGroupsPage />} />
               <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
               <Route path="carteira" element={<CarteiraPage />} />
               <Route path="performance" element={<BetPerformancePage />} />
+              <Route path="query" element={<BetQueryPage />} />
+              <Route path="simular" element={<BetSimulatorPage />} />
               <Route path="modelos" element={<ModelBenchmarkPage />} />
+              <Route path="pre-jogo" element={<PreGameAnalysisPage />} />
+              <Route path="central" element={<CopaCentralPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

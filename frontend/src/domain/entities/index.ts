@@ -826,6 +826,8 @@ export interface SuperbetLiveAdvice {
     ftAsianHandicapProbs?: Record<string, number>;
     cornerLineProbs?: Record<string, number>;
     cardLineProbs?: Record<string, number>;
+    refereeMarkets?: RefereeMarkets | null;
+    refereeProfile?: RefereeProfile | null;
     halftimeAdjustment?: {
       applied?: boolean;
       home2hFactor?: number;
@@ -923,6 +925,159 @@ export interface SuperbetLiveAdvice {
   trendReport: LiveTrendReport | null;
   halfTickets: InplayHalfTickets | null;
   viable2hMarkets: Viable2hMarketsPanel | null;
+  superMultipla: {
+    minLegOddForBonus: number;
+    bonusPct: number;
+    defaultStake: number;
+    suggestedCombos: Array<{
+      id: string;
+      stake: number;
+      combinedOdd: number;
+      productOdd?: number;
+      pricingMode?: string;
+      combinedProb: number;
+      combinedEv: number | null;
+      potentialPayout: number;
+      bonusEligible: boolean;
+      bonusPercentage: number;
+      finalPayout: number;
+      warnings: string[];
+      legs: Array<{
+        id?: string;
+        market: string;
+        outcome: string;
+        label: string;
+        marketOdd: number;
+        modelProb: number;
+        expectedValue?: number;
+        edgePp?: number;
+      }>;
+    }>;
+  } | null;
+  optimizedTickets?: {
+    tickets_1h: Array<{
+      legs: Array<{
+        market: string;
+        outcome: string;
+        label: string;
+        modelProb: number;
+        marketOdd: number;
+        expectedValue: number;
+        edgePp: number;
+        kellyQuarter: number;
+        classification: string;
+      }>;
+      combinedOdd: number;
+      combinedProb: number;
+      combinedEv: number;
+      correlationPenalty: number;
+      score: number;
+      stakeBrl: number;
+      stakePct: number;
+      periodMix: string;
+      nLegs: number;
+      valid: boolean;
+      validation: {
+        valid: boolean;
+        errors: Array<{ severity: string; code: string; reason: string }>;
+        warnings: Array<{ severity: string; code: string; reason: string }>;
+      };
+    }>;
+    tickets_2h: Array<{
+      legs: Array<{
+        market: string;
+        outcome: string;
+        label: string;
+        modelProb: number;
+        marketOdd: number;
+        expectedValue: number;
+        edgePp: number;
+        kellyQuarter: number;
+        classification: string;
+      }>;
+      combinedOdd: number;
+      combinedProb: number;
+      combinedEv: number;
+      correlationPenalty: number;
+      score: number;
+      stakeBrl: number;
+      stakePct: number;
+      periodMix: string;
+      nLegs: number;
+      valid: boolean;
+      validation: {
+        valid: boolean;
+        errors: Array<{ severity: string; code: string; reason: string }>;
+        warnings: Array<{ severity: string; code: string; reason: string }>;
+      };
+    }>;
+    tickets_ft: Array<{
+      legs: Array<{
+        market: string;
+        outcome: string;
+        label: string;
+        modelProb: number;
+        marketOdd: number;
+        expectedValue: number;
+        edgePp: number;
+        kellyQuarter: number;
+        classification: string;
+      }>;
+      combinedOdd: number;
+      combinedProb: number;
+      combinedEv: number;
+      correlationPenalty: number;
+      score: number;
+      stakeBrl: number;
+      stakePct: number;
+      periodMix: string;
+      nLegs: number;
+      valid: boolean;
+      validation: {
+        valid: boolean;
+        errors: Array<{ severity: string; code: string; reason: string }>;
+        warnings: Array<{ severity: string; code: string; reason: string }>;
+      };
+    }>;
+    tickets_mixed: Array<{
+      legs: Array<{
+        market: string;
+        outcome: string;
+        label: string;
+        modelProb: number;
+        marketOdd: number;
+        expectedValue: number;
+        edgePp: number;
+        kellyQuarter: number;
+        classification: string;
+      }>;
+      combinedOdd: number;
+      combinedProb: number;
+      combinedEv: number;
+      correlationPenalty: number;
+      score: number;
+      stakeBrl: number;
+      stakePct: number;
+      periodMix: string;
+      nLegs: number;
+      valid: boolean;
+      validation: {
+        valid: boolean;
+        errors: Array<{ severity: string; code: string; reason: string }>;
+        warnings: Array<{ severity: string; code: string; reason: string }>;
+      };
+    }>;
+  } | null;
+  matchContext: {
+    referee_name?: string;
+    referee_card_lambda?: number;
+    referee_penalty_rate?: number;
+    home_pregame_xg?: number;
+    away_pregame_xg?: number;
+    h2h_avg_goals?: number;
+    source_filename?: string;
+    notes?: string[];
+  } | null;
 }
 
 export interface Viable2hMarketRow {
@@ -1013,6 +1168,8 @@ export interface LiveMatchStats {
   awayCorners: number | null;
   homeYellowCards: number | null;
   awayYellowCards: number | null;
+  homeRedCards: number | null;
+  awayRedCards: number | null;
   warnings: string[];
 }
 
@@ -1103,6 +1260,65 @@ export interface ScorealarmContext {
   social: ScorealarmSocial | null;
   stats: Record<string, number>;
   scoresId: string | null;
+}
+
+export interface RefereeProfile {
+  name: string;
+  country: string | null;
+  cardLambda: number;
+  foulLambda: number;
+  penaltyLambda: number;
+  redCardLambda: number;
+  classification: "punitivista" | "equilibrado" | "pacificador";
+  classificationPt: string;
+  cardFoulRatio: number;
+  avgCardsPerGame: number;
+  avgFoulsPerGame: number;
+}
+
+export interface RefereeMarketLine {
+  line: number;
+  overProb: number;
+  underProb: number;
+  overOddsFair: number;
+  underOddsFair: number;
+  expectedTotal: number;
+  recommendation: "over" | "under" | "neutro";
+  confidence: "alta" | "media" | "baixa";
+  edge: number | null;
+}
+
+export interface RefereeMarkets {
+  yellowCards: {
+    current: number;
+    expectedRemaining: number;
+    expectedTotal: number;
+    overLines: RefereeMarketLine[];
+    metadata: {
+      refereeName: string;
+      classification: string;
+      classificationPt: string;
+      cardLambda: number;
+      minute: number;
+      remainingMinutes: number;
+    };
+  };
+  redCards: {
+    yesProb: number;
+    yesOddsFair: number;
+    recommendation: "sim" | "nao" | "neutro";
+    confidence: string;
+  };
+  penalties: {
+    yesProb: number;
+    yesOddsFair: number;
+    recommendation: "sim" | "nao" | "neutro";
+    confidence: string;
+  };
+  fouls: {
+    expectedTotal: number;
+    overLines: RefereeMarketLine[];
+  };
 }
 
 export interface LiveTrendReport {
@@ -1378,6 +1594,9 @@ export interface UserOpenBet {
   capturedAt: string | null;
   superbetEventId?: number | null;
   userId?: string | null;
+  bonusEligible?: boolean | null;
+  bonusPercentage?: number | null;
+  finalPayout?: number | null;
 }
 
 export interface UserOpenBetsList {

@@ -25,6 +25,7 @@ from models.wc_trend_advisor import (
     trend_report_to_dict,
 )
 from schemas.national_teams import normalize_national_team
+from models.wc_combo_optimizer import build_optimized_tickets, tickets_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -397,6 +398,19 @@ def _build_live_advice_payload(
 
     market_probs = market_probs_from_h2h_implied(snapshot.h2h_implied)
 
+    # Contexto de análise pré-jogo enviado pelo usuário (árbitro, xG, H2H…)
+    from ingest.superbet.match_context_store import load_match_context
+    from models.wc_referee_inplay import (
+        RefereeProfile,
+        apply_referee_to_inplay_result,
+        parse_referee_from_match_context,
+        referee_card_market_probs,
+    )
+
+    match_context = load_match_context(event_id)
+    referee_card_lambda: float | None = (match_context or {}).get("referee_card_lambda")
+    referee_profile = parse_referee_from_match_context(match_context)
+
     halftime_stats = load_or_freeze_halftime(event_id, snapshot) if snapshot.inplay else None
 
     inplay_live_stats = (
@@ -426,6 +440,7 @@ def _build_live_advice_payload(
         halftime_stats=halftime_stats,
         live_stats=inplay_live_stats,
         live_timeline=inplay_live_timeline,
+        match_context=match_context,
         n_simulations=settings.inplay_fast_mc_simulations if fast else None,
         use_ensemble=False if fast else None,
         before_date=model_before_date,
@@ -453,6 +468,24 @@ def _build_live_advice_payload(
             "X": market_probs[1] if market_probs else None,
             "2": market_probs[2] if market_probs else None,
         }
+
+    # --- Mercados de árbitro (cartões, faltas, pênaltis) ---
+    referee_markets = None
+    if referee_profile:
+        try:
+            current_yellow = 0
+            if snapshot.inplay:
+                current_yellow = (snapshot.inplay.home_yellow_cards or 0) + (snapshot.inplay.away_yellow_cards or 0)
+            referee_markets = referee_card_market_probs(
+                referee=referee_profile,
+                minute=minute,
+                match_minutes=90,
+                current_yellow_cards=current_yellow,
+            )
+            inplay_dict["referee_markets"] = referee_markets
+            inplay_dict["referee_profile"] = referee_profile.to_dict()
+        except Exception as exc:
+            logger.warning("referee_markets_error event_id=%s: %s", event_id, exc)
 
     if fast:
         ht_report = None
@@ -484,6 +517,7 @@ def _build_live_advice_payload(
                 card_lines=tuple(float(k) for k in snapshot.yellow_cards.keys())
                 if snapshot.yellow_cards
                 else None,
+                referee_card_lambda=referee_card_lambda,
             )
             if halftime_report_obj is not None:
                 ht_report = halftime_report_obj.to_dict()
@@ -657,6 +691,7 @@ def _build_live_advice_payload(
     )
 
     from models.wc_viable_2h_markets import build_viable_2h_markets
+    from models.super_multipla_suggestions import build_super_multipla_block
 
     viable_2h_markets = build_viable_2h_markets(
         strategy_report.get("market_scan") or [],
@@ -688,6 +723,7 @@ def _build_live_advice_payload(
         "sofascore_event_id": sofascore_event_id,
         "n_momentum_events": len(momentum_events),
         "event_finalize": finalize_info,
+        "match_context": match_context,
         "cashout": report.get("cashout"),
         "aportes": aportes_out,
         "inplay_summary": {
@@ -718,6 +754,8 @@ def _build_live_advice_payload(
             "ft_asian_handicap_probs": inplay_dict.get("ft_asian_handicap_probs"),
             "corner_line_probs": inplay_dict.get("corner_line_probs"),
             "card_line_probs": inplay_dict.get("card_line_probs"),
+            "referee_markets": inplay_dict.get("referee_markets"),
+            "referee_profile": inplay_dict.get("referee_profile"),
             "halftime_adjustment": inplay_dict.get("halftime_adjustment"),
             "model_before_date": inplay_dict.get("model_before_date"),
         },
@@ -734,6 +772,35 @@ def _build_live_advice_payload(
         "strategy": strategy_report,
         "half_tickets": half_tickets,
         "viable_2h_markets": viable_2h_markets,
+        "super_multipla": build_super_multipla_block(
+            strategy_report.get("market_scan") or [],
+            superbet_event_id=event_id,
+            minute=minute,
+            home_score=home_score,
+            away_score=away_score,
+            is_live=snapshot.is_live and not is_finished,
+        )
+        if not fast
+        else None,
+        "optimized_tickets": (
+            tickets_to_dict(
+                build_optimized_tickets(
+                    strategy_report.get("market_scan") or [],
+                    minute=minute,
+                    home_score=home_score,
+                    away_score=away_score,
+                    ht_home=ht_h if snapshot.inplay else None,
+                    ht_away=ht_a if snapshot.inplay else None,
+                    bankroll=bankroll,
+                    max_legs=4,
+                    min_legs=2,
+                    top_k=5,
+                    min_ev=0.0,
+                    min_combined_odd=1.5,
+                    max_combined_odd=20.0,
+                )
+            )
+        ),
         "captured_at": snapshot.captured_at,
         "betradar_id": snapshot.betradar_id,
         "raw_market_count": snapshot.raw_market_count,

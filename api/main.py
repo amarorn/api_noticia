@@ -50,6 +50,7 @@ from pipelines.wc_group_standings import (
 )
 from schemas.national_teams import normalize_national_team
 from schemas.user_bet import CheckAgainstModelRequest, SettledBetsBatchRequest, UserOpenBetRequest
+from schemas.super_multipla import SuperMultiplaCalculateRequest, SuperMultiplaCalculateResponse
 
 WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 
@@ -437,6 +438,7 @@ class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
     halftime_report: dict | None = None
     half_tickets: dict | None = None
     viable_2h_markets: dict | None = None
+    optimized_tickets: dict | None = None
 
 
 class HandicapLineResponse(BaseModel):
@@ -1607,6 +1609,145 @@ def worldcup_superbet_live(
     )
 
 
+@app.get("/worldcup/superbet/live/best-picks")
+async def worldcup_superbet_live_best_picks(
+    min_ev: float = Query(0.05, description="EV mínimo para incluir o pick (ex: 0.05 = 5%)"),
+    min_confidence: float = Query(0.0, description="Score mínimo de confiança do modelo (0–1)"),
+    max_picks_per_game: int = Query(3, ge=1, le=10),
+    max_minute: int = Query(85, description="Ignora jogos além deste minuto"),
+    compute_missing: bool = Query(
+        False,
+        description="Calcula advice (fast=True) para jogos sem cache. Padrão False: retorna só os já em cache.",
+    ),
+    max_compute: int = Query(6, ge=1, le=15, description="Máximo de jogos sem cache a computar em paralelo."),
+    phase: str = Query("friendly"),
+    bankroll: float = Query(1000, gt=0),
+):
+    """Agrega os melhores picks ao vivo de todos os jogos ativos.
+
+    Prioriza advice em cache (sem custo); para jogos sem cache e compute_missing=True
+    roda run_live_advice em modo fast em paralelo (até 8 jogos simultâneos).
+    Retorna picks com EV positivo ordenados por EV decrescente.
+    """
+    from ingest.superbet.advice import run_live_advice
+    from ingest.superbet.client import SuperbetClient, SuperbetClientError
+    from ingest.superbet.live_advice_cache import get_stale_advice_for_event, list_cached_event_ids
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    # 1. Busca eventos ao vivo
+    try:
+        live_events = SuperbetClient().fetch_live_events(sport_id=1)
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=f"Superbet offline: {exc}") from exc
+
+    cached_ids = set(list_cached_event_ids())
+
+    # 2. Separa eventos: com cache (imediato) vs sem cache (precisa computar)
+    advices: list[tuple[dict, dict]] = []
+    to_compute: list[tuple[dict, int]] = []  # (ev_dict, event_id)
+
+    for ev in live_events:
+        event_id = ev.event_id
+        minute = getattr(getattr(ev, "inplay", None), "minute", 0) or 0
+        if minute > max_minute:
+            continue
+        cached = get_stale_advice_for_event(event_id)
+        if cached is not None:
+            advices.append((ev.to_dict(), cached))
+        elif compute_missing:
+            to_compute.append((ev.to_dict(), event_id))
+
+    # 3. Computa em paralelo os jogos sem cache (fast=True, timeout 12s por jogo)
+    # Limita ao cap para não travar o servidor com dezenas de eventos simultâneos
+    to_compute = to_compute[:max_compute]
+    if to_compute:
+        async def _compute_one(ev_dict: dict, event_id: int) -> tuple[dict, dict] | None:
+            try:
+                payload = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        run_live_advice,
+                        event_id,
+                        predictor,
+                        phase=phase,
+                        bankroll=bankroll,
+                        fast=True,
+                        save_bronze=False,
+                        save_tick=False,
+                        use_sofascore_live=False,
+                    ),
+                    timeout=20.0,
+                )
+                return (ev_dict, payload)
+            except Exception:
+                return None
+
+        results = await asyncio.gather(*[_compute_one(ed, eid) for ed, eid in to_compute])
+        advices.extend(r for r in results if r is not None)
+
+    # 3. Extrai e filtra os melhores aportes
+    captured_at = datetime.now(timezone.utc).isoformat()
+    picks: list[dict] = []
+
+    for ev_dict, advice in advices:
+        aportes = advice.get("aportes") or []
+        conf_score = (advice.get("confidence") or {}).get("score", 0.0)
+        conf_label = (advice.get("confidence") or {}).get("label", "")
+        home = advice.get("home_team") or ev_dict.get("home_team", "")
+        away = advice.get("away_team") or ev_dict.get("away_team", "")
+        minute = advice.get("minute", 0) or 0
+        score = advice.get("current_score", "0x0") or "0x0"
+        event_id = ev_dict.get("event_id")
+
+        if conf_score < min_confidence:
+            continue
+
+        count = 0
+        for a in aportes:
+            ev_val = float(a.get("expected_value") or 0)
+            if ev_val < min_ev:
+                continue
+            if a.get("action") not in ("apostar", "aporte"):
+                continue
+
+            picks.append({
+                "event_id": event_id,
+                "home": home,
+                "away": away,
+                "minute": minute,
+                "score": score,
+                "market": a.get("market", ""),
+                "outcome": a.get("outcome", ""),
+                "label": a.get("label", ""),
+                "model_prob": round(float(a.get("model_prob") or 0), 4),
+                "market_odd": round(float(a.get("market_odd") or 0), 2),
+                "fair_odd": round(1 / float(a.get("model_prob") or 1), 2) if a.get("model_prob") else None,
+                "ev_pct": round(ev_val * 100, 1),
+                "edge_pp": round(float(a.get("edge_pp") or 0), 1),
+                "kelly_quarter": round(float(a.get("kelly_quarter") or 0), 4),
+                "suggested_stake_value": a.get("suggested_stake_value"),
+                "confidence_score": round(conf_score, 3),
+                "confidence_label": conf_label,
+                "from_cache": event_id in cached_ids,
+                "captured_at": captured_at,
+            })
+            count += 1
+            if count >= max_picks_per_game:
+                break
+
+    picks.sort(key=lambda p: p["ev_pct"], reverse=True)
+
+    return {
+        "count": len(picks),
+        "games_analyzed": len(advices),
+        "captured_at": captured_at,
+        "picks": picks,
+    }
+
+
 @app.get("/worldcup/superbet/live/{event_id}/advice", response_model=WcSuperbetLiveAdviceResponse)
 async def worldcup_superbet_live_advice(
     event_id: int,
@@ -1664,6 +1805,58 @@ async def worldcup_superbet_live_advice(
     return WcSuperbetLiveAdviceResponse(**payload)
 
 
+@app.post("/worldcup/superbet/live/{event_id}/context")
+async def upload_match_context(
+    event_id: int,
+    file: UploadFile = File(...),
+):
+    """Recebe arquivo .txt/.md de análise pré-jogo e extrai métricas para enriquecer o modelo ao vivo.
+
+    Os dados extraídos (árbitro, xG, H2H etc.) são persistidos e usados
+    automaticamente na próxima chamada ao endpoint de advice deste evento.
+    """
+    from ingest.superbet.match_context_parser import parse_match_context
+    from ingest.superbet.match_context_store import save_match_context
+
+    content_bytes = await file.read()
+    try:
+        text = content_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        text = content_bytes.decode("latin-1", errors="replace")
+
+    ctx = parse_match_context(text, filename=file.filename or "")
+    data = ctx.to_dict()
+    data["source_filename"] = file.filename or ""
+    save_match_context(event_id, data)
+
+    return {
+        "event_id": event_id,
+        "extracted": data,
+        "notes": ctx.notes,
+        "message": f"Contexto salvo — {len(ctx.notes)} enriquecimento(s) ativo(s) para o evento {event_id}.",
+    }
+
+
+@app.get("/worldcup/superbet/live/{event_id}/context")
+async def get_match_context(event_id: int):
+    """Retorna o contexto de análise pré-jogo salvo para o evento (se existir)."""
+    from ingest.superbet.match_context_store import load_match_context
+
+    data = load_match_context(event_id)
+    if data is None:
+        return {"event_id": event_id, "context": None}
+    return {"event_id": event_id, "context": data}
+
+
+@app.delete("/worldcup/superbet/live/{event_id}/context")
+async def delete_match_context(event_id: int):
+    """Remove o contexto de análise pré-jogo do evento."""
+    from ingest.superbet.match_context_store import delete_match_context as _delete
+
+    removed = _delete(event_id)
+    return {"event_id": event_id, "removed": removed}
+
+
 @app.get("/worldcup/superbet/events/{event_id}", response_model=WcSuperbetEventResponse)
 async def worldcup_superbet_event(
     event_id: int,
@@ -1711,6 +1904,19 @@ def worldcup_superbet_validate_builder(req: BetBuilderValidateRequest):
         combined_odd=req.combined_odd,
     )
     return BetBuilderValidateResponse(**result)
+
+
+@app.post("/worldcup/superbet/multiple/calculate", response_model=SuperMultiplaCalculateResponse)
+def worldcup_superbet_multiple_calculate(req: SuperMultiplaCalculateRequest):
+    """Calcula odds combinadas, prêmio e elegibilidade Super Múltipla (+5% promo)."""
+    from fastapi import HTTPException
+
+    from models.super_multipla import SuperMultiplaValidationError, calculate_super_multipla
+
+    try:
+        return calculate_super_multipla(req)
+    except SuperMultiplaValidationError as exc:
+        raise HTTPException(status_code=422, detail={"code": exc.code, "message": str(exc)}) from exc
 
 
 @app.get(
@@ -1873,6 +2079,84 @@ def worldcup_bet_advice(req: WcBetAdviceRequest):
     )
 
 
+@app.get("/worldcup/superbet/live/{event_id}/optimized-tickets")
+async def worldcup_superbet_optimized_tickets(
+    event_id: int,
+    phase: str = Query("friendly", description="Fase do modelo"),
+    bankroll: float = Query(1000, gt=0),
+    max_legs: int = Query(4, ge=2, le=6),
+    min_legs: int = Query(2, ge=2, le=4),
+    top_k: int = Query(5, ge=1, le=10),
+    fast: bool = Query(False, description="Pula Sofascore e gravação bronze"),
+):
+    """Retorna bilhetes otimizados por EV, odds e probabilidade, separados por período (1T/2T/FT/misto)."""
+    from datetime import UTC, datetime
+
+    from ingest.superbet.advice import run_live_advice
+    from ingest.superbet.client import SuperbetClientError
+    from models.wc_combo_optimizer import build_optimized_tickets, tickets_to_dict
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    try:
+        payload = await asyncio.to_thread(
+            run_live_advice,
+            event_id,
+            predictor,
+            phase=phase,
+            bankroll=bankroll,
+            save_bronze=not fast,
+            save_tick=not fast,
+            use_sofascore_live=False if fast else None,
+            fast=fast,
+        )
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    strategy = payload.get("strategy") or {}
+    market_scan = strategy.get("market_scan") or []
+    inplay = payload.get("inplay_summary") or {}
+    current_score = payload.get("current_score") or "0x0"
+    try:
+        home_score, away_score = map(int, current_score.split("x"))
+    except ValueError:
+        home_score, away_score = 0, 0
+
+    minute = payload.get("minute", 0)
+
+    tickets_by_period = build_optimized_tickets(
+        market_scan,
+        minute=minute,
+        home_score=home_score,
+        away_score=away_score,
+        bankroll=bankroll,
+        max_legs=max_legs,
+        min_legs=min_legs,
+        top_k=top_k,
+    )
+
+    return {
+        "event_id": str(event_id),
+        "home_team": payload["home_team"],
+        "away_team": payload["away_team"],
+        "minute": minute,
+        "home_score": home_score,
+        "away_score": away_score,
+        "tickets_1h": tickets_to_dict(tickets_by_period).get("1h", []),
+        "tickets_2h": tickets_to_dict(tickets_by_period).get("2h", []),
+        "tickets_ft": tickets_to_dict(tickets_by_period).get("ft", []),
+        "tickets_mixed": tickets_to_dict(tickets_by_period).get("mixed", []),
+        "total_tickets": sum(
+            len(tickets_to_dict(tickets_by_period).get(k, []))
+            for k in ("1h", "2h", "ft", "mixed")
+        ),
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
+
+
 @app.post("/user/open-bets", response_model=dict)
 def register_open_bet(req: UserOpenBetRequest):
     """Recebe apostas abertas capturadas da Superbet (extensão ou script)."""
@@ -1901,6 +2185,12 @@ def register_open_bet(req: UserOpenBetRequest):
         away_team=req.away_team,
     )
 
+    multipla_meta: dict[str, Any] = {}
+    if len(req.picks) >= 2:
+        from models.super_multipla import enrich_open_bet_with_super_multipla
+
+        multipla_meta = enrich_open_bet_with_super_multipla(req)
+
     try:
         ub = add_open_bet(
             {
@@ -1911,8 +2201,8 @@ def register_open_bet(req: UserOpenBetRequest):
                 "away_team": req.away_team,
                 "picks": pick_dicts,
                 "stake": req.stake,
-                "odds_placed": req.odds_placed,
-                "potential_return": req.potential_return,
+                "odds_placed": multipla_meta.get("total_odds", req.odds_placed),
+                "potential_return": multipla_meta.get("potential_payout", req.potential_return),
                 "cashout_value": req.cashout_value,
                 "ticket_code": req.ticket_code,
                 "status": "proposal" if is_proposal else "open",
@@ -1920,8 +2210,11 @@ def register_open_bet(req: UserOpenBetRequest):
                 "captured_at": req.captured_at
                 or __import__("datetime", fromlist=["datetime"]).datetime.now().isoformat(),
                 "model_source": req.model_source,
-                "combined_ev": req.combined_ev,
-                "combined_prob": req.combined_prob,
+                "combined_ev": multipla_meta.get("combined_ev", req.combined_ev),
+                "combined_prob": multipla_meta.get("combined_prob", req.combined_prob),
+                "bonus_eligible": multipla_meta.get("bonus_eligible", req.bonus_eligible),
+                "bonus_percentage": multipla_meta.get("bonus_percentage", req.bonus_percentage),
+                "final_payout": multipla_meta.get("final_payout", req.final_payout),
                 "proposal_minute": minute if is_proposal else None,
                 "register_minute": minute if not is_proposal else None,
             },
@@ -1942,6 +2235,9 @@ def register_open_bet(req: UserOpenBetRequest):
         "picks_count": len(ub.picks),
         "stake": ub.stake,
         "odds_placed": ub.odds_placed,
+        "bonus_eligible": ub.bonus_eligible,
+        "bonus_percentage": ub.bonus_percentage,
+        "final_payout": ub.final_payout,
         "open_bets_count": len(list_open_bets()),
         "proposals_count": len(list_combo_proposals()),
     }
@@ -2005,6 +2301,9 @@ def list_user_open_bets(include_proposals: bool = True):
                 "odds_placed": b.odds_placed,
                 "potential_return": b.potential_return,
                 "cashout_value": b.cashout_value,
+                "bonus_eligible": b.bonus_eligible,
+                "bonus_percentage": b.bonus_percentage,
+                "final_payout": b.final_payout,
                 "ticket_code": b.ticket_code,
                 "status": b.status,
                 "source": b.source,
@@ -2051,15 +2350,55 @@ def list_user_settled_bets():
     }
 
 
+@app.get("/user/bets/query", response_model=dict)
+def query_user_bets(
+    min_score: int = Query(0, ge=0, le=100, description="Score mínimo (0-100)"),
+    max_results: int = Query(50, ge=1, le=200, description="Máximo de resultados"),
+):
+    """Query inteligente de bilhetes abertos — ranqueia por potencial de retorno.
+
+    Analisa o histórico de apostas liquidadas do usuário e calcula um score
+    para cada bilhete aberto, considerando EV, odds, mercado, timing e combo.
+    """
+    from models.bet_query import query_bets, bet_query_to_dict
+
+    result = query_bets(min_score=min_score, max_results=max_results)
+    return {"error": None, "result": bet_query_to_dict(result), "message": "ok"}
+
+
+@app.get("/user/bets/query/patterns", response_model=dict)
+def get_user_bet_patterns():
+    """Retorna apenas os padrões do usuário (histórico de apostas liquidadas)."""
+    from models.bet_query import _analyze_user_patterns, _load_settled_bets
+
+    settled = _load_settled_bets()
+    patterns = _analyze_user_patterns(settled)
+    return {"patterns": patterns, "n_settled": len(settled)}
+
+
+@app.post("/user/bets/simulate", response_model=dict)
+def simulate_user_bet(req: UserOpenBetRequest):
+    """Simula uma aposta antes de colocar na Superbet.
+
+    Retorna score, alertas e recomendação baseada no histórico de perdas do usuário.
+    """
+    from models.bet_simulator import simulate_bet, simulation_result_to_dict
+
+    result = simulate_bet(
+        picks=[p.model_dump() for p in req.picks],
+        stake=req.stake,
+        odds_placed=req.odds_placed,
+        event_name=req.event_name,
+        home_team=req.home_team,
+        away_team=req.away_team,
+        minute=req.minute,
+        superbet_event_id=req.superbet_event_id,
+    )
+    return {"error": None, "result": simulation_result_to_dict(result), "message": "ok"}
+
+
 @app.get("/user/bet-performance", response_model=dict)
 def get_user_bet_performance():
-    """Retorna análise de performance com ROI, padrões de perda e sugestões."""
-    from api.user_bets_store import list_settled_bets
-    from models.wc_bet_performance import analyze_performance, performance_report_to_dict
-
-    bets = list_settled_bets()
-    if not bets:
-        return {"error": None, "report": None, "message": "Nenhuma aposta finalizada encontrada."}
 
     bets_data = [b.model_dump(mode="json") for b in bets]
     report = analyze_performance(bets_data)
@@ -2965,3 +3304,482 @@ def worldcup_live_value(req: WcValueRequest):
         captured_at=merged.get("captured_at"),
         edges=reports,
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# PRÉ-JOGO — Análise detalhada de partidas do dia
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@app.get("/worldcup/pregame/today")
+def pregame_today(
+    days_ahead: int = Query(2, ge=1, le=7, description="Quantos dias à frente mostrar"),
+):
+    """Lista jogos da Copa 2026 de hoje + próximos dias, com probabilidades do modelo.
+    Inclui jogos já encerrados (com resultado) para permitir revisão pós-jogo.
+    """
+    from dateutil.parser import parse as _parse_dt
+    from datetime import timedelta
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    schedule = load_wc_schedule()
+    today = datetime.now(timezone.utc).date()
+    end_date = today + timedelta(days=days_ahead - 1)
+
+    # Coleta todos os jogos no intervalo (hoje até today+days_ahead)
+    window_matches = []
+    for m in schedule.get("matches", []):
+        try:
+            ko = _parse_dt(m["kickoff"]).astimezone(timezone.utc)
+        except Exception:
+            continue
+        if today <= ko.date() <= end_date:
+            window_matches.append((ko, m))
+
+    window_matches.sort(key=lambda x: x[0])
+
+    results = []
+    for ko, m in window_matches:
+        home = normalize_national_team(m["home_team"])
+        away = normalize_national_team(m["away_team"])
+        phase = m.get("phase", "group")
+        group_name = lookup_2026_group(home, away) if phase == "group" else None
+        played = "home_score" in m
+
+        # Probabilidades do modelo (mesmo para jogos encerrados — análise histórica)
+        try:
+            pred = predictor.predict(home, away, phase=phase, season=2026, group_name=group_name)
+        except Exception:
+            continue
+
+        entry: dict[str, Any] = {
+            "id": m.get("id", f"{home}-{away}"),
+            "home_team": home,
+            "away_team": away,
+            "kickoff_utc": ko.isoformat(),
+            "kickoff_local": m["kickoff"],
+            "kickoff_date": ko.date().isoformat(),
+            "venue": m.get("venue"),
+            "city": m.get("city"),
+            "group": m.get("group"),
+            "phase": phase,
+            "played": played,
+            "home_score": m.get("home_score"),
+            "away_score": m.get("away_score"),
+            "prob_home": round(pred.prob_home, 4),
+            "prob_draw": round(pred.prob_draw, 4),
+            "prob_away": round(pred.prob_away, 4),
+            "prediction": pred.prediction,
+            "confidence": round(pred.confidence, 4),
+            "poisson_score": pred.poisson_score,
+            "expected_goals": pred.expected_goals,
+        }
+        results.append(entry)
+
+    return {
+        "date": today.isoformat(),
+        "end_date": end_date.isoformat(),
+        "days_ahead": days_ahead,
+        "total": len(results),
+        "matches": results,
+    }
+
+
+@app.get("/worldcup/pregame/analysis")
+def pregame_analysis(
+    home: str = Query(..., description="Time mandante"),
+    away: str = Query(..., description="Time visitante"),
+    phase: str = Query("group", description="Fase: group | knockout"),
+):
+    """Análise pré-jogo completa: probabilidades, placar provável, picks com Kelly, EV e contexto."""
+    from ingest.superbet.match_context_store import load_match_context
+
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    home = normalize_national_team(home)
+    away = normalize_national_team(away)
+    group_name = lookup_2026_group(home, away) if phase == "group" else None
+
+    try:
+        pred = predictor.predict(home, away, phase=phase, season=2026, group_name=group_name)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # Top scorelines via Poisson
+    lam_home = pred.expected_home_goals if hasattr(pred, "expected_home_goals") else 1.3
+    lam_away = pred.expected_away_goals if hasattr(pred, "expected_away_goals") else 0.9
+
+    # Extract xG from model breakdown if available
+    try:
+        bd = pred.model_breakdown
+        if bd and hasattr(bd, "poisson_factors") and bd.poisson_factors:
+            lam_home = bd.poisson_factors.get("lambda_home", lam_home) if isinstance(bd.poisson_factors, dict) else lam_home
+            lam_away = bd.poisson_factors.get("lambda_away", lam_away) if isinstance(bd.poisson_factors, dict) else lam_away
+    except Exception:
+        pass
+
+    # Parse expected goals string "1.3x0.9"
+    try:
+        parts = pred.expected_goals.split("x")
+        lam_home = float(parts[0])
+        lam_away = float(parts[1])
+    except Exception:
+        pass
+
+    MAX_G = 5
+    scorelines = []
+    total_mass = 0.0
+    for i in range(MAX_G + 1):
+        for j in range(MAX_G + 1):
+            import math
+            p_h = (lam_home**i * math.exp(-lam_home)) / math.factorial(i)
+            p_a = (lam_away**j * math.exp(-lam_away)) / math.factorial(j)
+            p = p_h * p_a
+            total_mass += p
+            scorelines.append({"score": f"{i}x{j}", "prob": p})
+    for s in scorelines:
+        s["prob"] = round(s["prob"] / total_mass, 4)
+    scorelines.sort(key=lambda x: x["prob"], reverse=True)
+    top_scorelines = scorelines[:8]
+
+    import math as _math
+
+    # Derived market probabilities from Poisson grid
+    prob_over_15 = sum(s["prob"] for s in scorelines if sum(int(x) for x in s["score"].split("x")) > 1)
+    prob_over_25 = sum(s["prob"] for s in scorelines if sum(int(x) for x in s["score"].split("x")) > 2)
+    prob_over_35 = sum(s["prob"] for s in scorelines if sum(int(x) for x in s["score"].split("x")) > 3)
+    prob_btts = sum(s["prob"] for s in scorelines if int(s["score"].split("x")[0]) > 0 and int(s["score"].split("x")[1]) > 0)
+
+    # Home -1 Asian handicap: home wins by 2+
+    prob_home_hcap = sum(
+        s["prob"] for s in scorelines
+        if int(s["score"].split("x")[0]) - int(s["score"].split("x")[1]) >= 2
+    )
+
+    def _kelly(prob: float, odd: float) -> float:
+        """Fractional Kelly (25%) stake as units per 100."""
+        if odd <= 1.0 or prob <= 0:
+            return 0.0
+        edge = prob * odd - 1
+        if edge <= 0:
+            return 0.0
+        full_kelly = edge / (odd - 1)
+        return round(full_kelly * 0.25 * 100, 1)
+
+    def _conf_label(prob: float) -> str:
+        if prob >= 0.70:
+            return "Alta"
+        if prob >= 0.55:
+            return "Média"
+        return "Baixa"
+
+    # Build all candidate picks
+    raw_markets = [
+        ("1", f"Vitória {home}", pred.prob_home),
+        ("X", "Empate", pred.prob_draw),
+        ("2", f"Vitória {away}", pred.prob_away),
+        ("over_1_5", "Mais de 1.5 gols", round(prob_over_15, 4)),
+        ("over_2_5", "Mais de 2.5 gols", round(prob_over_25, 4)),
+        ("over_3_5", "Mais de 3.5 gols", round(prob_over_35, 4)),
+        ("btts", "Ambas marcam", round(prob_btts, 4)),
+        ("home_-1", f"{home} -1 Handicap", round(prob_home_hcap, 4)),
+    ]
+
+    picks = []
+    for key, label, prob in raw_markets:
+        fair_odd = round(1 / prob, 2) if prob > 0 else None
+        kelly = _kelly(prob, fair_odd) if fair_odd else 0.0
+        picks.append(
+            {
+                "market": key,
+                "label": label,
+                "model_prob": round(prob, 4),
+                "fair_odd": fair_odd,
+                "kelly_units": kelly,
+                "confidence": _conf_label(prob),
+            }
+        )
+
+    # Rank picks: highest model_prob first, exclude very low confidence
+    ranked_picks = sorted(
+        [p for p in picks if p["model_prob"] >= 0.45],
+        key=lambda x: x["model_prob"],
+        reverse=True,
+    )
+
+    # Build ticket: top 3 singles + 1 combo
+    ticket_singles = ranked_picks[:3]
+
+    # Best combo: strongest single + best over
+    best_result = max(
+        [p for p in picks if p["market"] in ("1", "X", "2")],
+        key=lambda x: x["model_prob"],
+    )
+    best_over = next(
+        (p for p in picks if p["market"] in ("over_2_5", "over_1_5") and p["model_prob"] >= 0.55),
+        None,
+    )
+    combo = None
+    if best_over:
+        combo_prob = round(best_result["model_prob"] * best_over["model_prob"], 4)
+        combo_fair_odd = round(1 / combo_prob, 2) if combo_prob > 0 else None
+        combo_kelly = _kelly(combo_prob, combo_fair_odd) if combo_fair_odd else 0.0
+        combo = {
+            "label": f"{best_result['label']} + {best_over['label']}",
+            "markets": [best_result["market"], best_over["market"]],
+            "model_prob": combo_prob,
+            "fair_odd": combo_fair_odd,
+            "kelly_units": combo_kelly,
+            "confidence": _conf_label(combo_prob),
+        }
+
+    ticket = {
+        "singles": ticket_singles,
+        "combo": combo,
+        "note": "Odd justa = 1/prob_modelo. Use como referência para buscar valor no mercado.",
+    }
+
+    # Load match context (uploaded .txt analysis)
+    match_context = None
+    schedule = load_wc_schedule()
+    for m in schedule.get("matches", []):
+        h = normalize_national_team(m.get("home_team", ""))
+        a = normalize_national_team(m.get("away_team", ""))
+        if h == home and a == away:
+            eid = m.get("sofascore_event_id") or m.get("event_id")
+            if eid:
+                match_context = load_match_context(int(eid))
+            break
+
+    response = {
+        "home_team": home,
+        "away_team": away,
+        "phase": phase,
+        "group": group_name,
+        "prediction": pred.prediction,
+        "confidence": round(pred.confidence, 4),
+        "prob_home": round(pred.prob_home, 4),
+        "prob_draw": round(pred.prob_draw, 4),
+        "prob_away": round(pred.prob_away, 4),
+        "poisson_score": pred.poisson_score,
+        "expected_goals": pred.expected_goals,
+        "h2h_summary": pred.h2h_summary,
+        "top_scorelines": top_scorelines,
+        "picks": picks,
+        "ticket": ticket,
+        "match_context": match_context,
+    }
+
+    return response
+
+
+@app.get("/worldcup/pregame/research")
+async def pregame_research(
+    home: str = Query(..., description="Time mandante"),
+    away: str = Query(..., description="Time visitante"),
+    phase: str = Query("group", description="Fase: group | knockout"),
+    force_refresh: bool = Query(False, description="Ignora cache e re-executa pesquisa"),
+):
+    """
+    Pipeline Deep Research pré-jogo:
+    Pipeline Deep Research pré-jogo (tenta em ordem):
+    1. Gemini 2.0 Flash + Google Search Grounding (pesquisa + síntese em uma chamada)
+    2. Moonshot + $web_search nativo (fallback)
+    Perplexity opcionalmente enriquece a pesquisa antes da síntese.
+    Resultado cacheado por PREGAME_RESEARCH_CACHE_TTL_SEC (padrão 1h).
+    """
+    from ingest.research.perplexity_client import PerplexityError, search_pregame
+    from ingest.research.gemini_synthesizer import GeminiError
+    from ingest.research.gemini_synthesizer import synthesize_pregame_report as gemini_synthesize
+    from ingest.research.moonshot_synthesizer import MoonshotError
+    from ingest.research.moonshot_synthesizer import synthesize_pregame_report as moonshot_synthesize
+    from ingest.research.research_cache import load_cached, save_cached
+
+    home_n = normalize_national_team(home)
+    away_n = normalize_national_team(away)
+
+    if not force_refresh:
+        cached = load_cached(home_n, away_n)
+        if cached:
+            cached["from_cache"] = True
+            return cached
+
+    # Valida que o modelo está disponível
+    try:
+        predictor = _get_wc_predictor()
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    group_name = lookup_2026_group(home_n, away_n) if phase == "group" else None
+
+    # Dados do modelo
+    try:
+        pred = await asyncio.to_thread(
+            predictor.predict,
+            home_n,
+            away_n,
+            phase=phase,
+            season=2026,
+            group_name=group_name,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    import math as _math
+    try:
+        parts = pred.expected_goals.split("x")
+        lam_home, lam_away = float(parts[0]), float(parts[1])
+    except Exception:
+        lam_home, lam_away = 1.3, 0.9
+
+    MAX_G = 5
+    scorelines, total_mass = [], 0.0
+    for i in range(MAX_G + 1):
+        for j in range(MAX_G + 1):
+            p = (
+                (_math.exp(-lam_home) * lam_home**i / _math.factorial(i))
+                * (_math.exp(-lam_away) * lam_away**j / _math.factorial(j))
+            )
+            total_mass += p
+            scorelines.append({"score": f"{i}x{j}", "prob": p})
+    for s in scorelines:
+        s["prob"] = round(s["prob"] / total_mass, 4)
+    scorelines.sort(key=lambda x: x["prob"], reverse=True)
+
+    prob_over_25 = sum(s["prob"] for s in scorelines if sum(int(x) for x in s["score"].split("x")) > 2)
+    prob_btts = sum(
+        s["prob"] for s in scorelines
+        if int(s["score"].split("x")[0]) > 0 and int(s["score"].split("x")[1]) > 0
+    )
+
+    def _kelly_r(p: float, odd: float) -> float:
+        edge = p * odd - 1
+        return round(max(0.0, edge / (odd - 1)) * 0.25 * 100, 1) if odd > 1 and p > 0 else 0.0
+
+    singles = []
+    for label, key, prob in [
+        (f"Vitória {home_n}", "1", pred.prob_home),
+        ("Empate", "X", pred.prob_draw),
+        (f"Vitória {away_n}", "2", pred.prob_away),
+        ("Mais de 2.5 gols", "over_2_5", round(prob_over_25, 4)),
+        ("Ambas marcam", "btts", round(prob_btts, 4)),
+    ]:
+        fo = round(1 / prob, 2) if prob > 0 else None
+        singles.append({"label": label, "market": key, "model_prob": round(prob, 4),
+                        "fair_odd": fo, "kelly_units": _kelly_r(prob, fo) if fo else 0.0})
+
+    best_result = max([s for s in singles if s["market"] in ("1", "X", "2")], key=lambda x: x["model_prob"])
+    best_over = next((s for s in singles if s["market"] == "over_2_5" and s["model_prob"] >= 0.5), None)
+    combo = None
+    if best_over:
+        cp = round(best_result["model_prob"] * best_over["model_prob"], 4)
+        cfo = round(1 / cp, 2)
+        combo = {"label": f"{best_result['label']} + {best_over['label']}",
+                 "model_prob": cp, "fair_odd": cfo, "kelly_units": _kelly_r(cp, cfo)}
+
+    model_data = {
+        "prob_home": round(pred.prob_home, 4),
+        "prob_draw": round(pred.prob_draw, 4),
+        "prob_away": round(pred.prob_away, 4),
+        "confidence": round(pred.confidence, 4),
+        "prediction": pred.prediction,
+        "poisson_score": pred.poisson_score,
+        "expected_goals": pred.expected_goals,
+        "h2h_summary": pred.h2h_summary,
+        "group": group_name,
+        "phase": phase,
+        "top_scorelines": scorelines[:6],
+        "ticket": {"singles": singles, "combo": combo},
+    }
+
+    # 1) Perplexity — enriquecimento opcional (se chave válida)
+    web_text = ""
+    web_citations: list = []
+    errors: dict[str, str] = {}
+    _pplx_key = settings.perplexity_api_key or ""
+    if _pplx_key and not _pplx_key.startswith("pplx-CHAVE") and len(_pplx_key) > 30:
+        try:
+            sonar = await asyncio.to_thread(search_pregame, home_n, away_n)
+            web_text = sonar["text"]
+            web_citations = sonar.get("citations", [])
+        except PerplexityError as exc:
+            errors["perplexity"] = str(exc)
+
+    # 2) Síntese com IA — tenta Gemini primeiro, cai no Moonshot
+    synthesis: dict | None = None
+    used_provider = ""
+    provider_citations: list = []
+
+    if settings.gemini_api_key:
+        try:
+            result = await asyncio.to_thread(
+                gemini_synthesize, home_n, away_n, model_data, web_text
+            )
+            synthesis = result["report"]
+            provider_citations = result.get("web_searches", [])
+            used_provider = f"gemini:{result.get('model', settings.gemini_model)}"
+        except GeminiError as exc:
+            errors["gemini"] = str(exc)
+
+    if synthesis is None and settings.moonshot_api_key:
+        try:
+            result = await asyncio.to_thread(
+                moonshot_synthesize, home_n, away_n, model_data, web_text
+            )
+            synthesis = result["report"]
+            provider_citations = result.get("web_searches", [])
+            used_provider = f"moonshot:{result.get('model', settings.moonshot_model)}"
+        except MoonshotError as exc:
+            errors["moonshot"] = str(exc)
+
+    # 3) Fallback: síntese local usando match_context + modelo
+    if synthesis is None:
+        from models.wc_local_synthesis import generate_local_synthesis_with_context_lookup
+
+        # Tenta encontrar event_id para carregar match_context
+        event_id = None
+        try:
+            from pipelines.wc_schedule import find_schedule_match
+            schedule = find_schedule_match(home_n, away_n)
+            if schedule:
+                # Procura event_id nos dados do schedule ou lake
+                pass
+        except Exception:
+            pass
+
+        local_synthesis = generate_local_synthesis_with_context_lookup(
+            home_n, away_n, model_data, event_id=event_id
+        )
+        if local_synthesis:
+            synthesis = local_synthesis
+            used_provider = "local:match_context+model"
+            # Adiciona erro informativo
+            if errors:
+                errors["local_synthesis"] = "APIs externas indisponíveis. Usando análise local com dados do modelo e contexto pré-jogo."
+
+    all_citations = web_citations + provider_citations
+
+    payload: dict[str, Any] = {
+        "home_team": home_n,
+        "away_team": away_n,
+        "phase": phase,
+        "group": group_name,
+        "model_data": model_data,
+        "web_research": {"text": web_text, "citations": all_citations},
+        "synthesis": synthesis,
+        "provider": used_provider,
+        "errors": errors,
+        "from_cache": False,
+    }
+
+    if synthesis:
+        save_cached(home_n, away_n, payload)
+
+    return payload

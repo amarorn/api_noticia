@@ -101,6 +101,7 @@ export function buildProfileCombos(
     minCombinedOdd?: number;
     stake?: number;
     halfMarkets?: SuperbetLiveAdvice["halfMarkets"];
+    superbetEventId?: number;
   },
 ): LongshotCombo[] {
   const profile = COMBO_PROFILES[profileId];
@@ -121,6 +122,7 @@ export function buildProfileCombos(
     maxCombos: profile.maxCombos,
     sortBy: profile.sortBy,
     halfMarkets: options?.halfMarkets,
+    superbetEventId: options?.superbetEventId,
   };
 
   return buildScannedCombos(scan, config);

@@ -219,6 +219,14 @@ export class RefreshOpenBetsCashoutsUseCase {
   }
 }
 
+export class CalculateSuperMultiplaUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: Parameters<IWcRepository["calculateSuperMultipla"]>[0]) {
+    return this.repository.calculateSuperMultipla(dto);
+  }
+}
+
 export class RegisterComboProposalUseCase {
   constructor(private readonly repository: IWcRepository) {}
 

@@ -13,8 +13,11 @@ import {
   formatLongshotComboTicket,
   formatLongshotProbPct,
   LONGSHOT_STAKE_BRL,
-  type LongshotCombo,
 } from "@/presentation/utils/longshotCombos";
+import {
+  applySuperMultiplaBonus,
+  type SuperMultiplaEnrichedCombo,
+} from "@/presentation/utils/superMultipla";
 import {
   sendSuperbetTicketToExtension,
   type SuperbetExtensionTicket,
@@ -29,7 +32,7 @@ function isHandicapLeg(market: string): boolean {
 }
 
 function toExtensionTicket(
-  combo: LongshotCombo,
+  combo: SuperMultiplaEnrichedCombo,
   data: SuperbetLiveAdvice,
   profileId: ComboProfileId,
 ): SuperbetExtensionTicket {
@@ -41,8 +44,9 @@ function toExtensionTicket(
     title: `${COMBO_PROFILES[profileId].label} #${combo.rank} · ${combo.legs.length} pernas`,
     stake: combo.stake,
     combinedOdd: combo.combinedOdd,
-    potentialReturn: combo.potentialReturn,
+    potentialReturn: combo.bonusEligible ? combo.finalReturn : combo.potentialReturn,
     combinedProb: combo.combinedProb,
+    bonusEligible: combo.bonusEligible,
     legs: combo.legs.map((leg) => ({
       market: leg.market,
       outcome: leg.outcome,
@@ -59,7 +63,7 @@ function ProfileComboCard({
   data,
   profileId,
 }: {
-  combo: LongshotCombo;
+  combo: SuperMultiplaEnrichedCombo;
   data: SuperbetLiveAdvice;
   profileId: ComboProfileId;
 }) {
@@ -100,10 +104,22 @@ function ProfileComboCard({
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
             #{combo.rank} · {combo.legs.length} pernas
           </p>
+          {combo.bonusEligible ? (
+            <span className="mt-1 inline-block rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-200">
+              Super Múltipla +5%
+            </span>
+          ) : null}
           <p className="mt-1 font-mono text-lg font-bold text-white">
             R$ {combo.stake.toFixed(2)}{" "}
             <span className="text-slate-400">→</span>{" "}
-            <span className="text-neon-green">R$ {combo.potentialReturn.toFixed(2)}</span>
+            <span className="text-neon-green">
+              R$ {(combo.bonusEligible ? combo.finalReturn : combo.potentialReturn).toFixed(2)}
+            </span>
+            {combo.bonusEligible ? (
+              <span className="ml-1 text-xs font-normal text-slate-500 line-through">
+                R$ {combo.potentialReturn.toFixed(2)}
+              </span>
+            ) : null}
           </p>
         </div>
         <div className="text-right">
@@ -112,6 +128,11 @@ function ProfileComboCard({
           >
             @{combo.combinedOdd.toFixed(2)}
           </span>
+          {combo.productOdd != null && combo.productOdd > combo.combinedOdd + 0.01 ? (
+            <p className="mt-0.5 font-mono text-[10px] text-slate-500 line-through">
+              @{combo.productOdd.toFixed(2)} produto
+            </p>
+          ) : null}
           <p className="mt-1 text-[10px] font-medium text-neon-green">
             Hit {formatLongshotProbPct(combo.combinedProb)}
           </p>
@@ -185,8 +206,9 @@ export function LiveBestCombosPanel({ data }: LiveBestCombosPanelProps) {
       buildProfileCombos(data.strategy?.marketScan, profileId, {
         minCombinedOdd: minOdd,
         halfMarkets: data.halfMarkets,
-      }),
-    [data.strategy?.marketScan, data.halfMarkets, profileId, minOdd],
+        superbetEventId: data.superbetEventId,
+      }).map(applySuperMultiplaBonus),
+    [data.strategy?.marketScan, data.halfMarkets, data.superbetEventId, profileId, minOdd],
   );
 
   const selectProfile = (id: ComboProfileId) => {

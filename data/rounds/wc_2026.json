@@ -126,7 +126,7 @@
       "home_score": 2,
       "away_score": 0,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "A-r1-coreia-do-su-republica-tc",
@@ -156,7 +156,7 @@
       "home_score": 1,
       "away_score": 1,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "D-r1-estados-unid-paraguai",
@@ -182,7 +182,7 @@
       "home_score": 0,
       "away_score": 1,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "D-r1-australia-turquia",
@@ -197,7 +197,7 @@
       "home_score": 2,
       "away_score": 0,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "C-r1-brasil-marrocos",
@@ -212,7 +212,7 @@
       "home_score": 1,
       "away_score": 1,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "B-r1-catar-suica",
@@ -227,7 +227,7 @@
       "home_score": 1,
       "away_score": 1,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "E-r1-costa-do-mar-equador",
@@ -242,7 +242,7 @@
       "home_score": 1,
       "away_score": 0,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "E-r1-alemanha-curacau",
@@ -257,7 +257,7 @@
       "home_score": 7,
       "away_score": 1,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "F-r1-holanda-japao",
@@ -272,7 +272,7 @@
       "home_score": 2,
       "away_score": 2,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "F-r1-suecia-tunisia",
@@ -287,7 +287,7 @@
       "home_score": 5,
       "away_score": 1,
       "result_source": "fifa",
-      "result_synced_at": "2026-06-15T04:21:39.187344+00:00"
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "H-r1-arabia-saudi-uruguai",
@@ -301,8 +301,8 @@
       "city": "Miami Gardens",
       "home_score": 1,
       "away_score": 1,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-16T00:08:00.647503+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "H-r1-espanha-cabo-verde",
@@ -316,8 +316,8 @@
       "city": "Atlanta",
       "home_score": 0,
       "away_score": 0,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-15T17:59:37.772781+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "G-r1-ira-nova-zelandi",
@@ -346,8 +346,8 @@
       "city": "Seattle",
       "home_score": 1,
       "away_score": 1,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-15T21:00:34.466933+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "I-r1-franca-senegal",
@@ -361,8 +361,8 @@
       "city": "East Rutherford",
       "home_score": 3,
       "away_score": 1,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-16T21:43:30.011206+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "I-r1-iraque-noruega",
@@ -376,8 +376,8 @@
       "city": "Foxborough",
       "home_score": 1,
       "away_score": 4,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-17T00:03:01.025878+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "J-r1-argentina-argelia",
@@ -391,8 +391,8 @@
       "city": "Kansas City",
       "home_score": 3,
       "away_score": 0,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-17T03:02:07.856978+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "J-r1-austria-jordania",
@@ -406,8 +406,8 @@
       "city": "Santa Clara",
       "home_score": 3,
       "away_score": 1,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-17T06:11:58.168888+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "L-r1-gana-panama",
@@ -421,8 +421,8 @@
       "city": "Toronto",
       "home_score": 1,
       "away_score": 0,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-18T02:11:06.947085+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "L-r1-inglaterra-croacia",
@@ -436,8 +436,8 @@
       "city": "Arlington",
       "home_score": 4,
       "away_score": 2,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-18T05:17:31.639269+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "K-r1-portugal-republica-de",
@@ -462,8 +462,8 @@
       "city": "Cidade do México",
       "home_score": 1,
       "away_score": 3,
-      "result_source": "superbet",
-      "result_synced_at": "2026-06-18T04:17:10.848085+00:00"
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "A-r2-republica-tc-africa-do-su",
@@ -474,7 +474,11 @@
       "phase": "group",
       "kickoff": "2026-06-18T12:00:00-04:00",
       "venue": "Atlanta Stadium",
-      "city": "Atlanta"
+      "city": "Atlanta",
+      "home_score": 1,
+      "away_score": 1,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-18T18:45:35.223456+00:00"
     },
     {
       "id": "B-r2-suica-bosnia",
@@ -485,7 +489,11 @@
       "phase": "group",
       "kickoff": "2026-06-18T12:00:00-07:00",
       "venue": "Los Angeles Stadium",
-      "city": "Los Angeles"
+      "city": "Los Angeles",
+      "home_score": 4,
+      "away_score": 1,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "B-r2-canada-catar",
@@ -496,7 +504,11 @@
       "phase": "group",
       "kickoff": "2026-06-18T15:00:00-07:00",
       "venue": "BC Place Vancouver",
-      "city": "Vancouver"
+      "city": "Vancouver",
+      "home_score": 6,
+      "away_score": 0,
+      "result_source": "fifa",
+      "result_synced_at": "2026-06-19T21:14:43.092446+00:00"
     },
     {
       "id": "A-r2-mexico-coreia-do-su",
@@ -507,7 +519,11 @@
       "phase": "group",
       "kickoff": "2026-06-18T19:00:00-06:00",
       "venue": "Estadio Guadalajara",
-      "city": "Guadalajara"
+      "city": "Guadalajara",
+      "home_score": 1,
+      "away_score": 0,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-19T03:06:42.306165+00:00"
     },
     {
       "id": "C-r2-brasil-haiti",
@@ -518,7 +534,11 @@
       "phase": "group",
       "kickoff": "2026-06-19T21:00:00-04:00",
       "venue": "Philadelphia Stadium",
-      "city": "Filadélfia"
+      "city": "Filadélfia",
+      "home_score": 3,
+      "away_score": 0,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-20T02:38:31.664884+00:00"
     },
     {
       "id": "C-r2-escocia-marrocos",
@@ -529,7 +549,11 @@
       "phase": "group",
       "kickoff": "2026-06-19T18:00:00-04:00",
       "venue": "Boston Stadium",
-      "city": "Foxborough"
+      "city": "Foxborough",
+      "home_score": 0,
+      "away_score": 1,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-20T00:03:07.391264+00:00"
     },
     {
       "id": "D-r2-turquia-paraguai",
@@ -540,7 +564,11 @@
       "phase": "group",
       "kickoff": "2026-06-19T20:00:00-07:00",
       "venue": "San Francisco Bay Area Stadium",
-      "city": "Santa Clara"
+      "city": "Santa Clara",
+      "home_score": 0,
+      "away_score": 1,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-20T05:08:17.091807+00:00"
     },
     {
       "id": "D-r2-estados-unid-australia",
@@ -562,7 +590,11 @@
       "phase": "group",
       "kickoff": "2026-06-20T16:00:00-04:00",
       "venue": "Toronto Stadium",
-      "city": "Toronto"
+      "city": "Toronto",
+      "home_score": 2,
+      "away_score": 1,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-20T22:03:48.434610+00:00"
     },
     {
       "id": "E-r2-equador-curacau",
@@ -573,7 +605,11 @@
       "phase": "group",
       "kickoff": "2026-06-20T19:00:00-05:00",
       "venue": "Kansas City Stadium",
-      "city": "Kansas City"
+      "city": "Kansas City",
+      "home_score": 0,
+      "away_score": 0,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-21T01:58:43.377344+00:00"
     },
     {
       "id": "F-r2-holanda-suecia",
@@ -584,7 +620,11 @@
       "phase": "group",
       "kickoff": "2026-06-20T12:00:00-05:00",
       "venue": "Houston Stadium",
-      "city": "Houston"
+      "city": "Houston",
+      "home_score": 5,
+      "away_score": 1,
+      "result_source": "superbet",
+      "result_synced_at": "2026-06-20T19:00:16.740874+00:00"
     },
     {
       "id": "F-r2-tunisia-japao",
@@ -994,5 +1034,5 @@
       "city": "Atlanta"
     }
   ],
-  "results_synced_at": "2026-06-18T05:17:31.639269+00:00"
+  "results_synced_at": "2026-06-21T01:58:43.377344+00:00"
 }

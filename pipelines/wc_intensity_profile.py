@@ -51,18 +51,21 @@ def default_intensity_profile() -> list[IntensityBucket]:
 
 
 def get_intensity_profile() -> list[IntensityBucket]:
-    """Perfil ativo: calibrado (Fase 2) se disponível, senão literatura (Fase 1)."""
+    """Perfil ativo: calibrado (Fase 2) se disponível e robusto, senão literatura (Fase 1)."""
     from config import settings
 
     if settings.inplay_use_calibrated_nhpp:
         from models.wc_inplay_coefficients import load_inplay_coefficients
 
         coefs = load_inplay_coefficients()
-        if coefs and coefs.nhpp_weights:
-            return [
+        min_obs = getattr(settings, "inplay_nhpp_min_observations", 500)
+        if coefs and coefs.nhpp_weights and coefs.n_observations >= min_obs:
+            profile = [
                 IntensityBucket(w.start_min, w.end_min, w.weight)
                 for w in coefs.nhpp_weights
             ]
+            if validate_profile(profile):
+                return profile
     return default_intensity_profile()
 
 
@@ -163,8 +166,34 @@ def intensity_at_minute(
     return 1.0  # fallback se fora do range
 
 
+def _profile_has_late_intensity(profile: list[IntensityBucket]) -> bool:
+    """Verifica se a intensidade cresce no final do jogo (propriedade empírica).
+
+    Retorna True se a média ponderada dos últimos 30 min for pelo menos
+    90% da média dos primeiros 30 min. Isso evita perfis calibrados que
+    contradigam a literatura (ex: intensidade decaindo no final).
+    """
+    if not profile:
+        return False
+
+    def _avg(start: int, end: int) -> float:
+        weighted = 0.0
+        duration = 0
+        for b in profile:
+            s = max(b.start_min, start)
+            e = min(b.end_min, end)
+            if s < e:
+                weighted += b.weight * (e - s)
+                duration += e - s
+        return weighted / duration if duration > 0 else 0.0
+
+    early = _avg(0, 30)
+    late = _avg(60, 90)
+    return late >= early * 0.9
+
+
 def validate_profile(profile: list[IntensityBucket], match_minutes: int = 90) -> bool:
-    """Valida que o perfil cobre todo o jogo e tem média normalizada ~1.0."""
+    """Valida que o perfil cobre todo o jogo, tem média normalizada ~1.0 e intensidade final razoável."""
     total_duration = sum(b.duration for b in profile)
     if total_duration != match_minutes:
         return False
@@ -172,4 +201,7 @@ def validate_profile(profile: list[IntensityBucket], match_minutes: int = 90) ->
     total_weighted = sum(b.weight * b.duration for b in profile)
     avg_weight = total_weighted / match_minutes
     # Tolerância de 5% ao redor de 1.0
-    return 0.95 <= avg_weight <= 1.05
+    if not (0.95 <= avg_weight <= 1.05):
+        return False
+
+    return _profile_has_late_intensity(profile)

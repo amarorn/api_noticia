@@ -1,4 +1,9 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
+import {
+  jointModelProb,
+  resolveCombinedOdds,
+  type CombinedOddsResult,
+} from "@/presentation/utils/betBuilderOdds";
 
 export const LONGSHOT_STAKE_BRL = 5;
 export const LONGSHOT_MIN_RETURN_BRL = 500;
@@ -21,6 +26,9 @@ export interface LongshotCombo {
   id: string;
   legs: LongshotLeg[];
   combinedOdd: number;
+  /** Produto simples das pernas (pré-SGM); omitido quando igual a combinedOdd. */
+  productOdd?: number;
+  pricingMode?: CombinedOddsResult["pricingMode"];
   stake: number;
   potentialReturn: number;
   combinedProb: number;
@@ -485,6 +493,8 @@ export interface ComboBuildConfig {
   minLegOdd?: number;
   halfMarkets?: HalfMarkets;
   sortBy?: ComboSortMode;
+  /** Mesmo evento Superbet — habilita preço Criar Aposta (SGM). */
+  superbetEventId?: number;
 }
 
 function comboBalancedScore(combo: LongshotCombo): number {
@@ -525,6 +535,7 @@ export function buildScannedCombos(
   const maxLegs = config.maxLegs ?? 4;
   const minLegOdd = config.minLegOdd ?? 1.25;
   const sortBy = config.sortBy ?? "prob";
+  const eventId = config.superbetEventId;
 
   const pool = collectCandidateLegs(scan, config.halfMarkets, minLegOdd).slice(0, 24);
   if (pool.length < 2) return [];
@@ -536,7 +547,14 @@ export function buildScannedCombos(
     for (const legs of combinations(pool, size)) {
       if (!comboCompatible(legs)) continue;
 
-      const combinedOdd = legs.reduce((acc, leg) => acc * leg.marketOdd, 1);
+      const oddsLegs = legs.map((leg) => ({
+        market: leg.market,
+        outcome: leg.outcome,
+        marketOdd: leg.marketOdd,
+        modelProb: leg.modelProb,
+        superbetEventId: eventId,
+      }));
+      const { combinedOdd, productOdd, pricingMode } = resolveCombinedOdds(oddsLegs);
       if (combinedOdd < minOdd || combinedOdd > maxOdd) continue;
 
       const key = legs
@@ -546,19 +564,24 @@ export function buildScannedCombos(
       if (seen.has(key)) continue;
       seen.add(key);
 
-      const combinedProb = legs.reduce((acc, leg) => acc * leg.modelProb, 1);
-      if (combinedProb < minProb) continue;
+      const indepProb = legs.reduce((acc, leg) => acc * leg.modelProb, 1);
+      const jointProb =
+        jointModelProb(oddsLegs, pricingMode) ??
+        indepProb;
+      if (jointProb < minProb) continue;
 
-      const combinedEv = combinedProb * combinedOdd - 1;
+      const combinedEv = jointProb * combinedOdd - 1;
       if (combinedEv < minEv) continue;
 
       results.push({
         id: key,
         legs,
-        combinedOdd: Math.round(combinedOdd * 100) / 100,
+        combinedOdd,
+        productOdd: productOdd > combinedOdd + 0.01 ? productOdd : undefined,
+        pricingMode: pricingMode !== "product" ? pricingMode : undefined,
         stake,
         potentialReturn: Math.round(stake * combinedOdd * 100) / 100,
-        combinedProb,
+        combinedProb: jointProb,
         combinedEv,
         riskTier: "moderate",
         rank: 0,
@@ -582,6 +605,7 @@ export function buildLongshotCombos(
     maxCombos?: number;
     maxLegs?: number;
     halfMarkets?: HalfMarkets;
+    superbetEventId?: number;
   },
 ): LongshotCombo[] {
   const stake = options?.stake ?? LONGSHOT_STAKE_BRL;
@@ -593,6 +617,7 @@ export function buildLongshotCombos(
     maxLegs: options?.maxLegs ?? 6,
     minLegOdd: 1.8,
     halfMarkets: options?.halfMarkets,
+    superbetEventId: options?.superbetEventId,
     sortBy: "prob",
   });
 }
@@ -607,13 +632,24 @@ export function formatLongshotProbPct(prob: number): string {
   return `${pct.toExponential(1)}%`;
 }
 
-export function formatLongshotComboTicket(combo: LongshotCombo): string {
+export function formatLongshotComboTicket(
+  combo: LongshotCombo | import("@/presentation/utils/superMultipla").SuperMultiplaEnrichedCombo,
+): string {
   const lines = combo.legs.map(
     (leg, idx) =>
       `${idx + 1}. ${leg.label} @${leg.marketOdd.toFixed(2)} (modelo ${formatLongshotProbPct(leg.modelProb)})`,
   );
+  const enriched =
+    "bonusEligible" in combo && combo.bonusEligible
+      ? combo
+      : null;
+  const payout = enriched ? enriched.finalReturn : combo.potentialReturn;
+  const bonusNote =
+    enriched != null
+      ? ` · Super Múltipla +5% (bruto R$ ${combo.potentialReturn.toFixed(2)})`
+      : "";
   lines.push(
-    `Múltipla @${combo.combinedOdd.toFixed(2)} · hit est. ${formatLongshotProbPct(combo.combinedProb)} · R$ ${combo.stake.toFixed(2)} → R$ ${combo.potentialReturn.toFixed(2)}`,
+    `Múltipla @${combo.combinedOdd.toFixed(2)} · hit est. ${formatLongshotProbPct(combo.combinedProb)} · R$ ${combo.stake.toFixed(2)} → R$ ${payout.toFixed(2)}${bonusNote}`,
   );
   return lines.join("\n");
 }

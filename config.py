@@ -107,6 +107,7 @@ class Settings(BaseSettings):
     wc_draw_pick_min_prob: float = 0.26
     wc_draw_balance_gap: float = 0.18
     wc_draw_competitive_margin: float = 0.035
+    wc_draw_balanced_favorite_cap: float = 0.50
     wc_mc_simulations: int = 5000
     inplay_fast_mc_simulations: int = 1500
     # Fase 1 in-play (docs/specs/spec-fase-1-quickwins-inplay.md)
@@ -118,9 +119,14 @@ class Settings(BaseSettings):
     inplay_score_lambda_adjust_with_scorealarm: bool = True
     inplay_live_stats_lambda_adjust: bool = True
     inplay_live_stats_max_shift: float = 0.12
+    inplay_xg_lambda_adjust: bool = True
+    inplay_xg_max_shift: float = 0.25
+    inplay_xg_weight_max: float = 0.40
+    inplay_h2h_adjust: bool = True
     inplay_trailing_chase_boost: bool = True
     inplay_use_calibrated_coefficients: bool = True
-    inplay_use_calibrated_nhpp: bool = False
+    inplay_use_calibrated_nhpp: bool = True
+    inplay_nhpp_min_observations: int = 500
     wc_xg_lambda_blend_enabled: bool = True
     wc_xg_lambda_blend_weight: float = 0.35
     inplay_tune_min_snapshots: int = 50
@@ -197,6 +203,8 @@ class Settings(BaseSettings):
     bet_stop_loss_brl: float = 200.0
     bet_require_minute_extension: bool = True  # extensão precisa minuto resolvível
     bet_block_multis_late: bool = True  # múltiplas/combos bloqueados após live_block_minute
+    super_multipla_bonus_pct: float = 0.05  # +5% no retorno (promo Superbet)
+    super_multipla_min_leg_odd: float = 1.35  # odd mínima por perna para elegir bônus
     dixit_sigma: float = 2.0
     mlflow_tracking_uri: str = "sqlite:///./mlflow.db"
     mlflow_experiment_wc: str = "api-noticia/wc-benchmark"
@@ -209,6 +217,14 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     api_key: str | None = None
+    # ── Deep Research (Pré-Jogo) ──
+    perplexity_api_key: str | None = None
+    perplexity_model: str = "sonar-pro"
+    moonshot_api_key: str | None = None
+    moonshot_model: str = "moonshot-v1-128k"
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.0-flash"
+    pregame_research_cache_ttl_sec: int = 3600  # 1h de cache por partida
 
     @property
     def bronze_path(self) -> Path:

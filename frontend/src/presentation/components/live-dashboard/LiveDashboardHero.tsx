@@ -66,18 +66,20 @@ export function LiveDashboardHero({
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-neon-green/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-neon-blue/10 blur-3xl" />
 
-      <div className="relative flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-4 lg:flex-row lg:items-center">
+      <div className="relative flex flex-col gap-5">
+        {/* Linha do placar */}
+        <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <TeamFlag team={data.homeTeam} size={44} />
-            <div className="min-w-0 flex-1 text-center lg:text-left">
-              <p className="truncate text-sm font-medium text-slate-300">{data.homeTeam}</p>
+            <TeamFlag team={data.homeTeam} size={52} />
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold text-white">{data.homeTeam}</p>
+              <p className="text-[11px] text-slate-500">Mandante</p>
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col items-center px-2">
-            <p className="font-mono text-4xl font-bold tracking-tight text-white">{score}</p>
-            <div className="mt-1 flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs font-semibold text-amber-200">
+          <div className="flex shrink-0 flex-col items-center px-3">
+            <p className="font-mono text-5xl font-bold tracking-tight text-white">{score}</p>
+            <div className="mt-1.5 flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1 text-xs font-semibold text-amber-200">
               {data.isLive && !data.isFinished && (
                 <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
               )}
@@ -89,20 +91,48 @@ export function LiveDashboardHero({
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
             <div className="min-w-0 text-right">
-              <p className="truncate text-sm font-medium text-slate-300">{data.awayTeam}</p>
+              <p className="truncate text-base font-bold text-white">{data.awayTeam}</p>
+              <p className="text-[11px] text-slate-500">Visitante</p>
             </div>
-            <TeamFlag team={data.awayTeam} size={44} />
+            <TeamFlag team={data.awayTeam} size={52} />
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={isFetching}
-          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-400 transition hover:border-white/20 hover:text-white disabled:opacity-50"
-        >
-          {isFetching ? "Atualizando…" : adviceSource === "full" ? "Completo" : "Rápido"}
-        </button>
+        {/* Probabilidades em barra compacta */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: data.homeTeam, short: "1", prob: data.inplaySummary.probFinalHome, color: "#00ff88" },
+            { label: "Empate", short: "X", prob: data.inplaySummary.probFinalDraw, color: "#00d4ff" },
+            { label: data.awayTeam, short: "2", prob: data.inplaySummary.probFinalAway, color: "#a855f7" },
+          ].map(({ label, short, prob, color }) => (
+            <div
+              key={short}
+              className="flex flex-col items-center rounded-xl border border-white/8 bg-black/25 px-2 py-2.5"
+            >
+              <span className="text-[10px] font-bold" style={{ color }}>
+                {short}
+              </span>
+              <span className="font-mono text-base font-semibold text-white">
+                {(prob * 100).toFixed(0)}%
+              </span>
+              <span className="mt-0.5 truncate max-w-full text-[9px] text-slate-500">
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Botão de refresh */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isFetching}
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-slate-400 transition hover:border-white/20 hover:text-white disabled:opacity-50"
+          >
+            {isFetching ? "Atualizando…" : adviceSource === "full" ? "Dados completos" : "Modo rápido"}
+          </button>
+        </div>
       </div>
 
       <div

@@ -491,10 +491,11 @@ Superbet API → fetch_event_with_stale_fallback() → SuperbetEventSnapshot
 - `GET /worldcup/superbet/events/{event_id}` — snapshot bruto (`superbet_stale` quando fallback bronze)
 - `GET /worldcup/handicap/{event_id}` — análise handicap asiático (modelo × odds Superbet)
 - `POST /worldcup/superbet/validate-builder` — valida pernas do Criar Aposta (correlação, over 1T morto)
+- `POST /worldcup/superbet/multiple/calculate` — odds combinadas + elegibilidade Super Múltipla (+5%)
 
 **Frontend (`/ao-vivo`, `/ao-vivo/:eventId`):**
 - `LiveInPlayPage.tsx` — Hero CTA, cards de mercado, guia colapsável, monitor de cash-out
-- Componentes: `LiveActionNowPanel`, `LiveMarketCards`, `LiveModelPanel`, `LiveHandicapPanel`, `LiveBetBuilderGuardPanel`, `LivePlainGuide`, `LiveOpenBetMonitor`, `BetStrategyPanel`, `InPlayPanel`
+- Componentes: `LiveActionNowPanel`, `LiveMarketCards`, `LiveModelPanel`, `LiveHandicapPanel`, `LiveBetBuilderGuardPanel`, `LivePlainGuide`, `LiveOpenBetMonitor`, `BetStrategyPanel`, `LiveSuperMultiplaPanel`, `InPlayPanel`
 - Layout: 2 colunas (mercados | modelo) em desktop
 
 **Handicap asiático — regra crítica:**
@@ -572,6 +573,7 @@ Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no fro
 | Dev Container | `.devcontainer/devcontainer.json` |
 | In-Play / Superbet | `docs/analise-inplay-backend.md`, `ingest/superbet/advice.py`, `models/wc_inplay.py` |
 | Handicap asiático | `docs/prompt-implementacao-handicap.md`, `models/wc_handicap.py`, `GET /worldcup/handicap/{event_id}` |
+| Super Múltipla | `docs/super-multipla.md`, `models/super_multipla.py`, `POST /worldcup/superbet/multiple/calculate` |
 | Poll ao vivo | `pipelines/poll_superbet_live.py`, `./scripts/dev-full.sh`, `tests/test_poll_superbet_live.py` |
 | Amistosos (ingest) | `ingest/sofascore/friendlies.py`, `ingest/fifa/friendlies.py` |
 | Simulate WC | `models/wc_match_simulator.py`, `POST /worldcup/simulate` |

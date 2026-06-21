@@ -47,6 +47,9 @@ class UserOpenBetRequest(BaseModel):
     )
     combined_ev: float | None = Field(None, description="EV combinado (prob modelo × odd mercado − 1)")
     combined_prob: float | None = Field(None, ge=0, le=1, description="Probabilidade combinada do modelo")
+    bonus_eligible: bool | None = Field(None, description="Elegível promo Super Múltipla (+5%)")
+    bonus_percentage: float | None = Field(None, ge=0, description="Percentual de bônus aplicado")
+    final_payout: float | None = Field(None, gt=0, description="Retorno com bônus Super Múltipla")
 
     @model_validator(mode="after")
     def _check_combo_odds(self) -> "UserOpenBetRequest":

@@ -23,6 +23,7 @@ import { LiveHalfTicketsPanel } from "@/presentation/components/predictions/Live
 import { LiveRemaining2hMarketsPanel } from "@/presentation/components/predictions/LiveRemaining2hMarketsPanel";
 import { LiveLongshotCombosPanel } from "@/presentation/components/predictions/LiveLongshotCombosPanel";
 import { LiveTopReturnPanel } from "@/presentation/components/predictions/LiveTopReturnPanel";
+import { LiveOptimizedTicketsPanel } from "@/presentation/components/predictions/LiveOptimizedTicketsPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
 import { LiveModelVsMarketHero } from "@/presentation/components/predictions/LiveModelVsMarketHero";
 import { LiveEvRealPanel } from "@/presentation/components/predictions/LiveEvRealPanel";
@@ -34,6 +35,7 @@ import { LivePlayerStatsPanel } from "@/presentation/components/predictions/Live
 import { LiveSocialRadarPanel } from "@/presentation/components/predictions/LiveSocialRadarPanel";
 import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
 import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
+import LiveRefereePanel from "@/presentation/components/predictions/LiveRefereePanel";
 import {
   LiveOpenBetMonitor,
   createRegisteredBetId,
@@ -50,6 +52,7 @@ import { LiveRecalibrationBanner } from "@/presentation/components/predictions/L
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
 import { useCashoutTargetAlerts } from "@/presentation/hooks/useCashoutTargetAlerts";
+import { LiveContextUpload } from "@/presentation/components/predictions/LiveContextUpload";
 import {
   ensureNotificationPermission,
   notificationPermission,
@@ -557,6 +560,13 @@ export function LiveInPlayPage() {
             )}
           </section>
 
+          {/* ── 1c. ANÁLISE PRÉ-JOGO (upload .txt) ── */}
+          <LiveContextUpload
+            eventId={eventId}
+            activeContext={data.matchContext ?? null}
+            onContextChanged={refetchAdvice}
+          />
+
           {/* ── 1b. ODDS + EV + STATS AO VIVO ── */}
           <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
             <LiveModelVsMarketHero data={data} />
@@ -583,6 +593,8 @@ export function LiveInPlayPage() {
 
           {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
+
+          <LiveOptimizedTicketsPanel data={data} />
 
           {/* ── 2a-top. RETORNO ESPERADO (EV × stake, filtro odd) ── */}
           <LiveTopReturnPanel data={data} />
@@ -613,8 +625,18 @@ export function LiveInPlayPage() {
 
           {/* ── 3. COLUNA DUPLA: Mercados | Modelo + Casa ── */}
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
-            <section className="glass-card p-3">
+            <section className="glass-card p-3 space-y-3">
               <LiveMarketCards data={data} />
+              <LiveRefereePanel
+                refereeMarkets={data?.inplaySummary?.refereeMarkets}
+                refereeProfile={data?.inplaySummary?.refereeProfile}
+                currentMinute={data?.minute ?? 0}
+                homeYellows={data?.liveStats?.homeYellowCards ?? 0}
+                awayYellows={data?.liveStats?.awayYellowCards ?? 0}
+                homeReds={data?.liveStats?.homeRedCards ?? 0}
+                awayReds={data?.liveStats?.awayRedCards ?? 0}
+                compact
+              />
             </section>
             <LiveModelPanel data={data} recalibrationEvent={recalibrationEvent} />
           </div>

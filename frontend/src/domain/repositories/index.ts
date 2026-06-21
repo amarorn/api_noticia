@@ -119,6 +119,15 @@ export interface IWcRepository {
     bankroll?: number;
     superbetEventId?: number;
   }): Promise<import("@/domain/entities").WcComboTicket>;
+  calculateSuperMultipla(request: {
+    legs: import("@/presentation/utils/superMultipla").SuperMultiplaCalculateLeg[];
+    stake: number;
+    betType?: "SIMPLE" | "MULTIPLE";
+    minute?: number;
+    homeScore?: number;
+    awayScore?: number;
+    superbetEventId?: number;
+  }): Promise<import("@/presentation/utils/superMultipla").SuperMultiplaCalculateResult>;
   simulateMatch(request: {
     homeTeam: string;
     awayTeam: string;

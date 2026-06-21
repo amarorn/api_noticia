@@ -158,10 +158,26 @@ def run_with_advice_cache(
             inflight[0].set()
 
 
+def list_cached_event_ids(*, max_age_sec: float | None = None) -> list[int]:
+    """Retorna IDs de todos os eventos com advice em cache (não expirado)."""
+    now = time.monotonic()
+    with _LOCK:
+        result = []
+        for event_id, (expires_at, _) in _EVENT_LATEST.items():
+            if max_age_sec is not None:
+                cutoff = now + float(max_age_sec)
+                if expires_at > cutoff:
+                    continue
+            if now <= expires_at:
+                result.append(event_id)
+        return result
+
+
 __all__ = [
     "advice_cache_key",
     "get_cached_advice",
     "get_stale_advice_for_event",
+    "list_cached_event_ids",
     "run_with_advice_cache",
     "set_cached_advice",
 ]

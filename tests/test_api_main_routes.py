@@ -121,3 +121,35 @@ def test_worldcup_superbet_validate_builder(monkeypatch):
     codes = {e.get("code") for e in data["errors"]} | {w.get("code") for w in data["warnings"]}
     assert "ht_over_dead" in codes
     assert len(data["bet_builder_rules"]) >= 3
+
+
+def test_worldcup_superbet_multiple_calculate(monkeypatch):
+    client = _client(monkeypatch)
+    resp = client.post(
+        "/worldcup/superbet/multiple/calculate",
+        json={
+            "legs": [
+                {
+                    "market": "h2h",
+                    "outcome": "1",
+                    "market_odd": 1.80,
+                    "superbet_event_id": 13127506,
+                    "is_live": True,
+                },
+                {
+                    "market": "over_2_5",
+                    "outcome": "yes",
+                    "market_odd": 2.10,
+                    "superbet_event_id": 13127506,
+                    "is_live": True,
+                },
+            ],
+            "stake": 5.0,
+            "bet_type": "MULTIPLE",
+            "minute": 23,
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["bonus_eligible"] is True
+    assert data["final_payout"] > data["potential_payout"]

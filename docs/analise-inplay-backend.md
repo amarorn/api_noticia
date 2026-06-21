@@ -21,6 +21,7 @@
 | **P2** Eventos Sofascore ao vivo | 🟡 Parcial | `ingest/sofascore/live_events.py`, `live_momentum` |
 | **P2** MLE momentum com live_ticks | ✅ Feito | `tune-inplay --source ticks|both`; `wc_inplay_ticks_dataset.py` |
 | **Validação** benchmark_inplay CLI | ✅ Feito | `benchmark-inplay` (+ `--ab-momentum`, `--tune-ticks`) |
+| **Super Múltipla** (odds combo + bônus +5%) | ✅ Feito | `models/super_multipla.py`, `POST /worldcup/superbet/multiple/calculate`, `LiveSuperMultiplaPanel` |
 
 **Config operacional (ganhos):** respeitar `LIVE_BLOCK_MINUTE=45`, `LIVE_HARD_STOP_MINUTE=88`, `LIVE_CASHOUT_USE_TREND=true`.
 

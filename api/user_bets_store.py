@@ -47,6 +47,9 @@ class UserOpenBet(BaseModel):
     model_source: str | None = None
     combined_ev: float | None = None
     combined_prob: float | None = None
+    bonus_eligible: bool | None = None
+    bonus_percentage: float | None = None
+    final_payout: float | None = None
     proposal_minute: int | None = None
     register_minute: int | None = None
 

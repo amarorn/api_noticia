@@ -186,6 +186,73 @@ def apply_trailing_chase_boost(
     )
 
 
+def adjust_lambdas_from_xg(
+    lambda_home: float,
+    lambda_away: float,
+    *,
+    home_xg: float | None,
+    away_xg: float | None,
+    minute: int,
+    match_minutes: int = 90,
+    max_shift: float | None = None,
+    weight_max: float | None = None,
+) -> tuple[float, float, dict[str, Any] | None]:
+    """Ajusta λ com xG acumulado ao vivo (Sofascore/ScoreAlarm).
+
+    A ideia é comparar a taxa de gols esperada (xG) observada até o minuto
+    atual com o λ pré-jogo. Quanto mais minutos decorridos, maior o peso da
+    evidência ao vivo. O ajuste é suave e limitado para evitar overreaction.
+    """
+    cap = max_shift if max_shift is not None else settings.inplay_xg_max_shift
+    w_max = weight_max if weight_max is not None else settings.inplay_xg_weight_max
+
+    if minute <= 0 or match_minutes <= 0:
+        return lambda_home, lambda_away, None
+    if home_xg is None and away_xg is None:
+        return lambda_home, lambda_away, None
+
+    elapsed_fraction = minute / match_minutes
+    remaining_fraction = max(0.0, 1.0 - elapsed_fraction)
+
+    # Peso da evidência ao vivo cresce com o tempo, limitado por w_max
+    # Usar uma curva quadrática: aos 45' ~25%, aos 90' ~w_max
+    live_weight = min(w_max, w_max * (elapsed_fraction ** 2) / 0.5)
+    if live_weight <= 0.01:
+        return lambda_home, lambda_away, None
+
+    # λ observado via xG: se o ritmo de xG continuar pelo restante do jogo,
+    # quantos gols esperaríamos em 90 min?
+    lambda_obs_home = (home_xg or 0.0) / elapsed_fraction if home_xg is not None else lambda_home
+    lambda_obs_away = (away_xg or 0.0) / elapsed_fraction if away_xg is not None else lambda_away
+
+    # Blending com λ atual (que já inclui Bayesian update e live_stats)
+    new_home = (1.0 - live_weight) * lambda_home + live_weight * lambda_obs_home
+    new_away = (1.0 - live_weight) * lambda_away + live_weight * lambda_obs_away
+
+    # Limitar shift em relação ao λ atual
+    lower_h = lambda_home * (1.0 - cap)
+    upper_h = lambda_home * (1.0 + cap)
+    lower_a = lambda_away * (1.0 - cap)
+    upper_a = lambda_away * (1.0 + cap)
+
+    new_home = float(np.clip(new_home, lower_h, upper_h))
+    new_away = float(np.clip(new_away, lower_a, upper_a))
+
+    return new_home, new_away, {
+        "applied": True,
+        "source": "live_xg",
+        "minute": minute,
+        "elapsed_fraction": round(elapsed_fraction, 3),
+        "live_weight": round(live_weight, 3),
+        "home_xg": home_xg,
+        "away_xg": away_xg,
+        "lambda_obs_home": round(lambda_obs_home, 3),
+        "lambda_obs_away": round(lambda_obs_away, 3),
+        "shift_home_pct": round((new_home / lambda_home - 1.0) * 100, 2),
+        "shift_away_pct": round((new_away / lambda_away - 1.0) * 100, 2),
+    }
+
+
 def build_lambda_adjustment_report(
     *,
     lambda_prior_home: float,
@@ -212,6 +279,7 @@ def build_lambda_adjustment_report(
 
 __all__ = [
     "adjust_lambdas_from_live_stats",
+    "adjust_lambdas_from_xg",
     "apply_trailing_chase_boost",
     "build_lambda_adjustment_report",
     "has_scorealarm_momentum",

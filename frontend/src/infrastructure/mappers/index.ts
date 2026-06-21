@@ -10,6 +10,9 @@ import type {
   ModelBreakdown,
   SofascoreResolvedEvent,
   OutcomeLabel,
+  RefereeMarkets,
+  RefereeProfile,
+  RefereeMarketLine,
   ValueBetsReport,
   ValueMatch,
   ValueOutcome,
@@ -1144,11 +1147,15 @@ interface ApiSuperbetLiveAdvice {
   second_half_totals?: Record<string, Record<string, number>>;
   half_tickets?: Record<string, unknown> | null;
   viable_2h_markets?: Record<string, unknown> | null;
+  super_multipla?: Record<string, unknown> | null;
   halftime_report?: Record<string, unknown> | null;
   corners_projection?: Record<string, unknown> | null;
   trend_report?: Record<string, unknown> | null;
   live_stats?: Record<string, unknown> | null;
   scorealarm?: Record<string, unknown> | null;
+  match_context?: Record<string, unknown> | null;
+  referee_markets?: Record<string, unknown> | null;
+  referee_profile?: Record<string, unknown> | null;
 }
 
 function mapPatternAccuracy(raw: Record<string, unknown> | null | undefined) {
@@ -1483,6 +1490,10 @@ function mapLiveStats(raw: Record<string, unknown> | null | undefined) {
       raw.home_yellow_cards != null ? Number(raw.home_yellow_cards) : null,
     awayYellowCards:
       raw.away_yellow_cards != null ? Number(raw.away_yellow_cards) : null,
+    homeRedCards:
+      raw.home_red_cards != null ? Number(raw.home_red_cards) : null,
+    awayRedCards:
+      raw.away_red_cards != null ? Number(raw.away_red_cards) : null,
     warnings: ((raw.warnings as string[]) ?? []).map(String),
   };
 }
@@ -1800,6 +1811,12 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
       ftAsianHandicapProbs: summary.ft_asian_handicap_probs as Record<string, number> | undefined,
       cornerLineProbs: summary.corner_line_probs as Record<string, number> | undefined,
       cardLineProbs: summary.card_line_probs as Record<string, number> | undefined,
+      refereeMarkets: raw.referee_markets
+        ? mapRefereeMarkets(raw.referee_markets as Record<string, unknown>)
+        : undefined,
+      refereeProfile: raw.referee_profile
+        ? mapRefereeProfile(raw.referee_profile as Record<string, unknown>)
+        : undefined,
       halftimeAdjustment: summary.halftime_adjustment
         ? {
             applied: Boolean(
@@ -1946,6 +1963,51 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
     trendReport: mapTrendReport(raw.trend_report as Record<string, unknown> | null),
     halfTickets: mapHalfTickets(raw.half_tickets as Record<string, unknown> | null),
     viable2hMarkets: mapViable2hMarkets(raw.viable_2h_markets as Record<string, unknown> | null),
+    superMultipla: raw.super_multipla
+      ? {
+          minLegOddForBonus: Number(
+            (raw.super_multipla as Record<string, unknown>).min_leg_odd_for_bonus ?? 1.35,
+          ),
+          bonusPct: Number((raw.super_multipla as Record<string, unknown>).bonus_pct ?? 0.05),
+          defaultStake: Number(
+            (raw.super_multipla as Record<string, unknown>).default_stake ?? 10,
+          ),
+          suggestedCombos: (
+            ((raw.super_multipla as Record<string, unknown>).suggested_combos as Array<
+              Record<string, unknown>
+            >) ?? []
+          ).map((combo) => ({
+            id: String(combo.id ?? ""),
+            stake: Number(combo.stake ?? 0),
+            combinedOdd: Number(combo.combined_odd ?? 0),
+            productOdd:
+              combo.product_odd != null ? Number(combo.product_odd) : undefined,
+            pricingMode:
+              combo.pricing_mode != null ? String(combo.pricing_mode) : undefined,
+            combinedProb: Number(combo.combined_prob ?? 0),
+            combinedEv: combo.combined_ev != null ? Number(combo.combined_ev) : null,
+            potentialPayout: Number(combo.potential_payout ?? 0),
+            bonusEligible: Boolean(combo.bonus_eligible),
+            bonusPercentage: Number(combo.bonus_percentage ?? 0),
+            finalPayout: Number(combo.final_payout ?? 0),
+            warnings: ((combo.warnings as string[]) ?? []).map(String),
+            legs: (
+              (combo.legs as Array<Record<string, unknown>>) ?? []
+            ).map((leg) => ({
+              id: leg.id != null ? String(leg.id) : undefined,
+              market: String(leg.market ?? ""),
+              outcome: String(leg.outcome ?? ""),
+              label: String(leg.label ?? leg.selection_label ?? ""),
+              marketOdd: Number(leg.market_odd ?? 0),
+              modelProb: Number(leg.model_prob ?? 0),
+              expectedValue:
+                leg.expected_value != null ? Number(leg.expected_value) : undefined,
+              edgePp: leg.edge_pp != null ? Number(leg.edge_pp) : undefined,
+            })),
+          })),
+        }
+      : null,
+    matchContext: (raw.match_context as Record<string, unknown> | null | undefined) ?? null,
   };
 }
 
@@ -2018,6 +2080,84 @@ export function mapSuperbetEvent(raw: ApiSuperbetEvent) {
   };
 }
 
+function mapRefereeProfile(raw: Record<string, unknown>): RefereeProfile {
+  return {
+    name: String(raw.name ?? ""),
+    country: raw.country != null ? String(raw.country) : null,
+    cardLambda: Number(raw.card_lambda ?? 0),
+    foulLambda: Number(raw.foul_lambda ?? 0),
+    penaltyLambda: Number(raw.penalty_lambda ?? 0),
+    redCardLambda: Number(raw.red_card_lambda ?? 0),
+    classification: (String(raw.classification ?? "equilibrado") as
+      | "punitivista"
+      | "equilibrado"
+      | "pacificador"),
+    classificationPt: String(raw.classification_pt ?? "Equilibrado"),
+    cardFoulRatio: Number(raw.card_foul_ratio ?? 0),
+    avgCardsPerGame: Number(raw.avg_cards_per_game ?? 0),
+    avgFoulsPerGame: Number(raw.avg_fouls_per_game ?? 0),
+  };
+}
+
+function mapRefereeMarketLine(raw: Record<string, unknown>): RefereeMarketLine {
+  return {
+    line: Number(raw.line ?? 0),
+    overProb: Number(raw.over_prob ?? 0),
+    underProb: Number(raw.under_prob ?? 0),
+    overOddsFair: Number(raw.over_odds_fair ?? 0),
+    underOddsFair: Number(raw.under_odds_fair ?? 0),
+    expectedTotal: Number(raw.expected_total ?? 0),
+    recommendation: (String(raw.recommendation ?? "neutro") as "over" | "under" | "neutro"),
+    confidence: (String(raw.confidence ?? "media") as "alta" | "media" | "baixa"),
+    edge: raw.edge != null ? Number(raw.edge) : null,
+  };
+}
+
+function mapRefereeMarkets(raw: Record<string, unknown>): RefereeMarkets {
+  const yellowRaw = (raw.yellow_cards as Record<string, unknown>) ?? {};
+  const redRaw = (raw.red_cards as Record<string, unknown>) ?? {};
+  const penaltyRaw = (raw.penalties as Record<string, unknown>) ?? {};
+  const foulsRaw = (raw.fouls as Record<string, unknown>) ?? {};
+  const metaRaw = (yellowRaw.metadata as Record<string, unknown>) ?? {};
+
+  return {
+    yellowCards: {
+      current: Number(yellowRaw.current ?? 0),
+      expectedRemaining: Number(yellowRaw.expected_remaining ?? 0),
+      expectedTotal: Number(yellowRaw.expected_total ?? 0),
+      overLines: (
+        (yellowRaw.over_lines as Array<Record<string, unknown>>) ?? []
+      ).map(mapRefereeMarketLine),
+      metadata: {
+        refereeName: String(metaRaw.referee_name ?? ""),
+        classification: String(metaRaw.classification ?? ""),
+        classificationPt: String(metaRaw.classification_pt ?? ""),
+        cardLambda: Number(metaRaw.card_lambda ?? 0),
+        minute: Number(metaRaw.minute ?? 0),
+        remainingMinutes: Number(metaRaw.remaining_minutes ?? 90),
+      },
+    },
+    redCards: {
+      yesProb: Number(redRaw.yes_prob ?? 0),
+      yesOddsFair: Number(redRaw.yes_odds_fair ?? 0),
+      recommendation: (String(redRaw.recommendation ?? "neutro") as "sim" | "nao" | "neutro"),
+      confidence: String(redRaw.confidence ?? ""),
+    },
+    penalties: {
+      yesProb: Number(penaltyRaw.yes_prob ?? 0),
+      yesOddsFair: Number(penaltyRaw.yes_odds_fair ?? 0),
+      recommendation: (String(penaltyRaw.recommendation ?? "neutro") as "sim" | "nao" | "neutro"),
+      confidence: String(penaltyRaw.confidence ?? ""),
+    },
+    fouls: {
+      expectedTotal: Number(foulsRaw.expected_total ?? 0),
+      overLines: (
+        (foulsRaw.over_lines as Array<Record<string, unknown>>) ?? []
+      ).map(mapRefereeMarketLine),
+    },
+  };
+}
+
 export { mapWcPrediction };
 
 export function mapUserOpenBets(raw: {
@@ -2038,6 +2178,9 @@ export function mapUserOpenBets(raw: {
     captured_at: string | null;
     superbet_event_id?: number | null;
     user_id?: string | null;
+    bonus_eligible?: boolean | null;
+    bonus_percentage?: number | null;
+    final_payout?: number | null;
   }>;
 }) {
   return {
@@ -2062,6 +2205,9 @@ export function mapUserOpenBets(raw: {
       capturedAt: b.captured_at,
       superbetEventId: b.superbet_event_id ?? null,
       userId: b.user_id ?? null,
+      bonusEligible: b.bonus_eligible ?? null,
+      bonusPercentage: b.bonus_percentage ?? null,
+      finalPayout: b.final_payout ?? null,
     })),
   };
 }

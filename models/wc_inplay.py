@@ -6,9 +6,12 @@ from datetime import datetime
 from typing import Any
 
 import numpy as np
+import structlog
 
 from config import settings
 from models.wc_handicap import handicap_probs_from_samples
+
+logger = structlog.get_logger(__name__)
 from models.wc_monte_carlo import _sample_poisson_bivariate
 from pipelines.wc_intensity_profile import compute_half_lambdas_nhpp
 
@@ -542,6 +545,7 @@ def simulate_inplay(
     halftime_stats: Any | None = None,
     live_stats: dict[str, float] | None = None,
     live_timeline: list[dict[str, Any]] | None = None,
+    match_context: dict[str, Any] | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
@@ -560,37 +564,90 @@ def simulate_inplay(
     lambda_prior_home = lambda_full_home
     lambda_prior_away = lambda_full_away
     lambda_adjust_steps: list[dict[str, Any]] = []
+
+    def _apply_step(name: str, new_home: float, new_away: float, meta: dict[str, Any] | None) -> None:
+        nonlocal lambda_full_home, lambda_full_away
+        if meta is None or not meta.get("applied", True):
+            return
+        step = {
+            "step": name,
+            "lambda_before_home": round(lambda_full_home, 3),
+            "lambda_before_away": round(lambda_full_away, 3),
+            "lambda_after_home": round(new_home, 3),
+            "lambda_after_away": round(new_away, 3),
+            "delta_home_pct": round((new_home / lambda_full_home - 1.0) * 100, 2) if lambda_full_home else 0.0,
+            "delta_away_pct": round((new_away / lambda_full_away - 1.0) * 100, 2) if lambda_full_away else 0.0,
+        }
+        step.update({k: v for k, v in (meta or {}).items() if k != "applied"})
+        lambda_adjust_steps.append(step)
+        lambda_full_home = new_home
+        lambda_full_away = new_away
+
     if bayesian_update and minute > 0:
-        lambda_full_home = bayesian_lambda_update(
+        new_h = bayesian_lambda_update(
             lambda_prior=lambda_prior_home,
             goals_observed=home_score,
             minutes_elapsed=minute,
             match_minutes=match_minutes,
         )
-        lambda_full_away = bayesian_lambda_update(
+        new_a = bayesian_lambda_update(
             lambda_prior=lambda_prior_away,
             goals_observed=away_score,
             minutes_elapsed=minute,
             match_minutes=match_minutes,
         )
-        lambda_adjust_steps.append(
-            {
-                "step": "bayesian",
-                "lambda_home": round(lambda_full_home, 3),
-                "lambda_away": round(lambda_full_away, 3),
-            }
-        )
+        _apply_step("bayesian", new_h, new_a, {"applied": True})
 
     if settings.inplay_live_stats_lambda_adjust and live_stats and minute > 0:
         from models.wc_inplay_live_adjust import adjust_lambdas_from_live_stats
 
-        lambda_full_home, lambda_full_away, live_adj = adjust_lambdas_from_live_stats(
+        new_h, new_a, live_adj = adjust_lambdas_from_live_stats(
             lambda_full_home,
             lambda_full_away,
             live_stats=live_stats,
         )
-        if live_adj.get("applied"):
-            lambda_adjust_steps.append({"step": "live_stats", **live_adj})
+        _apply_step("live_stats", new_h, new_a, live_adj)
+
+    # --- xG acumulado ao vivo (Sofascore/ScoreAlarm) ---
+    if settings.inplay_xg_lambda_adjust and live_stats and minute > 0:
+        from models.wc_inplay_live_adjust import adjust_lambdas_from_xg
+
+        new_h, new_a, xg_adj = adjust_lambdas_from_xg(
+            lambda_full_home,
+            lambda_full_away,
+            home_xg=live_stats.get("home_xg"),
+            away_xg=live_stats.get("away_xg"),
+            minute=minute,
+            match_minutes=match_minutes,
+        )
+        _apply_step("live_xg", new_h, new_a, xg_adj)
+
+    # --- P0.2: H2H historical adjustment (comeback boost + over/under calibration) ---
+    if settings.inplay_h2h_adjust and match_context is not None:
+        from models.wc_inplay_h2h_adjust import parse_h2h_from_context, compute_h2h_adjust, apply_h2h_adjust
+
+        h2h_data = parse_h2h_from_context(match_context)
+        if h2h_data is not None:
+            h2h_adj = compute_h2h_adjust(
+                h2h_data=h2h_data,
+                home_team=home_team,
+                away_team=away_team,
+                home_score=home_score,
+                away_score=away_score,
+                minute=minute,
+                lambda_full_home=lambda_full_home,
+                lambda_full_away=lambda_full_away,
+            )
+            if h2h_adj.applied:
+                new_h, new_a, _ = apply_h2h_adjust(
+                    lambda_full_home, lambda_full_away, h2h_adj
+                )
+                _apply_step("h2h", new_h, new_a, {
+                    "home_factor": h2h_adj.lambda_home_factor,
+                    "away_factor": h2h_adj.lambda_away_factor,
+                    "draw_penalty": h2h_adj.draw_penalty,
+                    "reason": h2h_adj.reason,
+                })
 
     # Favorito pré-jogo perdendo por 1 gol: limita super-reação ao placar
     if minute >= 15 and abs(home_score - away_score) == 1:
@@ -882,6 +939,22 @@ def simulate_inplay(
         ),
     )
 
+    # Log de auditoria quando λ diverge significativamente do pré-jogo
+    if lambda_adjust_steps and logger.isEnabledFor(10):  # DEBUG
+        logger.debug(
+            "inplay_lambda_adjustments",
+            home=home_team,
+            away=away_team,
+            minute=minute,
+            score=f"{home_score}x{away_score}",
+            lambda_prior_home=round(lambda_prior_home, 3),
+            lambda_prior_away=round(lambda_prior_away, 3),
+            lambda_full_home=round(lambda_full_home, 3),
+            lambda_full_away=round(lambda_full_away, 3),
+            n_steps=len(lambda_adjust_steps),
+            steps=[s["step"] for s in lambda_adjust_steps],
+        )
+
 
 def inplay_from_predictor(
     predictor,
@@ -906,6 +979,7 @@ def inplay_from_predictor(
     live_stats: dict[str, float] | None = None,
     live_timeline: list[dict[str, Any]] | None = None,
     before_date: datetime | None = None,
+    match_context: dict[str, Any] | None = None,
 ) -> InPlayResult:
     from datetime import datetime, timezone
 
@@ -962,6 +1036,7 @@ def inplay_from_predictor(
         halftime_stats=halftime_stats,
         live_stats=live_stats,
         live_timeline=live_timeline,
+        match_context=match_context,
     )
     effective_use_ensemble = (
         use_ensemble if use_ensemble is not None else settings.inplay_use_ensemble
@@ -1018,6 +1093,7 @@ def simulate_inplay_ensemble(
     halftime_stats: Any | None = None,
     live_stats: dict[str, float] | None = None,
     live_timeline: list[dict[str, Any]] | None = None,
+    match_context: dict[str, Any] | None = None,
 ) -> InPlayResult:
     """simulate_inplay com blend do ensemble (Hawkes + GBM + Market).
 
@@ -1052,6 +1128,7 @@ def simulate_inplay_ensemble(
         halftime_stats=halftime_stats,
         live_stats=live_stats,
         live_timeline=live_timeline,
+        match_context=match_context,
     )
 
     if not settings.inplay_use_ensemble or minute <= 0:
@@ -1148,10 +1225,25 @@ def simulate_inplay_ensemble(
                     home_score,
                     away_score,
                 )
+                logger.debug("gbm_inplay_active", minute=minute, home=home_team, away=away_team)
             else:
                 gbm_available = False
-        except Exception:
+                logger.warning(
+                    "gbm_inplay_not_fitted",
+                    home=home_team,
+                    away=away_team,
+                    minute=minute,
+                    artifact_path=str(settings.lake_root / "artifacts" / "inplay_gbm.pkl"),
+                )
+        except Exception as exc:
             gbm_available = False
+            logger.warning(
+                "gbm_inplay_error",
+                home=home_team,
+                away=away_team,
+                minute=minute,
+                error=str(exc),
+            )
 
     # Market probs (se disponível)
     market_dict = None

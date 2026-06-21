@@ -1,6 +1,7 @@
 """Testes de propostas de combo enviadas pelo frontend à estação."""
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
@@ -74,3 +75,28 @@ def test_register_combo_proposal_rejects_without_market_model(monkeypatch, tmp_p
     res = client.post("/user/open-bets", json=payload)
     assert res.status_code == 422
     assert "mercado" in res.json()["detail"].lower() or "odd" in res.json()["detail"].lower()
+
+
+def test_register_multi_bet_enriches_super_multipla_bonus(monkeypatch, tmp_path):
+    monkeypatch.setattr("config.settings.api_key", "")
+    monkeypatch.setattr("config.settings.lake_root", tmp_path)
+    monkeypatch.setattr("config.settings.bet_guardrails_enabled", False)
+
+    client = TestClient(app)
+    payload = _valid_proposal_payload(
+        odds_placed=1.95,
+        potential_return=39.0,
+        source="manual",
+        minute=20,
+    )
+    res = client.post("/user/open-bets", json=payload)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["bonus_eligible"] is True
+    assert body["bonus_percentage"] == pytest.approx(0.05)
+    assert body["final_payout"] > body["odds_placed"] * payload["stake"] * 0.9
+
+    listed = client.get("/user/open-bets").json()
+    bet = next(b for b in listed["bets"] if b["id"] == body["id"])
+    assert bet.get("bonus_eligible") is True
+    assert bet.get("final_payout") == body["final_payout"]

@@ -210,7 +210,7 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
       key={event.eventId}
       className={`group border-b border-white/5 transition-colors hover:bg-white/[0.03] ${rowStyle}`}
     >
-      <td className="px-4 py-3.5">
+      <td className="hidden px-4 py-3.5 sm:table-cell">
         <BetTierBadge event={event} />
       </td>
       <td className="px-4 py-3.5">
@@ -233,13 +233,13 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
       <td className="px-4 py-3.5 font-mono text-sm text-white">
         {event.homeScore} × {event.awayScore}
       </td>
-      <td className="px-4 py-3.5">
+      <td className="hidden px-4 py-3.5 sm:table-cell">
         <span className="inline-flex rounded-md bg-amber-500/15 px-2 py-1 text-[11px] font-semibold text-amber-300">
           {minuteLabel(event)}
         </span>
       </td>
-      <td className="px-4 py-3.5 text-xs text-slate-400">{odds ?? "—"}</td>
-      <td className="px-4 py-3.5 text-xs text-slate-400">
+      <td className="hidden px-4 py-3.5 text-xs text-slate-400 md:table-cell">{odds ?? "—"}</td>
+      <td className="hidden px-4 py-3.5 text-xs text-slate-400 lg:table-cell">
         {event.marketCount > 0 ? event.marketCount : "—"}
       </td>
       <td className="px-4 py-3.5 text-right">
@@ -248,14 +248,8 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
             to={buildInPlayLinkForEvent(event)}
             className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 hover:border-amber-400/40"
           >
-            Abrir in-play
+            Abrir painel
             <IconChevronRight className="h-3 w-3" />
-          </Link>
-          <Link
-            to={`/ao-vivo/${event.eventId}/painel`}
-            className="inline-flex items-center gap-1 text-[10px] text-neon-blue/80 hover:text-neon-blue"
-          >
-            Painel visual
           </Link>
         </div>
       </td>
@@ -434,13 +428,13 @@ export function LivePage() {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/8 text-left text-[11px] uppercase tracking-widest text-slate-500">
-                    <th className="px-4 py-3">Palpite</th>
+                    <th className="hidden px-4 py-3 sm:table-cell">Palpite</th>
                     <th className="px-4 py-3">Confronto</th>
                     <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
                     <th className="px-4 py-3">Placar</th>
-                    <th className="px-4 py-3">Tempo</th>
-                    <th className="px-4 py-3">Odds 1X2</th>
-                    <th className="px-4 py-3">Mercados</th>
+                    <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
+                    <th className="hidden px-4 py-3 md:table-cell">Odds 1X2</th>
+                    <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
                     <th className="px-4 py-3 text-right">Ação</th>
                   </tr>
                 </thead>

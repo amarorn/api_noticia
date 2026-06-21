@@ -213,9 +213,16 @@ def project_halftime_cards(
     stats: HalftimeFrozenStats,
     *,
     prior_lambda_ft: float = 3.8,
+    referee_card_lambda: float | None = None,
     lines: tuple[float, ...] = (2.5, 3.5, 4.5, 5.5),
 ) -> dict[str, Any]:
-    """Projeta cartões amarelos FT com base no 1T observado."""
+    """Projeta cartões amarelos FT com base no 1T observado.
+
+    referee_card_lambda: média de amarelos/jogo do árbitro (substitui o prior
+    genérico de 3.8 quando fornecido via contexto de análise pré-jogo).
+    """
+    if referee_card_lambda is not None:
+        prior_lambda_ft = referee_card_lambda
     obs_1h = stats.home_yellows_1h + stats.away_yellows_1h
     prior_1h = prior_lambda_ft * 0.5
     prior_weight = 2.0
@@ -244,6 +251,7 @@ def build_halftime_report(
     corner_lambda_away: float | None = None,
     corner_lines: tuple[float, ...] | None = None,
     card_lines: tuple[float, ...] | None = None,
+    referee_card_lambda: float | None = None,
 ) -> HalftimeAdjustReport | None:
     if stats is None or not settings.inplay_halftime_adjust:
         return None
@@ -260,7 +268,11 @@ def build_halftime_report(
     lam_a = corner_lambda_away if corner_lambda_away is not None else lambda_full_away * 2.2
     lines_c = corner_lines or DEFAULT_LINES
     corners = project_halftime_corners(stats, lambda_home_ft=lam_h, lambda_away_ft=lam_a, lines=lines_c)
-    cards = project_halftime_cards(stats, lines=card_lines or (2.5, 3.5, 4.5, 5.5))
+    cards = project_halftime_cards(
+        stats,
+        referee_card_lambda=referee_card_lambda,
+        lines=card_lines or (2.5, 3.5, 4.5, 5.5),
+    )
 
     corner_line_probs = dict(corners.get("line_probs") or {})
     card_line_probs = dict(cards.get("line_probs") or {})
