@@ -1147,6 +1147,7 @@ interface ApiSuperbetLiveAdvice {
   second_half_totals?: Record<string, Record<string, number>>;
   half_tickets?: Record<string, unknown> | null;
   viable_2h_markets?: Record<string, unknown> | null;
+  optimized_tickets?: Record<string, unknown> | null;
   super_multipla?: Record<string, unknown> | null;
   halftime_report?: Record<string, unknown> | null;
   corners_projection?: Record<string, unknown> | null;
@@ -1156,6 +1157,60 @@ interface ApiSuperbetLiveAdvice {
   match_context?: Record<string, unknown> | null;
   referee_markets?: Record<string, unknown> | null;
   referee_profile?: Record<string, unknown> | null;
+}
+
+function mapOptimizedTicketLeg(raw: Record<string, unknown>) {
+  return {
+    market: String(raw.market ?? ""),
+    outcome: String(raw.outcome ?? ""),
+    label: String(raw.label ?? ""),
+    modelProb: Number(raw.model_prob ?? 0),
+    marketOdd: Number(raw.market_odd ?? 0),
+    expectedValue: Number(raw.expected_value ?? 0),
+    edgePp: Number(raw.edge_pp ?? 0),
+    kellyQuarter: Number(raw.kelly_quarter ?? 0),
+    classification: String(raw.classification ?? ""),
+  };
+}
+
+function mapOptimizedTicket(raw: Record<string, unknown>) {
+  const validation = (raw.validation as Record<string, unknown>) ?? {};
+  return {
+    legs: ((raw.legs as Array<Record<string, unknown>>) ?? []).map(mapOptimizedTicketLeg),
+    combinedOdd: Number(raw.combined_odd ?? 0),
+    combinedProb: Number(raw.combined_prob ?? 0),
+    combinedEv: Number(raw.combined_ev ?? 0),
+    correlationPenalty: Number(raw.correlation_penalty ?? 0),
+    score: Number(raw.score ?? 0),
+    stakeBrl: Number(raw.stake_brl ?? 0),
+    stakePct: Number(raw.stake_pct ?? 0),
+    periodMix: String(raw.period_mix ?? "ft"),
+    nLegs: Number(raw.n_legs ?? 0),
+    valid: Boolean(raw.valid ?? true),
+    validation: {
+      valid: Boolean(validation.valid ?? true),
+      errors: ((validation.errors as Array<Record<string, unknown>>) ?? []).map((e) => ({
+        severity: String(e.severity ?? ""),
+        code: String(e.code ?? ""),
+        reason: String(e.reason ?? ""),
+      })),
+      warnings: ((validation.warnings as Array<Record<string, unknown>>) ?? []).map((w) => ({
+        severity: String(w.severity ?? ""),
+        code: String(w.code ?? ""),
+        reason: String(w.reason ?? ""),
+      })),
+    },
+  };
+}
+
+function mapOptimizedTickets(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return undefined;
+  return {
+    tickets_1h: ((raw.tickets_1h as Array<Record<string, unknown>>) ?? []).map(mapOptimizedTicket),
+    tickets_2h: ((raw.tickets_2h as Array<Record<string, unknown>>) ?? []).map(mapOptimizedTicket),
+    tickets_ft: ((raw.tickets_ft as Array<Record<string, unknown>>) ?? []).map(mapOptimizedTicket),
+    tickets_mixed: ((raw.tickets_mixed as Array<Record<string, unknown>>) ?? []).map(mapOptimizedTicket),
+  };
 }
 
 function mapPatternAccuracy(raw: Record<string, unknown> | null | undefined) {
@@ -2008,6 +2063,7 @@ export function mapSuperbetLiveAdvice(raw: ApiSuperbetLiveAdvice) {
         }
       : null,
     matchContext: (raw.match_context as Record<string, unknown> | null | undefined) ?? null,
+    optimizedTickets: mapOptimizedTickets(raw.optimized_tickets as Record<string, unknown> | null | undefined),
   };
 }
 
