@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
@@ -47,6 +47,8 @@ import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration"
 import { resolveLiveAdvicePhase } from "@/presentation/utils/liveAdvicePhase";
 import { useTicket, type TicketLeg } from "@/presentation/hooks/useTicket";
 import { TicketSimulator, AddBtn, FloatingTicketBadge } from "@/presentation/components/ticket/TicketSimulator";
+import { useOddsDropMonitor, type OddsDropAlert } from "@/presentation/hooks/useOddsDropMonitor";
+import { LiveOddsDropAlert } from "@/presentation/components/predictions/LiveOddsDropAlert";
 
 // ─── Tab types ───────────────────────────────────────────────────────────────
 
@@ -139,7 +141,18 @@ export function LiveDashboardPage() {
   const advicePhase = resolveLiveAdvicePhase(searchParams);
   const eventId = Number.parseInt(eventIdParam ?? "", 10);
   const [activeTab, setActiveTab] = useState<Tab>("apostar");
+  const [riskAlerts, setRiskAlerts] = useState<OddsDropAlert[]>([]);
   const ticket = useTicket();
+
+  const handleRiskAlerts = useCallback((newAlerts: OddsDropAlert[]) => {
+    setRiskAlerts((prev) => {
+      const existingIds = new Set(prev.map((a) => a.id));
+      const fresh = newAlerts.filter((a) => !existingIds.has(a.id));
+      if (fresh.length === 0) return prev;
+      // Mantém últimos 8 alertas
+      return [...prev, ...fresh].slice(-8);
+    });
+  }, []);
 
   const {
     data, scoreTick, liveHeader, adviceSource,
@@ -149,6 +162,7 @@ export function LiveDashboardPage() {
 
   const possessionHistory = useLivePossessionHistory(data);
   const recalibrationEvent = useLiveRecalibration(data, isFetching);
+  useOddsDropMonitor(data, handleRiskAlerts);
 
   const liveSuggestions = useMemo<TicketLeg[]>(() => {
     if (!data?.aportes) return [];
@@ -271,7 +285,12 @@ export function LiveDashboardPage() {
                             {strongCount > 0 ? strongCount : opportunityCount}
                           </span>
                         )}
-                        {tab.id === "bilhete" && ticket.legs.length > 0 && (
+                        {tab.id === "bilhete" && riskAlerts.length > 0 && (
+                          <span className="absolute right-2 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white animate-pulse">
+                            !
+                          </span>
+                        )}
+                        {tab.id === "bilhete" && ticket.legs.length > 0 && riskAlerts.length === 0 && (
                           <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-black">
                             {ticket.legs.length}
                           </span>
@@ -447,7 +466,23 @@ export function LiveDashboardPage() {
 
               {/* ══ ABA: MEU BILHETE ══ */}
               {activeTab === "bilhete" && (
-                <TicketSimulator ticket={ticket} suggestions={liveSuggestions} />
+                <div className="space-y-4">
+                  {/* Monitor de risco ao vivo */}
+                  {riskAlerts.length > 0 && (
+                    <LiveOddsDropAlert
+                      alerts={riskAlerts}
+                      onDismiss={(id) =>
+                        setRiskAlerts((prev) => prev.filter((a) => a.id !== id))
+                      }
+                    />
+                  )}
+
+                  {/* Bilhetes otimizados pelo modelo */}
+                  {data && <LiveOptimizedTicketsPanel data={data} />}
+
+                  {/* Bilhete manual (simulador) */}
+                  <TicketSimulator ticket={ticket} suggestions={liveSuggestions} />
+                </div>
               )}
             </>
           ) : bootstrap ? (
