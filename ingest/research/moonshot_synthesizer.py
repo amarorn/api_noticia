@@ -39,7 +39,9 @@ Gere um relatório estruturado em JSON com EXATAMENTE estes campos:
   },
   "arbitro": {
     "nome": "nome ou 'Não divulgado'",
-    "perfil": "descrição do estilo (rigoroso/permissivo/neutro) e média de cartões"
+    "perfil": "descrição do estilo (rigoroso/permissivo/neutro) e média de cartões por jogo",
+    "card_lambda": 4.2,
+    "penalty_rate": 0.35
   },
   "analise_mercados": {
     "resultado": "análise do mercado 1X2 considerando modelo + contexto",

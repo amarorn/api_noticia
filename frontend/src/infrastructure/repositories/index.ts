@@ -322,7 +322,7 @@ export class WcApiRepository implements IWcRepository {
   }
 
   async getUserOpenBets() {
-    const raw = await apiFetch<Parameters<typeof mapUserOpenBets>[0]>("/user/open-bets", {
+    const raw = await apiFetch<Parameters<typeof mapUserOpenBets>[0]>("/user/open-bets?include_proposals=false", {
       timeoutMs: API_SYNC_TIMEOUT_MS,
     });
     return mapUserOpenBets(raw);

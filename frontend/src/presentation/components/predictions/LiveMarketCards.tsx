@@ -102,7 +102,7 @@ function DirectionBadge({
 }) {
   let key: string;
   if (groupId === "totals" || groupId.endsWith("_totals")) {
-    const direction = market?.includes("_over_") || market?.startsWith("over_") ? "over" : "over";
+    const direction = market?.includes("_over_") || market?.startsWith("over_") ? "over" : "under";
     key = `totals_${direction}`;
   } else {
     key = `${groupId}_${outcome}`;
@@ -506,6 +506,16 @@ function buildSectionCards(
       const opp =
         oppByKey.get(`${best.market}:${best.outcome}`) ?? oppByMarket.get(best.market);
       const resolved = resolveVerdict(best);
+      // Se não há opportunity validada pelo backend E confiança é baixa, rebaixar para "quase"
+      if (
+        resolved.verdict === "apostar" &&
+        !opp &&
+        data.confidence?.score != null &&
+        data.confidence.score < 0.6
+      ) {
+        resolved.verdict = "quase";
+        resolved.detail = `Edge +${best.edgePp.toFixed(1)} pp · aguardar — confiança ${data.confidence.label ?? "baixa"}`;
+      }
       if (opp && resolved.verdict === "apostar" && opp.suggestedStakeValue > 0) {
         resolved.stakeHint = `R$ ${opp.suggestedStakeValue.toFixed(0)} · ${opp.suggestedStakePct}% da banca`;
       }

@@ -83,11 +83,22 @@ interface ResearchSynthesis {
   alertas_risco: string[];
   escalacao_home: { status: string; lesoes_suspensoes: string[]; destaque: string };
   escalacao_away: { status: string; lesoes_suspensoes: string[]; destaque: string };
-  arbitro: { nome: string; perfil: string };
+  arbitro: { nome: string; perfil: string; card_lambda?: number; penalty_rate?: number };
   analise_mercados: { resultado: string; over_under: string; btts: string; handicap?: string };
   picks_recomendados: ResearchPick[];
   placar_provavel: string;
   nota_final: string;
+}
+
+interface PregameContext {
+  home_team?: string;
+  away_team?: string;
+  referee_name?: string;
+  referee_card_lambda?: number;
+  referee_penalty_rate?: number;
+  home_pregame_xg?: number;
+  away_pregame_xg?: number;
+  source?: string;
 }
 
 interface ResearchResponse {
@@ -100,6 +111,7 @@ interface ResearchResponse {
   errors: Record<string, string>;
   from_cache: boolean;
   cached_at?: number;
+  pregame_context?: PregameContext | null;
 }
 
 interface AnalysisResponse {
@@ -193,10 +205,11 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
     queryFn: () =>
       apiFetch(
         `/worldcup/pregame/research?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}&phase=${phase}${forceRefresh ? "&force_refresh=true" : ""}`,
+        { timeoutMs: 120_000 },
       ),
     enabled: triggered,
     staleTime: Infinity,
-    retry: 1,
+    retry: 0,
   });
 
   const confColor = (c?: string) =>
@@ -239,7 +252,20 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
   }
 
   if (error || !data) {
-    return <ErrorState message="Falha na pesquisa. Verifique as API keys (PERPLEXITY_API_KEY, MOONSHOT_API_KEY)." />;
+    const msg = error instanceof Error ? error.message : "Falha na pesquisa com IA.";
+    return (
+      <div className="flex flex-col items-center justify-center py-10 gap-4 text-center px-4">
+        <div className="text-3xl">⚠️</div>
+        <div className="text-sm text-red-400 font-semibold">Falha na pesquisa</div>
+        <div className="text-xs text-neutral-500 max-w-sm">{msg}</div>
+        <button
+          onClick={() => { setTriggered(false); setTimeout(() => setTriggered(true), 50); }}
+          className="mt-2 px-5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-semibold transition-colors"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
   }
 
   const s = data.synthesis;
@@ -353,12 +379,41 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
             ))}
           </div>
 
-          {/* Árbitro */}
+          {/* Árbitro + Projeção de Cartões */}
           {s.arbitro?.nome !== "Não divulgado" && (
-            <div className="rounded-lg bg-neutral-800/40 p-3">
+            <div className="rounded-lg bg-neutral-800/40 p-3 space-y-2">
               <div className="text-xs font-bold text-neutral-400 mb-1">⚖️ Árbitro</div>
               <div className="text-sm text-white">{s.arbitro.nome}</div>
-              <div className="text-xs text-neutral-400 mt-0.5">{s.arbitro.perfil}</div>
+              <div className="text-xs text-neutral-400">{s.arbitro.perfil}</div>
+              {/* Dados numéricos para projeção de cartões */}
+              {(data.pregame_context?.referee_card_lambda != null || s.arbitro?.card_lambda != null) && (() => {
+                const lambda = data.pregame_context?.referee_card_lambda ?? s.arbitro?.card_lambda;
+                const penRate = data.pregame_context?.referee_penalty_rate ?? s.arbitro?.penalty_rate;
+                return (
+                  <div className="mt-2 pt-2 border-t border-neutral-700/40 grid grid-cols-2 gap-2">
+                    {lambda != null && (
+                      <div className="bg-amber-900/20 rounded-lg p-2 text-center border border-amber-700/30">
+                        <div className="text-xs text-amber-400 font-semibold">Cartões/Jogo</div>
+                        <div className="text-lg font-black text-amber-300 font-mono">{Number(lambda).toFixed(1)}</div>
+                        <div className="text-xs text-neutral-500">λ amarelos</div>
+                      </div>
+                    )}
+                    {penRate != null && (
+                      <div className="bg-red-900/20 rounded-lg p-2 text-center border border-red-700/30">
+                        <div className="text-xs text-red-400 font-semibold">Pênaltis</div>
+                        <div className="text-lg font-black text-red-300 font-mono">{(Number(penRate) * 100).toFixed(0)}%</div>
+                        <div className="text-xs text-neutral-500">% jogos com pen.</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              {data.pregame_context && (
+                <div className="text-xs text-emerald-500/70 flex items-center gap-1 mt-1">
+                  <span>✓</span>
+                  <span>Dados salvos — modelo ao vivo usará esses priors</span>
+                </div>
+              )}
             </div>
           )}
 

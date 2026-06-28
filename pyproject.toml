@@ -112,6 +112,15 @@ tune-wc-kxl = "pipelines.wc_kxl_tune:main"
 run-pipeline = "pipelines.cli:main"
 lake-query = "pipelines.lake_query_cli:main"
 mlflow-ui = "pipelines.mlflow_ui:main"
+build-nextgoal-labels = "pipelines.wc_inplay_nextgoal_labels:main"
+train-ensemble-stack = "pipelines.wc_ensemble_stack_train:main"
+calibrate-wc-momentum = "pipelines.wc_momentum_calibrate_wc:main"
+inplay-train = "pipelines.wc_inplay_train:main"
+inplay-brier-benchmark = "pipelines.wc_inplay_brier_benchmark:main"
+train-event-seq2seq = "pipelines.wc_event_seq2seq_train:main"
+analyze-ab-test = "pipelines.wc_ab_analysis:main"
+automl-thresholds = "pipelines.wc_automl_thresholds:main"
+live-service = "live_service.app:main"
 
 [build-system]
 requires = ["hatchling"]

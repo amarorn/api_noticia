@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     wc_draw_prob_floor: float = 0.18
     wc_favorite_prob_cap: float = 0.78
     wc_favorite_draw_share: float = 0.55
-    wc_draw_pick_min_prob: float = 0.26
+    wc_draw_pick_min_prob: float = 1.0
     wc_draw_balance_gap: float = 0.18
     wc_draw_competitive_margin: float = 0.035
     wc_draw_balanced_favorite_cap: float = 0.50
@@ -122,6 +122,9 @@ class Settings(BaseSettings):
     inplay_xg_lambda_adjust: bool = True
     inplay_xg_max_shift: float = 0.25
     inplay_xg_weight_max: float = 0.40
+    inplay_xg_aggressive_enabled: bool = True
+    inplay_xg_aggressive_cap: float = 0.40
+    inplay_xg_aggressive_weight_max: float = 0.65
     inplay_h2h_adjust: bool = True
     inplay_trailing_chase_boost: bool = True
     inplay_use_calibrated_coefficients: bool = True

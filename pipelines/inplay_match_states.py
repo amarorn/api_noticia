@@ -123,7 +123,7 @@ def build_match_states_from_ticks(
         bins=[0, 15, 30, 45, 60, 75, 90, 999],
         labels=["0-15", "15-30", "30-45", "45-60", "60-75", "75-90", "90+"],
         include_lowest=True,
-    )
+    ).astype(str)
 
     df["score_state"] = df.apply(
         lambda r: f"{int(r['home_score']) if pd.notna(r.get('home_score')) else 0}-"

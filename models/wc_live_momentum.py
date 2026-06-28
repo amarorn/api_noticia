@@ -38,6 +38,9 @@ _RED_CARD_OPP_BOOST = 0.10  # aumenta λ_ataque adversário em 10%
 # Substituição ofensiva
 _OFFENSIVE_SUB_BOOST = 0.05  # +5% no λ_ataque do time que fez sub ofensiva
 
+# Lesão: jogador sai machucado → time perde poder ofensivo/defensivo
+_INJURY_OWN_PENALTY = 0.07   # −7% no λ do time que sofreu lesão
+
 
 @dataclass
 class GameEvent:
@@ -178,7 +181,23 @@ def compute_momentum(ctx: MomentumContext) -> MomentumResult:
         away_factor += boost
         reasons.append(f"Fora fez {away_off_subs} sub(s) ofensiva(s): +{boost*100:.0f}%")
 
-    # --- 5. Pressão via escanteios (proxy de ataque real ao vivo) ---
+    # --- 5. Lesões ---
+    home_injuries = sum(
+        1 for e in ctx.events if e.event_type == "injury" and e.team == "home"
+    )
+    away_injuries = sum(
+        1 for e in ctx.events if e.event_type == "injury" and e.team == "away"
+    )
+    if home_injuries > 0:
+        penalty = min(home_injuries * _INJURY_OWN_PENALTY, 0.20)
+        home_factor -= penalty
+        reasons.append(f"Casa com {home_injuries} lesão(ões): ataque -{penalty*100:.0f}%")
+    if away_injuries > 0:
+        penalty = min(away_injuries * _INJURY_OWN_PENALTY, 0.20)
+        away_factor -= penalty
+        reasons.append(f"Fora com {away_injuries} lesão(ões): ataque -{penalty*100:.0f}%")
+
+    # --- 6. Pressão via escanteios (proxy de ataque real ao vivo) ---
     total_corners = ctx.home_corners + ctx.away_corners
     if total_corners >= 2:
         # Proporção de escanteios como medida de pressão ofensiva

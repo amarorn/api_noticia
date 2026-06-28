@@ -546,6 +546,7 @@ def simulate_inplay(
     live_stats: dict[str, float] | None = None,
     live_timeline: list[dict[str, Any]] | None = None,
     match_context: dict[str, Any] | None = None,
+    live_research: dict[str, Any] | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
@@ -610,17 +611,73 @@ def simulate_inplay(
 
     # --- xG acumulado ao vivo (Sofascore/ScoreAlarm) ---
     if settings.inplay_xg_lambda_adjust and live_stats and minute > 0:
-        from models.wc_inplay_live_adjust import adjust_lambdas_from_xg
+        # Decide entre modo padrão e agressivo
+        use_aggressive = (
+            settings.inplay_xg_aggressive_enabled
+            and minute >= 20
+        )
+        if use_aggressive:
+            from models.wc_inplay_xg_aggressive import (
+                adjust_lambdas_from_xg_aggressive,
+                should_use_aggressive_xg,
+            )
+            if should_use_aggressive_xg(minute, live_stats):
+                new_h, new_a, xg_adj = adjust_lambdas_from_xg_aggressive(
+                    lambda_full_home,
+                    lambda_full_away,
+                    home_xg=live_stats.get("home_xg"),
+                    away_xg=live_stats.get("away_xg"),
+                    minute=minute,
+                    match_minutes=match_minutes,
+                )
+                _apply_step("live_xg_aggressive", new_h, new_a, xg_adj)
+            else:
+                # Fallback para modo padrão
+                from models.wc_inplay_live_adjust import adjust_lambdas_from_xg
+                new_h, new_a, xg_adj = adjust_lambdas_from_xg(
+                    lambda_full_home,
+                    lambda_full_away,
+                    home_xg=live_stats.get("home_xg"),
+                    away_xg=live_stats.get("away_xg"),
+                    minute=minute,
+                    match_minutes=match_minutes,
+                )
+                _apply_step("live_xg", new_h, new_a, xg_adj)
+        else:
+            from models.wc_inplay_live_adjust import adjust_lambdas_from_xg
+            new_h, new_a, xg_adj = adjust_lambdas_from_xg(
+                lambda_full_home,
+                lambda_full_away,
+                home_xg=live_stats.get("home_xg"),
+                away_xg=live_stats.get("away_xg"),
+                minute=minute,
+                match_minutes=match_minutes,
+            )
+            _apply_step("live_xg", new_h, new_a, xg_adj)
 
-        new_h, new_a, xg_adj = adjust_lambdas_from_xg(
+    # --- KXL dinâmico ao vivo (colisões setoriais reativas) ---
+    if momentum_events and minute > 0:
+        from models.wc_kxl_dynamic import KXLDynamic, apply_kxl_dynamic_to_lambda
+        kxl = KXLDynamic.from_match_context(match_context)
+        for ev in momentum_events:
+            ev_type = ev.get("event_type", "")
+            team = ev.get("team", "")
+            ev_minute = ev.get("minute", 0)
+            detail = ev.get("detail", "")
+            if ev_type in ("goal", "red_card", "yellow_card", "substitution", "injury", "penalty"):
+                kxl.apply_event(
+                    ev_type,
+                    team=team,
+                    minute=ev_minute,
+                    detail=detail,
+                )
+        kxl_factors = kxl.compute_factors(minute=minute)
+        new_h, new_a, kxl_meta = apply_kxl_dynamic_to_lambda(
             lambda_full_home,
             lambda_full_away,
-            home_xg=live_stats.get("home_xg"),
-            away_xg=live_stats.get("away_xg"),
-            minute=minute,
-            match_minutes=match_minutes,
+            kxl_factors,
         )
-        _apply_step("live_xg", new_h, new_a, xg_adj)
+        _apply_step("kxl_dynamic", new_h, new_a, kxl_meta)
 
     # --- P0.2: H2H historical adjustment (comeback boost + over/under calibration) ---
     if settings.inplay_h2h_adjust and match_context is not None:
@@ -980,6 +1037,7 @@ def inplay_from_predictor(
     live_timeline: list[dict[str, Any]] | None = None,
     before_date: datetime | None = None,
     match_context: dict[str, Any] | None = None,
+    live_research: dict[str, Any] | None = None,
 ) -> InPlayResult:
     from datetime import datetime, timezone
 
@@ -1014,6 +1072,15 @@ def inplay_from_predictor(
         rho=rho,
         xg_calibration=xg_calibration,
     )
+    # Aplica ajustes do live research (deep research ao vivo)
+    live_research_alerts: list[str] = []
+    if live_research:
+        from ingest.research.live_research_pulse import apply_live_research_to_lambda
+        factors.lambda_home, factors.lambda_away, live_research_alerts = apply_live_research_to_lambda(
+            factors.lambda_home,
+            factors.lambda_away,
+            live_research,
+        )
     seed = hash((home_team, away_team, home_score, away_score, minute)) % (2**32)
     sim_kwargs = dict(
         home_team=home_team,

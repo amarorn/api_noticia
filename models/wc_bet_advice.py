@@ -872,27 +872,52 @@ def _aporte_candidates(
     ]
 
     # --- Total de Gols (linhas disponíveis no snapshot) ---
+    # Usa score do snapshot (capturado em tempo real) se disponível — evita stale do inplay dict
+    live_home = getattr(snapshot, "home_score", None) if snapshot else None
+    live_away = getattr(snapshot, "away_score", None) if snapshot else None
+    current_total = (
+        (live_home + live_away)
+        if live_home is not None and live_away is not None
+        else home_score + away_score
+    )
     if snapshot:
         for line_key in snapshot.totals:
+            try:
+                line_val = float(line_key)
+            except ValueError:
+                continue
             line_num = line_key.replace(".", "_")
             over_prob = flp.get(f"over_{line_num}")
             under_prob = flp.get(f"under_{line_num}")
+            # Gate determinístico: se já passou a linha, "under" é impossível; "over" não tem valor
+            if current_total > line_val:
+                continue  # under já perdeu, over garantido mas odd ~1.0 — sem valor
             if over_prob is not None:
                 specs.append((f"over_{line_num}", "yes", f"Mais de {line_key} gols", lambda p=over_prob: p))
             if under_prob is not None:
                 specs.append((f"over_{line_num}", "no", f"Menos de {line_key} gols", lambda p=under_prob: p))
 
     # --- Total por Time (linhas disponíveis) ---
+    live_home_sc = live_home if live_home is not None else home_score
+    live_away_sc = live_away if live_away is not None else away_score
     if snapshot:
         for side in ("home", "away"):
             team_name = home_team if side == "home" else away_team
+            team_sc = live_home_sc if side == "home" else live_away_sc
             for line_key in snapshot.team_totals.get(side, {}):
+                try:
+                    line_val = float(line_key)
+                except ValueError:
+                    continue
+                if team_sc > line_val:
+                    continue  # linha já garantida — sem valor apostável
                 line_num = line_key.replace(".", "_")
                 prob = team_lp.get(f"{side}_over_{line_num}")
                 if prob is not None:
                     specs.append((f"{side}_over_{line_num}", "yes", f"{team_name} mais de {line_key} gols", lambda p=prob: p))
 
     # --- 2º Tempo (linhas disponíveis) ---
+    # second_half_line_probs já tem _apply_guaranteed_lines aplicado (minute > 45)
     if snapshot:
         for line_key in snapshot.second_half_totals:
             line_num = line_key.replace(".", "_")

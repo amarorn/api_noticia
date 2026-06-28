@@ -125,6 +125,39 @@ def market_probs_from_h2h_implied(h2h_implied: dict[str, float] | None) -> tuple
     return p1 / total, px / total, p2 / total
 
 
+def shrink_probs_1x2(
+    model_probs: dict[str, float],
+    market_probs: dict[str, float],
+    minute: int,
+) -> dict[str, float]:
+    """Aplica market shrinkage diretamente no espaço de probabilidades 1X2.
+
+    Substitui a conversão lambda → Monte Carlo com uma mistura direta:
+        p_final = α(min) × p_market + (1 - α) × p_model
+
+    Mais estável numericamente e evita a dupla aplicação de market info
+    (lambda shrinkage + blend_ensemble).
+
+    Args:
+        model_probs: {"1": p, "X": p, "2": p} do modelo (Poisson/ensemble).
+        market_probs: {"1": p, "X": p, "2": p} do mercado (devigged).
+        minute: minuto atual do jogo.
+
+    Returns:
+        {"1": p, "X": p, "2": p} normalizado.
+    """
+    alpha = compute_alpha(minute)
+    keys = ("1", "X", "2")
+    result = {
+        k: alpha * market_probs.get(k, 1 / 3) + (1 - alpha) * model_probs.get(k, 1 / 3)
+        for k in keys
+    }
+    total = sum(result.values())
+    if total > 0:
+        result = {k: v / total for k, v in result.items()}
+    return result
+
+
 def shrink_lambda(
     lambda_model_home: float,
     lambda_model_away: float,

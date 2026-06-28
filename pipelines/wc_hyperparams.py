@@ -33,7 +33,7 @@ class WcHyperParams:
     rho_max: float = 0.2
     rho_step: float = 0.01
     draw_prob_floor: float = 0.18
-    draw_pick_min_prob: float = 0.26
+    draw_pick_min_prob: float = 1.0
     draw_balance_gap: float = 0.18
     draw_competitive_margin: float = 0.035
     draw_balanced_favorite_cap: float = 0.50

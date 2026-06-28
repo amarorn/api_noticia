@@ -978,7 +978,7 @@
     stopPanel();
     const eventId = extractEventId();
     if (!eventId) {
-      console.warn("[Bolão AI] Painel: eventId não encontrado na URL", location.href);
+      // Página sem evento específico (ex: /apostas/ao-vivo) — painel não aplicável
       return;
     }
     renderPanel({ loading: true }, eventId);

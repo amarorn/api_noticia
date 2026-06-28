@@ -392,6 +392,30 @@ def _build_live_advice_payload(
         "away_possession_pct": live_stats.get("away_possession_pct"),
     }
 
+    # --- Live Research Pulse: deep research em eventos críticos ---
+    live_research_result: dict[str, Any] | None = None
+    live_research_applied = False
+    logger.warning("live_research_check event_id=%s inplay=%s gemini=%s fast=%s minute=%s", 
+                event_id, snapshot.inplay is not None, bool(settings.gemini_api_key), fast, minute)
+    if snapshot.inplay and settings.gemini_api_key and not fast and minute >= 15:
+        try:
+            from ingest.research.live_research_pulse import live_research_pulse, apply_live_research_to_lambda
+
+            live_research_result = live_research_pulse(
+                event_id=str(event_id),
+                home_team=home,
+                away_team=away,
+                minute=minute,
+                home_score=home_score,
+                away_score=away_score,
+                recent_events=momentum_events,
+            )
+            logger.warning("live_research_result event_id=%s result=%s", event_id, live_research_result is not None)
+        except Exception as exc:
+            logger.warning("live_research_pulse_falha event_id=%s: %s", event_id, exc)
+    else:
+        logger.info("live_research_skipped event_id=%s reason=conditions_not_met", event_id)
+
     from models.wc_market_shrinkage import market_probs_from_h2h_implied
     from ingest.superbet.halftime_snapshot import load_or_freeze_halftime
     from models.wc_halftime_adjust import build_halftime_report
@@ -399,7 +423,7 @@ def _build_live_advice_payload(
     market_probs = market_probs_from_h2h_implied(snapshot.h2h_implied)
 
     # Contexto de análise pré-jogo enviado pelo usuário (árbitro, xG, H2H…)
-    from ingest.superbet.match_context_store import load_match_context
+    from ingest.superbet.match_context_store import load_match_context, load_match_context_by_teams
     from models.wc_referee_inplay import (
         RefereeProfile,
         apply_referee_to_inplay_result,
@@ -408,6 +432,9 @@ def _build_live_advice_payload(
     )
 
     match_context = load_match_context(event_id)
+    # Fallback: usa contexto salvo via análise pré-jogo (por nome dos times)
+    if match_context is None:
+        match_context = load_match_context_by_teams(home, away)
     referee_card_lambda: float | None = (match_context or {}).get("referee_card_lambda")
     referee_profile = parse_referee_from_match_context(match_context)
 
@@ -441,6 +468,7 @@ def _build_live_advice_payload(
         live_stats=inplay_live_stats,
         live_timeline=inplay_live_timeline,
         match_context=match_context,
+        live_research=live_research_result,
         n_simulations=settings.inplay_fast_mc_simulations if fast else None,
         use_ensemble=False if fast else None,
         before_date=model_before_date,
@@ -449,6 +477,16 @@ def _build_live_advice_payload(
     inplay_dict["ht_home_score"] = ht_h
     inplay_dict["ht_away_score"] = ht_a
     inplay_dict["model_before_date"] = model_before_date.isoformat()
+    # Adiciona alertas do live research (deep research ao vivo)
+    if live_research_result:
+        inplay_dict["live_research"] = {
+            "eventos_detectados": live_research_result.get("eventos_detectados", []),
+            "alertas_ao_vivo": live_research_result.get("alertas_ao_vivo", []),
+            "recomendacao_modelo": live_research_result.get("recomendacao_modelo", "manter"),
+            "confianca_alteracao": live_research_result.get("confianca_alteracao", "Baixa"),
+            "justificativa": live_research_result.get("justificativa", ""),
+            "_cached": live_research_result.get("_cached", False),
+        }
     try:
         pre = predictor.predict(
             home,
@@ -853,6 +891,13 @@ def _build_live_advice_payload(
             scorealarm_stats=(scorealarm_context or {}).get("stats"),
             scorealarm_stale=bool((scorealarm_context or {}).get("stale")),
         ),
+        "live_research": inplay_dict.get("live_research"),
+        "live_kelly": _build_live_kelly_block(
+            strategy_report=strategy_report,
+            minute=minute,
+            confidence_report=report.get("confidence"),
+            bankroll=bankroll,
+        ),
         "scorealarm": None
         if fast or not scorealarm_context
         else {
@@ -867,6 +912,46 @@ def _build_live_advice_payload(
             "scores_id": scorealarm_context.get("scores_id"),
         },
     }
+
+
+def _build_live_kelly_block(
+    strategy_report: dict,
+    minute: float,
+    confidence_report: dict | None,
+    bankroll: float = 1000.0,
+) -> dict:
+    """Adiciona Kelly dinâmico ao bloco de advice (Item 2: KXL dinâmico ao vivo)."""
+    try:
+        from models.wc_kelly_live import (
+            compute_live_kxl_weight,
+            compute_live_kelly,
+            enrich_opportunity_with_live_kelly,
+        )
+
+        confidence_score = float((confidence_report or {}).get("score") or 0.5)
+        market_scan = list(strategy_report.get("market_scan") or [])
+        n_events = len(market_scan)
+
+        kxl_weight = compute_live_kxl_weight(
+            minute=minute,
+            confidence_score=confidence_score,
+            n_live_events=n_events,
+        )
+
+        # Enriquecer os primeiros 5 aportes com Kelly dinâmico
+        enriched = [
+            enrich_opportunity_with_live_kelly(opp, minute, confidence_score, bankroll)
+            for opp in market_scan[:5]
+        ]
+
+        return {
+            "kxl_blend_dynamic": round(kxl_weight, 4),
+            "minute": minute,
+            "confidence_score": confidence_score,
+            "top_enriched": enriched,
+        }
+    except Exception:
+        return {}
 
 
 __all__ = ["SuperbetClientError", "run_live_advice"]

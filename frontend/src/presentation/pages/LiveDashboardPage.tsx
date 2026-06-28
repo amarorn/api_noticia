@@ -34,6 +34,8 @@ import { LiveContextUpload } from "@/presentation/components/predictions/LiveCon
 
 // Componentes do dashboard visual
 import { LiveDashboardHero } from "@/presentation/components/live-dashboard/LiveDashboardHero";
+import { LiveMatchProbCard } from "@/presentation/components/predictions/LiveMatchProbCard";
+import { LiveStatsProjectionPanel } from "@/presentation/components/predictions/LiveStatsProjectionPanel";
 import { LiveDirectionKpis } from "@/presentation/components/live-dashboard/LiveDirectionKpis";
 import { LivePossessionPanel } from "@/presentation/components/live-dashboard/LivePossessionPanel";
 import { LiveMatchStatsPanel } from "@/presentation/components/live-dashboard/LiveMatchStatsPanel";
@@ -252,6 +254,14 @@ export function LiveDashboardPage() {
                 isFetching={isFetching}
               />
 
+              {/* ── Card prob 1X2 ── */}
+              {(data.inplaySummary.probFinalHome > 0 || data.inplaySummary.probFinalAway > 0) && (
+                <LiveMatchProbCard data={data} />
+              )}
+
+              {/* ── Projeções escanteios / cartões / gols / faltas ── */}
+              <LiveStatsProjectionPanel data={data} />
+
               <LiveRecalibrationBanner event={recalibrationEvent} />
               <LiveP0GuardBanner guardrails={data.betGuardrails} />
               <LiveAgainstModelAlert alerts={data.againstModelAlerts ?? []} />
@@ -353,6 +363,8 @@ export function LiveDashboardPage() {
                   {/* Upload de análise pré-jogo */}
                   <LiveContextUpload
                     eventId={eventId}
+                    homeTeam={data.homeTeam}
+                    awayTeam={data.awayTeam}
                     activeContext={data.matchContext ?? null}
                     onContextChanged={refetch}
                   />

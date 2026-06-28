@@ -35,6 +35,8 @@ import { LivePlayerStatsPanel } from "@/presentation/components/predictions/Live
 import { LiveSocialRadarPanel } from "@/presentation/components/predictions/LiveSocialRadarPanel";
 import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
 import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
+import { LiveMatchProbCard } from "@/presentation/components/predictions/LiveMatchProbCard";
+import { LiveStatsProjectionPanel } from "@/presentation/components/predictions/LiveStatsProjectionPanel";
 import LiveRefereePanel from "@/presentation/components/predictions/LiveRefereePanel";
 import {
   LiveOpenBetMonitor,
@@ -505,60 +507,15 @@ export function LiveInPlayPage() {
               <p className="mt-2 text-sm text-slate-400">Jogo encerrado — polling pausado.</p>
             )}
 
-            {/* ── Barras de probabilidade 1X2 ── */}
-            {(data.inplaySummary.probFinalHome > 0 || data.inplaySummary.probFinalAway > 0) && (
-              <div className="mt-2">
-                <div className="flex overflow-hidden rounded-xl" style={{ height: "24px" }}>
-                  {[
-                    {
-                      key: "1",
-                      label: data.homeTeam,
-                      prob: data.inplaySummary.probFinalHome,
-                      bg: "rgba(0,255,136,0.18)",
-                      text: "#00ff88",
-                    },
-                    {
-                      key: "X",
-                      label: "Empate",
-                      prob: data.inplaySummary.probFinalDraw,
-                      bg: "rgba(251,191,36,0.18)",
-                      text: "#fbbf24",
-                    },
-                    {
-                      key: "2",
-                      label: data.awayTeam,
-                      prob: data.inplaySummary.probFinalAway,
-                      bg: "rgba(56,189,248,0.18)",
-                      text: "#38bdf8",
-                    },
-                  ].map(({ key, label, prob, bg, text }) => {
-                    const pct = prob * 100;
-                    if (pct < 1) return null;
-                    return (
-                      <div
-                        key={key}
-                        style={{ width: `${pct.toFixed(1)}%`, backgroundColor: bg, minWidth: "36px" }}
-                        className="relative flex items-center justify-center transition-all duration-500"
-                        title={`${label}: ${pct.toFixed(0)}%`}
-                      >
-                        <span
-                          className="font-mono text-[10px] font-bold"
-                          style={{ color: text }}
-                        >
-                          {pct.toFixed(0)}%
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-1 flex justify-between px-0.5 text-[9px] text-slate-600">
-                  <span className="max-w-[35%] truncate text-left">{data.homeTeam}</span>
-                  <span>Empate</span>
-                  <span className="max-w-[35%] truncate text-right">{data.awayTeam}</span>
-                </div>
-              </div>
-            )}
           </section>
+
+          {/* ── 1b-top. CARD PROB 1X2 ── */}
+          {(data.inplaySummary.probFinalHome > 0 || data.inplaySummary.probFinalAway > 0) && (
+            <LiveMatchProbCard data={data} />
+          )}
+
+          {/* ── 1b-mid. PROJEÇÕES ESCANTEIOS / CARTÕES / GOLS / FALTAS ── */}
+          <LiveStatsProjectionPanel data={data} />
 
           {/* ── 1c. ANÁLISE PRÉ-JOGO (upload .txt) ── */}
           <LiveContextUpload

@@ -90,3 +90,61 @@ def test_scan_ht_over_traps_on_market_scan():
     traps = scan_ht_over_traps(rows, minute=45, home_score=1, away_score=0)
     assert len(traps) == 1
     assert traps[0]["severity"] == "critical"
+
+
+def test_contradiction_handicap_next_goal_adversario():
+    """Handicap time A + Próximo gol time B = contradição."""
+    legs = [
+        {"market": "handicap", "outcome": "Central PE", "line": 0.5, "label": "Central PE (+0.5) Handicap"},
+        {"market": "next_goal", "outcome": "Ferroviário CE", "label": "Ferroviário CE 2º Gol"},
+    ]
+    result = validate_bet_builder(legs, minute=45, home_score=0, away_score=1)
+    codes = [w["code"] for w in result["warnings"]]
+    assert "contradiction_handicap_next_goal" in codes
+    assert any(w["severity"] == "critical" for w in result["warnings"] if w["code"] == "contradiction_handicap_next_goal")
+
+
+def test_contradiction_handicap_over_adversario():
+    """Handicap time A + Over gols time B = contradição."""
+    legs = [
+        {"market": "handicap", "outcome": "Central PE", "line": 0.5, "label": "Central PE (+0.5) Handicap"},
+        {"market": "team_total_over", "outcome": "Ferroviário CE", "line": 1.5, "label": "Mais de 1.5 - Ferroviário CE"},
+    ]
+    result = validate_bet_builder(legs, minute=45, home_score=0, away_score=1)
+    codes = [w["code"] for w in result["warnings"]]
+    assert "contradiction_handicap_over" in codes
+    assert any(w["severity"] == "critical" for w in result["warnings"] if w["code"] == "contradiction_handicap_over")
+
+
+def test_correlation_next_goal_over_mesmo_time():
+    """Próximo gol time + Over gols mesmo time = correlação alta."""
+    legs = [
+        {"market": "next_goal", "outcome": "Ferroviário CE", "label": "Ferroviário CE 2º Gol"},
+        {"market": "team_total_over", "outcome": "Ferroviário CE", "line": 1.5, "label": "Mais de 1.5 - Ferroviário CE"},
+    ]
+    result = validate_bet_builder(legs, minute=45, home_score=0, away_score=1)
+    codes = [w["code"] for w in result["warnings"]]
+    assert "correlation_next_goal_over" in codes
+    assert any(w["severity"] == "high" for w in result["warnings"] if w["code"] == "correlation_next_goal_over")
+
+
+def test_bilhete_screenshot_completo():
+    """Bilhete do screenshot: 3 pernas com 2 contradições + 1 correlação."""
+    legs = [
+        {"market": "next_goal", "outcome": "Ferroviário CE", "label": "Ferroviário CE 2º Gol"},
+        {"market": "team_total_over", "outcome": "Ferroviário CE", "line": 1.5, "label": "Mais de 1.5 - Ferroviário CE"},
+        {"market": "handicap", "outcome": "Central PE", "line": 0.5, "label": "Central PE (+0.5) Handicap"},
+    ]
+    result = validate_bet_builder(legs, minute=45, home_score=0, away_score=1)
+    codes = [w["code"] for w in result["warnings"]]
+    
+    # Deve detectar TODAS as contradições/correlações
+    assert "contradiction_handicap_next_goal" in codes, f"Esperado contradiction_handicap_next_goal, got {codes}"
+    assert "contradiction_handicap_over" in codes, f"Esperado contradiction_handicap_over, got {codes}"
+    assert "correlation_next_goal_over" in codes, f"Esperado correlation_next_goal_over, got {codes}"
+    
+    # 2 críticas + 1 alta
+    severities = {w["code"]: w["severity"] for w in result["warnings"]}
+    assert severities["contradiction_handicap_next_goal"] == "critical"
+    assert severities["contradiction_handicap_over"] == "critical"
+    assert severities["correlation_next_goal_over"] == "high"

@@ -39,7 +39,9 @@ Retorne SOMENTE um JSON válido (sem markdown, sem texto extra) com esta estrutu
   },
   "arbitro": {
     "nome": "nome ou 'Não divulgado'",
-    "perfil": "estilo e média de cartões"
+    "perfil": "estilo e média de cartões por jogo (ex: rigoroso, ~4.2 cartões/jogo)",
+    "card_lambda": 4.2,
+    "penalty_rate": 0.35
   },
   "analise_mercados": {
     "resultado": "análise 1X2",
@@ -215,18 +217,43 @@ Combine com os dados do modelo e retorne o JSON estruturado."""
 def _parse_json(raw: str) -> dict:
     raw = raw.strip()
     # Remove markdown se houver
-    raw = re.sub(r"^```(?:json)?\n?", "", raw)
-    raw = re.sub(r"\n?```$", "", raw)
+    raw = re.sub(r"^```(?:json)?\s*\n?", "", raw)
+    raw = re.sub(r"\n?```\s*$", "", raw)
+    raw = raw.strip()
+
+    # Tentativa 1: texto inteiro é JSON válido
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            try:
-                return json.loads(match.group())
-            except json.JSONDecodeError:
-                pass
-    return {"resumo_executivo": raw[:500], "nota_final": "Falha ao parsear JSON da IA."}
+        pass
+
+    # Tentativa 2: extrair bloco { ... } usando primeiro { e último }
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start != -1 and end > start:
+        try:
+            return json.loads(raw[start : end + 1])
+        except json.JSONDecodeError:
+            pass
+
+    # Tentativa 3: o modelo retornou JSON incompleto (truncado) — tenta completar
+    if start != -1 and end == -1:
+        try:
+            candidate = raw[start:]
+            # Conta chaves abertas para tentar fechar
+            depth = 0
+            for ch in candidate:
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+            if depth > 0:
+                candidate += "}" * depth
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+    return {"resumo_executivo": raw[:800], "nota_final": "Falha ao parsear JSON da IA."}
 
 
 def _format_picks(ticket: dict) -> str:

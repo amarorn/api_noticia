@@ -47,6 +47,34 @@ def delete_match_context(event_id: int) -> bool:
     return False
 
 
+def _teams_slug(home: str, away: str) -> str:
+    import re
+    def _norm(s: str) -> str:
+        return re.sub(r"[^a-z0-9]", "_", s.lower().strip())
+    return f"{_norm(home)}-vs-{_norm(away)}"
+
+
+def save_match_context_by_teams(home: str, away: str, data: dict[str, Any]) -> Path:
+    _CONTEXTS_DIR.mkdir(parents=True, exist_ok=True)
+    slug = _teams_slug(home, away)
+    path = _CONTEXTS_DIR / f"pregame_{slug}.json"
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.info("match_context_by_teams_saved home=%s away=%s path=%s", home, away, path)
+    return path
+
+
+def load_match_context_by_teams(home: str, away: str) -> dict[str, Any] | None:
+    slug = _teams_slug(home, away)
+    path = _CONTEXTS_DIR / f"pregame_{slug}.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        logger.warning("match_context_by_teams_load_error home=%s away=%s: %s", home, away, exc)
+        return None
+
+
 def list_match_contexts() -> list[dict[str, Any]]:
     if not _CONTEXTS_DIR.exists():
         return []

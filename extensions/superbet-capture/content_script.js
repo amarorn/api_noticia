@@ -309,7 +309,7 @@
       }
     }
 
-    // Stake — pode estar na mesma linha ("APOSTA 20,00 R$") ou na próxima
+    // Stake — pode estar na mesma linha ("APOSTA 20,00 R$") ou em linhas seguintes
     let stake = 0;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -319,10 +319,22 @@
         stake = parseMoney(m[1]);
         break;
       }
-      // Linha isolada "APOSTA" → valor na próxima linha
-      if (/^APOSTA$/i.test(line) && i + 1 < lines.length) {
-        const nextVal = parseMoney(lines[i + 1]);
-        if (nextVal > 0) { stake = nextVal; break; }
+      // Linha isolada "APOSTA" → valor pode estar 1-3 linhas abaixo
+      // (a próxima pode ser "ODDS TOTAIS" num layout de duas colunas)
+      if (/^APOSTA$/i.test(line)) {
+        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+          const val = parseMoney(lines[j]);
+          if (val > 0) { stake = val; break; }
+        }
+        if (stake > 0) break;
+      }
+    }
+    // Último fallback: primeiro valor monetário isolado no card que não seja ganho/cashout
+    if (stake === 0) {
+      for (const line of lines) {
+        if (/GANHO|POTENCIAL|Cashout|ODDS|RETORNO/i.test(line)) continue;
+        const m = line.match(/^R?\$?\s*([\d]+[.,]\d{2})\s*R?\$?$/i);
+        if (m) { stake = parseMoney(m[1]); break; }
       }
     }
 
