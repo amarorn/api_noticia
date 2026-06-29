@@ -88,6 +88,8 @@ def build_match_states_from_ticks(
     if ticks.empty:
         return pd.DataFrame()
 
+    from pipelines.inplay_bet_resolver import GameResult, build_ht_scores, resolve_bet
+
     finals = finals if finals is not None else _load_final_labels()
     df = ticks.copy()
     df["event_id"] = pd.to_numeric(df["event_id"], errors="coerce").astype("Int64")
@@ -100,6 +102,15 @@ def build_match_states_from_ticks(
     )
     df["y_final"] = df["event_id"].map(
         lambda x: finals.get(int(x), {}).get("y_final") if pd.notna(x) else None
+    )
+
+    # Placar do intervalo: extraído dos próprios ticks (period_label==HT ou último 1H)
+    ht_scores = build_ht_scores(ticks)
+    df["ht_home_score"] = df["event_id"].map(
+        lambda x: ht_scores.get(int(x), (None, None))[0] if pd.notna(x) else None
+    )
+    df["ht_away_score"] = df["event_id"].map(
+        lambda x: ht_scores.get(int(x), (None, None))[1] if pd.notna(x) else None
     )
 
     def _brier_row(row: pd.Series) -> float | None:
@@ -117,6 +128,31 @@ def build_match_states_from_ticks(
         return float(((p1 - t1) ** 2 + (px - tx) ** 2 + (p2 - t2) ** 2) / 3)
 
     df["brier_model"] = df.apply(_brier_row, axis=1)
+
+    # Resolver top_aporte_won: resultado real da aposta após o jogo.
+    # Usa o resolver completo de mercados (handicap, over/under, h2h, btts, etc.)
+    def _resolve_top_aporte(row: pd.Series) -> bool | None:
+        ft_h = row.get("home_score_final")
+        ft_a = row.get("away_score_final")
+        if pd.isna(ft_h) or pd.isna(ft_a):
+            return None
+        market = row.get("top_aporte_market")
+        outcome = row.get("top_aporte_outcome")
+        if pd.isna(market) or pd.isna(outcome) or not market or not outcome:
+            return None
+
+        ht_h = row.get("ht_home_score")
+        ht_a = row.get("ht_away_score")
+        game = GameResult(
+            ft_home=int(ft_h),
+            ft_away=int(ft_a),
+            ht_home=int(ht_h) if pd.notna(ht_h) else None,
+            ht_away=int(ht_a) if pd.notna(ht_a) else None,
+        )
+        return resolve_bet(str(market), str(outcome), game)
+
+    if "top_aporte_market" in df.columns:
+        df["top_aporte_won"] = df.apply(_resolve_top_aporte, axis=1)
 
     df["minute_bucket"] = pd.cut(
         pd.to_numeric(df["minute"], errors="coerce").fillna(0).astype(int),

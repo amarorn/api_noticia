@@ -42,6 +42,8 @@ _TICK_COLUMNS: dict[str, str] = {
     "top_aporte_market": "string",
     "top_aporte_outcome": "string",
     "top_aporte_ev": "float64",
+    "top_aporte_edge_pp": "float64",
+    "top_aporte_won": "boolean",  # preenchido no pós-jogo pelo match_states resolver
     "raw_market_count": "Int64",
     "home_corners": "Int64",
     "away_corners": "Int64",
@@ -144,6 +146,7 @@ def append_live_tick(
         "top_aporte_market": top_aporte.get("market"),
         "top_aporte_outcome": top_aporte.get("outcome"),
         "top_aporte_ev": top_aporte.get("expected_value"),
+        "top_aporte_edge_pp": top_aporte.get("edge_pp"),
         "raw_market_count": snapshot.get("raw_market_count"),
         "home_corners": inplay_stats.get("home_corners"),
         "away_corners": inplay_stats.get("away_corners"),

@@ -55,6 +55,10 @@ def _serialize_leg(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+_COMBO_MIN_EV: float = 0.08
+_INTRA_GAME_CORRELATION_DISCOUNT: float = 0.12
+
+
 def _build_combo(
     legs: list[dict[str, Any]],
     *,
@@ -67,11 +71,15 @@ def _build_combo(
     for leg in legs:
         combined_odd *= float(leg["market_odd"])
         combined_prob *= float(leg["model_prob"])
+    # Desconto de correlação: mercados do mesmo jogo não são independentes.
+    # Reduz a prob combinada em 12% para refletir correlação positiva típica
+    # (ex: "time A vence" + "over 2.5 gols" têm prob conjunta menor que p1*p2).
+    combined_prob *= (1.0 - _INTRA_GAME_CORRELATION_DISCOUNT)
     combined_ev = combined_prob * combined_odd - 1.0
     min_kelly = min(float(leg.get("suggested_stake_pct") or 1.0) for leg in legs)
-    stake_pct = round(min(3.0, min_kelly * 0.55), 2)
+    stake_pct = round(min(2.0, min_kelly * 0.45), 2)
     notes = [
-        "Probabilidades tratadas como independentes — em mercados correlacionados o hit rate real pode ser menor.",
+        "Probabilidades com desconto de 12% de correlação — mercados do mesmo jogo não são independentes.",
     ]
     if len(legs) > 1 and any(
         _period_of_market(leg["market"]) != _period_of_market(legs[0]["market"]) for leg in legs[1:]
@@ -110,7 +118,7 @@ def _pick_combos(
             combo_id=f"{prefix}-double",
             bankroll=bankroll,
         )
-        if combo["combined_ev"] <= 0:
+        if combo["combined_ev"] < _COMBO_MIN_EV:
             continue
         combos.append(combo)
     combos.sort(key=lambda c: c["combined_ev"], reverse=True)
@@ -132,16 +140,16 @@ def _period_block(
     closed = closed_after_minute is not None and minute > closed_after_minute
     period_rows = [r for r in rows if _period_of_market(r["market"]) == period]
     qualified = [r for r in period_rows if r.get("meets_threshold")]
-    pool = qualified if qualified else period_rows[:4]
 
-    pool = [
-        r for r in pool
-        if is_superbet_bet_builder_market(r["market"])
-    ]
+    # Singles: mostra qualificados primeiro, senão os melhores disponíveis
+    singles_pool = qualified if qualified else period_rows[:4]
+    singles_pool = [r for r in singles_pool if is_superbet_bet_builder_market(r["market"])]
+    singles = [_serialize_leg(r) for r in singles_pool[:4]]
 
-    singles = [_serialize_leg(r) for r in pool[:4]]
+    # Combos: apenas com picks que passaram o threshold — sem fallback para picks fracos
+    combo_pool = [r for r in qualified if is_superbet_bet_builder_market(r["market"])]
     combos = [] if closed else _pick_combos(
-        pool,
+        combo_pool,
         prefix=period,
         title_prefix=title,
         bankroll=bankroll,
@@ -207,12 +215,19 @@ def build_inplay_half_tickets(
 
     mixed: list[dict[str, Any]] = []
     if minute <= 45:
-        pool_1h = [r for r in market_scan if _period_of_market(r["market"]) == "1h" and r.get("meets_threshold")]
-        pool_2h = [r for r in market_scan if _period_of_market(r["market"]) == "2h" and r.get("meets_threshold")]
-        if not pool_1h:
-            pool_1h = [r for r in market_scan if _period_of_market(r["market"]) == "1h"][:3]
-        if not pool_2h:
-            pool_2h = [r for r in market_scan if _period_of_market(r["market"]) == "2h"][:3]
+        # Combos mistos só com picks qualificados nos dois períodos — sem fallback
+        pool_1h = [
+            r for r in market_scan
+            if _period_of_market(r["market"]) == "1h"
+            and r.get("meets_threshold")
+            and is_superbet_bet_builder_market(r["market"])
+        ]
+        pool_2h = [
+            r for r in market_scan
+            if _period_of_market(r["market"]) == "2h"
+            and r.get("meets_threshold")
+            and is_superbet_bet_builder_market(r["market"])
+        ]
         if pool_1h and pool_2h:
             for idx, (a, b) in enumerate(zip(pool_1h[:3], pool_2h[:3], strict=False), start=1):
                 if not _legs_compatible(a, b):
@@ -223,7 +238,7 @@ def build_inplay_half_tickets(
                     combo_id=f"mixed-{idx}",
                     bankroll=bankroll,
                 )
-                if combo["combined_ev"] > 0:
+                if combo["combined_ev"] >= _COMBO_MIN_EV:
                     mixed.append(combo)
             mixed.sort(key=lambda c: c["combined_ev"], reverse=True)
             mixed = mixed[:2]

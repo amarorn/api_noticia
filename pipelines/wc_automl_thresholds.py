@@ -100,7 +100,7 @@ def _simulate_bets(
         return pd.Series(dtype=float)
 
     # Normalizar colunas necessárias
-    for col in ("minute", "top_aporte_ev", "h2h_odd_1", "h2h_odd_x", "h2h_odd_2"):
+    for col in ("minute", "top_aporte_ev", "top_aporte_edge_pp", "h2h_odd_1", "h2h_odd_x", "h2h_odd_2"):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -123,9 +123,17 @@ def _simulate_bets(
         else:
             min_edge = thresholds.live_min_edge_pp
 
-        # Filtros básicos
-        ev_pp = ev * 100
-        if ev_pp < min_edge:
+        # Filtro de edge em pp: usa top_aporte_edge_pp se disponível (dados novos),
+        # senão estima a partir de ev como fallback para dados históricos.
+        # edge_pp ≈ (model_prob - implied_prob) × 100; EV = model_prob × odd - 1
+        # Relação aproximada: edge_pp ≈ ev × 100 / (odd - 1) quando model_prob >> implied_prob
+        raw_edge_pp = row.get("top_aporte_edge_pp")
+        if pd.notna(raw_edge_pp) and float(raw_edge_pp) > 0:
+            edge_pp = float(raw_edge_pp)
+        else:
+            # Fallback: estima edge_pp como EV × 40 (heurística conservadora para dados legados)
+            edge_pp = ev * 40.0
+        if edge_pp < min_edge:
             continue
 
         # Confidence filter (usa ens_prob_l1_delta como proxy de confiança)
@@ -149,12 +157,15 @@ def _simulate_bets(
         if odds < thresholds.min_odds or odds > thresholds.max_odds:
             continue
 
-        # Simular retorno: ganhou se y_final == outcome previsto
-        won = (
-            (market in ("h2h", "1x2") and y_final == outcome) or
-            (market == "btts_yes" and y_final != "X") or  # aproximação
-            True  # fallback: não sabe o resultado do mercado
-        )
+        # Simular retorno: usa top_aporte_won se disponível (campo pós-jogo),
+        # senão tenta resolver h2h via y_final, senão descarta o tick.
+        raw_won = row.get("top_aporte_won")
+        if pd.notna(raw_won):
+            won = bool(raw_won)
+        elif market in ("h2h", "ft_h2h", "1x2"):
+            won = y_final == outcome
+        else:
+            continue  # sem dados de resultado para este mercado — pular
         stake_frac = min(thresholds.kelly_max_pct / 100, 0.05)
         if won:
             returns.append(stake_frac * (odds - 1.0))
@@ -166,7 +177,7 @@ def _simulate_bets(
 
 def _sharpe(returns: pd.Series) -> float:
     """Sharpe ratio anualizado (assume cada aposta como independente)."""
-    if len(returns) < 5:
+    if len(returns) < 3:
         return -10.0
     mean = returns.mean()
     std = returns.std()
@@ -203,10 +214,34 @@ def optimize_thresholds(
     if len(labeled) < 30:
         return {"error": f"Amostras insuficientes: {len(labeled)} < 30"}
 
-    # Split temporal: treina em 80%, valida em 20%
+    # Detectar amostras com dados de aporte resolvidos (top_aporte_won preenchido)
+    has_won = labeled["top_aporte_won"].notna() if "top_aporte_won" in labeled.columns else pd.Series(False, index=labeled.index)
+    n_resolved = int(has_won.sum())
+
+    # Split temporal 80/20; se val tiver < 10 apostas resolvidas, usa k-fold no total
     n_train = int(len(labeled) * 0.8)
-    train_states = labeled.iloc[:n_train]
-    val_states = labeled.iloc[n_train:]
+    _val_candidate = labeled.iloc[n_train:]
+    val_resolved_count = int(_val_candidate["top_aporte_won"].notna().sum()) if "top_aporte_won" in _val_candidate.columns else 0
+
+    use_kfold = val_resolved_count < 10
+    if use_kfold:
+        # K-fold temporal: 5 folds, cada fold usa 80% treino / 20% val mas com janelas deslizantes
+        fold_size = max(1, len(labeled) // 5)
+        folds: list[tuple[Any, Any]] = []
+        for k in range(5):
+            start_val = k * fold_size
+            end_val = start_val + fold_size
+            val_fold = labeled.iloc[start_val:end_val]
+            train_fold = pd.concat([labeled.iloc[:start_val], labeled.iloc[end_val:]])
+            if val_fold["top_aporte_won"].notna().sum() >= 3:
+                folds.append((train_fold, val_fold))
+        if not folds:
+            # Último recurso: avalia in-sample
+            folds = [(labeled, labeled)]
+        train_states, val_states = folds[0]
+    else:
+        train_states = labeled.iloc[:n_train]
+        val_states = labeled.iloc[n_train:]
 
     def objective(trial_or_params: Any) -> float:
         """Objetivo Optuna: maximizar Sharpe no holdout."""
@@ -225,16 +260,28 @@ def optimize_thresholds(
             # Fallback: trial_or_params é dict
             thresholds = BusinessThresholds.from_dict(trial_or_params)
 
-        # Penalizar se poucas apostas (sem diversidade)
-        train_returns = _simulate_bets(train_states, thresholds)
-        if len(train_returns) < 5:
-            return -5.0
-
-        val_returns = _simulate_bets(val_states, thresholds)
-        if len(val_returns) < 3:
-            return -5.0
-
-        return _sharpe(val_returns)
+        if use_kfold:
+            # Média dos Sharpes em todos os folds com dados suficientes
+            fold_sharpes: list[float] = []
+            for (tr, vl) in folds:
+                tr_ret = _simulate_bets(tr, thresholds)
+                if len(tr_ret) < 3:
+                    continue
+                vl_ret = _simulate_bets(vl, thresholds)
+                s = _sharpe(vl_ret)
+                if s > -10.0:
+                    fold_sharpes.append(s)
+            if not fold_sharpes:
+                return -5.0
+            return float(np.mean(fold_sharpes))
+        else:
+            train_returns = _simulate_bets(train_states, thresholds)
+            if len(train_returns) < 5:
+                return -5.0
+            eval_returns = _simulate_bets(val_states, thresholds)
+            if len(eval_returns) < 3:
+                return -5.0
+            return _sharpe(eval_returns)
 
     try:
         import optuna

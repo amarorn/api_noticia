@@ -52,9 +52,10 @@ def test_nao_monta_dupla_under_aninhado_1t():
 
 
 def test_monta_dupla_mista():
+    # Picks com edge forte o suficiente para o combo superar 8% de EV após desconto de correlação
     scan = [
-        {**_row("1h_over_0_5"), "outcome": "yes", "label": "1T over 0.5"},
-        {**_row("2h_over_0_5"), "outcome": "yes", "label": "2T over 0.5"},
+        {**_row("1h_over_0_5", odd=2.8, prob=0.65, ev=0.20, edge=14.0), "outcome": "yes", "label": "1T over 0.5"},
+        {**_row("2h_over_0_5", odd=2.8, prob=0.65, ev=0.20, edge=14.0), "outcome": "yes", "label": "2T over 0.5"},
     ]
     tickets = build_inplay_half_tickets(scan, minute=20, bankroll=1000)
     assert len(tickets["mixed_combos"]) >= 1
