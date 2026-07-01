@@ -135,8 +135,9 @@ class SofascoreClient:
 
     def get_json(self, path: str, *, params: dict | None = None) -> dict[str, Any]:
         if self.is_globally_blocked():
+            remaining = max(1, int(self.waf_cooldown_remaining_sec()))
             raise SofascoreWafBlockedError(
-                "Sofascore em cooldown por bloqueio WAF — aguarde alguns minutos."
+                f"Sofascore em cooldown por bloqueio WAF — aguarde ~{remaining}s."
             )
         url = path if path.startswith("http") else f"{self._base}/{path.lstrip('/')}"
         last_error: SofascoreClientError | None = None

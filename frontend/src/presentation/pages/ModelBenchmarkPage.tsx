@@ -201,6 +201,36 @@ export function ModelBenchmarkPage() {
           ) : null}
 
           {latest && m ? (
+            <>
+              {(() => {
+                const wfAcc = m.wc_walkforward?.mean_accuracy as number | undefined;
+                const randomBaseline = 1 / 3;
+                const reconHit = m.reconciliation?.hit_rate as number | undefined;
+                const alerts: string[] = [];
+                if (wfAcc != null && wfAcc < randomBaseline + 0.05) {
+                  alerts.push(
+                    `Modelo WC (${formatPct(wfAcc)}) próximo do baseline aleatório (${formatPct(randomBaseline)}).`,
+                  );
+                }
+                if (reconHit != null && reconHit < 0.35) {
+                  alerts.push(`Hit rate reconciliado (${formatPct(reconHit)}) abaixo do mínimo (35%).`);
+                }
+                const reconPnl = m.reconciliation?.total_pnl as number | undefined;
+                if (reconPnl != null && reconPnl < 0) {
+                  alerts.push(`P&L reconciliado negativo (${formatNum(reconPnl, 2)}).`);
+                }
+                if (!alerts.length) return null;
+                return (
+                  <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                    <p className="font-semibold text-amber-300">Alertas de qualidade</p>
+                    <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
+                      {alerts.map((a) => (
+                        <li key={a}>{a}</li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
             <section className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <SummaryCard
                 label="WC holdout (acc)"
@@ -268,6 +298,7 @@ export function ModelBenchmarkPage() {
                 delta={d["reconciliation.pnl"]}
               />
             </section>
+            </>
           ) : null}
 
           <section className="overflow-x-auto rounded-xl border border-border/60">

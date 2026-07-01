@@ -167,7 +167,7 @@ export function SquadsPage() {
 
   if (indexQuery.isLoading) {
     return (
-      <PageTransition className="space-y-6">
+      <PageTransition className="space-y-3">
         <Skeleton className="h-36 w-full rounded-2xl" />
         <Skeleton className="h-96 w-full rounded-2xl" />
       </PageTransition>
@@ -192,7 +192,7 @@ export function SquadsPage() {
   const meta = indexQuery.data;
 
   return (
-    <PageTransition className="space-y-8">
+    <PageTransition className="space-y-4">
       <header className="relative overflow-hidden rounded-2xl border border-white/[0.06]">
         <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 via-surface to-neon-green/5" />
         <div className="relative p-6 sm:p-8">

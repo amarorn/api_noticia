@@ -115,11 +115,11 @@ export function MatchCard({
 
       {/* Header: resultado previsto */}
       <div
-        className="relative flex items-center justify-between rounded-t-2xl px-4 py-3 transition-colors duration-300"
-        style={{ backgroundColor: `${winnerColor}10`, borderBottom: `1px solid ${winnerColor}20` }}
+        className="relative flex items-center justify-between rounded-t-2xl px-3 py-2.5 transition-colors duration-300"
+        style={{ backgroundColor: `${winnerColor}08`, borderBottom: `1px solid ${winnerColor}18` }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
+          <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">Palpite</span>
           {group && (
             <span className="rounded-md bg-neon-green/10 px-1.5 py-0.5 text-[10px] font-black text-neon-green">
               {group}
@@ -138,7 +138,7 @@ export function MatchCard({
       </div>
 
       {prediction.actualScore && (
-        <div className="relative border-b border-white/5 px-4 py-2">
+        <div className="relative border-b border-white/5 px-3 py-1.5">
           <ResultBadge
             actualScore={prediction.actualScore}
             predictionHit={prediction.predictionHit ?? null}
@@ -147,100 +147,93 @@ export function MatchCard({
       )}
 
       {showDrawNote && (
-        <p className="relative px-4 pt-2 text-[11px] leading-snug text-slate-400">
-          Empate escolhido por equilíbrio (P({prediction.maxProbOutcome})=
-          {formatPercent(prediction.maxProb ?? 0)} vs P(X)={formatPercent(prediction.confidence)}).
+        <p className="relative px-3 pt-1.5 text-[10px] leading-snug text-slate-500">
+          Empate por equilíbrio (P({prediction.maxProbOutcome})={formatPercent(prediction.maxProb ?? 0)} vs P(X)={formatPercent(prediction.confidence)}).
         </p>
       )}
 
       {/* Times */}
-      <div className="relative flex items-center justify-between gap-2 px-4 py-4">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <div className="relative flex items-center justify-between gap-2 px-3 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <TeamAvatar name={prediction.homeTeam} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">{prediction.homeTeam}</p>
-            <p className="text-[11px] text-slate-500">Mandante</p>
+            <p className="truncate text-xs font-semibold text-white">{prediction.homeTeam}</p>
+            <p className="text-[10px] text-slate-500">Mandante</p>
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-center gap-1.5">
-          <span className="text-[11px] font-black text-slate-500">VS</span>
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          <span className="text-[10px] font-black text-slate-500">VS</span>
           {/* Mini probability sparkline */}
           <div className="flex h-1 w-10 overflow-hidden rounded-full">
             <div style={{ width: `${prediction.probHome * 100}%`, backgroundColor: homeColor }} />
             <div style={{ width: `${prediction.probDraw * 100}%`, backgroundColor: outcomeColors.X }} />
             <div style={{ width: `${prediction.probAway * 100}%`, backgroundColor: awayColor }} />
           </div>
-          {prediction.prediction !== "X" && (
-            <div
-              className="h-0.5 w-6 rounded-full"
-              style={{
-                background: `linear-gradient(90deg, ${homeColor}80, ${awayColor}80)`,
-              }}
-            />
-          )}
         </div>
 
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2.5">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
           <div className="min-w-0 text-right">
-            <p className="truncate text-sm font-semibold text-white">{prediction.awayTeam}</p>
-            <p className="text-[11px] text-slate-500">Visitante</p>
+            <p className="truncate text-xs font-semibold text-white">{prediction.awayTeam}</p>
+            <p className="text-[10px] text-slate-500">Visitante</p>
           </div>
           <TeamAvatar name={prediction.awayTeam} />
         </div>
       </div>
 
-      {/* Stats + barra */}
+      {/* Stats + barra compactados */}
       {!compact && (
-        <div className="relative space-y-3 px-4 pb-4">
+        <div className="relative space-y-2 px-3 pb-3">
           <ProbabilityBar
             probHome={prediction.probHome}
             probDraw={prediction.probDraw}
             probAway={prediction.probAway}
           />
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="stat-pill">
-              <p className="text-[11px] text-slate-500">Placar provável</p>
-              <p className="mt-0.5 text-sm font-bold text-neon-green">{prediction.poissonScore}</p>
+          <div className="flex items-center gap-2">
+            <div className="stat-pill flex-1">
+              <p className="text-[10px] text-slate-500">Placar provável</p>
+              <p className="text-xs font-bold text-neon-green">{prediction.poissonScore}</p>
             </div>
-            <div className="stat-pill">
-              <p className="text-[11px] text-slate-500">Gols esperados</p>
-              <p className="mt-0.5 text-sm font-bold text-neon-blue">{prediction.expectedGoals}</p>
+            <div className="stat-pill flex-1">
+              <p className="text-[10px] text-slate-500">Gols esper.</p>
+              <p className="text-xs font-bold text-neon-blue">{prediction.expectedGoals}</p>
             </div>
           </div>
 
-          <ConfidenceBar confidence={prediction.confidence} label="Probabilidade do palpite" />
+          <ConfidenceBar confidence={prediction.confidence} label="Prob. do palpite" />
 
-          <p className="line-clamp-1 text-xs text-slate-500">{prediction.h2hSummary}</p>
+          {prediction.h2hSummary && (
+            <p className="line-clamp-1 text-[10px] text-slate-500">{prediction.h2hSummary}</p>
+          )}
         </div>
       )}
 
-      <div className="relative mx-4 mb-4 flex flex-col gap-2">
+      <div className="relative mx-3 mb-3 flex flex-col gap-1.5">
         <Link
           to={buildMatchTicketsPath(prediction.homeTeam, prediction.awayTeam)}
           onClick={(event) => event.stopPropagation()}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-violet-400/35 bg-violet-500/15 py-2.5 text-sm font-semibold text-violet-100 transition-all hover:border-violet-300/50 hover:bg-violet-500/25"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-violet-400/35 bg-violet-500/15 py-2 text-xs font-semibold text-violet-100 transition-all hover:border-violet-300/50 hover:bg-violet-500/25"
         >
-          <IconWallet className="h-4 w-4" />
+          <IconWallet className="h-3.5 w-3.5" />
           Bilhetes R$ 5 → R$ 500+
-          <IconChevronRight className="h-3.5 w-3.5" />
+          <IconChevronRight className="h-3 w-3" />
         </Link>
         <Link
           to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}`}
           state={{ prediction }}
           onClick={(event) => event.stopPropagation()}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2.5 text-sm font-medium text-slate-400 transition-all group-hover:border-neon-green/25 group-hover:bg-neon-green/4 group-hover:text-neon-green"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-white/8 bg-white/4 py-2 text-xs font-medium text-slate-400 transition-all group-hover:border-neon-green/25 group-hover:bg-neon-green/4 group-hover:text-neon-green"
         >
-          Ver análise completa
-          <IconChevronRight className="h-3.5 w-3.5" />
+          Análise completa
+          <IconChevronRight className="h-3 w-3" />
         </Link>
         <Link
           to={`/match/${encodeURIComponent(prediction.homeTeam)}/${encodeURIComponent(prediction.awayTeam)}?sofascore=1`}
           onClick={(event) => event.stopPropagation()}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-white/8 bg-white/4 py-2 text-xs font-medium text-slate-500 transition-all hover:border-neon-blue/25 hover:bg-neon-blue/4 hover:text-neon-blue"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-white/8 bg-white/4 py-1.5 text-[11px] font-medium text-slate-500 transition-all hover:border-neon-blue/25 hover:bg-neon-blue/4 hover:text-neon-blue"
         >
-          Palpite com escalação Sofascore
+          Palpite c/ escalação
           <IconChevronRight className="h-3 w-3" />
         </Link>
       </div>

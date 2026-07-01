@@ -56,6 +56,28 @@ def is_event_finalized(event_id: int) -> bool:
     return str(event_id) in _load_registry().get("events", {})
 
 
+def list_pending_watch_event_ids(*, max_events: int | None = None) -> list[int]:
+    """Eventos com bronze Superbet ainda não finalizados no gold."""
+    events_root = settings.bronze_path / "superbet" / "events"
+    if not events_root.is_dir():
+        return []
+    registry = _load_registry().get("events", {})
+    pending: list[int] = []
+    for path in sorted(events_root.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not path.is_dir() or not path.name.isdigit():
+            continue
+        eid = int(path.name)
+        if str(eid) in registry:
+            continue
+        latest = path / "latest.json"
+        if not latest.exists():
+            continue
+        pending.append(eid)
+        if max_events is not None and len(pending) >= max_events:
+            break
+    return pending
+
+
 def _count_bronze_snapshots(event_id: int) -> int:
     base = settings.bronze_path / "superbet" / "events" / str(event_id)
     if not base.exists():
@@ -257,6 +279,24 @@ def maybe_finalize_finished_event(
         advice=advice,
     )
 
+    ip = snapshot.inplay
+    postmortem_path = None
+    if ip is not None:
+        try:
+            from pipelines.inplay_postmortem import save_inplay_postmortem
+
+            postmortem_path = save_inplay_postmortem(
+                event_id,
+                home_score=int(ip.home_score or 0),
+                away_score=int(ip.away_score or 0),
+                ht_home=ip.ht_home_score,
+                ht_away=ip.ht_away_score,
+                home_team=snapshot.home_team,
+                away_team=snapshot.away_team,
+            )
+        except Exception as exc:
+            logger.warning("postmortem falhou: %s", exc)
+
     try:
         from pipelines.inplay_match_states import upsert_match_states
 
@@ -267,7 +307,6 @@ def maybe_finalize_finished_event(
         entry_silver = None
 
     settle_summary = None
-    ip = snapshot.inplay
     if settings.superbet_finalize_settle_open_bets and ip is not None:
         try:
             from models.open_bet_settle import settle_open_bets_for_event
@@ -320,6 +359,7 @@ def maybe_finalize_finished_event(
         "final_score": inplay.get("current_score"),
         "finalized_at": datetime.now(UTC).isoformat(),
         "gold_path": str(gold_path),
+        "postmortem_path": str(postmortem_path) if postmortem_path else None,
         "silver_match_states": entry_silver,
         "settle_open_bets": (
             {
@@ -353,6 +393,7 @@ def maybe_finalize_finished_event(
 
 __all__ = [
     "is_event_finalized",
+    "list_pending_watch_event_ids",
     "maybe_finalize_finished_event",
     "save_finished_event_record",
 ]

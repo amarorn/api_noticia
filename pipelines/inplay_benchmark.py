@@ -11,9 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -35,31 +33,10 @@ def _load_live_ticks() -> pd.DataFrame:
 
 
 def _find_final_score_from_events(event_id: int) -> dict | None:
-    """Busca último snapshot do evento para obter placar final."""
-    events_dir = settings.bronze_path / "superbet" / "events" / str(event_id)
-    if not events_dir.exists():
-        return None
-    snapshots = sorted(events_dir.glob("*.json"), key=lambda p: p.stem)
-    if not snapshots:
-        return None
-    # Último snapshot = mais próximo do final
-    try:
-        with open(snapshots[-1]) as f:
-            data = json.load(f)
-        inplay = data.get("inplay_stats") or data.get("inplay") or {}
-        status = (data.get("inplay_stats_metadata") or {}).get("status", "")
-        home_score = int(inplay.get("home_team_score", inplay.get("home_score", -1)))
-        away_score = int(inplay.get("away_team_score", inplay.get("away_score", -1)))
-        if home_score < 0 or away_score < 0:
-            return None
-        return {
-            "event_id": event_id,
-            "home_score_final": home_score,
-            "away_score_final": away_score,
-            "status": status,
-        }
-    except (json.JSONDecodeError, ValueError, KeyError):
-        return None
+    """Compat: delega para pipelines.inplay_event_finals."""
+    from pipelines.inplay_event_finals import find_event_final_score
+
+    return find_event_final_score(event_id)
 
 
 def compute_live_ticks_brier(verbose: bool = False) -> dict:
@@ -204,6 +181,9 @@ def compute_walkforward_brier(
     eval_season: int = 2022,
     n_simulations: int = 3000,
     verbose: bool = False,
+    *,
+    use_momentum: bool = True,
+    use_calibrated_coefficients: bool | None = None,
 ) -> dict:
     """Roda walk-forward e retorna Brier overall + por minuto."""
     try:
@@ -212,6 +192,8 @@ def compute_walkforward_brier(
         result = evaluate_inplay(
             eval_season=eval_season,
             n_simulations=n_simulations,
+            use_momentum=use_momentum,
+            use_calibrated_coefficients=use_calibrated_coefficients,
             verbose=verbose,
         )
         return {
@@ -221,9 +203,78 @@ def compute_walkforward_brier(
             "n_samples": result.n_samples,
             "n_games": result.n_games,
             "elapsed_seconds": result.elapsed_seconds,
+            "use_momentum": use_momentum,
+            "use_calibrated_coefficients": use_calibrated_coefficients,
+            "error": result.error,
         }
     except Exception as e:
         return {"error": str(e)}
+
+
+def compute_ab_momentum_report(
+    eval_season: int = 2022,
+    n_simulations: int = 2000,
+    verbose: bool = False,
+) -> dict:
+    """Compara walk-forward: sem momentum vs default vs MLE calibrado."""
+    scenarios = [
+        ("sem_momentum", {"use_momentum": False, "use_calibrated_coefficients": False}),
+        ("momentum_default", {"use_momentum": True, "use_calibrated_coefficients": False}),
+        ("momentum_calibrado", {"use_momentum": True, "use_calibrated_coefficients": True}),
+    ]
+    out: dict[str, dict] = {}
+    for name, kwargs in scenarios:
+        out[name] = compute_walkforward_brier(
+            eval_season=eval_season,
+            n_simulations=n_simulations,
+            verbose=False,
+            **kwargs,
+        )
+    if verbose:
+        print("\n=== A/B MOMENTUM (walk-forward fixtures) ===")
+        for name, rep in out.items():
+            if rep.get("error"):
+                print(f"  {name}: ERRO — {rep['error']}")
+                continue
+            if rep.get("n_samples", 0) == 0:
+                print(f"  {name:20s}: sem amostras (walk-forward falhou ou season vazia)")
+                continue
+            print(
+                f"  {name:20s}: Brier={rep.get('brier_overall', 0):.5f} "
+                f"(n={rep.get('n_samples', 0)})"
+            )
+        base = out.get("momentum_default", {}).get("brier_overall")
+        cal = out.get("momentum_calibrado", {}).get("brier_overall")
+        if base is not None and cal is not None and out.get("momentum_default", {}).get("n_samples"):
+            print(f"  Ganho calibrado vs default: {base - cal:+.5f}")
+    return out
+
+
+def compute_ticks_dataset_summary(verbose: bool = False) -> dict:
+    """Resume live_ticks disponíveis para calibração MLE."""
+    from pipelines.wc_inplay_ticks_dataset import build_timeline_from_live_ticks
+
+    timeline = build_timeline_from_live_ticks()
+    if timeline.empty:
+        return {"n_snapshots": 0, "n_events": 0, "ready_for_tune": False}
+    summary = {
+        "n_snapshots": len(timeline),
+        "n_events": int(timeline["match_id"].nunique()),
+        "minute_range": [
+            int(timeline["minute"].min()),
+            int(timeline["minute"].max()),
+        ],
+        "ready_for_tune": len(timeline) >= settings.inplay_tune_min_snapshots,
+    }
+    if verbose:
+        print("\n=== LIVE TICKS (dataset MLE) ===")
+        print(f"  Snapshots: {summary['n_snapshots']} | Eventos: {summary['n_events']}")
+        print(f"  Minutos: {summary['minute_range'][0]}–{summary['minute_range'][1]}")
+        print(
+            f"  Pronto p/ tune-inplay --source ticks: "
+            f"{'sim' if summary['ready_for_tune'] else 'não'}"
+        )
+    return summary
 
 
 # ---------------------------------------------------------------------------
@@ -285,6 +336,9 @@ def full_benchmark_report(
     eval_season: int = 2022,
     verbose: bool = True,
     live_only: bool = False,
+    *,
+    ab_momentum: bool = False,
+    include_ticks_summary: bool = True,
 ) -> dict:
     """Relatório completo de performance do modelo in-play.
 
@@ -305,6 +359,9 @@ def full_benchmark_report(
 
     report["live_ticks"] = compute_live_ticks_brier(verbose=verbose)
 
+    if include_ticks_summary:
+        report["ticks_dataset"] = compute_ticks_dataset_summary(verbose=verbose)
+
     # Walk-forward (somente se não --live-only)
     if not live_only:
         if verbose:
@@ -312,6 +369,11 @@ def full_benchmark_report(
         report["walkforward"] = compute_walkforward_brier(
             eval_season=eval_season, verbose=verbose
         )
+        if ab_momentum:
+            report["ab_momentum"] = compute_ab_momentum_report(
+                eval_season=eval_season,
+                verbose=verbose,
+            )
 
     # Reconciliação
     recon = compute_reconciliation_metrics()
@@ -367,19 +429,52 @@ def main():
     parser.add_argument("--verbose", "-v", action="store_true", default=True)
     parser.add_argument("--live-only", action="store_true", help="Apenas live ticks (skip walkforward)")
     parser.add_argument("--eval-season", type=int, default=2022, help="Season para walk-forward")
+    parser.add_argument(
+        "--ab-momentum",
+        action="store_true",
+        help="Compara walk-forward sem/default/calibrado momentum",
+    )
+    parser.add_argument(
+        "--tune-ticks",
+        action="store_true",
+        help="Roda tune-inplay --source both e salva coeficientes MLE",
+    )
     parser.add_argument("--json", action="store_true", help="Saída em JSON (máquina)")
     args = parser.parse_args()
 
     verbose = not args.json and args.verbose
+    tune_result = None
+    if args.tune_ticks:
+        from pipelines.wc_inplay_tune import run_inplay_tune
+
+        if verbose:
+            print("=== CALIBRAÇÃO MLE (fixtures + live_ticks) ===")
+        try:
+            coefs = run_inplay_tune(source="both", eval_season=args.eval_season, verbose=verbose)
+            tune_result = {
+                "n_observations": coefs.n_observations,
+                "holdout_brier": coefs.holdout_brier,
+                "holdout_brier_baseline": coefs.holdout_brier_baseline,
+                "dataset_hash": coefs.dataset_hash,
+            }
+        except ValueError as exc:
+            tune_result = {"error": str(exc)}
+            if verbose:
+                print(f"  Falha: {exc}")
+
     report = full_benchmark_report(
         eval_season=args.eval_season,
         verbose=verbose,
         live_only=args.live_only,
+        ab_momentum=args.ab_momentum,
     )
+    if tune_result is not None:
+        report["tune_ticks"] = tune_result
 
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False, default=str))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

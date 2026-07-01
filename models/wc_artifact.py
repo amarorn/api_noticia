@@ -10,10 +10,13 @@ import pickle
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import structlog
 
-import pandas as pd
+if TYPE_CHECKING:
+    from models.wc_train_progress import TrainProgressReporter
+
 
 from config import settings
 from models.wc_predictor import WcPredictor, train_wc_predictor
@@ -131,6 +134,10 @@ def save_artifact(predictor: WcPredictor) -> dict:
     }
     _bundle_path().write_bytes(pickle.dumps(bundle, protocol=pickle.HIGHEST_PROTOCOL))
 
+    from pipelines.wc_holdout_eval import evaluate_wc_holdout
+
+    holdout_eval = evaluate_wc_holdout(predictor)
+
     manifest = {
         "artifact_version": ARTIFACT_VERSION,
         "created_at": datetime.now(UTC).isoformat(),
@@ -154,6 +161,7 @@ def save_artifact(predictor: WcPredictor) -> dict:
             "dixon_coles": predictor.collaborative.dixon_coles_weight,
             "logistic": predictor.collaborative.logistic_weight,
         },
+        "holdout_eval": holdout_eval.to_dict() if holdout_eval else None,
     }
     _manifest_path().write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
@@ -260,6 +268,11 @@ def load_or_train_wc_predictor(
     from models.wc_train_progress import NullTrainProgressReporter
 
     reporter = progress or NullTrainProgressReporter()
+    mlflow_session = None
+    if enable_mlflow:
+        from pipelines.mlflow_live_train import attach_mlflow_live
+
+        reporter, mlflow_session = attach_mlflow_live(reporter)
     if not force:
         loaded = load_artifact()
         if loaded is not None:
@@ -288,12 +301,22 @@ def load_or_train_wc_predictor(
                 "ensemble_weights": manifest.get("ensemble_weights"),
             }
         )
-        if enable_mlflow:
+        if enable_mlflow and mlflow_session and mlflow_session.active:
+            from models.wc_train_progress import read_train_progress
+
+            progress = read_train_progress()
+            elapsed = progress.elapsed_sec if progress else None
+            run_id = mlflow_session.finalize(manifest, elapsed_sec=elapsed)
+            if run_id:
+                manifest["mlflow_run_id"] = run_id
+        elif enable_mlflow:
             run_id = _log_train_to_mlflow(manifest)
             if run_id:
                 manifest["mlflow_run_id"] = run_id
         return predictor, manifest
     except Exception as exc:
+        if mlflow_session and mlflow_session.active:
+            mlflow_session.fail(str(exc))
         reporter.fail(str(exc))
         raise
 

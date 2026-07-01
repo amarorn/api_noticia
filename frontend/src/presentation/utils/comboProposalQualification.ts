@@ -48,11 +48,11 @@ export function qualifyKxlCombo(ticket: {
     label: string;
     hitRate: number;
     availableOnBook?: boolean;
-    marketOdd: number | null;
+    marketOdd?: number | null;
     expectedValue?: number | null;
   }>;
-  comboOdd: number | null;
-  comboEv: number | null;
+  comboOdd?: number | null;
+  comboEv?: number | null;
   bookCoverage?: { mainAvailable: number; mainTotal: number } | null;
 }): ComboProposalQualification {
   if (ticket.mainBets.length < 2) {
@@ -107,6 +107,29 @@ export function qualifyStrategyOpportunity(opp: {
     };
   }
   return { qualified: true, reason: null };
+}
+
+export function qualifyComboProposal(proposal: ComboProposalContext): ComboProposalContext {
+  if (proposal.legs.length < 2) {
+    return { ...proposal, qualified: false, disqualifyReason: "Múltipla exige 2+ pernas." };
+  }
+  if (proposal.combinedEv <= MIN_COMBINED_EV) {
+    return {
+      ...proposal,
+      qualified: false,
+      disqualifyReason: "EV combinado não positivo — modelo sem edge vs mercado.",
+    };
+  }
+  for (const leg of proposal.legs) {
+    if (!legHasModelAndMarket(leg.modelProb, leg.marketOdd, leg.expectedValue)) {
+      return {
+        ...proposal,
+        qualified: false,
+        disqualifyReason: `"${leg.label}": falta odd Superbet ou EV do modelo.`,
+      };
+    }
+  }
+  return { ...proposal, qualified: true, disqualifyReason: null };
 }
 
 export function formatProposalBasis(proposal: ComboProposalContext): string {

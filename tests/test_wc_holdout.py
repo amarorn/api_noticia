@@ -1,6 +1,14 @@
 import pandas as pd
+import pytest
 
+from config import settings
 from pipelines.wc_holdout import wc_holdout_test_df, wc_holdout_train_df
+
+
+@pytest.fixture(autouse=True)
+def edition_holdout_mode(monkeypatch):
+    """Testes legados assumem holdout por edição 2022."""
+    monkeypatch.setattr(settings, "wc_holdout_mode", "edition")
 
 
 def test_holdout_2022_prefers_copa_do_mundo():

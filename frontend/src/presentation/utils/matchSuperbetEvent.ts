@@ -12,7 +12,6 @@ const TEAM_SLUG: Record<string, string> = {
   "south korea": "coreia do sul",
   "korea republic": "coreia do sul",
   mexico: "mexico",
-  "mexico": "mexico",
   "republica tcheca": "republica tcheca",
   "czech republic": "republica tcheca",
   czechia: "republica tcheca",
@@ -150,4 +149,14 @@ export function buildMatchTicketsPathWithEvent(
 ): string {
   const base = buildMatchTicketsPath(homeTeam, awayTeam);
   return `${base}?superbetEventId=${superbetEventId}`;
+}
+
+export function buildInPlayLink(
+  eventId: number,
+  kickoff?: string | null,
+): string {
+  const base = `/ao-vivo/${eventId}`;
+  if (!kickoff) return base;
+  const params = new URLSearchParams({ kickoff });
+  return `${base}?${params.toString()}`;
 }

@@ -101,6 +101,9 @@ def h2h_conflicts_handicap(h2h_market: str, h2h_outcome: str, hcap_market: str) 
     _, team, line = h
     if side == "draw":
         return line <= -0.5
+    # Superbet Criar Aposta: 1X2 no mesmo time do handicap anula/rejeita a outra perna
+    if side == team:
+        return True
     if side == "home" and team == "away" and line <= -0.5:
         return True
     if side == "away" and team == "home" and line <= -0.5:
@@ -248,6 +251,38 @@ def handicap_conflicts_opposite_offense(
     return False
 
 
+def _same_period(a: str, b: str) -> bool:
+    return a == b or (a == "ft" and b == "ft")
+
+
+def handicap_conflicts_same_team_offense(
+    hcap_market: str,
+    other_market: str,
+    other_outcome: str,
+) -> bool:
+    """Handicap + gols do mesmo time no Criar Aposta (Superbet descarta uma perna)."""
+    parsed = parse_handicap(hcap_market)
+    if not parsed:
+        return False
+    hcap_period, hcap_side, _line = parsed
+    if other_outcome.lower() not in {"yes", "sim"}:
+        return False
+
+    team_over = _parse_team_over_line(other_market)
+    if team_over:
+        period, side, _line = team_over
+        if side == hcap_side and _same_period(hcap_period, period):
+            return True
+
+    exact = _parse_exact_team_goals(other_market)
+    if exact:
+        period, side, _goals = exact
+        if side == hcap_side and _same_period(hcap_period, period):
+            return True
+
+    return False
+
+
 def legs_compatible(a_market: str, a_outcome: str, b_market: str, b_outcome: str) -> bool:
     """True se as duas pernas podem ir juntas no Criar Aposta Superbet."""
     if a_market == b_market:
@@ -301,6 +336,15 @@ def legs_compatible(a_market: str, a_outcome: str, b_market: str, b_outcome: str
     ):
         return False
 
+    if leg_family(a_market) == "handicap" and handicap_conflicts_same_team_offense(
+        a_market, b_market, b_outcome
+    ):
+        return False
+    if leg_family(b_market) == "handicap" and handicap_conflicts_same_team_offense(
+        b_market, a_market, a_outcome
+    ):
+        return False
+
     return True
 
 
@@ -344,6 +388,7 @@ __all__ = [
     "handicaps_conflict",
     "handicap_requires_win",
     "handicap_conflicts_opposite_offense",
+    "handicap_conflicts_same_team_offense",
     "h2h_conflicts_handicap",
     "is_superbet_bet_builder_market",
     "combo_legs_compatible",

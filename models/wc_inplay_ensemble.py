@@ -104,12 +104,14 @@ def blend_ensemble(
 ) -> EnsembleResult:
     """Combina probabilidades de múltiplos modelos com pesos dinâmicos.
 
-    Se um modelo não está disponível, redistribui seu peso proporcionalmente
-    entre os demais. Garante que a soma final das probabilidades = 1.
+    Fluxo:
+    1. Tenta usar o meta-learner (StackedEnsemble) se disponível.
+    2. Fallback: média ponderada com pesos manuais por bucket temporal.
+    3. Se market_probs disponível, aplica shrinkage final em prob space.
 
     Args:
         inputs: probabilidades de cada fonte + metadata.
-        weights: configuração de pesos por bucket.
+        weights: configuração de pesos manuais (fallback).
 
     Returns:
         EnsembleResult com probabilidades finais e breakdown.
@@ -117,12 +119,45 @@ def blend_ensemble(
     if weights is None:
         weights = EnsembleWeights()
 
-    w_poisson, w_hawkes, w_gbm, w_market = weights.get_weights(inputs.minute)
     bucket_name = weights.get_bucket_name(inputs.minute)
+    raw_contributions: dict[str, dict[str, float]] = {}
 
-    # Coletar modelos disponíveis e suas probabilidades
+    # --- Tentar meta-learner (Item 2: stacking aprendido) ---
+    try:
+        from models.wc_ensemble_stack import build_meta_features, get_stack
+
+        stack = get_stack()
+        if stack is not None:
+            meta = build_meta_features(
+                poisson_probs=inputs.poisson_probs,
+                hawkes_probs=inputs.hawkes_probs,
+                gbm_probs=inputs.gbm_probs,
+                market_probs=inputs.market_probs,
+                minute=inputs.minute,
+            )
+            stacked_probs = stack.predict(meta)
+            for name, probs in [
+                ("poisson", inputs.poisson_probs),
+                ("hawkes", inputs.hawkes_probs),
+                ("gbm", inputs.gbm_probs),
+                ("market", inputs.market_probs),
+            ]:
+                if probs:
+                    raw_contributions[name] = probs
+            return EnsembleResult(
+                probs=stacked_probs,
+                weights_used=(0.0, 0.0, 0.0, 0.0),
+                bucket=bucket_name,
+                components_used=list(raw_contributions.keys()),
+                raw_contributions=raw_contributions,
+            )
+    except Exception:
+        pass  # fallback silencioso para pesos manuais
+
+    # --- Fallback: pesos manuais por bucket (comportamento original) ---
+    w_poisson, w_hawkes, w_gbm, w_market = weights.get_weights(inputs.minute)
+
     sources: list[tuple[str, dict[str, float], float]] = []
-
     if inputs.poisson_available and inputs.poisson_probs:
         sources.append(("poisson", inputs.poisson_probs, w_poisson))
     if inputs.hawkes_available and inputs.hawkes_probs:
@@ -133,7 +168,6 @@ def blend_ensemble(
         sources.append(("market", inputs.market_probs, w_market))
 
     if not sources:
-        # Nenhum modelo disponível — retornar prior uniforme
         return EnsembleResult(
             probs={"1": 1 / 3, "X": 1 / 3, "2": 1 / 3},
             weights_used=(0.0, 0.0, 0.0, 0.0),
@@ -142,34 +176,53 @@ def blend_ensemble(
             raw_contributions={},
         )
 
-    # Redistribuir pesos entre disponíveis
     total_weight = sum(w for _, _, w in sources)
     if total_weight <= 0:
         total_weight = len(sources)
 
-    normalized_sources = [
-        (name, probs, w / total_weight)
-        for name, probs, w in sources
-    ]
+    normalized_sources = [(name, probs, w / total_weight) for name, probs, w in sources]
 
-    # Blend via média ponderada
-    final_probs = {"1": 0.0, "X": 0.0, "2": 0.0}
-    raw_contributions = {}
+    # Blend via média ponderada (excluindo market do blend para evitar dupla contagem)
+    model_sources = [(n, p, w) for n, p, w in normalized_sources if n != "market"]
+    market_entry = next(((p, w) for n, p, w in normalized_sources if n == "market"), None)
 
-    for name, probs, w in normalized_sources:
-        raw_contributions[name] = probs
-        for key in final_probs:
-            final_probs[key] += w * probs.get(key, 0.0)
+    if model_sources:
+        model_total_w = sum(w for _, _, w in model_sources)
+        model_renorm = [(n, p, w / model_total_w) for n, p, w in model_sources] if model_total_w > 0 else model_sources
 
-    # Normalizar para garantir soma = 1
-    total = sum(final_probs.values())
-    if total > 0:
-        for key in final_probs:
-            final_probs[key] /= total
+        final_probs = {"1": 0.0, "X": 0.0, "2": 0.0}
+        for name, probs, w in model_renorm:
+            raw_contributions[name] = probs
+            for key in final_probs:
+                final_probs[key] += w * probs.get(key, 0.0)
 
-    # Pesos efetivos usados
+        # Normalizar probs dos modelos
+        tot = sum(final_probs.values())
+        if tot > 0:
+            final_probs = {k: v / tot for k, v in final_probs.items()}
+
+        # Aplicar shrinkage em prob space (Item 4) se market disponível
+        if market_entry is not None:
+            market_p, _ = market_entry
+            raw_contributions["market"] = market_p
+            try:
+                from models.wc_market_shrinkage import shrink_probs_1x2
+                final_probs = shrink_probs_1x2(final_probs, market_p, int(inputs.minute))
+            except Exception:
+                # fallback: blend direto como antes
+                for key in final_probs:
+                    final_probs[key] = (
+                        final_probs[key] * (1 - w_market) + market_p.get(key, 1 / 3) * w_market
+                    )
+                tot2 = sum(final_probs.values())
+                if tot2 > 0:
+                    final_probs = {k: v / tot2 for k, v in final_probs.items()}
+    else:
+        # Só market disponível
+        final_probs = dict(inputs.market_probs or {"1": 1/3, "X": 1/3, "2": 1/3})
+        raw_contributions["market"] = final_probs
+
     weights_used = tuple(w for _, _, w in normalized_sources)
-
     return EnsembleResult(
         probs=final_probs,
         weights_used=weights_used,

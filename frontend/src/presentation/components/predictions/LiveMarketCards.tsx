@@ -102,7 +102,7 @@ function DirectionBadge({
 }) {
   let key: string;
   if (groupId === "totals" || groupId.endsWith("_totals")) {
-    const direction = market?.includes("_over_") || market?.startsWith("over_") ? "over" : "over";
+    const direction = market?.includes("_over_") || market?.startsWith("over_") ? "over" : "under";
     key = `totals_${direction}`;
   } else {
     key = `${groupId}_${outcome}`;
@@ -484,11 +484,19 @@ function buildSectionCards(
     const cards = section.groups.map((group) => {
       const rows = scan.filter((row) => group.matchMarket(row.market));
       if (rows.length === 0) {
+        const waitingHalftime =
+          section.id === "props" &&
+          group.id === "cards" &&
+          data.isLive &&
+          data.minute <= 45 &&
+          Boolean(data.analysisCoverage?.yellowCards);
         return {
           group,
           best: null as MarketScanRow | null,
           verdict: "sem_odds" as Verdict,
-          detail: "Mercado não disponível para este evento",
+          detail: waitingHalftime
+            ? "Cartões FT calibrados após o intervalo (poll completo ~60s)"
+            : "Mercado não disponível para este evento",
           stakeHint: undefined as string | undefined,
           alternatives: [] as MarketScanRow[],
           matchedOpp: undefined as Opportunity | undefined,
@@ -498,6 +506,16 @@ function buildSectionCards(
       const opp =
         oppByKey.get(`${best.market}:${best.outcome}`) ?? oppByMarket.get(best.market);
       const resolved = resolveVerdict(best);
+      // Se não há opportunity validada pelo backend E confiança é baixa, rebaixar para "quase"
+      if (
+        resolved.verdict === "apostar" &&
+        !opp &&
+        data.confidence?.score != null &&
+        data.confidence.score < 0.6
+      ) {
+        resolved.verdict = "quase";
+        resolved.detail = `Edge +${best.edgePp.toFixed(1)} pp · aguardar — confiança ${data.confidence.label ?? "baixa"}`;
+      }
       if (opp && resolved.verdict === "apostar" && opp.suggestedStakeValue > 0) {
         resolved.stakeHint = `R$ ${opp.suggestedStakeValue.toFixed(0)} · ${opp.suggestedStakePct}% da banca`;
       }
@@ -529,11 +547,11 @@ function buildSectionCards(
             )
           : section.id === "props"
             ? Boolean(
-                data.analysisCoverage?.halftimeAdjust &&
-                  (data.analysisCoverage?.corners ||
-                    data.analysisCoverage?.yellowCards ||
-                    Object.keys(data.inplaySummary.cornerLineProbs ?? {}).length > 0 ||
-                    Object.keys(data.inplaySummary.cardLineProbs ?? {}).length > 0),
+                data.analysisCoverage?.corners ||
+                  data.analysisCoverage?.yellowCards ||
+                  Object.keys(data.inplaySummary.cornerLineProbs ?? {}).length > 0 ||
+                  Object.keys(data.inplaySummary.cardLineProbs ?? {}).length > 0 ||
+                  (data.isLive && data.minute > 45),
               )
             : true;
 

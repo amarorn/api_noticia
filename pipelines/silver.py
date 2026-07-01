@@ -133,6 +133,15 @@ def save_silver(articles: list[SilverArticle]) -> Path | None:
     return out_path
 
 
+def _silver_article_parquet_files(root: Path) -> list[Path]:
+    """Lista parquets de artigos RSS (exclui silver/inplay e outros auxiliares)."""
+    return sorted(
+        f
+        for f in root.glob("**/articles_*.parquet")
+        if "inplay" not in f.relative_to(root).parts
+    )
+
+
 def silver_fingerprint() -> str:
     from ingest.gcp.lake_store import cloud_lake_enabled, layer_fingerprint
 
@@ -142,7 +151,7 @@ def silver_fingerprint() -> str:
     root = settings.silver_path
     if not root.exists():
         return "empty"
-    files = sorted(root.glob("**/*.parquet"))
+    files = _silver_article_parquet_files(root)
     if not files:
         return "empty"
     parts = [f"{f.relative_to(root)}:{f.stat().st_mtime_ns}:{f.stat().st_size}" for f in files]
@@ -159,10 +168,21 @@ def load_silver() -> pd.DataFrame:
     silver_root = settings.silver_path
     if not silver_root.exists():
         return pd.DataFrame()
-    files = list(silver_root.glob("**/*.parquet"))
+    files = _silver_article_parquet_files(silver_root)
     if not files:
         return pd.DataFrame()
-    df = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+
+    frames: list[pd.DataFrame] = []
+    for path in files:
+        try:
+            frames.append(pd.read_parquet(path))
+        except Exception as exc:
+            logger.warning("silver_parquet_read_failed", path=str(path), error=str(exc))
+
+    if not frames:
+        return pd.DataFrame()
+
+    df = pd.concat(frames, ignore_index=True)
     dedup_col = "content_hash" if "content_hash" in df.columns else "id"
     return df.drop_duplicates(subset=[dedup_col], keep="last")
 

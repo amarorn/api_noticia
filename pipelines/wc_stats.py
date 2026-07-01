@@ -360,7 +360,6 @@ def _resolve_group_name(
         return lookup_2026_group(home_team, away_team)
     return None
 
-
 def build_match_features(
     fixtures_df: pd.DataFrame,
     home_team: str,

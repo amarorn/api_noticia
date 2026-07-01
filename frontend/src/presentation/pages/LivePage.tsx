@@ -3,13 +3,19 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getSuperbetLiveUseCase } from "@/application/container";
 import type { SuperbetLiveEvent } from "@/domain/entities";
+import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
+import { useAdaptivePollClock } from "@/presentation/hooks/useAdaptivePollClock";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
+import { SuperbetPulseBadge } from "@/presentation/components/layout/SuperbetPulseBadge";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconChevronRight } from "@/presentation/components/ui/Icons";
+import { resolveAdaptiveLivePollMs } from "@/presentation/utils/adaptiveLivePoll";
+import { buildInPlayLink } from "@/presentation/utils/matchSuperbetEvent";
+import { formatScheduleDate, formatScheduleTime } from "@/presentation/utils/sofascore";
 
 type SportFilter = "football" | "esport_fifa" | "all";
 type TierFilter = "all" | "bettable" | "top" | "good" | "watch";
@@ -47,8 +53,15 @@ function minuteLabel(event: SuperbetLiveEvent): string {
   return event.minute > 0 ? `${event.minute}'` : "Ao vivo";
 }
 
-function buildInPlayLink(event: SuperbetLiveEvent): string {
-  return `/ao-vivo/${event.eventId}`;
+function buildInPlayLinkForEvent(event: SuperbetLiveEvent): string {
+  return buildInPlayLink(event.eventId, event.utcDate);
+}
+
+function formatEventSchedule(utcDate: string | null): { date: string; time: string } {
+  return {
+    date: formatScheduleDate(utcDate),
+    time: formatScheduleTime(utcDate),
+  };
 }
 
 function isNationalTeam(name: string): boolean {
@@ -165,7 +178,7 @@ function BetTierBadge({ event }: { event: SuperbetLiveEvent }) {
 function TopPickCard({ event }: { event: SuperbetLiveEvent }) {
   return (
     <Link
-      to={buildInPlayLink(event)}
+      to={buildInPlayLinkForEvent(event)}
       className="group flex min-w-[260px] flex-1 flex-col gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4 transition-colors hover:border-emerald-400/40 hover:bg-emerald-500/10"
     >
       <div className="flex items-center gap-2">
@@ -190,13 +203,14 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
   const odds = formatOdds(event.h2hOdds);
   const tier = event.betTier ?? "skip";
   const rowStyle = TIER_STYLES[tier].row;
+  const schedule = formatEventSchedule(event.utcDate);
 
   return (
     <tr
       key={event.eventId}
       className={`group border-b border-white/5 transition-colors hover:bg-white/[0.03] ${rowStyle}`}
     >
-      <td className="px-4 py-3.5">
+      <td className="hidden px-4 py-3.5 sm:table-cell">
         <BetTierBadge event={event} />
       </td>
       <td className="px-4 py-3.5">
@@ -212,32 +226,30 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
           {event.betradarId ? ` · Betradar ${event.betradarId}` : ""}
         </span>
       </td>
+      <td className="hidden px-3 py-3.5 text-xs text-slate-400 whitespace-nowrap md:table-cell">
+        <span className="block">{schedule.date}</span>
+        <span className="block font-semibold text-slate-300">{schedule.time}</span>
+      </td>
       <td className="px-4 py-3.5 font-mono text-sm text-white">
         {event.homeScore} × {event.awayScore}
       </td>
-      <td className="px-4 py-3.5">
+      <td className="hidden px-4 py-3.5 sm:table-cell">
         <span className="inline-flex rounded-md bg-amber-500/15 px-2 py-1 text-[11px] font-semibold text-amber-300">
           {minuteLabel(event)}
         </span>
       </td>
-      <td className="px-4 py-3.5 text-xs text-slate-400">{odds ?? "—"}</td>
-      <td className="px-4 py-3.5 text-xs text-slate-400">
+      <td className="hidden px-4 py-3.5 text-xs text-slate-400 md:table-cell">{odds ?? "—"}</td>
+      <td className="hidden px-4 py-3.5 text-xs text-slate-400 lg:table-cell">
         {event.marketCount > 0 ? event.marketCount : "—"}
       </td>
       <td className="px-4 py-3.5 text-right">
         <div className="flex flex-col items-end gap-1.5">
           <Link
-            to={buildInPlayLink(event)}
+            to={buildInPlayLinkForEvent(event)}
             className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 hover:border-amber-400/40"
           >
-            Abrir in-play
+            Abrir painel
             <IconChevronRight className="h-3 w-3" />
-          </Link>
-          <Link
-            to={`/ao-vivo/${event.eventId}/painel`}
-            className="inline-flex items-center gap-1 text-[10px] text-neon-blue/80 hover:text-neon-blue"
-          >
-            Painel visual
           </Link>
         </div>
       </td>
@@ -249,6 +261,12 @@ export function LivePage() {
   const [sportFilter, setSportFilter] = useState<SportFilter>("esport_fifa");
   const [nationalOnly, setNationalOnly] = useState(false);
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const pulse = useDataPulse();
+  const pollClock = useAdaptivePollClock(true);
+  const listPollMs = useMemo(() => {
+    void pollClock;
+    return resolveAdaptiveLivePollMs(pulse?.superbetLive).list;
+  }, [pollClock, pulse]);
 
   const liveQuery = useQuery({
     queryKey: ["superbet-live", sportFilter],
@@ -259,7 +277,7 @@ export function LivePage() {
         rank: true,
       }),
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: listPollMs,
   });
 
   const baseEvents = useMemo(() => {
@@ -313,7 +331,9 @@ export function LivePage() {
       <PageHeader
         title="Ao vivo"
         subtitle="Jogos em andamento na Superbet — ordenados por melhor oportunidade de palpite"
-      />
+      >
+        <SuperbetPulseBadge />
+      </PageHeader>
 
       <section className="mb-6 space-y-4">
         <FilterBar label="Esporte">
@@ -408,12 +428,13 @@ export function LivePage() {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/8 text-left text-[11px] uppercase tracking-widest text-slate-500">
-                    <th className="px-4 py-3">Palpite</th>
+                    <th className="hidden px-4 py-3 sm:table-cell">Palpite</th>
                     <th className="px-4 py-3">Confronto</th>
+                    <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
                     <th className="px-4 py-3">Placar</th>
-                    <th className="px-4 py-3">Tempo</th>
-                    <th className="px-4 py-3">Odds 1X2</th>
-                    <th className="px-4 py-3">Mercados</th>
+                    <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
+                    <th className="hidden px-4 py-3 md:table-cell">Odds 1X2</th>
+                    <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
                     <th className="px-4 py-3 text-right">Ação</th>
                   </tr>
                 </thead>

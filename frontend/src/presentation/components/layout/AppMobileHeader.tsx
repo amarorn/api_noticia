@@ -66,7 +66,7 @@ export function AppMobileHeader({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={springSoft}
-            className="overflow-hidden border-t border-white/[0.06] bg-surface/95 backdrop-blur-xl"
+            className="overflow-hidden border-t border-white/[0.06] bg-surface-100/95 backdrop-blur-xl"
             aria-label="Principal"
           >
             <motion.div
@@ -84,9 +84,12 @@ export function AppMobileHeader({
                   transition={{ delay: 0.04 * gi }}
                   className="mb-4 last:mb-0"
                 >
-                  <p className="mb-2 px-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                    {group.label}
-                  </p>
+                  <div className="mb-2 flex items-center gap-2 px-2">
+                    <span className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                      {group.label}
+                    </span>
+                    <span className="h-px flex-1 bg-gradient-to-r from-white/[0.08] to-transparent" />
+                  </div>
                   <div className="grid grid-cols-2 gap-1.5">
                     {group.items.map(({ to, label, end, Icon }) => (
                       <NavLink
@@ -102,7 +105,11 @@ export function AppMobileHeader({
                           }`
                         }
                       >
-                        <Icon className="h-5 w-5" aria-hidden />
+                        <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${{
+                          false: "",
+                        }}`}>
+                          <Icon className="h-5 w-5" aria-hidden />
+                        </span>
                         <span className="text-[10px] font-medium leading-tight">{label}</span>
                       </NavLink>
                     ))}

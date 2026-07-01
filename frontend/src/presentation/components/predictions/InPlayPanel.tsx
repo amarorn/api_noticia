@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { predictWcInPlayUseCase } from "@/application/container";
+import { predictWcInPlayUseCase, getHandicapAnalysisUseCase } from "@/application/container";
 import type { WcInPlayPrediction } from "@/domain/entities";
 import { ApiError } from "@/infrastructure/api/client";
 import { formatPercent } from "@/presentation/theme";
+import { LiveHandicapPanel } from "@/presentation/components/predictions/LiveHandicapPanel";
 
 interface InPlayPanelProps {
   homeTeam: string;
@@ -99,6 +100,23 @@ export function InPlayPanel({
   });
 
   const data: WcInPlayPrediction | undefined = query.data;
+
+  const handicapQuery = useQuery({
+    queryKey: ["wc-handicap", superbetEventId, phase, request?.minute],
+    queryFn: () =>
+      getHandicapAnalysisUseCase.execute({
+        eventId: superbetEventId!,
+        phase,
+        bankroll: 1000,
+      }),
+    enabled:
+      request != null &&
+      superbetEventId != null &&
+      Number.isFinite(superbetEventId) &&
+      superbetEventId > 0,
+    staleTime: 30_000,
+  });
+
   const errorMessage =
     query.error instanceof ApiError
       ? query.error.message
@@ -291,6 +309,21 @@ export function InPlayPanel({
                 ))}
               </div>
             </div>
+          )}
+
+          {superbetEventId != null && superbetEventId > 0 && (
+            <section className="mt-6 border-t border-white/8 pt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="font-mono text-[10px] text-neon-blue">:: HANDICAP</span>
+                <span className="h-px flex-1 bg-gradient-to-r from-neon-blue/20 to-transparent" />
+              </div>
+              <LiveHandicapPanel
+                analysis={handicapQuery.data}
+                homeTeam={homeTeam}
+                awayTeam={awayTeam}
+                isLoading={handicapQuery.isLoading || handicapQuery.isFetching}
+              />
+            </section>
           )}
 
           <p className="mt-3 text-[10px] text-slate-600">

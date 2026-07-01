@@ -7,7 +7,7 @@ import pandas as pd
 
 from models.dixon_coles_wc import DixonColesWcModel
 from models.logistic_wc import WcLogisticModel
-from pipelines.wc_holdout import wc_holdout_test_df, wc_holdout_train_df
+from pipelines.wc_training_dataset import wc_training_label_df, wc_validation_label_df
 from pipelines.wc_hyperparams import get_wc_hyperparams
 from pipelines.wc_stats import build_match_features, precompute_elo_timeline
 
@@ -73,8 +73,8 @@ class CollaborativeWcModel:
         on_progress: Callable[[int, int, str], None] | None = None,
     ) -> CollaborativeMetrics:
         df = fixtures_df.sort_values("match_date").copy()
-        train_df = wc_holdout_train_df(df, validation_season)
-        valid_df = wc_holdout_test_df(df, validation_season)
+        train_df = wc_training_label_df(df, validation_season)
+        valid_df = wc_validation_label_df(df, validation_season)
 
         if train_df.empty or valid_df.empty:
             raise ValueError(

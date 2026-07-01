@@ -287,38 +287,6 @@ def _apply_study_conservative_line(
     return leg
 
 
-def _best_under_leg(candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """Menor linha Under entre candidatos 9/10+ (prioriza match_total e cruzamento)."""
-    if not candidates:
-        return None
-    match_total = [c for c in candidates if c.get("entity") == "match_total"]
-    pool = match_total if match_total else candidates
-    return min(
-        pool,
-        key=lambda x: (
-            x.get("line") if x.get("line") is not None else 999.0,
-            "cruzamento" not in str(x.get("pattern_ref", "")),
-            -x.get("hit_rate", 0),
-            -x.get("score", 0),
-        ),
-    )
-
-
-def _best_shots_over_away(candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """Chutes Over da visitante (linha mais alta 9/10+)."""
-    if not candidates:
-        return None
-    away = [
-        c
-        for c in candidates
-        if c.get("entity") == "team" and c.get("team_side") == "away" and c.get("line") is not None
-    ]
-    pool = away if away else [c for c in candidates if c.get("line") is not None]
-    if not pool:
-        return None
-    return max(pool, key=lambda x: (x.get("line") or 0, x.get("score", 0), x.get("hit_rate", 0)))
-
-
 def _axes_correlated(a: str, b: str) -> bool:
     for group in _CORRELATED_AXIS:
         if a in group and b in group:
@@ -415,6 +383,10 @@ def _build_legs(home_team: str, away_team: str) -> list[dict[str, Any]]:
                         "hit_rate": round((hp["hit_rate"] + ap["hit_rate"]) / 2, 2),
                         "hits": min(hp["hits"], ap["hits"]),
                         "total": hp["total"],
+                        "home_hits": hp["hits"],
+                        "home_total": hp["total"],
+                        "away_hits": ap["hits"],
+                        "away_total": ap["total"],
                     }
                     label = _superbet_label(
                         stat=merged["stat"],
@@ -436,8 +408,9 @@ def _build_legs(home_team: str, away_team: str) -> list[dict[str, Any]]:
                         "total": merged["total"],
                         "label": label,
                         "pattern_ref": (
-                            f"PADRÕES KXL — cruzamento {normalize_national_team(home_en)}×"
-                            f"{normalize_national_team(away_en)} {merged['hits']}/{merged['total']}"
+                            f"PADRÕES KXL — cruzamento "
+                            f"{normalize_national_team(home_en)} {hp['hits']}/{hp['total']} × "
+                            f"{normalize_national_team(away_en)} {ap['hits']}/{ap['total']}"
                         ),
                         "score": round(
                             merged["hit_rate"]
@@ -456,117 +429,53 @@ def _build_legs(home_team: str, away_team: str) -> list[dict[str, Any]]:
     return legs
 
 
-def _pick_combo(legs: list[dict[str, Any]], size: int = 2) -> list[dict[str, Any]]:
-    """Monta combo defensivo 1T: gols + cartões na partida (estilo bilhete KXL)."""
-    templates: list[tuple[str, str, str]] = [
-        ("goals", "first_half", "under"),
-        ("yellow_cards", "first_half", "under"),
-    ]
-    picked: list[dict[str, Any]] = []
-    for stat, period, direction in templates:
-        candidates = [
-            leg
-            for leg in legs
-            if leg["stat"] == stat
-            and leg["period"] == period
-            and leg["direction"] == direction
-            and leg["hit_rate"] >= 0.9
-            and leg["entity"] == "match_total"
-        ]
-        if not candidates:
-            candidates = [
-                leg
-                for leg in legs
-                if leg["stat"] == stat
-                and leg["period"] == period
-                and leg["direction"] == direction
-                and leg["hit_rate"] >= 0.9
-            ]
-        if not candidates:
-            continue
-        if stat == "goals" and direction == "under":
-            best = _best_under_leg(candidates)
-        else:
-            best = max(
-                candidates,
-                key=lambda x: (x["entity"] == "match_total", x["score"], x["hit_rate"]),
-            )
-        if best is None:
-            continue
-        if any(_axes_correlated(best["stat"], p["stat"]) for p in picked):
-            continue
-        picked.append(best)
-        if len(picked) >= size:
-            return picked
-
-    ranked = sorted(
-        legs,
-        key=lambda x: (
-            x["entity"] != "match_total",
-            x["period"] != "first_half",
-            -x["score"],
-            -x["hit_rate"],
-        ),
+def _leg_rank_key(leg: dict[str, Any]) -> tuple[float, float, int, int, int]:
+    """Prioriza score KXL, acerto histórico e padrões de cruzamento match_total."""
+    ref = str(leg.get("pattern_ref", ""))
+    return (
+        float(leg.get("score") or 0),
+        float(leg.get("hit_rate") or 0),
+        1 if "cruzamento" in ref else 0,
+        1 if leg.get("entity") == "match_total" else 0,
+        1 if leg.get("period") == "first_half" else 0,
     )
+
+
+def _pick_combo(legs: list[dict[str, Any]], size: int = 2) -> list[dict[str, Any]]:
+    """Monta combo pelos eixos com maior score KXL (decorrelacionados)."""
+    candidates = [leg for leg in legs if float(leg.get("hit_rate") or 0) >= 0.9]
+    ranked = sorted(candidates, key=_leg_rank_key, reverse=True)
+
+    picked: list[dict[str, Any]] = []
     for leg in ranked:
         if len(picked) >= size:
             break
         if any(_axes_correlated(leg["stat"], p["stat"]) for p in picked):
             continue
-        if leg["hit_rate"] < 0.9:
+        if any(p["stat"] == leg["stat"] and p["period"] == leg["period"] for p in picked):
             continue
         picked.append(leg)
     return picked
 
 
 def _pick_reserves(legs: list[dict[str, Any]], combo: list[dict[str, Any]], size: int = 2) -> list[dict[str, Any]]:
+    """Singles reserva: próximos eixos 9/10+ ainda não usados no combo."""
     combo_keys = {_leg_key(leg) for leg in combo}
-    reserves: list[dict[str, Any]] = []
-    combo_stats = {leg["stat"] for leg in combo}
-    # Reserva típica do estudo: FT under gols + chutes do favorito
-    reserve_templates: list[tuple[str, str, str]] = [
-        ("goals", "full_time", "under"),
-        ("shots", "full_time", "over"),
+    candidates = [
+        leg
+        for leg in legs
+        if _leg_key(leg) not in combo_keys and float(leg.get("hit_rate") or 0) >= 0.9
     ]
-    for stat, period, direction in reserve_templates:
-        if len(reserves) >= size:
-            break
-        candidates = [
-            leg
-            for leg in legs
-            if _leg_key(leg) not in combo_keys
-            and leg["stat"] == stat
-            and leg["period"] == period
-            and leg["direction"] == direction
-            and leg["hit_rate"] >= 0.9
-            and leg["entity"] in {"team", "match_total"}
-        ]
-        if not candidates:
-            continue
-        if stat == "goals" and direction == "under":
-            best = _best_under_leg(candidates)
-        elif stat == "shots" and direction == "over":
-            best = _best_shots_over_away(candidates)
-        else:
-            best = max(candidates, key=lambda x: (x["score"], x["hit_rate"]))
-        if best is None:
-            continue
-        if best["stat"] in combo_stats and best["period"] == (combo[0]["period"] if combo else ""):
-            continue
-        reserves.append({**best, "role": "reserva"})
-        combo_keys.add(_leg_key(best))
+    ranked = sorted(candidates, key=_leg_rank_key, reverse=True)
 
-    for leg in legs:
+    reserves: list[dict[str, Any]] = []
+    for leg in ranked:
         if len(reserves) >= size:
             break
-        if _leg_key(leg) in combo_keys:
-            continue
-        if leg["stat"] in combo_stats and leg["period"] == (combo[0]["period"] if combo else ""):
-            continue
-        if leg["hit_rate"] < 0.9:
+        pool = combo + reserves
+        if any(_axes_correlated(leg["stat"], p["stat"]) for p in pool):
             continue
         reserves.append({**leg, "role": "reserva"})
-        combo_keys.add(_leg_key(leg))
     return reserves
 
 
@@ -613,8 +522,9 @@ def build_combo_ticket(
         stake_pct = round(stake_pct * 0.6, 2)
 
     strategy_notes = [
-        "Combo montado só com linhas 9/10 ou 10/10 (últimas 10 partidas de cada seleção).",
-        "Apostas principais em eixos decorrelacionados (ex.: gols 1T + cartões 1T).",
+        "Combo montado pelos eixos KXL com maior score neste confronto (9/10 ou 10/10).",
+        "Seleção automática — não é template fixo; muda conforme padrões de cada seleção.",
+        "Apostas principais em eixos decorrelacionados (ex.: cartões 1T + chutes 1T).",
         "Reservas são singles de fallback — use se o combo principal não estiver disponível na casa.",
         "Não empilhe combo + reservas no mesmo bilhete; escolha uma estrutura.",
         f"Exposição sugerida: {stake_pct:.1f}% da banca (R$ {bankroll * stake_pct / 100:.0f}).",

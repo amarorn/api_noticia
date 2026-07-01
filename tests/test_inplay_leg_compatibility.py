@@ -28,6 +28,23 @@ def test_h2h_casa_conflita_handicap_visitante_m0_5():
     assert h2h_conflicts_handicap("h2h", "1", "ft_hcap_away_m0_5") is True
 
 
+def test_h2h_mesmo_time_que_handicap_conflita():
+    """NZ vence + NZ handicap +0,5 — Superbet anula uma perna."""
+    assert h2h_conflicts_handicap("h2h", "2", "ft_hcap_away_p0_5") is True
+    assert legs_compatible("h2h", "2", "ft_hcap_away_p0_5", "yes") is False
+    assert legs_compatible("h2h", "1", "ft_hcap_home_m0_5", "yes") is False
+
+
+def test_handicap_nao_combina_over_mesmo_time():
+    assert legs_compatible("ft_hcap_away_p0_5", "yes", "away_over_1_5", "yes") is False
+    assert legs_compatible("ft_hcap_home_m0_5", "yes", "home_over_1_5", "yes") is False
+
+
+def test_handicap_continua_com_totais_de_periodo_diferente():
+    assert legs_compatible("ft_hcap_away_p0_5", "yes", "1h_over_2_5", "no") is True
+    assert legs_compatible("ft_hcap_away_p0_5", "yes", "2h_over_2_5", "yes") is True
+
+
 def test_totais_1t_aninhados():
     assert legs_compatible("1h_over_0_5", "no", "1h_over_1_5", "no") is False
 

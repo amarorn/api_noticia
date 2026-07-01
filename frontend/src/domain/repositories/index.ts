@@ -6,6 +6,7 @@ import type {
   NewsSyncResult,
   SofascoreResolvedEvent,
   ValueBetsReport,
+  HandicapAnalysis,
   WcCornersPrediction,
   WcInPlayPrediction,
   WcPrediction,
@@ -74,6 +75,11 @@ export interface IWcRepository {
     matchMinutes?: number;
     superbetEventId?: number;
   }): Promise<WcInPlayPrediction>;
+  getHandicapAnalysis(request: {
+    eventId: number;
+    bankroll?: number;
+    phase?: string;
+  }): Promise<HandicapAnalysis>;
   resolveSofascoreEvent(request: {
     homeTeam: string;
     awayTeam: string;
@@ -105,6 +111,7 @@ export interface IWcRepository {
     stake?: number;
     oddsPlaced?: number;
     fast?: boolean;
+    kickoff?: string;
   }): Promise<import("@/domain/entities").SuperbetLiveAdvice>;
   getComboTicket(request: {
     homeTeam: string;
@@ -112,6 +119,15 @@ export interface IWcRepository {
     bankroll?: number;
     superbetEventId?: number;
   }): Promise<import("@/domain/entities").WcComboTicket>;
+  calculateSuperMultipla(request: {
+    legs: import("@/presentation/utils/superMultipla").SuperMultiplaCalculateLeg[];
+    stake: number;
+    betType?: "SIMPLE" | "MULTIPLE";
+    minute?: number;
+    homeScore?: number;
+    awayScore?: number;
+    superbetEventId?: number;
+  }): Promise<import("@/presentation/utils/superMultipla").SuperMultiplaCalculateResult>;
   simulateMatch(request: {
     homeTeam: string;
     awayTeam: string;
@@ -121,6 +137,11 @@ export interface IWcRepository {
     sofascoreEventId?: number;
   }): Promise<import("@/domain/entities").WcSimulation>;
   getUserOpenBets(): Promise<import("@/domain/entities").UserOpenBetsList>;
+  refreshOpenBetsCashouts(eventId?: number): Promise<{
+    updated: number;
+    skipped: number;
+    errors: number;
+  }>;
   registerComboProposal(
     body: import("@/application/dtos/comboProposal").ComboProposalApiBody,
   ): Promise<import("@/application/dtos/comboProposal").RegisterComboProposalResult>;

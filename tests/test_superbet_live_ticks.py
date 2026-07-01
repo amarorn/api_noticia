@@ -1,10 +1,7 @@
-import json
-from pathlib import Path
 
 import pandas as pd
-import pytest
 
-from ingest.superbet.live_ticks import append_live_tick, live_ticks_path
+from ingest.superbet.live_ticks import append_live_tick
 
 
 def test_append_live_tick_creates_parquet(tmp_path, monkeypatch):

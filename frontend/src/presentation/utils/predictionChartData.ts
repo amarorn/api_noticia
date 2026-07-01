@@ -1,6 +1,18 @@
 import type { LivePredictionTick } from "@/presentation/hooks/useLivePredictionHistory";
 import { buildOhlc, impliedPctFromOdd } from "@/presentation/utils/liveChartUtils";
-import { modelProbKey } from "@/presentation/utils/handicapLine";
+import {
+  formatHandicapLineKey,
+  handicapOddForSide,
+  bookModelProbKey,
+  pairedHandicapKeys,
+} from "@/presentation/utils/handicapLine";
+import {
+  assessHandicapCover,
+  type HandicapCoverStatus,
+  type SuggestedHandicapPick,
+  pickMatchesChartLine,
+  coverTrajectoryValue,
+} from "@/presentation/utils/handicapCover";
 
 export type MarketKind = "handicap" | "asian";
 
@@ -35,12 +47,26 @@ export interface TotalsChartPoint {
 export interface HandicapChartPoint {
   minute: number;
   label: string;
+  currentScore: string | null;
+  homeLineKey: string;
+  awayLineKey: string;
   homeOdd: number | null;
   awayOdd: number | null;
   homeImpliedPct: number | null;
+  awayImpliedPct: number | null;
   homeModelPct: number | null;
+  /** P(modelo) do botão Superbet do visitante (+0.5 quando casa é −0.5). */
+  awayModelPct: number | null;
+  /** P(modelo) vitória pura visitante (= AH −0.5), condicionada ao placar. */
+  awayWinModelPct: number | null;
   homeEdgePp: number | null;
+  awayEdgePp: number | null;
   homeOhlc: [number, number, number, number] | null;
+  /** Palpite indicado (quando linha do gráfico = palpite). */
+  suggestedCoverStatus?: HandicapCoverStatus | null;
+  suggestedCoverHint?: string | null;
+  suggestedModelPct?: number | null;
+  suggestedTrajectory?: number | null;
 }
 
 export function buildH2hChartPoints(history: LivePredictionTick[]): H2hChartPoint[] {
@@ -97,29 +123,106 @@ export function buildHandicapChartPoints(
   history: LivePredictionTick[],
   kind: MarketKind,
   lineKey: string,
+  options?: {
+    homeTeam?: string;
+    awayTeam?: string;
+    suggestedPick?: SuggestedHandicapPick | null;
+    htHome?: number;
+    htAway?: number;
+  },
 ): HandicapChartPoint[] {
   const oddsKey = kind === "handicap" ? "handicap" : "asianHandicap";
   const modelKey = kind === "handicap" ? "modelHandicap" : "modelAsian";
+  const { homeLineKey, awayLineKey } = pairedHandicapKeys(lineKey);
   let prevHomeOdd: number | null = null;
+  const homeTeam = options?.homeTeam ?? "Casa";
+  const awayTeam = options?.awayTeam ?? "Fora";
+  const suggested = options?.suggestedPick;
+  const showSuggested =
+    suggested != null &&
+    suggested.kind === (kind === "handicap" ? "hcap" : "ah") &&
+    pickMatchesChartLine(suggested, lineKey);
 
   return history.map((sample) => {
-    const sides = sample[oddsKey][lineKey];
-    const homeOdd = sides?.home ?? null;
-    const homeModel = sample[modelKey]?.[modelProbKey("home", lineKey)] ?? null;
+    const book = sample[oddsKey];
+    const homeOdd = handicapOddForSide(book, "home", homeLineKey);
+    const awayOdd = handicapOddForSide(book, "away", awayLineKey);
+    const homeModel = sample[modelKey]?.[bookModelProbKey("home", homeLineKey)] ?? null;
+    const awayModel = sample[modelKey]?.[bookModelProbKey("away", awayLineKey)] ?? null;
+    const awayWinModel =
+      awayLineKey !== homeLineKey
+        ? sample[modelKey]?.[bookModelProbKey("away", homeLineKey)] ?? null
+        : awayModel;
     const homeImpliedPct = impliedPctFromOdd(homeOdd);
+    const awayImpliedPct = impliedPctFromOdd(awayOdd);
     const homeModelPct = homeModel != null ? homeModel * 100 : null;
+    const awayModelPct = awayModel != null ? awayModel * 100 : null;
+    const awayWinModelPct = awayWinModel != null ? awayWinModel * 100 : null;
+
+    let suggestedCoverStatus: HandicapCoverStatus | null = null;
+    let suggestedCoverHint: string | null = null;
+    let suggestedModelPct: number | null = null;
+    let suggestedTrajectory: number | null = null;
+
+    if (showSuggested && suggested) {
+      const cover = assessHandicapCover(suggested, {
+        homeScore: sample.homeScore,
+        awayScore: sample.awayScore,
+        minute: sample.minute,
+        homeTeam,
+        awayTeam,
+        htHome: options?.htHome,
+        htAway: options?.htAway,
+      });
+      suggestedCoverStatus = cover.status;
+      suggestedCoverHint = cover.hint;
+      const probKey = bookModelProbKey(suggested.side, suggested.lineKey);
+      const raw = sample[modelKey]?.[probKey];
+      suggestedModelPct = raw != null ? raw * 100 : null;
+      suggestedTrajectory = coverTrajectoryValue(cover.status);
+    }
+
     const point: HandicapChartPoint = {
       minute: sample.minute,
       label: sample.label,
+      currentScore: sample.currentScore,
+      homeLineKey,
+      awayLineKey,
       homeOdd,
-      awayOdd: sides?.away ?? null,
+      awayOdd,
       homeImpliedPct,
+      awayImpliedPct,
       homeModelPct,
+      awayModelPct,
+      awayWinModelPct,
       homeEdgePp:
         homeModelPct != null && homeImpliedPct != null ? homeModelPct - homeImpliedPct : null,
+      awayEdgePp:
+        awayModelPct != null && awayImpliedPct != null ? awayModelPct - awayImpliedPct : null,
       homeOhlc: buildOhlc(prevHomeOdd, homeOdd),
+      suggestedCoverStatus,
+      suggestedCoverHint,
+      suggestedModelPct,
+      suggestedTrajectory,
     };
     if (homeOdd != null) prevHomeOdd = homeOdd;
     return point;
   });
+}
+
+export function handicapChartLegendSuffix(
+  homeTeam: string,
+  awayTeam: string,
+  point: HandicapChartPoint | undefined,
+): { homeLine: string; awayLine: string; awayWinLine: string | null } {
+  if (!point) {
+    return { homeLine: "", awayLine: "", awayWinLine: null };
+  }
+  const homeLine = `${homeTeam} ${formatHandicapLineKey(point.homeLineKey)}`;
+  const awayLine = `${awayTeam} ${formatHandicapLineKey(point.awayLineKey)}`;
+  const awayWinLine =
+    point.homeLineKey !== point.awayLineKey
+      ? `${awayTeam} ${formatHandicapLineKey(point.homeLineKey)} (vitória)`
+      : null;
+  return { homeLine, awayLine, awayWinLine };
 }

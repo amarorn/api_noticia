@@ -3,7 +3,12 @@ import {
   SendComboProposalButton,
 } from "@/presentation/components/predictions/SendComboProposalButton";
 import { ComboTicketLast10Panel } from "@/presentation/components/predictions/ComboTicketLast10Panel";
+import { DefensiveComboBanner } from "@/presentation/components/predictions/DefensiveComboBanner";
 import { buildProposalFromKxlTicket } from "@/presentation/utils/comboProposalPayload";
+import {
+  buildDefensiveComboView,
+  type DefensiveLiveContext,
+} from "@/presentation/utils/defensiveComboTicket";
 
 type ComboLeg = WcComboTicket extends { mainBets: infer M }
   ? M extends Array<infer L>
@@ -31,6 +36,9 @@ interface ComboTicketPanelProps {
   strategy?: SuperbetLiveAdvice["strategy"];
   superbetEventId?: number | null;
   minute?: number | null;
+  /** Ativa modo defensivo (EV+ + hedge da 1ª perna) quando há contexto ao vivo. */
+  defensiveMode?: boolean;
+  liveContext?: DefensiveLiveContext | null;
 }
 
 function BetLine({ leg, index, variant }: { leg: ComboLeg; index: number; variant: "main" | "reserve" }) {
@@ -85,12 +93,6 @@ function BetLine({ leg, index, variant }: { leg: ComboLeg; index: number; varian
           Linha não encontrada na Superbet — não inclua no bilhete.
         </p>
       )}
-      {leg.bookChecked === false && (
-        <p className="mt-1 text-[11px] text-amber-200/90">
-          Odds não cruzadas (evento Superbet não vinculado). Confira manualmente no Criar Aposta
-          — no seu print as 2 pernas principais batem @~1.50.
-        </p>
-      )}
     </div>
   );
 }
@@ -103,18 +105,45 @@ export function ComboTicketPanel({
   strategy,
   superbetEventId,
   minute,
+  defensiveMode = false,
+  liveContext,
 }: ComboTicketPanelProps) {
   const ticket = ticketProp ?? strategy?.comboTicket ?? null;
   const accuracy = accuracyProp ?? strategy?.patternAccuracy ?? ticket?.accuracy ?? null;
+  const defensiveView =
+    defensiveMode && ticket?.available
+      ? buildDefensiveComboView(ticket, liveContext ?? null)
+      : null;
+  const displayMainBets =
+    defensiveView?.qualified && defensiveView.defensiveLegs.length >= 2
+      ? defensiveView.defensiveLegs
+      : ticket?.mainBets ?? [];
+  const displayStakePct =
+    defensiveView?.qualified && defensiveView.suggestedStakePct != null
+      ? defensiveView.suggestedStakePct
+      : ticket?.suggestedStakePct ?? 0;
+  const displayStakeValue =
+    defensiveView?.qualified && defensiveView.suggestedStakeValue != null
+      ? defensiveView.suggestedStakeValue
+      : ticket?.suggestedStakeValue ?? 0;
+  const displayComboOdd = defensiveView?.qualified ? defensiveView.comboOdd : ticket?.comboOdd;
+  const displayComboEv = defensiveView?.qualified ? defensiveView.comboEv : ticket?.comboEv;
+  const displayHitRate =
+    defensiveView?.qualified && defensiveView.combinedHitRate > 0
+      ? defensiveView.combinedHitRate
+      : ticket?.combinedHitRateEstimate ?? 0;
+
   const kxlProposal =
-    ticket?.available && ticket.mainBets.length > 0
+    ticket?.available && displayMainBets.length > 0
       ? buildProposalFromKxlTicket(
           {
-            title: ticket.title,
-            mainBets: ticket.mainBets,
-            comboOdd: ticket.comboOdd,
-            comboEv: ticket.comboEv,
-            suggestedStakeValue: ticket.suggestedStakeValue,
+            title: defensiveView?.qualified
+              ? `${ticket.title ?? "Combo"} · defensivo`
+              : ticket.title,
+            mainBets: displayMainBets,
+            comboOdd: displayComboOdd,
+            comboEv: displayComboEv,
+            suggestedStakeValue: displayStakeValue,
             bookCoverage: ticket.bookCoverage,
           },
           {
@@ -134,7 +163,7 @@ export function ComboTicketPanel({
         <div>
           <h2 className="text-sm font-semibold text-white">Bilhete combo — estudo KXL</h2>
           <p className="text-xs text-slate-500">
-            Montagem automática com padrões 9/10–10/10 · envio só com odd Superbet e EV positivo
+            Eixos escolhidos pelo score KXL deste confronto · envio só com odd Superbet e EV positivo
           </p>
         </div>
         {accuracy && (
@@ -152,6 +181,15 @@ export function ComboTicketPanel({
         <p className="mb-4 text-xs leading-relaxed text-slate-400">{accuracy.reason}</p>
       )}
 
+      {ticket?.available &&
+        ticket.mainBets.some((leg) => leg.bookChecked === false) &&
+        !superbetEventId && (
+          <p className="mb-4 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/90">
+            Odds ainda não cruzadas com a Superbet. Abra pelo botão <strong>Ao vivo</strong> na
+            tabela (ou informe o evento) para validar linhas e EV automaticamente.
+          </p>
+        )}
+
       {!ticket?.available ? (
         <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
           {ticket?.reason ??
@@ -159,18 +197,24 @@ export function ComboTicketPanel({
         </div>
       ) : (
         <>
+          {defensiveView && (
+            <DefensiveComboBanner view={defensiveView} homeTeam={homeTeam} awayTeam={awayTeam} />
+          )}
+
           <p className="mb-3 text-xs font-medium text-neon-blue">
             {ticket.title ?? `${homeTeam} x ${awayTeam}`}
           </p>
 
           <div className="mb-4 space-y-2">
-            <p className="text-[11px] uppercase tracking-wider text-slate-500">Apostas principais (combo)</p>
+            <p className="text-[11px] uppercase tracking-wider text-slate-500">
+              {defensiveView?.qualified ? "Pernas defensivas (EV+)" : "Apostas principais (combo)"}
+            </p>
             <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100/90">
               No <strong className="text-amber-50">Criar Aposta</strong> da Superbet use{" "}
               <strong className="text-amber-50">só estas 2 pernas</strong>. Reservas são singles
               separados — não empilhe tudo no mesmo bilhete @2.00.
             </p>
-            {ticket.mainBets.map((leg, idx) => (
+            {displayMainBets.map((leg, idx) => (
               <BetLine key={`main-${leg.label}-${idx}`} leg={leg} index={idx + 1} variant="main" />
             ))}
           </div>
@@ -188,22 +232,22 @@ export function ComboTicketPanel({
 
           <div className="mb-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
             <Metric
-              label="Stake sugerido"
-              value={`${ticket.suggestedStakePct.toFixed(1)}%`}
-              sub={`R$ ${ticket.suggestedStakeValue.toFixed(0)}`}
+              label={defensiveView?.qualified ? "Stake defensivo" : "Stake sugerido"}
+              value={`${displayStakePct.toFixed(1)}%`}
+              sub={`R$ ${displayStakeValue.toFixed(0)}`}
             />
             <Metric
               label="Acerto combo est."
-              value={`${(ticket.combinedHitRateEstimate * 100).toFixed(0)}%`}
+              value={`${(displayHitRate * 100).toFixed(0)}%`}
               sub="produto das taxas 9/10+"
             />
-            {ticket.comboOdd != null && (
+            {displayComboOdd != null && (
               <Metric
                 label="Odd combo Superbet"
-                value={ticket.comboOdd.toFixed(2)}
+                value={displayComboOdd.toFixed(2)}
                 sub={
-                  ticket.comboEv != null
-                    ? `EV ${(ticket.comboEv * 100).toFixed(1)}%`
+                  displayComboEv != null
+                    ? `EV ${(displayComboEv * 100).toFixed(1)}%`
                     : "pernas cruzadas"
                 }
               />

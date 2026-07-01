@@ -8,7 +8,7 @@ from pathlib import Path
 import structlog
 
 from config import settings
-from ingest.sofascore.live_events import fetch_live_events, live_events_as_dicts
+from ingest.sofascore.live_events import live_events_as_dicts
 from schemas.national_teams import normalize_national_team
 
 logger = structlog.get_logger()

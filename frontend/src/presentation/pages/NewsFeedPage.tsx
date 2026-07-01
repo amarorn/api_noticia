@@ -138,7 +138,7 @@ export function NewsFeedPage() {
   const lastSync = syncQuery.data;
 
   return (
-    <PageTransition className="space-y-8">
+    <PageTransition className="space-y-4">
       <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-surface-card via-surface-elevated to-transparent p-6 sm:p-8">
         <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-neon-purple/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 left-1/4 h-32 w-32 rounded-full bg-neon-green/15 blur-3xl" />

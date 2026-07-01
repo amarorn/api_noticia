@@ -195,18 +195,18 @@ def compute_wallet_summary(user_id: str) -> dict[str, Any]:
     df_day = df.copy()
     df_day["date"] = df_day["transaction_at"].dt.date
     daily = []
-    for date, grp in df_day.groupby("date"):
+    for day_key, grp in df_day.groupby("date"):
         d_staked = float(grp.loc[grp["transaction_type"] == "bilhete colocado", "amount"].sum())
         d_cancelled = float(grp.loc[grp["transaction_type"] == "bilhete cancelado", "amount"].sum())
         d_won = float(grp.loc[grp["transaction_type"] == "valor ganhado", "amount"].sum())
         d_pnl = d_won - (d_staked - d_cancelled)
         daily.append({
-            "date": str(date),
+            "date": str(day_key),
             "staked": round(d_staked - d_cancelled, 2),
             "won": round(d_won, 2),
             "pnl": round(d_pnl, 2),
             "n_bets": int((grp["transaction_type"] == "bilhete colocado").sum()),
-            "is_today": date == _today_br(),
+            "is_today": day_key == _today_br(),
         })
 
     daily.sort(key=lambda x: x["date"])

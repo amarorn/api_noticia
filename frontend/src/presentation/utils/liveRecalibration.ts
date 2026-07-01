@@ -28,6 +28,71 @@ export function formatLiveScore(home: number, away: number): string {
 
 export type LiveAdviceSource = "fast" | "full";
 
+function isPropsMarket(market: string): boolean {
+  return market.startsWith("cards_") || market.startsWith("corners_");
+}
+
+/** Preserva escanteios/cartões do poll full quando o fast é mais recente no placar. */
+function mergeFastWithFullProps(
+  fast: SuperbetLiveAdvice,
+  full: SuperbetLiveAdvice,
+): SuperbetLiveAdvice {
+  const fullPropsAportes = full.aportes.filter((a) => isPropsMarket(a.market));
+  const fastCoreAportes = fast.aportes.filter((a) => !isPropsMarket(a.market));
+  const aportes =
+    fullPropsAportes.length > 0 ? [...fastCoreAportes, ...fullPropsAportes] : fast.aportes;
+
+  const fullScan = full.strategy?.marketScan ?? [];
+  const fastScan = fast.strategy?.marketScan ?? [];
+  const fullPropsScan = fullScan.filter((r) => isPropsMarket(r.market));
+  const fastCoreScan = fastScan.filter((r) => !isPropsMarket(r.market));
+  const marketScan =
+    fullPropsScan.length > 0 ? [...fastCoreScan, ...fullPropsScan] : fastScan.length ? fastScan : fullScan;
+
+  return {
+    ...fast,
+    aportes,
+    analysisCoverage: {
+      h2h: fast.analysisCoverage?.h2h ?? full.analysisCoverage?.h2h ?? false,
+      totals: fast.analysisCoverage?.totals ?? full.analysisCoverage?.totals ?? false,
+      btts: fast.analysisCoverage?.btts ?? full.analysisCoverage?.btts ?? false,
+      nextGoal: fast.analysisCoverage?.nextGoal ?? full.analysisCoverage?.nextGoal ?? false,
+      combos: fast.analysisCoverage?.combos ?? full.analysisCoverage?.combos ?? [],
+      firstHalf: fast.analysisCoverage?.firstHalf ?? full.analysisCoverage?.firstHalf ?? false,
+      secondHalf: fast.analysisCoverage?.secondHalf ?? full.analysisCoverage?.secondHalf ?? false,
+      halftimeAdjust:
+        full.analysisCoverage?.halftimeAdjust ?? fast.analysisCoverage?.halftimeAdjust ?? false,
+      corners: full.analysisCoverage?.corners ?? fast.analysisCoverage?.corners ?? false,
+      yellowCards: full.analysisCoverage?.yellowCards ?? fast.analysisCoverage?.yellowCards ?? false,
+    },
+    inplaySummary: {
+      ...fast.inplaySummary,
+      cornerLineProbs: {
+        ...fast.inplaySummary.cornerLineProbs,
+        ...full.inplaySummary.cornerLineProbs,
+      },
+      cardLineProbs: {
+        ...fast.inplaySummary.cardLineProbs,
+        ...full.inplaySummary.cardLineProbs,
+      },
+      halftimeAdjustment:
+        full.inplaySummary.halftimeAdjustment ?? fast.inplaySummary.halftimeAdjustment,
+      lambdaAdjustment:
+        full.inplaySummary.lambdaAdjustment ?? fast.inplaySummary.lambdaAdjustment,
+    },
+    halftimeReport: full.halftimeReport ?? fast.halftimeReport,
+    cornersProjection: full.cornersProjection ?? fast.cornersProjection,
+    halfTickets: fast.halfTickets ?? full.halfTickets,
+    strategy: fast.strategy
+      ? {
+          ...fast.strategy,
+          marketScan,
+          comboTicket: fast.strategy.comboTicket ?? full.strategy?.comboTicket ?? null,
+        }
+      : full.strategy,
+  };
+}
+
 export function mergeLiveAdvice(
   fast: SuperbetLiveAdvice | undefined,
   full: SuperbetLiveAdvice | undefined,
@@ -39,16 +104,7 @@ export function mergeLiveAdvice(
   const fullTs = Date.parse(full.capturedAt ?? "") || 0;
   if (fullTs >= fastTs) return { data: full, source: "full" };
   return {
-    data: {
-      ...fast,
-      halfTickets: fast.halfTickets ?? full.halfTickets,
-      strategy: fast.strategy
-        ? {
-            ...fast.strategy,
-            comboTicket: fast.strategy.comboTicket ?? full.strategy?.comboTicket ?? null,
-          }
-        : full.strategy,
-    },
+    data: mergeFastWithFullProps(fast, full),
     source: "fast",
   };
 }

@@ -1,0 +1,630 @@
+================================================================================
+         ANALISE COMPLETA - BRASIL x HAITI - COPA DO MUNDO 2026
+              2 Rodada do Grupo C | 19 de Junho de 2026
+================================================================================
+                       LINHA DE APOSTAS E ESTATISTICAS
+================================================================================
+
+> Data: 19 de junho de 2026 (sexta-feira)
+> Horario: 21h30 (horario de Brasilia)
+> Local: Lincoln Financial Field, Filadelfia (EUA)
+> Arbitro: Alejandro Hernandez Hernandez (ESPANHA)
+
+================================================================================
+                        1. RESUMO EXECUTIVO PARA APOSTAS
+================================================================================
+
+Este relatorio apresenta uma analise estatistica completa do confronto entre
+Brasil e Haiti pela 2 rodada do Grupo C da Copa do Mundo 2026, com foco em
+mercados de apostas. O Brasil chega pressionado apos o empate na estreia e 
+precisa vencer para garantir boa posicao na classificacao. O Haiti, apesar de
+considerado o adversario mais fraco do grupo, demonstrou organizacao na
+partida contra a Escocia.
+
+**PRINCIPAIS CONCLUSOES PARA APOSTAS:**
+- Brasil tem 92.6% de probabilidade implicita de vitoria (odd 1.08)
+- O mercado de OVER 2.5 gols (odd 1.40) e altamente provavel
+- Com Hernandez apitando, espere MUITOS cartoes amarelos (media de 5.46/jogo)
+- O Haiti comete muitas faltas (23 em media no amistoso recente)
+- Handicap -2.5 para o Brasil (odd ~1.62) tem valor consideravel
+
+================================================================================
+                     2. CONTEXTO DA PARTIDA
+================================================================================
+
+2.1 SITUACAO DO GRUPO C (APOS 1 RODADA)
+-----------------------------------------
+
+    Pos | Time       | Pts | J | V | E | D | GP | GS | SG
+    ----|------------|-----|---|---|---|---|----|----|----
+     1  | Escocia    |  3  | 1 | 1 | 0 | 0 |  1 |  0 | +1
+     2  | Marrocos   |  1  | 1 | 0 | 1 | 0 |  1 |  1 |  0
+     3  | Brasil     |  1  | 1 | 0 | 1 | 0 |  1 |  1 |  0
+     4  | Haiti      |  0  | 1 | 0 | 0 | 1 |  0 |  1 | -1
+
+*O Brasil precisa vencer para nao depender do resultado da ultima rodada.*
+
+2.2 PROBABILIDADES DE CLASSIFICACAO (The Athletic)
+----------------------------------------------------
+- Brasil: 94% de chance de classificar (51% em 1)
+- Escocia: 88% de chance de classificar
+- Marrocos: 83% de chance de classificar
+- Haiti: 12% de chance de classificar
+
+2.3 CONSEQUENCIA DO RESULTADO PARA O BRASIL
+--------------------------------------------
+- Se VENCER: chega a 4 pts e fica muito proximo da classificacao
+- Se EMPATAR: fica com 2 pts e precisa vencer a Escocia na ultima rodada
+- Se PERDER: situacao complicadissima, depende de outros resultados
+
+================================================================================
+                  3. ESTATISTICAS DETALHADAS - BRASIL
+================================================================================
+
+3.1 ULTIMOS 5 JOGOS E RESULTADOS
+---------------------------------
+
+    Data      | Adversario    | Placar   | Competicao
+    ----------|---------------|----------|------------------
+    13/06/26  | Marrocos      | 1-1      | Copa 2026
+    06/06/26  | Egito         | 2-1      | Amistoso
+    31/05/26  | Panama        | 6-2      | Amistoso
+    31/03/26  | Croacia       | 3-1      | Amistoso
+    26/03/26  | Franca        | 1-2      | Amistoso
+
+    Aproveitamento: 60% Vitorias | 20% Empates | 20% Derrotas
+
+3.2 ESTATISTICAS NA COPA 2026 (1 JOGO)
+---------------------------------------
+
+    Metrica                          | Valor | Rank entre 48 selecoes
+    ---------------------------------|-------|------------------------
+    Gols por jogo                    | 1.0   | 22
+    Gols sofridos por jogo           | 1.0   | 10
+    Posse media (%)                  | 51.4  | 23
+    xG (gols esperados)              | 1.3   | 23
+    Diferenca de xG                  | -0.1  | 26
+    Chutes ao alvo por jogo          | 5.0   | 16
+    Grandes chances                  | 1     | 30
+    Grandes chances perdidas         | 1     | 24
+    Passes acertados por jogo        | 449   | 16
+    Cruzamentos acertados por jogo   | 4     | 21
+    Toques na area adversaria        | 22    | 22
+    Escanteios por jogo              | 6     | 11
+    Faltas cometidas por jogo        | 16    | 6
+    Cartoes amarelos                 | 2     | 11
+    xG concedido                     | 1.4   | 31
+    Desarmes por jogo                | 23    | 5
+    Cortes por jogo                  | 23    | 19
+
+3.3 ESTATISTICAS DO JOGO vs MARROCOS (ESTREIA)
+-----------------------------------------------
+
+    Metrica              | Brasil | Marrocos
+    ---------------------|--------|----------
+    Posse de bola        | 51%    | 49%
+    Finalizacoes         | 12     | 14
+    Finalizacoes ao alvo | 5      | 3
+    Faltas               | 16     | 14
+    Escanteios           | 6      | 4
+    Passes certos        | 448    | 421
+    Cruzamentos          | 16     | 15
+    Desarmes             | 23     | 24
+    Cortes               | 23     | 24
+    xG                   | 1.3    | 1.4
+
+3.4 ANALISE DO DESEMPENHO OFENSIVO
+-----------------------------------
+O Brasil tem mostrado dificuldades em converter chances em gols. Com apenas
+8.3% de finalizacoes convertidas na Copa (1 gol em 12 chutes), a selecao 
+precisa melhorar a eficiencia ofensiva. O xG de 1.3 e relativamente baixo
+para o padrao brasileiro, indicando que as chances criadas nao sao de alta
+qualidade. A dependencia de Vinicius Jr e Raphinha e evidente - os dois foram
+responsaveis pelas principais jogadas ofensivas na estreia.
+
+3.5 ANALISE DO DESEMPENHO DEFENSIVO
+------------------------------------
+A defesa brasileira mostrou fragilidades na estreia, especialmente pelo lado
+direito com Ibañez e Lucas Paqueta. O gol marroquino saiu de um contra-ataque
+explorando exatamente essa regiao. Casemiro e Bruno Guimaraes no meio-campo
+precisam oferecer maior protecao a zaga. A boa noticia e que Alisson esta em
+grande forma e realizou defesas importantes contra o Marrocos.
+
+================================================================================
+                   4. ESTATISTICAS DETALHADAS - HAITI
+================================================================================
+
+4.1 ULTIMOS 5 JOGOS E RESULTADOS
+---------------------------------
+
+    Data      | Adversario     | Placar   | Competicao
+    ----------|----------------|----------|------------------
+    13/06/26  | Escocia        | 0-1      | Copa 2026
+    05/06/26  | Peru           | 1-2      | Amistoso
+    02/06/26  | Nova Zelandia  | 4-0      | Amistoso
+    31/03/26  | Islandia       | 1-1      | Amistoso
+    28/03/26  | Tunisia        | 0-1      | Amistoso
+
+    Aproveitamento: 20% Vitorias | 20% Empates | 60% Derrotas
+
+4.2 ESTATISTICAS NA COPA 2026 (1 JOGO)
+---------------------------------------
+
+    Metrica                          | Valor | Rank entre 48 selecoes
+    ---------------------------------|-------|------------------------
+    Gols por jogo                    | 0.0   | 48 (ultimo)
+    Gols sofridos por jogo           | 0.5   | 7
+    Posse media (%)                  | 26.9  | 44
+    xG (gols esperados)              | 1.0   | 31
+    Diferenca de xG                  | 0.0   | 24
+    Chutes ao alvo por jogo          | 1.0   | 45
+    Grandes chances                  | 1     | 39
+    Grandes chances perdidas         | 1     | 29
+    Passes acertados por jogo        | 184   | 47
+    Cruzamentos acertados por jogo   | 2.5   | 31
+    Toques na area adversaria        | 22    | 25
+    Faltas cometidas por jogo        | 11.5  | 17
+    Cartoes amarelos                 | 1     | 19
+    xG concedido                     | 1.0   | 19
+    Desarmes por jogo                | 6     | 47
+    Cortes por jogo                  | 10    | 45
+
+4.3 ESTATISTICAS DO JOGO vs ESCOCIA (ESTREIA)
+----------------------------------------------
+
+    Metrica              | Haiti  | Escocia
+    ---------------------|--------|----------
+    Posse de bola        | 54%    | 46%
+    Finalizacoes         | 15     | 9
+    Finalizacoes ao alvo | 2      | 2
+    Faltas               | 13     | 9
+    Escanteios           | 4      | 3
+    xG                   | 1.07   | 1.21
+    Grandes chances      | 1      | 2
+    Recuperacoes de posse| 42     | 27
+    Entradas no 1/3 final| 66     | 57
+
+4.4 ANALISE DO DESEMPENHO DO HAITI
+-----------------------------------
+Apesar da derrota, o Haiti deixou uma impressao positiva contra a Escocia.
+A selecao caribenha teve MAIS posse de bola (54%), MAIS finalizacoes (15 vs 9)
+e praticamente o mesmo xG (1.07 vs 1.21). O problema foi a falta de eficiencia
+no terço final - apenas 2 chutes ao alvo em 15 tentativas. Jean-Ricner
+Bellegarde foi o destaque, comandando o meio-campo com 84 toques, 3 chutes e
+2 passes decisivos. O Haiti joga no 4-4-2 ofensivo, buscando triangulacoes
+pelos corredores. Sem a bola, recua para um 4-5-1 mais compacto.
+
+4.5 PONTO FRACO DO HAITI: FINALIZACAO
+--------------------------------------
+O Haiti finalizou 15 vezes contra a Escocia e marcou 0 gols. Contra o Peru,
+finalizou pouco e perdeu. A conversao de chances e o calcanhar de Aquiles
+desta selecao. Frantzdy Pierrot, o centroavante, gerou 0.824 xG mas nao
+converteu sua grande chance. Esse desperdicio pode ser fatal contra o Brasil.
+
+================================================================================
+                5. ANALISE COMPARATIVA BRASIL vs HAITI
+================================================================================
+
+5.1 TABELA COMPARATIVA DE ESTATISTICAS
+---------------------------------------
+
+    Metrica                     | Brasil   | Haiti    | Vantagem
+    ----------------------------|----------|----------|----------
+    FIFA Ranking                | 6        | 83       | BRASIL
+    Valor do elenco             | ~1.2B    | ~45M     | BRASIL
+    Posse media                 | 51.4%    | 26.9%    | BRASIL
+    xG por jogo                 | 1.3      | 1.0      | BRASIL
+    Chutes ao alvo p/jogo       | 5.0      | 1.0      | BRASIL
+    Finalizacoes convertidas    | 8.3%     | 0%       | BRASIL
+    Gols sofridos p/jogo        | 1.0      | 0.5      | HAITI
+    xG concedido                | 1.4      | 1.0      | HAITI
+    Desarmes p/jogo             | 23       | 6        | BRASIL
+    Cortes p/jogo               | 23       | 10       | BRASIL
+    Faltas cometidas p/jogo     | 16       | 11.5     | --
+    Cartoes amarelos            | 2        | 1        | --
+    Grandes chances criadas     | 1        | 1        | EMPATE
+    Avaliacao FotMob            | 6.71     | 3.27     | BRASIL
+
+5.2 ANÁLISE POR SETORES
+------------------------
+
+    ATAQUE:        BRASIL >>> HAITI
+    - Brasil cria mais chances de qualidade
+    - Haiti finaliza mais vezes, mas com baixa precisao
+    
+    MEIO-CAMPO:    BRASIL >>> HAITI
+    - Brasil domina a posse e o controle do jogo
+    - Haiti depende de Bellegarde para criar
+    
+    DEFESA:        BRASIL >>> HAITI
+    - Brasil faz muito mais desarmes e cortes
+    - Haiti se defende com pouca eficacia
+    
+    GOLEIRO:       EMPATE/BRASIL
+    - Alisson (BRA) e um dos melhores do mundo
+    - Placide (HAI) foi bem contra a Escocia
+
+================================================================================
+                    6. HISTORICO CONFRONTO DIRETO
+================================================================================
+
+6.1 RESULTADOS ANTERIORES
+--------------------------
+
+    Data       | Competicao     | Placar
+    -----------|----------------|--------
+    08/06/2016 | Copa America   | 7-1 (Brasil)
+    18/08/2004 | Amistoso       | 6-0 (Brasil)
+    1974       | Jogos da Paz   | 2-0 (Brasil)
+
+6.2 RESUMO DO CONFRONTO
+------------------------
+- Jogos disputados: 3
+- Vitorias do Brasil: 3 (100%)
+- Empates: 0
+- Vitorias do Haiti: 0
+- Gols do Brasil: 15 (media de 5.0 por jogo)
+- Gols do Haiti: 1 (media de 0.33 por jogo)
+
+*O Brasil NUNCA perdeu para o Haiti e marcou pelo menos 6 gols nos dois
+confrontos mais recentes.*
+
+================================================================================
+            7. PERFIL DO ARBITRO - ALEJANDRO HERNANDEZ HERNANDEZ
+================================================================================
+
+7.1 DADOS PESSOAIS
+-------------------
+- Nome completo: Alejandro Jose Hernandez Hernandez
+- Nacionalidade: Espanha
+- Data de nascimento: 10/11/1982 (43 anos)
+- Natural: Arrecife, Lanzarote, Ilhas Canarias
+- Clube afiliado: UD Las Palmas
+- Estreia FIFA: 2014
+
+7.2 CARREIRA E RECONHECIMENTOS
+-------------------------------
+- Estreia em La Liga: 2012/13 (apos 5 temporadas na 2 divisao)
+- Trofeu Guruceta (melhor arbitro da Espanha): 2015
+- Jogos em La Liga: 255
+- Jogos na Champions League: 19
+- Jogos na Copa do Mundo 2026: ESTREIA (Brasil x Haiti e o 1)
+- Primeiro classico Real Madrid x Barcelona: abril/2016
+
+7.3 ESTATISTICAS DO ARBITRO (CARRERA)
+--------------------------------------
+
+    Metrica                          | Total     | Media p/jogo
+    ---------------------------------|-----------|-------------
+    Jogos apitados                   | 322       | --
+    Cartoes amarelos                 | 1.759     | 5.46
+    Cartoes vermelhos diretos        | 39        | 0.12
+    Segundos amarelos (vermelho)     | 49        | 0.15
+    Penaltis marcados                | 129       | 0.40
+
+7.4 ESTATISTICAS NA LIGA ESPANHOLA (2025/26)
+---------------------------------------------
+
+    Metrica                          | Valor
+    ---------------------------------|--------
+    Jogos                            | 26
+    Media de amarelos p/jogo         | 5.42 (2 maior da La Liga)
+    Media de faltas marcadas p/jogo  | 23.89
+    Ultimo jogo: Girona x Elche      | 8 amarelos, 40 faltas
+
+7.5 ESTATISTICAS NA CHAMPIONS LEAGUE
+-------------------------------------
+    - Jogos: 19
+    - Amarelos: 61 (media de 3.21/jogo)
+    - Vermelhos: 3
+    - Penaltis: 8
+
+7.6 PERFIL ARBITRAL
+--------------------
+Alejandro Hernandez e considerado um dos arbitros mais rigorosos da Europa.
+Sua media de 5.46 cartoes amarelos por jogo e significativamente acima da
+media dos arbitros de Copa do Mundo (~3.5). Ele e conhecido por:
+
+- Marcar muitas faltas (media de 23.89 por jogo)
+- Ser rapido no cartao amarelo para provocacoes
+- Manter o controle do jogo atraves do dialogo com jogadores
+- Ter historico de atritos com o Real Madrid (torcedor do Barcelona na
+  infancia, declarou torcer para o Barca aos 11 anos)
+- Ser decisivo em lances de penalti (media de 0.40 por jogo)
+
+7.7 IMPLICACOES PARA APOSTAS NO CARTAO
+---------------------------------------
+Com Hernandez apitando, ESPERE:
+- Entre 5 e 7 cartoes amarelos no jogo
+- Possivel cartao vermelho (15% dos jogos dele tem vermelho)
+- Muitas faltas marcadas (provavelmente 20+)
+- Penalti marcado (40% dos jogos dele tem penalti)
+- Jogo mais truncado no inicio ate os jogadores se adaptarem
+
+================================================================================
+                       8. ODDS E MERCADOS DE APOSTAS
+================================================================================
+
+8.1 ODDS PRINCIPAIS (1X2)
+--------------------------
+
+    Resultado     | Betano   | Lebull   | Solverde | Prob. Implicita
+    --------------|----------|----------|----------|----------------
+    Brasil vence  | 1.08     | 1.01     | 1.06     | 92.6%
+    Empate        | 9.00     | 11.20    | 7.30     | 11.1%
+    Haiti vence   | 26.00    | 21.29    | 15.00    | 3.8%
+
+8.2 MERCADO DE GOLS
+--------------------
+
+    Mercado           | Odd     | Prob. Implicita
+    ------------------|---------|----------------
+    Over 1.5 gols     | 1.05    | 95.2%
+    Over 2.5 gols     | 1.40    | 71.4%
+    Over 3.5 gols     | 1.91    | 52.4%
+    Over 4.5 gols     | 2.85    | 35.1%
+    Ambas marcam SIM  | 2.50    | 40.0%
+    Ambas marcam NAO  | 1.50    | 66.7%
+
+8.3 HANDICAP ASIATICO
+----------------------
+
+    Handicap           | Odd Brasil | Odd Haiti
+    -------------------|------------|----------
+    -1.5               | 1.30       | 3.40
+    -2.5               | 1.62       | 2.30
+    -3.5               | 2.40       | 1.55
+
+8.4 MERCADO DE CARTOES
+-----------------------
+
+    Mercado                     | Odd
+    ----------------------------|------
+    Over 3.5 cartoes amarelos   | 1.45
+    Over 4.5 cartoes amarelos   | 1.85
+    Over 5.5 cartoes amarelos   | 2.40
+    Cartao vermelho SIM         | 4.50
+    Cartao vermelho NAO         | 1.20
+
+8.5 MARCADORES DE GOLS
+-----------------------
+
+    Jogador              | Anytime Scorer | Primeiro Marcador
+    ---------------------|----------------|------------------
+    Vinicius Jr          | 1.35           | 3.50
+    Raphinha             | 1.40           | 4.00
+    Endrick              | 1.55           | 5.00
+    Matheus Cunha        | 1.60           | 5.50
+    Igor Thiago          | 1.65           | 6.00
+    Neymar               | 1.70           | 6.50
+    Frantzdy Pierrot(HAI)| 4.50           | 12.00
+    Duckens Nazon (HAI)  | 5.00           | 15.00
+
+================================================================================
+                    9. PROGNOSTICOS E APOSTAS RECOMENDADAS
+================================================================================
+
+9.1 PRINCIPAIS CENARIOS ESPERADOS
+----------------------------------
+
+    CENARIO 1: Brasil vence com facilidade (55% probabilidade)
+    - Placar provavel: 3-0, 4-0, 3-1
+    - O Brasil impoe seu ritmo desde o inicio
+    - Haiti tenta se defender mas nao resiste a pressao
+    
+    CENARIO 2: Brasil vence com dificuldade (30% probabilidade)
+    - Placar provavel: 2-0, 2-1, 1-0
+    - O Brasil demora a marcar o primeiro gol
+    - Haiti consegue criar algumas chances no contra-ataque
+    
+    CENARIO 3: Empate ou zebra do Haiti (15% probabilidade)
+    - Placar provavel: 1-1, 0-0, 0-1
+    - Brasil desperdica chances
+    - Haiti aproveita erro defensivo ou jogo truncado
+
+9.2 APOSTAS PRINCIPAIS (PICKS)
+-------------------------------
+
+    #1 - BRASIL VENCE + OVER 2.5 GOLS (Combinada)
+    - Odd estimada: ~1.35
+    - Confianca: ALTA (85%)
+    - Justificativa: Brasil precisa vencer e Haiti tem defesa fragil.
+      Historico de confrontos mostra media de 5 gols por jogo.
+    
+    #2 - BRASIL VENCE POR 2 OU MAIS GOLS (Handicap -1.5)
+    - Odd: ~1.30
+    - Confianca: ALTA (75%)
+    - Justificativa: Brasil venceu os ultimos 2 confrontos por 6 e 7 gols
+      de diferenca. Haiti perdeu 3 dos ultimos 5 jogos.
+    
+    #3 - OVER 4.5 CARTOES AMARELOS
+    - Odd: ~1.75
+    - Confianca: ALTA (80%)
+    - Justificativa: Hernandez tem media de 5.46 amarelos por jogo.
+      Haiti cometeu 13 faltas na estreia. Brasil cometeu 16.
+      O jogo tende a ser truncado pelo lado haitiano.
+    
+    #4 - VINICIUS JR MARCADOR A QUALQUER MOMENTO
+    - Odd: ~1.35
+    - Confianca: ALTA (70%)
+    - Justificativa: Vini Jr marcou na estreia, e o principal atacante
+      do Brasil e estara motivado para decidir o jogo.
+    
+    #5 - OVER 3.5 GOLS
+    - Odd: ~1.91
+    - Confianca: MEDIA-ALTA (65%)
+    - Justificativa: Confrontos diretos tem media de 5.3 gols por jogo.
+      Brasil marcou 6 no ultimo amistoso. Haiti e defensivamente fragil.
+    
+    #6 - AMBAS MARCAM: NAO
+    - Odd: ~1.50
+    - Confianca: MEDIA (60%)
+    - Justificativa: Haiti so marcou 1 gol nos ultimos 3 jogos contra
+      selecoes fortes. Brasil tem Alisson e defesa solida.
+    
+    #7 - HANDICAP -2.5 BRASIL
+    - Odd: ~1.62
+    - Confianca: MEDIA (55%)
+    - Justificativa: Valor consideravel. Brasil ganhou por 6 e 7 nos
+      ultimos confrontos. Haiti e o adversario mais fraco do grupo.
+
+9.3 APOSTAS COM MAIOR VALOR (VALUE BET)
+----------------------------------------
+
+    MERCADO                          | ODD  | VALOR
+    ---------------------------------|------|-------
+    Over 5.5 cartoes amarelos        | 2.40 | ALTO
+    - O arbitro marca 5.46 em media na La Liga
+    - Haiti joga fisico (13 faltas na estreia)
+    - Brasil pode frustrar e cometer faltas duras
+    
+    Brasil vence sem sofrer gols       | 1.65 | ALTO
+    - Haiti nao marcou contra Escocia (xG de 1.07)
+    - Alisson e um dos melhores goleiros do mundo
+    - Brasil deve controlar a posse
+    
+    Over 9.5 escanteios                | 2.10 | MEDIO
+    - Brasil teve 6 escanteios na estreia
+    - Haiti deve se defender com muitos desarmes
+    - Pressao brasileira gera escanteios
+
+================================================================================
+                     10. GESTAO DE BANCA E STAKE
+================================================================================
+
+10.1 GERENCIAMENTO RECOMENDADO
+-------------------------------
+
+    Nivel de Confiança | % da Banca | Unidades
+    -------------------|------------|----------
+    ALTA (80%+)        | 3-5%       | 3-5u
+    MEDIA-ALTA (65-79%)| 2-3%       | 2-3u
+    MEDIA (50-64%)     | 1-2%       | 1-2u
+    BAIXA (<50%)       | 0.5-1%     | 0.5-1u
+
+10.2 STAKES SUGERIDAS POR APOSTA
+---------------------------------
+
+    Aposta                           | Stake Sugerida
+    ---------------------------------|----------------
+    Brasil vence + Over 2.5          | 4 unidades
+    Over 4.5 amarelos                | 3 unidades
+    Vini Jr anytime scorer           | 3 unidades
+    Handicap -1.5 Brasil             | 3 unidades
+    Over 3.5 gols                    | 2 unidades
+    Ambas marcam: NAO                | 2 unidades
+    Handicap -2.5 Brasil             | 2 unidades
+
+================================================================================
+                    11. FATORES EXTERNOS IMPORTANTES
+================================================================================
+
+11.1 CONDICOES DO JOGO
+-----------------------
+- Local: Lincoln Financial Field, Filadelfia
+- Capacidade: ~69.000 espectadores
+- Clima em junho: temperatura media de 25C, possivel umidade alta
+- Gramado: sintetico (FieldTurf) - pode afetar a velocidade da bola
+
+11.2 ESCALACAO PROVAVEL DO BRASIL
+----------------------------------
+    GOL: Alisson
+    LD: Danilo (ou Ibañez)
+    ZG: Marquinhos + Gabriel Magalhaes
+    LE: Douglas Santos
+    VOL: Casemiro + Bruno Guimaraes
+    MEI: Lucas Paqueta
+    ATA: Raphinha + Vinicius Jr + Igor Thiago (ou Endrick)
+
+    *Neymar ainda e duvida - lesionado na panturrilha. Treinou separado
+     mas pode ficar no banco novamente.*
+
+11.3 ESCALACAO PROVAVEL DO HAITI
+---------------------------------
+    GOL: Johny Placide
+    LD: Carlens Arcus
+    ZG: Ricardo Ade + Hannes Delcroix
+    LE: Martin Experience
+    MEI: Jean-Ricner Bellegarde + Danley Jean Jacques
+    PNT: Ruben Providence + Louicius Deedson
+    ATA: Wilson Isidor + Frantzdy Pierrot
+
+11.4 ASSISTENTES E VAR
+-----------------------
+- Assistente 1: Jose Enrique Naranjo (ESP)
+- Assistente 2: Diego Sanchez (ESP)
+- 4 Arbitro: Sandro Schaerer (SUI)
+- Arbitra reserva: Stephane de Almeida (SUI)
+- VAR: A ser confirmado
+
+================================================================================
+                       12. CONCLUSAO FINAL
+================================================================================
+
+12.1 RESUMO DA ANALISE
+-----------------------
+O Brasil e MASSIVO favorito para vencer esta partida. A diferenca tecnica,
+financeira e de experiencia entre as selecoes e enorme. O historico de
+confrontos diretos mostra dominio absoluto brasileiro, com 3 vitorias em 3
+jogos e 15 gols marcados contra apenas 1 sofrido.
+
+No entanto, o Brasil precisa melhorar bastante em relacao a estreia. A
+selecao criou poucas chances de qualidade contra o Marrocos e dependeu de
+um lampejo individual de Vinicius Jr para empatar o jogo. Contra o Haiti,
+Ancelotti precisa encontrar uma forma de tornar o ataque mais produtivo.
+
+O Haiti, por sua vez, vai tentar se defender e explorar bolas paradas e
+contra-ataques. A selecao caribenha mostrou organizacao tatica contra a
+Escocia e nao vai se entregar facilmente. Bellegarde e o jogador a ser
+observado - se tiver espaco, pode criar problemas.
+
+O fator arbitral e crucial para apostas em cartoes. Hernandez e um dos
+arbitros mais rigorosos da Europa, com media de 5.46 amarelos por jogo.
+Com o Haiti jogando fisico e o Brasil frustrado se nao marcar cedo, o jogo
+tem TODAS as condicoes para ter muitos cartoes.
+
+12.2 APOSTA MAIS SEGURA
+------------------------
+> BRASIL VENCE + OVER 2.5 GOLS (Combinada) @ 1.35
+> Confianca: 85% | Stake recomendada: 4 unidades
+
+12.3 APOSTA COM MAIOR VALOR
+----------------------------
+> OVER 5.5 CARTOES AMARELOS @ 2.40
+> Confianca: 70% | Stake recomendada: 2 unidades
+
+12.4 PLACAR MAIS PROVAVEL
+--------------------------
+> Brasil 3 x 0 Haiti (20% probabilidade)
+> Brasil 3 x 1 Haiti (15% probabilidade)
+> Brasil 4 x 0 Haiti (12% probabilidade)
+> Brasil 2 x 0 Haiti (12% probabilidade)
+
+================================================================================
+                    13. REFERENCIAS DOS GRAFICOS
+================================================================================
+
+Os seguintes graficos foram gerados para auxiliar a analise:
+
+1. grafico_ataque.png    - Comparativo de estatisticas ofensivas
+2. grafico_defesa.png    - Comparativo de estatisticas defensivas
+3. grafico_disciplina.png - Comparativo de faltas e cartoes
+4. grafico_forma.png     - Forma recente das selecoes
+5. grafico_arbitro.png   - Perfil arbitral de Hernandez
+6. grafico_odds.png      - Principais mercados de apostas
+7. grafico_grupo.png     - Classificacao do Grupo C
+8. grafico_h2h.png       - Historico de confrontos diretos
+
+================================================================================
+                         FIM DO RELATORIO
+================================================================================
+
+Data de elaboracao: 19 de junho de 2026
+Fontes: FotMob, ESPN, Flashscore, SofaScore, Betano, Record.pt, 
+        Band.com.br, CNN Brasil, The Athletic, FIFA.com
+
+AVISO: Este relatorio e para fins informativos e de analise. Apostas 
+esportivas envolvem riscos. Jogue com responsabilidade e nunca aposte
+mais do que pode perder. +18
+
+================================================================================

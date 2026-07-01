@@ -6,10 +6,14 @@ import {
   IconHistory,
   IconLive,
   IconNewspaper,
+  IconSearch,
+  IconTrendingUp,
   IconTrophy,
   IconUsers,
   IconWallet,
   IconZap,
+  IconTarget,
+  IconFlask,
 } from "@/presentation/components/ui/Icons";
 
 export interface NavItem {
@@ -28,8 +32,8 @@ export interface NavGroup {
 
 export const navGroups: NavGroup[] = [
   {
-    id: "copa",
-    label: "Copa 2026",
+    id: "principal",
+    label: "Principal",
     items: [
       {
         to: "/",
@@ -39,16 +43,10 @@ export const navGroups: NavGroup[] = [
         description: "Palpites da rodada",
       },
       {
-        to: "/jogos",
-        label: "Jogos",
-        Icon: IconCalendar,
-        description: "Tabela oficial",
-      },
-      {
-        to: "/amistosos",
-        label: "Amistosos",
-        Icon: IconCalendar,
-        description: "Datas preparatórias",
+        to: "/central",
+        label: "Central de Apostas",
+        Icon: IconTrophy,
+        description: "Melhores bilhetes e análise do dia",
       },
       {
         to: "/ao-vivo",
@@ -56,6 +54,36 @@ export const navGroups: NavGroup[] = [
         Icon: IconLive,
         description: "Jogos Superbet live",
       },
+      {
+        to: "/pre-jogo",
+        label: "Análise Pré-Jogo",
+        Icon: IconTarget,
+        description: "Análise detalhada por jogo",
+      },
+      {
+        to: "/palpite-avulso",
+        label: "Palpite avulso",
+        Icon: IconZap,
+        description: "Confronto oficial + EV",
+      },
+      {
+        to: "/jogos",
+        label: "Agenda",
+        Icon: IconCalendar,
+        description: "Tabela oficial",
+      },
+      {
+        to: "/brasileirao",
+        label: "Brasileirão",
+        Icon: IconTrendingUp,
+        description: "Rodada nacional",
+      },
+    ],
+  },
+  {
+    id: "copa",
+    label: "Copa 2026",
+    items: [
       {
         to: "/grupos",
         label: "Grupos",
@@ -69,58 +97,64 @@ export const navGroups: NavGroup[] = [
         description: "Elencos oficiais",
       },
       {
+        to: "/amistosos",
+        label: "Amistosos",
+        Icon: IconCalendar,
+        description: "Datas preparatórias",
+      },
+      {
         to: "/album",
         label: "Álbum",
         Icon: IconAlbum,
         description: "Figurinhas KXL",
       },
-      {
-        to: "/predict",
-        label: "Palpite avulso",
-        Icon: IconZap,
-        description: "Confronto oficial",
-      },
-      {
-        to: "/validate",
-        label: "Histórico",
-        Icon: IconHistory,
-        description: "Backtest WC",
-      },
     ],
   },
   {
-    id: "mais",
-    label: "Mais",
+    id: "analise",
+    label: "Análise",
     items: [
       {
-        to: "/news",
+        to: "/historico",
+        label: "Histórico",
+        Icon: IconHistory,
+        description: "Palpites e resultados",
+      },
+      {
+        to: "/noticias",
         label: "Notícias",
         Icon: IconNewspaper,
         description: "Feed com sentimento",
       },
       {
-        to: "/brasileirao",
-        label: "Brasileirao",
-        Icon: IconTrophy,
-        description: "Rodada nacional",
-      },
-      {
         to: "/performance",
         label: "Performance",
-        Icon: IconHistory,
-        description: "ROI e analise de apostas",
+        Icon: IconTrendingUp,
+        description: "ROI e análise de apostas",
       },
       {
-        to: "/modelos",
-        label: "Modelos",
-        Icon: IconZap,
-        description: "Benchmark e evolução",
+        to: "/query",
+        label: "Query Bilhetes",
+        Icon: IconTarget,
+        description: "Análise inteligente de potencial",
+      },
+      {
+        to: "/simular",
+        label: "Simular Aposta",
+        Icon: IconFlask,
+        description: "Teste antes de apostar na Superbet",
       },
       {
         to: "/carteira",
         label: "Carteira",
         Icon: IconWallet,
         description: "CSV Superbet e reconciliação",
+      },
+      {
+        to: "/modelos",
+        label: "Modelos",
+        Icon: IconSearch,
+        description: "Benchmark e evolução",
       },
     ],
   },

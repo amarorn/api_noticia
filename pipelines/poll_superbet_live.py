@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import sys
 import time
 from datetime import datetime, timezone
 
@@ -114,6 +113,63 @@ def _resolve_event_ids(
     return ids[:max_events] if max_events else ids
 
 
+def _resolve_event_ids_resilient(
+    client: SuperbetClient,
+    *,
+    event_ids: list[int] | None,
+    auto: bool,
+    sport_id: int,
+    max_events: int | None = None,
+    filter_international: bool = False,
+    last_auto_ids: list[int] | None = None,
+) -> tuple[list[int], list[int] | None]:
+    """Resolve IDs do ciclo; em falha de rede reutiliza último snapshot auto."""
+    try:
+        ids = _resolve_event_ids(
+            client,
+            event_ids=event_ids,
+            auto=auto,
+            sport_id=sport_id,
+            max_events=max_events,
+            filter_international=filter_international,
+        )
+    except SuperbetClientError as exc:
+        cached = list(last_auto_ids or [])
+        logger.warning(
+            "superbet_resolve_event_ids_failed: %s (cached=%d)",
+            exc,
+            len(cached),
+        )
+        print(f"Superbet indisponível: {exc}")
+        if cached:
+            print(f"Reutilizando {len(cached)} evento(s) do último ciclo OK.")
+            return cached, last_auto_ids
+        print("Nenhum evento em cache; aguardando próximo ciclo.")
+        return [], last_auto_ids
+
+    if auto and not event_ids and ids:
+        return ids, list(ids)
+    return ids, last_auto_ids
+
+
+def _merge_poll_event_ids(
+    *,
+    resolved: list[int],
+    watchlist: set[int],
+) -> list[int]:
+    """Une feed ao vivo + watchlist (jogos vistos que ainda não finalizaram)."""
+    if not settings.superbet_poll_watchlist_enabled:
+        return list(dict.fromkeys(resolved))
+    cap = settings.superbet_poll_watchlist_max
+    merged: list[int] = []
+    for eid in [*resolved, *sorted(watchlist)]:
+        if eid not in merged:
+            merged.append(eid)
+        if len(merged) >= cap:
+            break
+    return merged
+
+
 def poll_once(
     event_ids: list[int],
     predictor,
@@ -121,6 +177,7 @@ def poll_once(
     phase: str = "friendly",
     bankroll: float = 1000.0,
     client: SuperbetClient | None = None,
+    watchlist: set[int] | None = None,
 ) -> dict:
     """Executa um ciclo de poll para os event_ids informados."""
     superbet_client = client or SuperbetClient()
@@ -128,6 +185,7 @@ def poll_once(
     skipped = 0
     errors = 0
     details: list[str] = []
+    active_watch: set[int] = set(watchlist or [])
 
     for event_id in event_ids:
         try:
@@ -149,6 +207,7 @@ def poll_once(
 
         if not payload.get("is_live"):
             if payload.get("is_finished"):
+                active_watch.discard(event_id)
                 fin = payload.get("event_finalize") or {}
                 msg = (
                     f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
@@ -161,16 +220,27 @@ def poll_once(
                 print(msg)
                 captured += 1
             else:
-                skipped += 1
-                status = payload.get("status") or "sem stats"
-                msg = (
-                    f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
-                    f"— não ao vivo ({status})"
-                )
-                details.append(msg)
-                print(msg)
+                if event_id in active_watch:
+                    captured += 1
+                    msg = (
+                        f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+                        f"— watchlist ({payload.get('status') or 'sem stats'}) "
+                        f"{payload.get('current_score')} @ {payload.get('minute')}'"
+                    )
+                    details.append(msg)
+                    print(msg)
+                else:
+                    skipped += 1
+                    status = payload.get("status") or "sem stats"
+                    msg = (
+                        f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+                        f"— não ao vivo ({status})"
+                    )
+                    details.append(msg)
+                    print(msg)
             continue
 
+        active_watch.add(event_id)
         captured += 1
         aportes = len(payload.get("aportes") or [])
         msg = (
@@ -187,6 +257,7 @@ def poll_once(
         "errors": errors,
         "n_events": len(event_ids),
         "details": details,
+        "watchlist": active_watch,
     }
 
 
@@ -207,6 +278,14 @@ def poll_loop(
     predictor, _manifest = load_or_train_wc_predictor(allow_train=allow_train)
     client = SuperbetClient()
     cycle = 0
+    last_auto_ids: list[int] | None = None
+    from ingest.superbet.event_finalize import list_pending_watch_event_ids
+
+    watchlist: set[int] = set(
+        list_pending_watch_event_ids(max_events=settings.superbet_poll_watchlist_max)
+    )
+    if watchlist:
+        print(f"Watchlist retomada: {len(watchlist)} evento(s) pendente(s)")
 
     print(f"Ticks parquet: {live_ticks_path()}")
     print(f"Intervalo: {interval_sec}s | auto={auto} | sport_id={sport_id}")
@@ -214,23 +293,34 @@ def poll_loop(
     while True:
         cycle += 1
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        ids = _resolve_event_ids(
+        ids, last_auto_ids = _resolve_event_ids_resilient(
             client,
             event_ids=event_ids,
             auto=auto,
             sport_id=sport_id,
             max_events=max_events,
             filter_international=filter_international,
+            last_auto_ids=last_auto_ids,
         )
 
-        print(f"\n--- Ciclo {cycle} @ {ts} | {len(ids)} evento(s) ---")
-        if not ids:
+        print(f"\n--- Ciclo {cycle} @ {ts} | {len(ids)} ao vivo + {len(watchlist)} watch ---")
+        merged_ids = _merge_poll_event_ids(resolved=ids, watchlist=watchlist)
+        if not merged_ids:
             print("Nenhum evento ao vivo encontrado.")
         else:
-            result = poll_once(ids, predictor, phase=phase, bankroll=bankroll, client=client)
+            result = poll_once(
+                merged_ids,
+                predictor,
+                phase=phase,
+                bankroll=bankroll,
+                client=client,
+                watchlist=watchlist,
+            )
+            watchlist = set(result.get("watchlist") or watchlist)
             print(
                 f"Resumo: {result['captured']} capturados, "
-                f"{result['skipped']} ignorados, {result['errors']} erros"
+                f"{result['skipped']} ignorados, {result['errors']} erros, "
+                f"watchlist={len(watchlist)}"
             )
 
         if max_cycles is not None and cycle >= max_cycles:
@@ -331,14 +421,18 @@ def main() -> int:
     # Execução única
     predictor, _ = load_or_train_wc_predictor(allow_train=not args.no_train)
     client = SuperbetClient()
-    ids = _resolve_event_ids(
-        client,
-        event_ids=event_ids,
-        auto=args.auto,
-        sport_id=args.sport_id,
-        max_events=args.max_events,
-        filter_international=args.filter_international,
-    )
+    try:
+        ids = _resolve_event_ids(
+            client,
+            event_ids=event_ids,
+            auto=args.auto,
+            sport_id=args.sport_id,
+            max_events=args.max_events,
+            filter_international=args.filter_international,
+        )
+    except SuperbetClientError as exc:
+        print(f"Superbet indisponível: {exc}")
+        return 1
     if not ids:
         print("Nenhum evento ao vivo encontrado.")
         return 0

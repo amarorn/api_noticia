@@ -199,10 +199,6 @@ class XgCalibration:
     away_xg_against: float | None = None  # xG médio contra o visitante
 
 
-# Peso do xG na calibração do λ (0.0 = só gols reais, 1.0 = só xG)
-_XG_BLEND_WEIGHT = 0.35
-
-
 def _apply_xg_calibration(
     lambda_home: float,
     lambda_away: float,
@@ -217,7 +213,12 @@ def _apply_xg_calibration(
     if xg is None:
         return lambda_home, lambda_away
 
-    w = _XG_BLEND_WEIGHT
+    from config import settings
+
+    if not settings.wc_xg_lambda_blend_enabled:
+        return lambda_home, lambda_away
+
+    w = settings.wc_xg_lambda_blend_weight
 
     if xg.home_xg_for is not None and xg.home_xg_for > 0:
         lambda_home = lambda_home * (1 - w) + xg.home_xg_for * w

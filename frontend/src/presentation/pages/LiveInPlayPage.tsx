@@ -1,25 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   getSuperbetLiveAdviceUseCase,
   getUserOpenBetsUseCase,
+  refreshOpenBetsCashoutsUseCase,
 } from "@/application/container";
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
+import { SuperbetPulseBadge } from "@/presentation/components/layout/SuperbetPulseBadge";
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
-import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
+import { LiveMatchSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
-import { IconArrowLeft, IconChevronRight } from "@/presentation/components/ui/Icons";
+import { IconArrowLeft, IconBell, IconChevronRight } from "@/presentation/components/ui/Icons";
+import { useToast } from "@/presentation/components/ui/toast/ToastContext";
+import { CashoutAlertSetup } from "@/presentation/components/predictions/CashoutAlertSetup";
 import { BetStrategyPanel } from "@/presentation/components/predictions/BetStrategyPanel";
 import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
+import { LiveBestCombosPanel } from "@/presentation/components/predictions/LiveBestCombosPanel";
 import { LiveHalfTicketsPanel } from "@/presentation/components/predictions/LiveHalfTicketsPanel";
 import { LiveRemaining2hMarketsPanel } from "@/presentation/components/predictions/LiveRemaining2hMarketsPanel";
 import { LiveLongshotCombosPanel } from "@/presentation/components/predictions/LiveLongshotCombosPanel";
+import { LiveTopReturnPanel } from "@/presentation/components/predictions/LiveTopReturnPanel";
+import { LiveOptimizedTicketsPanel } from "@/presentation/components/predictions/LiveOptimizedTicketsPanel";
 import { LiveActionNowPanel } from "@/presentation/components/predictions/LiveActionNowPanel";
+import { LiveModelVsMarketHero } from "@/presentation/components/predictions/LiveModelVsMarketHero";
+import { LiveEvRealPanel } from "@/presentation/components/predictions/LiveEvRealPanel";
+import { LiveCornersPanel } from "@/presentation/components/predictions/LiveCornersPanel";
+import { LiveStatsCompactBar } from "@/presentation/components/predictions/LiveStatsCompactBar";
+import { LiveTimelinePanel } from "@/presentation/components/predictions/LiveTimelinePanel";
+import { LiveFormH2hPanel } from "@/presentation/components/predictions/LiveFormH2hPanel";
+import { LivePlayerStatsPanel } from "@/presentation/components/predictions/LivePlayerStatsPanel";
+import { LiveSocialRadarPanel } from "@/presentation/components/predictions/LiveSocialRadarPanel";
 import { LiveMarketCards } from "@/presentation/components/predictions/LiveMarketCards";
 import { LiveModelPanel } from "@/presentation/components/predictions/LiveModelPanel";
+import { LiveMatchProbCard } from "@/presentation/components/predictions/LiveMatchProbCard";
+import { LiveStatsProjectionPanel } from "@/presentation/components/predictions/LiveStatsProjectionPanel";
+import LiveRefereePanel from "@/presentation/components/predictions/LiveRefereePanel";
 import {
   LiveOpenBetMonitor,
   createRegisteredBetId,
@@ -31,15 +49,28 @@ import { LivePredictionEvolutionChart } from "@/presentation/components/live-das
 import LiveHedgeAlert from "@/presentation/components/predictions/LiveHedgeAlert";
 import LiveAgainstModelAlert from "@/presentation/components/predictions/LiveAgainstModelAlert";
 import { LiveP0GuardBanner } from "@/presentation/components/predictions/LiveP0GuardBanner";
+import { LiveBetBuilderGuardPanel } from "@/presentation/components/predictions/LiveBetBuilderGuardPanel";
 import { LiveRecalibrationBanner } from "@/presentation/components/predictions/LiveRecalibrationBanner";
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
+import { useCashoutTargetAlerts } from "@/presentation/hooks/useCashoutTargetAlerts";
+import { LiveContextUpload } from "@/presentation/components/predictions/LiveContextUpload";
+import {
+  ensureNotificationPermission,
+  notificationPermission,
+} from "@/presentation/utils/browserNotifications";
+import {
+  getCashoutAlertConfig,
+  setCashoutAlertConfig,
+} from "@/presentation/utils/cashoutAlertStorage";
 import { draftAgainstModelAlert, normalizeH2hOutcome } from "@/presentation/utils/againstModelBet";
+import { resolveLiveAdvicePhase } from "@/presentation/utils/liveAdvicePhase";
 
 const FAST_POLL_MS = 10_000;
-const FULL_POLL_MS = 60_000;
 const SCORE_POLL_MS = 5_000;
 const MAX_OPEN_BETS = 2;
+
+const CASHOUT_REFRESH_MS = 30_000;
 
 type BetDraft = {
   market: string;
@@ -47,6 +78,10 @@ type BetDraft = {
   stake: number;
   oddsPlaced: number;
   offeredCashout: number | null;
+  cashoutAlertEnabled: boolean;
+  cashoutAlertTarget: number | null;
+  cashoutNotifyApproach: boolean;
+  cashoutNotifyReach: boolean;
 };
 
 const DEFAULT_BET_DRAFT: BetDraft = {
@@ -55,16 +90,39 @@ const DEFAULT_BET_DRAFT: BetDraft = {
   stake: 10,
   oddsPlaced: 2,
   offeredCashout: null,
+  cashoutAlertEnabled: false,
+  cashoutAlertTarget: null,
+  cashoutNotifyApproach: true,
+  cashoutNotifyReach: true,
 };
 
 function betToDraft(bet: RegisteredBetEntry): BetDraft {
+  const alert = getCashoutAlertConfig(bet.id);
   return {
     market: bet.market,
     outcome: bet.outcome,
     stake: bet.stake,
     oddsPlaced: bet.oddsPlaced,
     offeredCashout: bet.offeredCashout ?? null,
+    cashoutAlertEnabled: alert.enabled,
+    cashoutAlertTarget: alert.target,
+    cashoutNotifyApproach: alert.notifyApproach,
+    cashoutNotifyReach: alert.notifyReach,
   };
+}
+
+function persistBetAlertConfig(
+  betId: string,
+  draft: BetDraft,
+  bump?: () => void,
+): void {
+  setCashoutAlertConfig(betId, {
+    enabled: draft.cashoutAlertEnabled,
+    target: draft.cashoutAlertTarget,
+    notifyApproach: draft.cashoutNotifyApproach,
+    notifyReach: draft.cashoutNotifyReach,
+  });
+  bump?.();
 }
 
 function formatCapturedAt(iso: string | null): string {
@@ -105,8 +163,12 @@ function formatOddsLine(odds: Record<string, number>): string {
 
 export function LiveInPlayPage() {
   const { eventId: eventIdParam } = useParams();
+  const [searchParams] = useSearchParams();
+  const kickoffFromUrl = searchParams.get("kickoff");
+  const advicePhase = resolveLiveAdvicePhase(searchParams);
   const eventId = Number.parseInt(eventIdParam ?? "", 10);
   const pulse = useDataPulse();
+  const { addToast } = useToast();
 
   const [bankrollDraft, setBankrollDraft] = useState(1000);
   const [appliedBankroll, setAppliedBankroll] = useState(1000);
@@ -116,6 +178,8 @@ export function LiveInPlayPage() {
   const [betDraft, setBetDraft] = useState<BetDraft>(DEFAULT_BET_DRAFT);
   const [formMode, setFormMode] = useState<"add" | string | null>(null);
   const [betSectionOpen, setBetSectionOpen] = useState(false);
+  const [notifyPermission, setNotifyPermission] = useState(notificationPermission());
+  const [alertConfigVersion, setAlertConfigVersion] = useState(0);
 
   const openBetsQuery = useQuery({
     queryKey: ["user-open-bets"],
@@ -133,22 +197,11 @@ export function LiveInPlayPage() {
     error: adviceError,
     isFetching: adviceFetching,
     refetch: refetchAdvice,
-  } = useLiveAdviceQueries(eventId, appliedBankroll);
+    pollMs,
+    timelineReactive,
+  } = useLiveAdviceQueries(eventId, appliedBankroll, kickoffFromUrl, advicePhase);
 
   const recalibrationEvent = useLiveRecalibration(data, adviceFetching);
-
-  useEffect(() => {
-    if (!scoreTick?.currentScore || !data?.currentScore) return;
-    if (scoreTick.currentScore === data.currentScore) return;
-    if (adviceFetching || data.isFinished) return;
-    refetchAdvice();
-  }, [
-    scoreTick?.currentScore,
-    data?.currentScore,
-    data?.isFinished,
-    adviceFetching,
-    refetchAdvice,
-  ]);
 
   const apiBets: RegisteredBetEntry[] = useMemo(() => {
     if (!openBetsQuery.data?.bets) return [];
@@ -174,6 +227,41 @@ export function LiveInPlayPage() {
 
   const displayBets = apiBets.length > 0 ? apiBets : registeredBets;
 
+  useEffect(() => {
+    if (!trackBet || !Number.isFinite(eventId) || eventId <= 0 || data?.isFinished) return;
+    let cancelled = false;
+    const syncCashouts = async () => {
+      try {
+        await refreshOpenBetsCashoutsUseCase.execute(eventId);
+        if (!cancelled) await openBetsQuery.refetch();
+      } catch {
+        /* API ou Superbet offline */
+      }
+    };
+    void syncCashouts();
+    const timer = window.setInterval(syncCashouts, CASHOUT_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [trackBet, eventId, data?.isFinished, openBetsQuery.refetch]);
+
+  useCashoutTargetAlerts({
+    bets: displayBets,
+    homeTeam: data?.homeTeam ?? "",
+    awayTeam: data?.awayTeam ?? "",
+    enabled: trackBet && Boolean(data?.homeTeam) && !data?.isFinished,
+    configVersion: alertConfigVersion,
+    onAlert: ({ body, kind }) => {
+      addToast(body, kind === "reach" ? "success" : "info");
+    },
+  });
+
+  const activeAlertCount = useMemo(
+    () => displayBets.filter((b) => getCashoutAlertConfig(b.id).enabled).length,
+    [displayBets, alertConfigVersion],
+  );
+
   const blockNewBets = Boolean(data?.betGuardrails?.blockNewBets);
   const showBetForm = trackBet && formMode != null && !blockNewBets;
   const canAddBet =
@@ -190,6 +278,7 @@ export function LiveInPlayPage() {
         "superbet-live-bet",
         eventId,
         appliedBankroll,
+        advicePhase,
         bet.id,
         bet.market,
         bet.outcome,
@@ -199,7 +288,7 @@ export function LiveInPlayPage() {
       queryFn: () =>
         getSuperbetLiveAdviceUseCase.execute({
           eventId,
-          phase: "friendly",
+          phase: advicePhase,
           bankroll: appliedBankroll,
           market: bet.market,
           outcome: bet.outcome,
@@ -243,16 +332,28 @@ export function LiveInPlayPage() {
 
   const matchLink = useMemo(() => {
     if (!data) return null;
+    const isFriendly = advicePhase === "friendly";
     const params = new URLSearchParams({
-      source: "friendly",
-      phase: "friendly",
+      ...(isFriendly ? { source: "friendly" } : {}),
+      phase: advicePhase,
       superbet: String(eventId),
       liveHome: String(data.currentScore?.split("x")[0] ?? "0"),
       liveAway: String(data.currentScore?.split("x")[1] ?? "0"),
       minute: String(data.minute),
     });
     return `/match/${encodeURIComponent(data.homeTeam)}/${encodeURIComponent(data.awayTeam)}?${params}`;
-  }, [data, eventId]);
+  }, [advicePhase, data, eventId]);
+
+  const defensiveLiveContext = useMemo(() => {
+    if (!data) return null;
+    return {
+      minute: data.minute,
+      periodLabel: data.periodLabel,
+      liveStats: data.liveStats,
+      halftimeReport: data.halftimeReport ?? null,
+      shields: data.strategy?.shields ?? [],
+    };
+  }, [data]);
 
   if (!Number.isFinite(eventId) || eventId <= 0) {
     return (
@@ -281,7 +382,7 @@ export function LiveInPlayPage() {
             to={`/ao-vivo/${eventId}/painel`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-neon-blue/30 bg-neon-blue/10 px-3 py-1.5 text-xs font-medium text-neon-blue transition hover:border-neon-blue/50"
           >
-            Painel visual
+            Painel completo
           </Link>
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
           {pulse?.wcModelsReady === false && (
@@ -289,6 +390,12 @@ export function LiveInPlayPage() {
               Modelo WC indisponível
             </span>
           )}
+          <SuperbetPulseBadge
+            eventId={eventId}
+            compact
+            adaptivePollMs={pollMs.fast}
+            adaptivePollTier={pollMs.tier}
+          />
           <span>
             Superbet #{eventId}
             {data?.betradarId ? ` · Betradar ${data.betradarId}` : ""}
@@ -298,7 +405,7 @@ export function LiveInPlayPage() {
       </div>
 
       {isLoading ? (
-        <DashboardSkeleton />
+        <LiveMatchSkeleton />
       ) : adviceIsError && !scoreTick ? (
         <ErrorState
           message={
@@ -311,15 +418,15 @@ export function LiveInPlayPage() {
       ) : data ? (
         <>
           {/* ── 1. MATCH HEADER ── */}
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <TeamFlag team={data.homeTeam} size={36} />
+          <section className="glass-card p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <TeamFlag team={data.homeTeam} size={32} />
                 <div className="min-w-0 text-left">
                   <p className="truncate text-sm font-semibold text-white">{data.homeTeam}</p>
                 </div>
                 <div className="px-2 text-center">
-                  <p className="font-mono text-2xl font-bold text-white">
+                  <p className="font-mono text-xl font-bold text-white">
                     {liveHeader?.currentScore?.replace("x", " × ") ??
                       data.currentScore?.replace("x", " × ") ??
                       "0 × 0"}
@@ -339,7 +446,7 @@ export function LiveInPlayPage() {
                 <div className="min-w-0 text-right">
                   <p className="truncate text-sm font-semibold text-white">{data.awayTeam}</p>
                 </div>
-                <TeamFlag team={data.awayTeam} size={36} />
+                <TeamFlag team={data.awayTeam} size={32} />
               </div>
               <div className="text-right text-[11px] text-slate-500">
                 <p>
@@ -351,11 +458,11 @@ export function LiveInPlayPage() {
                 <p>{liveHeader?.rawMarketCount ?? data.rawMarketCount} mercados</p>
                 <p className="mt-0.5 flex flex-wrap items-center justify-end gap-2">
                   <span>
-                    Captura {formatCapturedAt(liveHeader?.capturedAt ?? data.capturedAt)}
+                    {formatCapturedAt(liveHeader?.capturedAt ?? data.capturedAt)}
                     {data.isLive
                       ? liveHeader?.scoreIsFresh
-                        ? ` · placar ${SCORE_POLL_MS / 1000}s · rápido ${FAST_POLL_MS / 1000}s · completo ${FULL_POLL_MS / 1000}s`
-                        : ` · rápido ${FAST_POLL_MS / 1000}s · completo ${FULL_POLL_MS / 1000}s`
+                        ? ` · ${SCORE_POLL_MS / 1000}s`
+                        : ` · ${FAST_POLL_MS / 1000}s`
                       : ""}
                   </span>
                   {data.isLive && !data.isFinished && (
@@ -377,7 +484,7 @@ export function LiveInPlayPage() {
                   <button
                     onClick={() => refetchAdvice()}
                     disabled={adviceFetching}
-                    title="Atualizar agora (rápido + completo)"
+                    title="Atualizar agora"
                     className="rounded p-0.5 text-slate-500 transition hover:text-slate-300 disabled:opacity-40"
                   >
                     <svg
@@ -397,71 +504,63 @@ export function LiveInPlayPage() {
               </div>
             </div>
             {data.isFinished && (
-              <p className="mt-3 text-sm text-slate-400">Jogo encerrado — polling pausado.</p>
+              <p className="mt-2 text-sm text-slate-400">Jogo encerrado — polling pausado.</p>
             )}
 
-            {/* ── Barras de probabilidade 1X2 ── */}
-            {(data.inplaySummary.probFinalHome > 0 || data.inplaySummary.probFinalAway > 0) && (
-              <div className="mt-3">
-                <div className="flex overflow-hidden rounded-xl" style={{ height: "28px" }}>
-                  {[
-                    {
-                      key: "1",
-                      label: data.homeTeam,
-                      prob: data.inplaySummary.probFinalHome,
-                      bg: "rgba(0,255,136,0.18)",
-                      text: "#00ff88",
-                    },
-                    {
-                      key: "X",
-                      label: "Empate",
-                      prob: data.inplaySummary.probFinalDraw,
-                      bg: "rgba(251,191,36,0.18)",
-                      text: "#fbbf24",
-                    },
-                    {
-                      key: "2",
-                      label: data.awayTeam,
-                      prob: data.inplaySummary.probFinalAway,
-                      bg: "rgba(56,189,248,0.18)",
-                      text: "#38bdf8",
-                    },
-                  ].map(({ key, label, prob, bg, text }) => {
-                    const pct = prob * 100;
-                    if (pct < 1) return null;
-                    return (
-                      <div
-                        key={key}
-                        style={{ width: `${pct.toFixed(1)}%`, backgroundColor: bg, minWidth: "36px" }}
-                        className="relative flex items-center justify-center transition-all duration-500"
-                        title={`${label}: ${pct.toFixed(0)}%`}
-                      >
-                        <span
-                          className="font-mono text-[10px] font-bold"
-                          style={{ color: text }}
-                        >
-                          {pct.toFixed(0)}%
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-1 flex justify-between px-0.5 text-[9px] text-slate-600">
-                  <span className="max-w-[35%] truncate text-left">{data.homeTeam}</span>
-                  <span>Empate</span>
-                  <span className="max-w-[35%] truncate text-right">{data.awayTeam}</span>
-                </div>
-              </div>
-            )}
           </section>
+
+          {/* ── 1b-top. CARD PROB 1X2 ── */}
+          {(data.inplaySummary.probFinalHome > 0 || data.inplaySummary.probFinalAway > 0) && (
+            <LiveMatchProbCard data={data} />
+          )}
+
+          {/* ── 1b-mid. PROJEÇÕES ESCANTEIOS / CARTÕES / GOLS / FALTAS ── */}
+          <LiveStatsProjectionPanel data={data} />
+
+          {/* ── 1c. ANÁLISE PRÉ-JOGO (upload .txt) ── */}
+          <LiveContextUpload
+            eventId={eventId}
+            activeContext={data.matchContext ?? null}
+            onContextChanged={refetchAdvice}
+          />
+
+          {/* ── 1b. ODDS + EV + STATS AO VIVO ── */}
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            <LiveModelVsMarketHero data={data} />
+            <div className="flex flex-col gap-3">
+              <LiveStatsCompactBar data={data} eventId={eventId} />
+              <LiveEvRealPanel data={data} />
+            </div>
+          </div>
+          <LiveCornersPanel data={data} />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <LiveTimelinePanel
+              data={data}
+              highlightGoalMinute={timelineReactive.latestGoalMinute}
+              reactiveBoosted={timelineReactive.boosted}
+            />
+            <LiveFormH2hPanel data={data} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <LivePlayerStatsPanel data={data} />
+            <LiveSocialRadarPanel data={data} />
+          </div>
 
           <LiveRecalibrationBanner event={recalibrationEvent} />
 
           {/* ── 2. HERO CTA ── */}
           <LiveActionNowPanel data={data} trackBet={betAnalysisActive} />
 
+          <LiveOptimizedTicketsPanel data={data} />
+
+          {/* ── 2a-top. RETORNO ESPERADO (EV × stake, filtro odd) ── */}
+          <LiveTopReturnPanel data={data} />
+
           {/* ── 2a. BILHETES 1T / 2T (modelo × mercado) ── */}
           <LiveHalfTicketsPanel data={data} />
+
+          {/* ── 2a0. MELHOR COMBO (seguro / equilibrado / longshot) ── */}
+          <LiveBestCombosPanel data={data} />
 
           {/* ── 2a1. MERCADOS 2T VIÁVEIS (tempo restante) ── */}
           <LiveRemaining2hMarketsPanel data={data} />
@@ -472,6 +571,9 @@ export function LiveInPlayPage() {
           {/* ── 2b. REGRAS P0 ── */}
           <LiveP0GuardBanner guardrails={data.betGuardrails} />
 
+          {/* ── 2b1. CRIAR APOSTA / over 1T ── */}
+          <LiveBetBuilderGuardPanel guardrails={data.betGuardrails} />
+
           {/* ── 2b. ALERTA — aposta contra palpite do modelo ── */}
           <LiveAgainstModelAlert alerts={againstModelAlerts} />
 
@@ -479,9 +581,19 @@ export function LiveInPlayPage() {
           <LiveHedgeAlert report={data?.hedgeReport ?? null} />
 
           {/* ── 3. COLUNA DUPLA: Mercados | Modelo + Casa ── */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
-            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
+            <section className="glass-card p-3 space-y-3">
               <LiveMarketCards data={data} />
+              <LiveRefereePanel
+                refereeMarkets={data?.inplaySummary?.refereeMarkets}
+                refereeProfile={data?.inplaySummary?.refereeProfile}
+                currentMinute={data?.minute ?? 0}
+                homeYellows={data?.liveStats?.homeYellowCards ?? 0}
+                awayYellows={data?.liveStats?.awayYellowCards ?? 0}
+                homeReds={data?.liveStats?.homeRedCards ?? 0}
+                awayReds={data?.liveStats?.awayRedCards ?? 0}
+                compact
+              />
             </section>
             <LiveModelPanel data={data} recalibrationEvent={recalibrationEvent} />
           </div>
@@ -501,30 +613,41 @@ export function LiveInPlayPage() {
             strategy={data.strategy}
             superbetEventId={data.superbetEventId}
             minute={data.minute}
+            defensiveMode
+            liveContext={defensiveLiveContext}
           />
 
           {/* ── 6. ESTRATÉGIA ── */}
           <BetStrategyPanel strategy={data.strategy} />
 
           {/* ── 7. MINHA APOSTA / CASHOUT (colapsável) ── */}
-          <section className="rounded-2xl border border-white/8 bg-white/[0.02]">
+          <section className="overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-b from-white/[0.03] to-transparent">
             <button
               type="button"
               onClick={() => setBetSectionOpen((v) => !v)}
-              className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+              className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
               aria-expanded={betSectionOpen}
             >
-              <div>
-                <h2 className="text-sm font-semibold text-white">
-                  Minha aposta — monitorar cash-out
-                </h2>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  {displayBets.length > 0
-                    ? `${displayBets.length} bilhete${displayBets.length > 1 ? "s" : ""} cadastrado${displayBets.length > 1 ? "s" : ""} · atualiza a cada ${FAST_POLL_MS / 1000}s`
-                    : `Cadastre até ${MAX_OPEN_BETS} bilhetes e monitore o ponto ideal de cash-out`}
-                </p>
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neon-blue/10 text-neon-blue">
+                  <IconBell className="h-4 w-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Minha aposta & cash-out</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {displayBets.length > 0
+                      ? `${displayBets.length} bilhete${displayBets.length > 1 ? "s" : ""} · modelo a cada ${FAST_POLL_MS / 1000}s`
+                      : "Cadastre seu bilhete, defina meta de saída e receba alertas"}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
+                {activeAlertCount > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
+                    <IconBell className="h-3 w-3" />
+                    {activeAlertCount} alerta{activeAlertCount > 1 ? "s" : ""}
+                  </span>
+                )}
                 {displayBets.length > 0 && (
                   <span className="rounded-full bg-neon-green/15 px-2 py-0.5 text-[11px] font-semibold text-neon-green">
                     {displayBets.length} ativo{displayBets.length > 1 ? "s" : ""}
@@ -595,7 +718,7 @@ export function LiveInPlayPage() {
                 )}
 
                 {trackBet && displayBets.length > 0 && (
-                  <div className="mb-4 space-y-6">
+                  <div className="mb-4 space-y-3">
                     {displayBets.map((bet, index) =>
                       formMode === bet.id ? null : (
                         <LiveOpenBetMonitor
@@ -719,25 +842,17 @@ export function LiveInPlayPage() {
                         />
                       </label>
                     </div>
-                    <label className="mb-3 flex max-w-xs flex-col gap-1 text-xs text-slate-400">
-                      Cash-out oferecido na Superbet (R$) — opcional
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        placeholder="ex.: 4,31"
-                        value={betDraft.offeredCashout ?? ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          setBetDraft((d) => ({
-                            ...d,
-                            offeredCashout: raw === "" ? null : Number(raw),
-                          }));
-                        }}
-                        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-sm text-white"
-                      />
-                    </label>
-                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                    <CashoutAlertSetup
+                      draft={betDraft}
+                      notifyPermission={notifyPermission}
+                      refreshSeconds={CASHOUT_REFRESH_MS / 1000}
+                      onDraftChange={(patch) => setBetDraft((d) => ({ ...d, ...patch }))}
+                      onRequestNotificationPermission={async () => {
+                        const ok = await ensureNotificationPermission();
+                        setNotifyPermission(ok ? "granted" : notificationPermission());
+                      }}
+                    />
+                    <div className="mb-4 mt-4 flex flex-wrap items-center gap-3">
                       {hasDuplicateMarket(
                         displayBets,
                         betDraft,
@@ -759,31 +874,40 @@ export function LiveInPlayPage() {
                         )}
                         onClick={() => {
                           if (formMode === "add") {
+                            const newId = createRegisteredBetId();
+                            persistBetAlertConfig(newId, betDraft, () =>
+                              setAlertConfigVersion((v) => v + 1),
+                            );
                             setRegisteredBets((prev) =>
                               [
                                 ...prev,
                                 {
                                   ...betDraft,
-                                  id: createRegisteredBetId(),
+                                  id: newId,
                                   autoMonitor: true,
                                 },
                               ].slice(0, MAX_OPEN_BETS),
                             );
                           } else if (typeof formMode === "string") {
-                            setRegisteredBets((prev) =>
-                              prev.map((b) =>
-                                b.id === formMode
-                                  ? {
-                                      ...b,
-                                      market: betDraft.market,
-                                      outcome: betDraft.outcome,
-                                      stake: betDraft.stake,
-                                      oddsPlaced: betDraft.oddsPlaced,
-                                      offeredCashout: betDraft.offeredCashout,
-                                    }
-                                  : b,
-                              ),
+                            persistBetAlertConfig(formMode, betDraft, () =>
+                              setAlertConfigVersion((v) => v + 1),
                             );
+                            if (!apiBets.some((b) => b.id === formMode)) {
+                              setRegisteredBets((prev) =>
+                                prev.map((b) =>
+                                  b.id === formMode
+                                    ? {
+                                        ...b,
+                                        market: betDraft.market,
+                                        outcome: betDraft.outcome,
+                                        stake: betDraft.stake,
+                                        oddsPlaced: betDraft.oddsPlaced,
+                                        offeredCashout: betDraft.offeredCashout,
+                                      }
+                                    : b,
+                                ),
+                              );
+                            }
                           }
                           setFormMode(null);
                         }}

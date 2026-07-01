@@ -40,3 +40,33 @@ def test_bronze_to_silver_accepts_nan_published_at():
     articles = bronze_to_silver(df)
     assert len(articles) == 1
     assert articles[0].published_at is None
+
+
+def test_load_silver_ignores_inplay_parquet(tmp_path, monkeypatch):
+    """load_silver não deve ler silver/inplay/match_states.parquet."""
+    from config import settings
+    from pipelines.silver import load_silver, save_silver
+    from schemas.models import SilverArticle
+
+    monkeypatch.setattr(settings, "lake_root", tmp_path / "lake")
+    monkeypatch.setattr("ingest.gcp.lake_store.cloud_lake_enabled", lambda: False)
+
+    inplay = tmp_path / "lake" / "silver" / "inplay"
+    inplay.mkdir(parents=True)
+    (inplay / "match_states.parquet").write_bytes(b"not-a-parquet")
+
+    article = SilverArticle(
+        id="a1",
+        source="espn_br",
+        source_url="https://example.com/a",
+        title="Brasil vence",
+        body="texto",
+        scraped_at="2026-06-03T12:00:00+00:00",
+        content_hash="hash1",
+    )
+    save_silver([article])
+
+    df = load_silver()
+    assert len(df) == 1
+    assert df.iloc[0]["id"] == "a1"
+

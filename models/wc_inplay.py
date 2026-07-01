@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 import numpy as np
+import structlog
 
 from config import settings
+from models.wc_handicap import handicap_probs_from_samples
 from models.wc_monte_carlo import _sample_poisson_bivariate
 from pipelines.wc_intensity_profile import compute_half_lambdas_nhpp
+
+logger = structlog.get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -25,7 +30,7 @@ from pipelines.wc_intensity_profile import compute_half_lambdas_nhpp
 #   - prior_weight baixo (ex: 2) → evidência ao vivo domina rápido
 # ---------------------------------------------------------------------------
 
-_BAYESIAN_PRIOR_WEIGHT = 3.0  # Moderado: 3 "pseudo-jogos" de prior
+_BAYESIAN_PRIOR_WEIGHT = 5.0  # Moderado-alto: evita overreaction a 1 gol cedo
 
 
 def bayesian_lambda_update(
@@ -108,6 +113,7 @@ class InPlayResult:
     top_ht_ft: dict[str, float]
     combo_markets: dict[str, float]
     btts_final: float
+    handicap_probs: dict[str, float]
     n_simulations: int
     ft_handicap_probs: dict[str, float] = field(default_factory=dict)
     ft_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
@@ -116,6 +122,7 @@ class InPlayResult:
     features: Any = None
     ensemble_shadow: dict[str, Any] | None = None
     halftime_adjustment: dict[str, Any] | None = None
+    lambda_adjustment: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = {
@@ -165,12 +172,15 @@ class InPlayResult:
             "top_ht_ft": self.top_ht_ft,
             "combo_markets": {k: round(v, 4) for k, v in self.combo_markets.items()},
             "btts_final": round(self.btts_final, 4),
+            "handicap_probs": {k: round(v, 4) for k, v in self.handicap_probs.items()},
             "n_simulations": self.n_simulations,
         }
         if self.ensemble_shadow:
             payload["ensemble_shadow"] = self.ensemble_shadow
         if self.halftime_adjustment:
             payload["halftime_adjustment"] = self.halftime_adjustment
+        if self.lambda_adjustment:
+            payload["lambda_adjustment"] = self.lambda_adjustment
         return payload
 
 
@@ -495,11 +505,17 @@ def _has_sofascore_momentum(momentum_events: list[dict] | None) -> bool:
 
 
 def _use_score_lambda_adjust(momentum_events: list[dict] | None) -> bool:
-    """Ajuste por placar: global ou só quando há eventos Sofascore ao vivo."""
+    """Ajuste por placar: global, Sofascore ou ScoreAlarm ao vivo."""
     if settings.inplay_score_lambda_adjust:
         return True
     if settings.inplay_score_lambda_adjust_with_sofascore:
-        return _has_sofascore_momentum(momentum_events)
+        if _has_sofascore_momentum(momentum_events):
+            return True
+    if settings.inplay_score_lambda_adjust_with_scorealarm:
+        from models.wc_inplay_live_adjust import has_scorealarm_momentum
+
+        if has_scorealarm_momentum(momentum_events):
+            return True
     return False
 
 
@@ -527,6 +543,10 @@ def simulate_inplay(
     use_market_shrinkage: bool | None = None,
     use_momentum: bool | None = None,
     halftime_stats: Any | None = None,
+    live_stats: dict[str, float] | None = None,
+    live_timeline: list[dict[str, Any]] | None = None,
+    match_context: dict[str, Any] | None = None,
+    live_research: dict[str, Any] | None = None,
 ) -> InPlayResult:
     minute = max(0, min(minute, match_minutes))
     half = match_minutes // 2
@@ -542,22 +562,158 @@ def simulate_inplay(
     )
 
     # --- P0.1: Bayesian update de λ com gols observados ---
-    # Ajusta λ_full com base nos gols reais marcados até agora.
-    # Efeito: se um time marcou mais do que o esperado, λ sobe;
-    # se marcou menos, λ desce (em direção ao prior moderado).
+    lambda_prior_home = lambda_full_home
+    lambda_prior_away = lambda_full_away
+    lambda_adjust_steps: list[dict[str, Any]] = []
+
+    def _apply_step(name: str, new_home: float, new_away: float, meta: dict[str, Any] | None) -> None:
+        nonlocal lambda_full_home, lambda_full_away
+        if meta is None or not meta.get("applied", True):
+            return
+        step = {
+            "step": name,
+            "lambda_before_home": round(lambda_full_home, 3),
+            "lambda_before_away": round(lambda_full_away, 3),
+            "lambda_after_home": round(new_home, 3),
+            "lambda_after_away": round(new_away, 3),
+            "delta_home_pct": round((new_home / lambda_full_home - 1.0) * 100, 2) if lambda_full_home else 0.0,
+            "delta_away_pct": round((new_away / lambda_full_away - 1.0) * 100, 2) if lambda_full_away else 0.0,
+        }
+        step.update({k: v for k, v in (meta or {}).items() if k != "applied"})
+        lambda_adjust_steps.append(step)
+        lambda_full_home = new_home
+        lambda_full_away = new_away
+
     if bayesian_update and minute > 0:
-        lambda_full_home = bayesian_lambda_update(
-            lambda_prior=lambda_full_home,
+        new_h = bayesian_lambda_update(
+            lambda_prior=lambda_prior_home,
             goals_observed=home_score,
             minutes_elapsed=minute,
             match_minutes=match_minutes,
         )
-        lambda_full_away = bayesian_lambda_update(
-            lambda_prior=lambda_full_away,
+        new_a = bayesian_lambda_update(
+            lambda_prior=lambda_prior_away,
             goals_observed=away_score,
             minutes_elapsed=minute,
             match_minutes=match_minutes,
         )
+        _apply_step("bayesian", new_h, new_a, {"applied": True})
+
+    if settings.inplay_live_stats_lambda_adjust and live_stats and minute > 0:
+        from models.wc_inplay_live_adjust import adjust_lambdas_from_live_stats
+
+        new_h, new_a, live_adj = adjust_lambdas_from_live_stats(
+            lambda_full_home,
+            lambda_full_away,
+            live_stats=live_stats,
+        )
+        _apply_step("live_stats", new_h, new_a, live_adj)
+
+    # --- xG acumulado ao vivo (Sofascore/ScoreAlarm) ---
+    if settings.inplay_xg_lambda_adjust and live_stats and minute > 0:
+        # Decide entre modo padrão e agressivo
+        use_aggressive = (
+            settings.inplay_xg_aggressive_enabled
+            and minute >= 20
+        )
+        if use_aggressive:
+            from models.wc_inplay_xg_aggressive import (
+                adjust_lambdas_from_xg_aggressive,
+                should_use_aggressive_xg,
+            )
+            if should_use_aggressive_xg(minute, live_stats):
+                new_h, new_a, xg_adj = adjust_lambdas_from_xg_aggressive(
+                    lambda_full_home,
+                    lambda_full_away,
+                    home_xg=live_stats.get("home_xg"),
+                    away_xg=live_stats.get("away_xg"),
+                    minute=minute,
+                    match_minutes=match_minutes,
+                )
+                _apply_step("live_xg_aggressive", new_h, new_a, xg_adj)
+            else:
+                # Fallback para modo padrão
+                from models.wc_inplay_live_adjust import adjust_lambdas_from_xg
+                new_h, new_a, xg_adj = adjust_lambdas_from_xg(
+                    lambda_full_home,
+                    lambda_full_away,
+                    home_xg=live_stats.get("home_xg"),
+                    away_xg=live_stats.get("away_xg"),
+                    minute=minute,
+                    match_minutes=match_minutes,
+                )
+                _apply_step("live_xg", new_h, new_a, xg_adj)
+        else:
+            from models.wc_inplay_live_adjust import adjust_lambdas_from_xg
+            new_h, new_a, xg_adj = adjust_lambdas_from_xg(
+                lambda_full_home,
+                lambda_full_away,
+                home_xg=live_stats.get("home_xg"),
+                away_xg=live_stats.get("away_xg"),
+                minute=minute,
+                match_minutes=match_minutes,
+            )
+            _apply_step("live_xg", new_h, new_a, xg_adj)
+
+    # --- KXL dinâmico ao vivo (colisões setoriais reativas) ---
+    if momentum_events and minute > 0:
+        from models.wc_kxl_dynamic import KXLDynamic, apply_kxl_dynamic_to_lambda
+        kxl = KXLDynamic.from_match_context(match_context)
+        for ev in momentum_events:
+            ev_type = ev.get("event_type", "")
+            team = ev.get("team", "")
+            ev_minute = ev.get("minute", 0)
+            detail = ev.get("detail", "")
+            if ev_type in ("goal", "red_card", "yellow_card", "substitution", "injury", "penalty"):
+                kxl.apply_event(
+                    ev_type,
+                    team=team,
+                    minute=ev_minute,
+                    detail=detail,
+                )
+        kxl_factors = kxl.compute_factors(minute=minute)
+        new_h, new_a, kxl_meta = apply_kxl_dynamic_to_lambda(
+            lambda_full_home,
+            lambda_full_away,
+            kxl_factors,
+        )
+        _apply_step("kxl_dynamic", new_h, new_a, kxl_meta)
+
+    # --- P0.2: H2H historical adjustment (comeback boost + over/under calibration) ---
+    if settings.inplay_h2h_adjust and match_context is not None:
+        from models.wc_inplay_h2h_adjust import parse_h2h_from_context, compute_h2h_adjust, apply_h2h_adjust
+
+        h2h_data = parse_h2h_from_context(match_context)
+        if h2h_data is not None:
+            h2h_adj = compute_h2h_adjust(
+                h2h_data=h2h_data,
+                home_team=home_team,
+                away_team=away_team,
+                home_score=home_score,
+                away_score=away_score,
+                minute=minute,
+                lambda_full_home=lambda_full_home,
+                lambda_full_away=lambda_full_away,
+            )
+            if h2h_adj.applied:
+                new_h, new_a, _ = apply_h2h_adjust(
+                    lambda_full_home, lambda_full_away, h2h_adj
+                )
+                _apply_step("h2h", new_h, new_a, {
+                    "home_factor": h2h_adj.lambda_home_factor,
+                    "away_factor": h2h_adj.lambda_away_factor,
+                    "draw_penalty": h2h_adj.draw_penalty,
+                    "reason": h2h_adj.reason,
+                })
+
+    # Favorito pré-jogo perdendo por 1 gol: limita super-reação ao placar
+    if minute >= 15 and abs(home_score - away_score) == 1:
+        if away_score > home_score and lambda_prior_home > lambda_prior_away * 1.12:
+            lambda_full_away = min(lambda_full_away, lambda_prior_away * 1.35)
+            lambda_full_home = max(lambda_full_home, lambda_prior_home * 0.85)
+        elif home_score > away_score and lambda_prior_away > lambda_prior_home * 1.12:
+            lambda_full_home = min(lambda_full_home, lambda_prior_home * 1.35)
+            lambda_full_away = max(lambda_full_away, lambda_prior_away * 0.85)
 
     # Ajuste legado em λ_full (desligado globalmente; ativo com Sofascore live)
     score_diff = home_score - away_score  # positivo = casa vence
@@ -573,6 +729,7 @@ def simulate_inplay(
             # Fora vencendo: fora ganha boost, casa penalizada
             lambda_full_away *= surplus_factors[abs_diff]
             lambda_full_home *= deficit_factors[abs_diff]
+        lambda_adjust_steps.append({"step": "score_diff", "abs_diff": abs_diff})
 
     # --- P1c: Market shrinkage (mistura λ modelo com λ implícito do mercado) ---
     if shrinkage_enabled and market_probs is not None:
@@ -625,6 +782,20 @@ def simulate_inplay(
 
     lam_h = lam_rem_1h_h + lam_2h_h
     lam_a = lam_rem_1h_a + lam_2h_a
+
+    if settings.inplay_trailing_chase_boost and live_timeline and minute > 0:
+        from models.wc_inplay_live_adjust import apply_trailing_chase_boost
+
+        lam_h, lam_a, chase = apply_trailing_chase_boost(
+            lam_h,
+            lam_a,
+            minute=minute,
+            home_score=home_score,
+            away_score=away_score,
+            timeline=live_timeline,
+        )
+        if chase:
+            lambda_adjust_steps.append({"step": "trailing_chase", **chase})
 
     # --- P1a: Momentum aplicado sobre λ_remaining (não λ_full) ---
     if momentum_enabled and minute > 0:
@@ -736,7 +907,6 @@ def simulate_inplay(
         a_2h=a_2h,
         n=n,
     )
-
     # --- P0.2: Override determinístico de linhas já garantidas ---
     current_total = home_score + away_score
     final_lp = _line_probs_from_totals(total_final, [1.5, 2.5, 3.5, 4.5])
@@ -762,6 +932,9 @@ def simulate_inplay(
     )
     ft_handicap = _handicap_probs(final_h, final_a, n, lines=_FT_HANDICAP_LINES)
     ft_asian = _asian_handicap_probs(final_h, final_a, n)
+    handicap_probs = handicap_probs_from_samples(final_h, final_a)
+
+    from models.wc_inplay_live_adjust import build_lambda_adjustment_report
 
     return InPlayResult(
         home_team=home_team,
@@ -811,9 +984,33 @@ def simulate_inplay(
         top_ht_ft=_top_ht_ft(ht_h, ht_a, final_h, final_a, n),
         combo_markets=combo,
         btts_final=btts,
+        handicap_probs=handicap_probs,
         n_simulations=n,
         halftime_adjustment=halftime_adj_dict,
+        lambda_adjustment=build_lambda_adjustment_report(
+            lambda_prior_home=lambda_prior_home,
+            lambda_prior_away=lambda_prior_away,
+            lambda_full_home=lambda_full_home,
+            lambda_full_away=lambda_full_away,
+            steps=lambda_adjust_steps,
+        ),
     )
+
+    # Log de auditoria quando λ diverge significativamente do pré-jogo
+    if lambda_adjust_steps and logger.isEnabledFor(10):  # DEBUG
+        logger.debug(
+            "inplay_lambda_adjustments",
+            home=home_team,
+            away=away_team,
+            minute=minute,
+            score=f"{home_score}x{away_score}",
+            lambda_prior_home=round(lambda_prior_home, 3),
+            lambda_prior_away=round(lambda_prior_away, 3),
+            lambda_full_home=round(lambda_full_home, 3),
+            lambda_full_away=round(lambda_full_away, 3),
+            n_steps=len(lambda_adjust_steps),
+            steps=[s["step"] for s in lambda_adjust_steps],
+        )
 
 
 def inplay_from_predictor(
@@ -836,13 +1033,18 @@ def inplay_from_predictor(
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
     halftime_stats: Any | None = None,
+    live_stats: dict[str, float] | None = None,
+    live_timeline: list[dict[str, Any]] | None = None,
+    before_date: datetime | None = None,
+    match_context: dict[str, Any] | None = None,
+    live_research: dict[str, Any] | None = None,
 ) -> InPlayResult:
     from datetime import datetime, timezone
 
     from models.poisson_wc import goal_model_factors
     from pipelines.wc_stats import build_match_features
 
-    cutoff = datetime.now(timezone.utc)
+    cutoff = before_date or datetime.now(timezone.utc)
     features = build_match_features(
         predictor.fixtures,
         home_team,
@@ -854,6 +1056,13 @@ def inplay_from_predictor(
     rho = predictor.dixon_coles.rho
     if rho is None and predictor._dc_metrics:
         rho = predictor._dc_metrics.get("rho", 0.0)
+
+    xg_calibration = None
+    if settings.wc_xg_lambda_blend_enabled:
+        from models.xg_lambda_blend import build_xg_calibration
+
+        xg_calibration = build_xg_calibration(home_team, away_team, before_date=cutoff)
+
     factors = goal_model_factors(
         predictor.fixtures,
         home_team,
@@ -861,7 +1070,17 @@ def inplay_from_predictor(
         features=features,
         before_date=cutoff,
         rho=rho,
+        xg_calibration=xg_calibration,
     )
+    # Aplica ajustes do live research (deep research ao vivo)
+    live_research_alerts: list[str] = []
+    if live_research:
+        from ingest.research.live_research_pulse import apply_live_research_to_lambda
+        factors.lambda_home, factors.lambda_away, live_research_alerts = apply_live_research_to_lambda(
+            factors.lambda_home,
+            factors.lambda_away,
+            live_research,
+        )
     seed = hash((home_team, away_team, home_score, away_score, minute)) % (2**32)
     sim_kwargs = dict(
         home_team=home_team,
@@ -882,6 +1101,9 @@ def inplay_from_predictor(
         away_corners=away_corners,
         market_probs=market_probs,
         halftime_stats=halftime_stats,
+        live_stats=live_stats,
+        live_timeline=live_timeline,
+        match_context=match_context,
     )
     effective_use_ensemble = (
         use_ensemble if use_ensemble is not None else settings.inplay_use_ensemble
@@ -936,6 +1158,9 @@ def simulate_inplay_ensemble(
     away_corners: int = 0,
     market_probs: tuple[float, float, float] | None = None,
     halftime_stats: Any | None = None,
+    live_stats: dict[str, float] | None = None,
+    live_timeline: list[dict[str, Any]] | None = None,
+    match_context: dict[str, Any] | None = None,
 ) -> InPlayResult:
     """simulate_inplay com blend do ensemble (Hawkes + GBM + Market).
 
@@ -968,6 +1193,9 @@ def simulate_inplay_ensemble(
         away_corners=away_corners,
         market_probs=market_probs,
         halftime_stats=halftime_stats,
+        live_stats=live_stats,
+        live_timeline=live_timeline,
+        match_context=match_context,
     )
 
     if not settings.inplay_use_ensemble or minute <= 0:
@@ -1064,10 +1292,25 @@ def simulate_inplay_ensemble(
                     home_score,
                     away_score,
                 )
+                logger.debug("gbm_inplay_active", minute=minute, home=home_team, away=away_team)
             else:
                 gbm_available = False
-        except Exception:
+                logger.warning(
+                    "gbm_inplay_not_fitted",
+                    home=home_team,
+                    away=away_team,
+                    minute=minute,
+                    artifact_path=str(settings.lake_root / "artifacts" / "inplay_gbm.pkl"),
+                )
+        except Exception as exc:
             gbm_available = False
+            logger.warning(
+                "gbm_inplay_error",
+                home=home_team,
+                away=away_team,
+                minute=minute,
+                error=str(exc),
+            )
 
     # Market probs (se disponível)
     market_dict = None

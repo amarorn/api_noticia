@@ -11,7 +11,6 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
-from models.wc_inplay import simulate_inplay
 from pipelines.wc_build_timeline import build_timeline_from_fixtures, SNAPSHOT_MINUTES
 
 
@@ -26,6 +25,7 @@ class WalkForwardResult:
     eval_season: int = 0
     elapsed_seconds: float = 0.0
     predictions: list[dict] = field(default_factory=list)
+    error: str | None = None
 
 
 def evaluate_inplay(
@@ -107,6 +107,8 @@ def evaluate_inplay(
     # Resultado real de cada jogo (para calcular Brier)
     predictions: list[dict] = []
     n_games = timeline["match_id"].nunique()
+    sim_errors = 0
+    first_sim_error: str | None = None
 
     for idx, row in timeline.iterrows():
         # Estado parcial no snapshot
@@ -159,7 +161,10 @@ def evaluate_inplay(
                 away_corners=int(row.get("away_corners", 0)),
                 **({} if use_ensemble else {"use_nhpp": use_nhpp, "use_momentum": use_momentum}),
             )
-        except Exception:
+        except Exception as exc:
+            sim_errors += 1
+            if first_sim_error is None:
+                first_sim_error = f"{type(exc).__name__}: {exc}"
             continue
 
         prob_1 = result.prob_final_home
@@ -183,7 +188,17 @@ def evaluate_inplay(
     settings.inplay_ensemble_gbm = prev_gbm
 
     if not predictions:
-        return WalkForwardResult(eval_season=eval_season)
+        err = first_sim_error or f"0/{len(timeline)} snapshots simulados"
+        if sim_errors:
+            err = f"{sim_errors} falhas MC; primeira: {first_sim_error or 'desconhecida'}"
+        if verbose:
+            print(f"  AVISO: walk-forward vazio — {err}")
+        return WalkForwardResult(
+            eval_season=eval_season,
+            n_games=n_games,
+            elapsed_seconds=round(time.time() - start_time, 1),
+            error=err,
+        )
 
     # Calcular Brier
     elapsed = time.time() - start_time

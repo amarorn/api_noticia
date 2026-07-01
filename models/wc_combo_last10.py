@@ -1,7 +1,6 @@
 """Análise dos últimos 10 jogos por perna do bilhete combo KXL."""
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 import pandas as pd
@@ -239,7 +238,6 @@ def build_last10_analysis(
         ]
         crossing_hits = min(r["hits"] for r in team_reports) if team_reports else 0
         evaluated_min = min(r["evaluated"] for r in team_reports) if team_reports else 0
-        crossing_total = leg.get("total") or window
         leg_reports.append(
             {
                 "rank": leg.get("rank"),

@@ -78,23 +78,44 @@ def _parse_incidents(incidents: list[dict]) -> list[GameEvent]:
             # Amarelos simples não afetam o momentum por ora
 
         elif incident_type == "substitution":
-            # Detectar se a sub é ofensiva: jogador que ENTRA é atacante
             player_in = inc.get("playerIn", {})
-            position = player_in.get("position", "").lower()
-            if position in ("f", "forward", "a", "attacker"):
+            player_out = inc.get("playerOut", {})
+            incident_class = inc.get("incidentClass", "")
+
+            # Substituição por lesão: jogador sai machucado
+            if incident_class == "injury":
                 events.append(GameEvent(
-                    event_type="sub_offensive",
+                    event_type="injury",
+                    minute=minute,
+                    team=team,
+                    detail=player_out.get("shortName", ""),
+                ))
+                # Ainda registrar a sub para efeito tático
+                position = player_in.get("position", "").lower()
+                sub_type = "sub_offensive" if position in ("f", "forward", "a", "attacker") else "sub_defensive"
+                events.append(GameEvent(
+                    event_type=sub_type,
                     minute=minute,
                     team=team,
                     detail=player_in.get("shortName", ""),
                 ))
             else:
-                events.append(GameEvent(
-                    event_type="sub_defensive",
-                    minute=minute,
-                    team=team,
-                    detail=player_in.get("shortName", ""),
-                ))
+                # Sub normal: detectar se ofensiva pelo jogador que entra
+                position = player_in.get("position", "").lower()
+                if position in ("f", "forward", "a", "attacker"):
+                    events.append(GameEvent(
+                        event_type="sub_offensive",
+                        minute=minute,
+                        team=team,
+                        detail=player_in.get("shortName", ""),
+                    ))
+                else:
+                    events.append(GameEvent(
+                        event_type="sub_defensive",
+                        minute=minute,
+                        team=team,
+                        detail=player_in.get("shortName", ""),
+                    ))
 
     return events
 

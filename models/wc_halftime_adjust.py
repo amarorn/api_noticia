@@ -119,6 +119,52 @@ def _over_under_probs_from_total(total_lam: float, observed: int, lines: tuple[f
     return probs
 
 
+def project_live_corners(
+    *,
+    home_corners: int,
+    away_corners: int,
+    minute: int,
+    lambda_home_ft: float,
+    lambda_away_ft: float,
+    lines: tuple[float, ...] = DEFAULT_LINES,
+    match_minutes: int = 90,
+) -> dict[str, Any]:
+    """Projeta escanteios FT condicionados ao placar de cantos e minuto atual (ao vivo)."""
+    minute_clamped = max(1, min(int(minute), match_minutes))
+    elapsed_frac = max(minute_clamped / float(match_minutes), 0.12)
+    prior_weight = 2.0
+
+    implied_rate_home = home_corners / elapsed_frac
+    implied_rate_away = away_corners / elapsed_frac
+    ft_home = (implied_rate_home + prior_weight * lambda_home_ft) / (1 + prior_weight)
+    ft_away = (implied_rate_away + prior_weight * lambda_away_ft) / (1 + prior_weight)
+
+    pred = predict_corners(ft_home, ft_away, lines=lines)
+
+    observed_total = home_corners + away_corners
+    line_probs = _over_under_probs_from_total(ft_home + ft_away, observed_total, lines)
+    remaining_home = max(0.0, ft_home - home_corners)
+    remaining_away = max(0.0, ft_away - away_corners)
+
+    return {
+        "source": "live_poisson",
+        "minute": minute_clamped,
+        "observed_home": home_corners,
+        "observed_away": away_corners,
+        "observed_total": observed_total,
+        "expected_remaining_home": round(remaining_home, 3),
+        "expected_remaining_away": round(remaining_away, 3),
+        "expected_ft_home": round(ft_home, 3),
+        "expected_ft_away": round(ft_away, 3),
+        "expected_ft_total": round(ft_home + ft_away, 3),
+        "prob_home_more_corners": round(pred.prob_home_more, 4),
+        "prob_draw_corners": round(pred.prob_draw_corners, 4),
+        "prob_away_more_corners": round(pred.prob_away_more, 4),
+        "most_likely_corners": pred.most_likely_score,
+        "line_probs": line_probs,
+    }
+
+
 def project_halftime_corners(
     stats: HalftimeFrozenStats,
     *,
@@ -167,9 +213,16 @@ def project_halftime_cards(
     stats: HalftimeFrozenStats,
     *,
     prior_lambda_ft: float = 3.8,
+    referee_card_lambda: float | None = None,
     lines: tuple[float, ...] = (2.5, 3.5, 4.5, 5.5),
 ) -> dict[str, Any]:
-    """Projeta cartões amarelos FT com base no 1T observado."""
+    """Projeta cartões amarelos FT com base no 1T observado.
+
+    referee_card_lambda: média de amarelos/jogo do árbitro (substitui o prior
+    genérico de 3.8 quando fornecido via contexto de análise pré-jogo).
+    """
+    if referee_card_lambda is not None:
+        prior_lambda_ft = referee_card_lambda
     obs_1h = stats.home_yellows_1h + stats.away_yellows_1h
     prior_1h = prior_lambda_ft * 0.5
     prior_weight = 2.0
@@ -198,6 +251,7 @@ def build_halftime_report(
     corner_lambda_away: float | None = None,
     corner_lines: tuple[float, ...] | None = None,
     card_lines: tuple[float, ...] | None = None,
+    referee_card_lambda: float | None = None,
 ) -> HalftimeAdjustReport | None:
     if stats is None or not settings.inplay_halftime_adjust:
         return None
@@ -214,7 +268,11 @@ def build_halftime_report(
     lam_a = corner_lambda_away if corner_lambda_away is not None else lambda_full_away * 2.2
     lines_c = corner_lines or DEFAULT_LINES
     corners = project_halftime_corners(stats, lambda_home_ft=lam_h, lambda_away_ft=lam_a, lines=lines_c)
-    cards = project_halftime_cards(stats, lines=card_lines or (2.5, 3.5, 4.5, 5.5))
+    cards = project_halftime_cards(
+        stats,
+        referee_card_lambda=referee_card_lambda,
+        lines=card_lines or (2.5, 3.5, 4.5, 5.5),
+    )
 
     corner_line_probs = dict(corners.get("line_probs") or {})
     card_line_probs = dict(cards.get("line_probs") or {})

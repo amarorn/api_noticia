@@ -18,7 +18,6 @@ REPORTS_DIR = settings.lake_root / "reports"
 
 def _load_reconciliation_stats(user_id: str) -> dict[str, Any]:
     try:
-        import pandas as pd
 
         from pipelines.user_bet_reconciliation import load_reconciliation
 

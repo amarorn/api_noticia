@@ -15,7 +15,9 @@ import {
 } from "@/application/use-cases/historicalValidationUseCases";
 import {
   GetUserOpenBetsUseCase,
+  RefreshOpenBetsCashoutsUseCase,
   RegisterComboProposalUseCase,
+  CalculateSuperMultiplaUseCase,
   GetValueBetsUseCase,
   GetWcGroupStandingsUseCase,
   GetWcRoundUseCase,
@@ -24,6 +26,7 @@ import {
   GetWcSquadUseCase,
   GetWcTeamsUseCase,
   GetWcFriendliesUseCase,
+  GetHandicapAnalysisUseCase,
   GetSuperbetLiveUseCase,
   GetSuperbetLiveAdviceUseCase,
   GetSuperbetEventUseCase,
@@ -50,6 +53,7 @@ export const getWcSquadUseCase = new GetWcSquadUseCase(wcRepository);
 export const predictWcMatchUseCase = new PredictWcMatchUseCase(wcRepository);
 export const predictWcCornersUseCase = new PredictWcCornersUseCase(wcRepository);
 export const predictWcInPlayUseCase = new PredictWcInPlayUseCase(wcRepository);
+export const getHandicapAnalysisUseCase = new GetHandicapAnalysisUseCase(wcRepository);
 export const resolveSofascoreEventUseCase = new ResolveSofascoreEventUseCase(wcRepository);
 export const getWcTeamsUseCase = new GetWcTeamsUseCase(wcRepository);
 export const getWcFriendliesUseCase = new GetWcFriendliesUseCase(wcRepository);
@@ -60,7 +64,9 @@ export const getWcComboTicketUseCase = new GetWcComboTicketUseCase(wcRepository)
 export const simulateWcMatchUseCase = new SimulateWcMatchUseCase(wcRepository);
 export const getValueBetsUseCase = new GetValueBetsUseCase(wcRepository);
 export const getUserOpenBetsUseCase = new GetUserOpenBetsUseCase(wcRepository);
+export const refreshOpenBetsCashoutsUseCase = new RefreshOpenBetsCashoutsUseCase(wcRepository);
 export const registerComboProposalUseCase = new RegisterComboProposalUseCase(wcRepository);
+export const calculateSuperMultiplaUseCase = new CalculateSuperMultiplaUseCase(wcRepository);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
   brasileiraoRepository,
 );

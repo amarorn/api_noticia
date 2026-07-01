@@ -1,5 +1,7 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { formatPercent } from "@/presentation/theme";
+import { CashoutAlertProgress } from "@/presentation/components/predictions/CashoutAlertProgress";
+import { getCashoutAlertConfig } from "@/presentation/utils/cashoutAlertStorage";
 
 export interface RegisteredBet {
   market: string;
@@ -9,6 +11,10 @@ export interface RegisteredBet {
   potentialReturn?: number;
   ticketCode?: string | null;
   offeredCashout?: number | null;
+  picks?: Array<{ market: string; outcome: string; label?: string }>;
+  bonusEligible?: boolean;
+  bonusPercentage?: number;
+  finalPayout?: number;
 }
 
 export interface RegisteredBetEntry extends RegisteredBet {
@@ -130,10 +136,19 @@ export function LiveOpenBetMonitor({
   onAutoMonitorChange,
 }: LiveOpenBetMonitorProps) {
   const autoMonitor = bet.autoMonitor;
-  const pick = pickLabel(data, bet);
-  const marketLabel = MARKET_LABELS[bet.market] ?? bet.market;
-  const modelP = modelProbForBet(data, bet);
-  const liveOdd = liveOddForBet(data, bet);
+  const alertConfig = getCashoutAlertConfig(bet.id);
+  const currentCashout = bet.offeredCashout ?? bet.cashoutValue ?? null;
+  const isMulti = (bet.picks?.length ?? 0) > 1;
+  const pick = isMulti ? null : pickLabel(data, bet);
+  const marketLabel = isMulti
+    ? `Múltipla · ${bet.picks!.length} pernas`
+    : (MARKET_LABELS[bet.market] ?? bet.market);
+  const displayReturn =
+    bet.bonusEligible && bet.finalPayout != null
+      ? bet.finalPayout
+      : (bet.potentialReturn ?? bet.stake * bet.oddsPlaced);
+  const modelP = isMulti ? null : modelProbForBet(data, bet);
+  const liveOdd = isMulti ? null : liveOddForBet(data, bet);
   const placedImplied = 1 / Math.max(bet.oddsPlaced, 1.01);
   const house = houseFavorite(data);
 
@@ -151,17 +166,31 @@ export function LiveOpenBetMonitor({
               )}
             </p>
             <p className="mt-1 text-base font-semibold text-white">
-              {marketLabel} → {pick}
+              {isMulti ? marketLabel : `${marketLabel} → ${pick}`}
             </p>
+            {isMulti && bet.picks && (
+              <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                {bet.picks.map((p) => (
+                  <li key={`${p.market}-${p.outcome}`}>
+                    · {p.label ?? `${p.market} ${p.outcome}`}
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="mt-1 font-mono text-sm text-slate-300">
               Aposta R$ {bet.stake.toFixed(2)} · odd {bet.oddsPlaced.toFixed(2)} · ganho potencial R${" "}
-              {(bet.potentialReturn ?? bet.stake * bet.oddsPlaced).toFixed(2)}
+              {displayReturn.toFixed(2)}
+              {bet.bonusEligible ? (
+                <span className="ml-2 rounded-full border border-amber-400/35 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-200">
+                  Super Múltipla +{((bet.bonusPercentage ?? 0.05) * 100).toFixed(0)}%
+                </span>
+              ) : null}
             </p>
-            {bet.offeredCashout != null && bet.offeredCashout > 0 && (
-              <p className="mt-1 font-mono text-sm text-neon-green">
-                Cash-out Superbet: R$ {bet.offeredCashout.toFixed(2)}
+            {bet.bonusEligible && bet.potentialReturn != null && bet.finalPayout != null ? (
+              <p className="mt-0.5 text-[10px] text-slate-500">
+                Bruto R$ {bet.potentialReturn.toFixed(2)} + bônus → R$ {bet.finalPayout.toFixed(2)}
               </p>
-            )}
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {autoMonitor && data.isLive && (
@@ -200,6 +229,8 @@ export function LiveOpenBetMonitor({
         </label>
       </div>
 
+      <CashoutAlertProgress config={alertConfig} currentCashout={currentCashout} />
+
       <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.05] p-4">
         <p className="text-[10px] font-bold uppercase tracking-widest text-violet-300/80">
           Onde a casa está concentrada
@@ -214,7 +245,11 @@ export function LiveOpenBetMonitor({
           )}
           <HouseRow
             label="Sua entrada"
-            value={`${pick} @ ${bet.oddsPlaced.toFixed(2)} (${formatPercent(placedImplied)} implícita)`}
+            value={
+              isMulti || pick == null
+                ? `@ ${bet.oddsPlaced.toFixed(2)} (${formatPercent(placedImplied)} implícita)`
+                : `${pick} @ ${bet.oddsPlaced.toFixed(2)} (${formatPercent(placedImplied)} implícita)`
+            }
             hint="Odd que você pegou ao entrar"
           />
           {liveOdd != null && (

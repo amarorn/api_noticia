@@ -22,9 +22,14 @@ import {
   mapSuperbetLiveAdvice,
   mapSuperbetEvent,
   mapComboTicket,
+  mapHandicapAnalysis,
   mapWcSimulation,
   mapUserOpenBets,
 } from "../mappers";
+import {
+  mapSuperMultiplaCalculate,
+  type SuperMultiplaCalculateLeg,
+} from "@/presentation/utils/superMultipla";
 
 export class WcApiRepository implements IWcRepository {
   async getRound(matchday?: number) {
@@ -116,6 +121,18 @@ export class WcApiRepository implements IWcRepository {
       },
     );
     return mapWcInPlayPrediction(raw);
+  }
+
+  async getHandicapAnalysis(dto: { eventId: number; bankroll?: number; phase?: string }) {
+    const params = new URLSearchParams();
+    if (dto.bankroll != null) params.set("bankroll", String(dto.bankroll));
+    if (dto.phase) params.set("phase", dto.phase);
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapHandicapAnalysis>[0]>(
+      `/worldcup/handicap/${dto.eventId}${qs}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapHandicapAnalysis(raw);
   }
 
   async resolveSofascoreEvent(dto: {
@@ -225,6 +242,34 @@ export class WcApiRepository implements IWcRepository {
     return mapComboTicket(raw)!;
   }
 
+  async calculateSuperMultipla(dto: {
+    legs: SuperMultiplaCalculateLeg[];
+    stake: number;
+    betType?: "SIMPLE" | "MULTIPLE";
+    minute?: number;
+    homeScore?: number;
+    awayScore?: number;
+    superbetEventId?: number;
+  }) {
+    const raw = await apiFetch<Record<string, unknown>>(
+      "/worldcup/superbet/multiple/calculate",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          legs: dto.legs,
+          stake: dto.stake,
+          bet_type: dto.betType ?? "MULTIPLE",
+          minute: dto.minute,
+          home_score: dto.homeScore ?? 0,
+          away_score: dto.awayScore ?? 0,
+          superbet_event_id: dto.superbetEventId,
+        }),
+        timeoutMs: 15_000,
+      },
+    );
+    return mapSuperMultiplaCalculate(raw);
+  }
+
   async getSuperbetLiveAdvice(dto: {
     eventId: number;
     phase?: string;
@@ -234,6 +279,7 @@ export class WcApiRepository implements IWcRepository {
     stake?: number;
     oddsPlaced?: number;
     fast?: boolean;
+    kickoff?: string;
   }) {
     const params = new URLSearchParams();
     if (dto.phase) params.set("phase", dto.phase);
@@ -243,6 +289,7 @@ export class WcApiRepository implements IWcRepository {
     if (dto.stake != null) params.set("stake", String(dto.stake));
     if (dto.oddsPlaced != null) params.set("odds_placed", String(dto.oddsPlaced));
     if (dto.fast) params.set("fast", "true");
+    if (dto.kickoff) params.set("kickoff", dto.kickoff);
     const qs = params.size > 0 ? `?${params}` : "";
     const raw = await apiFetch<Parameters<typeof mapSuperbetLiveAdvice>[0]>(
       `/worldcup/superbet/live/${dto.eventId}/advice${qs}`,
@@ -275,10 +322,18 @@ export class WcApiRepository implements IWcRepository {
   }
 
   async getUserOpenBets() {
-    const raw = await apiFetch<Parameters<typeof mapUserOpenBets>[0]>("/user/open-bets", {
+    const raw = await apiFetch<Parameters<typeof mapUserOpenBets>[0]>("/user/open-bets?include_proposals=false", {
       timeoutMs: API_SYNC_TIMEOUT_MS,
     });
     return mapUserOpenBets(raw);
+  }
+
+  async refreshOpenBetsCashouts(eventId?: number) {
+    const qs = eventId != null ? `?event_id=${eventId}` : "";
+    return apiFetch<{ updated: number; skipped: number; errors: number }>(
+      `/user/open-bets/refresh-cashouts${qs}`,
+      { method: "POST", timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
   }
 
   async registerComboProposal(body: import("@/application/dtos/comboProposal").ComboProposalApiBody) {

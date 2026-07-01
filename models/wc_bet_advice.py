@@ -1,7 +1,6 @@
 """Recomendações de cash-out e aporte com base no modelo in-play vs mercado."""
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -9,6 +8,16 @@ from config import settings
 from models.inplay_market_period import is_market_blocked_by_minute
 from models.economics import coase_effective_min_edge, live_effective_min_edge
 from models.ev_value import evaluate_outcome
+from models.wc_handicap_score import (
+    assess_handicap_vs_live_score,
+    format_handicap_label_with_score,
+    handicap_blocked_by_score,
+    handicap_line_from_key,
+    model_prob_key_for_book_handicap,
+    parse_any_handicap_market,
+    parse_period_handicap_market,
+    superbet_handicap_line_label,
+)
 from models.wc_trend_confidence import assess_prediction_confidence
 from models.wc_team_patterns import blend_confidence_with_patterns, pattern_accuracy_score
 from ingest.superbet.parser import SuperbetEventSnapshot
@@ -42,6 +51,93 @@ class CashoutAdvice:
     remaining_ev: float
     estimated_fair_cashout: float
     potential_return: float
+    trend_influenced: bool = False
+    trend_urgency: str | None = None
+
+
+_CASHOUT_ACTION_RANK: dict[str, int] = {
+    "manter": 0,
+    "aguardar": 1,
+    "cashout_parcial": 2,
+    "cashout": 3,
+}
+
+
+def _trend_exit_target(urgency: str, trend_conf: float, current_action: str) -> str | None:
+    """Define ação mínima de cash-out sugerida pelo copiloto de tendência."""
+    current_rank = _CASHOUT_ACTION_RANK.get(current_action, 0)
+    if urgency == "critical":
+        return "cashout"
+    if urgency == "high":
+        if trend_conf >= 0.8 or current_rank < 2:
+            return "cashout"
+        return "cashout_parcial"
+    if urgency == "medium" and current_rank < 2:
+        return "cashout_parcial"
+    if urgency == "low" and current_rank < 1:
+        return "aguardar"
+    return None
+
+
+def apply_trend_to_cashout(
+    advice: CashoutAdvice,
+    trend_report: dict[str, Any] | None,
+) -> CashoutAdvice:
+    """Funde sinais de fluxo (ticks/odds) na decisão mecânica de cash-out."""
+    if not settings.live_cashout_use_trend or not trend_report:
+        return advice
+
+    pa = trend_report.get("position_advice")
+    if not pa or not isinstance(pa, dict):
+        return advice
+
+    trend_action = pa.get("action")
+    if trend_action != "exit":
+        return advice
+
+    urgency = str(pa.get("urgency") or "low")
+    trend_conf = float(pa.get("confidence") or 0)
+    reasoning = str(pa.get("reasoning") or "").strip()
+    trend_note = (
+        f" Copiloto de tendência ({urgency}): {reasoning[:240]}"
+        if reasoning
+        else f" Copiloto de tendência recomenda saída ({urgency})."
+    )
+
+    target = _trend_exit_target(urgency, trend_conf, advice.action)
+    current_rank = _CASHOUT_ACTION_RANK.get(advice.action, 0)
+    target_rank = _CASHOUT_ACTION_RANK.get(target, current_rank) if target else current_rank
+
+    if target_rank <= current_rank:
+        return CashoutAdvice(
+            action=advice.action,
+            confidence=advice.confidence,
+            reason=advice.reason + trend_note,
+            current_model_prob=advice.current_model_prob,
+            placed_implied_prob=advice.placed_implied_prob,
+            remaining_ev=advice.remaining_ev,
+            estimated_fair_cashout=advice.estimated_fair_cashout,
+            potential_return=advice.potential_return,
+            trend_influenced=False,
+            trend_urgency=urgency,
+        )
+
+    new_confidence = min(
+        0.98,
+        max(advice.confidence, trend_conf, 0.72 if urgency == "critical" else 0.62),
+    )
+    return CashoutAdvice(
+        action=target or advice.action,
+        confidence=round(new_confidence, 3),
+        reason=advice.reason + trend_note,
+        current_model_prob=advice.current_model_prob,
+        placed_implied_prob=advice.placed_implied_prob,
+        remaining_ev=advice.remaining_ev,
+        estimated_fair_cashout=advice.estimated_fair_cashout,
+        potential_return=advice.potential_return,
+        trend_influenced=True,
+        trend_urgency=urgency,
+    )
 
 
 @dataclass
@@ -57,6 +153,9 @@ class AporteAdvice:
     kelly_quarter: float
     suggested_stake_pct: float
     action: str
+    score_context: str | None = None
+    classification: str = "value_bet"
+    suggested_stake_brl: float | None = None
 
 
 _INPLAY_HALF_CFG: dict[str, dict[str, Any]] = {
@@ -84,45 +183,46 @@ _INPLAY_HALF_CFG: dict[str, dict[str, Any]] = {
     },
 }
 
-_HCAP_MARKET_RE = re.compile(r"^(ft|1h|2h)_(hcap|ah)_(home|away)_(.+)$")
-
-
-def handicap_line_from_key(line_key: str) -> float | None:
-    """Converte chave estável (-0.5 → m0_5) em linha numérica."""
-    if line_key == "0":
-        return 0.0
-    if line_key.startswith("m"):
-        try:
-            return -float(line_key[1:].replace("_", "."))
-        except ValueError:
-            return None
-    if line_key.startswith("p"):
-        try:
-            return float(line_key[1:].replace("_", "."))
-        except ValueError:
-            return None
-    return None
-
-
-def parse_period_handicap_market(market: str) -> tuple[str, str, float] | None:
-    """Retorna (periodo, lado, linha) para mercados ft/1h/2h_hcap_* ou *_ah_*."""
-    match = _HCAP_MARKET_RE.match(market)
-    if not match:
-        return None
-    if match.group(2) == "ah":
-        return None
-    line = handicap_line_from_key(match.group(4))
-    if line is None:
-        return None
-    return match.group(1), match.group(3), line
-
-
 def _score_from_inplay(inplay: dict[str, Any]) -> tuple[int, int]:
     score_str = inplay.get("current_score", "0x0")
     parts = str(score_str).split("x")
     home = int(parts[0]) if len(parts) == 2 and str(parts[0]).isdigit() else 0
     away = int(parts[1]) if len(parts) == 2 and str(parts[1]).isdigit() else 0
     return home, away
+
+
+def _ht_scores_from_inplay(inplay: dict[str, Any]) -> tuple[int | None, int | None]:
+    ht_h = inplay.get("ht_home_score")
+    ht_a = inplay.get("ht_away_score")
+    if ht_h is None or ht_a is None:
+        return None, None
+    try:
+        return int(ht_h), int(ht_a)
+    except (TypeError, ValueError):
+        return None, None
+
+
+def _handicap_score_assessment(
+    market: str,
+    inplay: dict[str, Any],
+    *,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    home_team: str,
+    away_team: str,
+):
+    ht_h, ht_a = _ht_scores_from_inplay(inplay)
+    return assess_handicap_vs_live_score(
+        market,
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        ht_home=ht_h,
+        ht_away=ht_a,
+        home_team=home_team,
+        away_team=away_team,
+    )
 
 
 def is_aggressive_leading_handicap(
@@ -152,6 +252,39 @@ def is_aggressive_leading_handicap(
         return True, (
             f"visitante já lidera {away_sc}x{home_sc}; handicap {line_label} no 2T "
             f"exige goleada no período"
+        )
+    return False, ""
+
+
+def is_premature_underdog_handicap_2h(
+    market: str,
+    inplay: dict[str, Any],
+    *,
+    minute: int = 0,
+) -> tuple[bool, str]:
+    """Bloqueia −0,5 no 2T do visitante quando favorita mandante só perde por 1."""
+    parsed = parse_period_handicap_market(market)
+    if not parsed:
+        return False, ""
+    period, side, line = parsed
+    if period != "2h" or line > -0.499 or minute < 45:
+        return False, ""
+
+    pre = inplay.get("pregame_probs") or {}
+    pre_home = float(pre.get("1") or 0)
+    pre_away = float(pre.get("2") or 0)
+    home_score, away_score = _score_from_inplay(inplay)
+    gap = home_score - away_score
+
+    if side == "away" and pre_home >= pre_away + 0.08 and gap == -1:
+        return True, (
+            "Favorita pré-jogo perdendo por 1 gol; handicap −0,5 visitante no 2T "
+            "superestima fechamento do azarão."
+        )
+    if side == "home" and pre_away >= pre_home + 0.08 and gap == 1:
+        return True, (
+            "Favorita visitante pré-jogo perdendo por 1 gol; handicap −0,5 mandante no 2T "
+            "superestima fechamento do azarão."
         )
     return False, ""
 
@@ -214,7 +347,10 @@ def _prob_from_half_market(inplay: dict[str, Any], market: str, outcome: str) ->
         if len(parts) != 2:
             return None
         side, line = parts
-        return inplay.get(cfg["handicap"], {}).get(f"{side}_{line}")
+        prob_key = model_prob_key_for_book_handicap(side, line)
+        if prob_key is None:
+            return None
+        return inplay.get(cfg["handicap"], {}).get(prob_key)
 
     if suffix.startswith("ah_"):
         rest = suffix[len("ah_") :]
@@ -272,7 +408,8 @@ def _market_odd_half(
         if len(parts) != 2:
             return None
         side, line = parts
-        return period_markets.get("handicap", {}).get(line, {}).get(side)
+        hcap = period_markets.get("handicap", {})
+        return hcap.get(line, {}).get(side)
 
     if suffix.startswith("ah_"):
         rest = suffix[len("ah_") :]
@@ -280,7 +417,8 @@ def _market_odd_half(
         if len(parts) != 2:
             return None
         side, line = parts
-        return period_markets.get("asian_handicap", {}).get(line, {}).get(side)
+        ah = period_markets.get("asian_handicap", {})
+        return ah.get(line, {}).get(side)
 
     return None
 
@@ -362,12 +500,18 @@ def _half_aporte_specs(
             if not hcap_cfg:
                 continue
             for side in sides:
+                if _market_odd_half(snapshot, f"{period}_hcap_{side}_{line}", "yes") is None:
+                    continue
                 team_name = home_team if side == "home" else away_team
+                line_label = superbet_handicap_line_label(side, line)
+                prob_key = model_prob_key_for_book_handicap(side, line)
+                if prob_key is None:
+                    continue
                 specs.append((
                     f"{period}_hcap_{side}_{line}",
                     "yes",
-                    f"{period_label} — {team_name} handicap {_format_handicap_line_label(line)}",
-                    lambda s=side, lk=line, ck=hcap_cfg: inplay.get(ck, {}).get(f"{s}_{lk}"),
+                    f"{period_label} — {team_name} handicap {line_label}",
+                    lambda pk=prob_key, ck=hcap_cfg: inplay.get(ck, {}).get(pk),
                 ))
 
         ah_cfg = cfg.get("asian_handicap")
@@ -375,6 +519,8 @@ def _half_aporte_specs(
             if not ah_cfg:
                 continue
             for side in sides:
+                if _market_odd_half(snapshot, f"{period}_ah_{side}_{line}", "yes") is None:
+                    continue
                 team_name = home_team if side == "home" else away_team
                 specs.append((
                     f"{period}_ah_{side}_{line}",
@@ -502,7 +648,9 @@ def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: st
         line = market.replace("1h_over_", "").replace("_", ".")
         prices = ht_totals.get(line, {})
         for name, price in prices.items():
-            if "mais" in name.lower():
+            if outcome in {"yes", "sim"} and "mais" in name.lower():
+                return price
+            if outcome in {"no", "não", "nao"} and "menos" in name.lower():
                 return price
         return None
     # --- Combos (extraídos do parser) ---
@@ -565,6 +713,7 @@ def advise_cashout(
     *,
     minute: int = 0,
     book_margin: float = 0.08,
+    trend_report: dict[str, Any] | None = None,
 ) -> CashoutAdvice:
     current_p = _prob_from_inplay(inplay, bet.market, bet.outcome)
     if current_p is None:
@@ -616,7 +765,7 @@ def advise_cashout(
         )
         confidence = 0.5
 
-    return CashoutAdvice(
+    base = CashoutAdvice(
         action=action,
         confidence=round(confidence, 3),
         reason=reason,
@@ -626,6 +775,7 @@ def advise_cashout(
         estimated_fair_cashout=round(estimated_fair, 2),
         potential_return=round(potential, 2),
     )
+    return apply_trend_to_cashout(base, trend_report)
 
 
 def _is_comeback_unrealistic(
@@ -689,8 +839,8 @@ def _aporte_candidates(
     home_score: int | None = None,
     away_score: int | None = None,
     minute: int = 0,
-) -> list[tuple[str, str, str, float, float]]:
-    """market, outcome, label, model_prob, market_odd"""
+) -> list[tuple[str, str, str, float, float, str | None]]:
+    """market, outcome, label, model_prob, market_odd, score_context"""
     candidates: list[tuple[str, str, str, float, float]] = []
 
     # Extrair placar do inplay se não passado explicitamente
@@ -722,27 +872,52 @@ def _aporte_candidates(
     ]
 
     # --- Total de Gols (linhas disponíveis no snapshot) ---
+    # Usa score do snapshot (capturado em tempo real) se disponível — evita stale do inplay dict
+    live_home = getattr(snapshot, "home_score", None) if snapshot else None
+    live_away = getattr(snapshot, "away_score", None) if snapshot else None
+    current_total = (
+        (live_home + live_away)
+        if live_home is not None and live_away is not None
+        else home_score + away_score
+    )
     if snapshot:
         for line_key in snapshot.totals:
+            try:
+                line_val = float(line_key)
+            except ValueError:
+                continue
             line_num = line_key.replace(".", "_")
             over_prob = flp.get(f"over_{line_num}")
             under_prob = flp.get(f"under_{line_num}")
+            # Gate determinístico: se já passou a linha, "under" é impossível; "over" não tem valor
+            if current_total > line_val:
+                continue  # under já perdeu, over garantido mas odd ~1.0 — sem valor
             if over_prob is not None:
                 specs.append((f"over_{line_num}", "yes", f"Mais de {line_key} gols", lambda p=over_prob: p))
             if under_prob is not None:
                 specs.append((f"over_{line_num}", "no", f"Menos de {line_key} gols", lambda p=under_prob: p))
 
     # --- Total por Time (linhas disponíveis) ---
+    live_home_sc = live_home if live_home is not None else home_score
+    live_away_sc = live_away if live_away is not None else away_score
     if snapshot:
         for side in ("home", "away"):
             team_name = home_team if side == "home" else away_team
+            team_sc = live_home_sc if side == "home" else live_away_sc
             for line_key in snapshot.team_totals.get(side, {}):
+                try:
+                    line_val = float(line_key)
+                except ValueError:
+                    continue
+                if team_sc > line_val:
+                    continue  # linha já garantida — sem valor apostável
                 line_num = line_key.replace(".", "_")
                 prob = team_lp.get(f"{side}_over_{line_num}")
                 if prob is not None:
                     specs.append((f"{side}_over_{line_num}", "yes", f"{team_name} mais de {line_key} gols", lambda p=prob: p))
 
     # --- 2º Tempo (linhas disponíveis) ---
+    # second_half_line_probs já tem _apply_guaranteed_lines aplicado (minute > 45)
     if snapshot:
         for line_key in snapshot.second_half_totals:
             line_num = line_key.replace(".", "_")
@@ -856,7 +1031,46 @@ def _aporte_candidates(
             continue
         if is_aggressive_leading_handicap(market, inplay, minute=minute)[0]:
             continue
-        candidates.append((market, outcome, label, float(prob), float(odd)))
+        blocked_ud, _ = is_premature_underdog_handicap_2h(market, inplay, minute=minute)
+        if blocked_ud:
+            continue
+        from models.inplay_dead_market import is_dead_inplay_market
+
+        dead, _dead_reason = is_dead_inplay_market(
+            market,
+            outcome,
+            home_score=home_score,
+            away_score=away_score,
+        )
+        if dead:
+            continue
+        score_context: str | None = None
+        if parse_any_handicap_market(market) or parse_period_handicap_market(market):
+            ht_h, ht_a = _ht_scores_from_inplay(inplay)
+            blocked, _ = handicap_blocked_by_score(
+                market,
+                home_score=home_score,
+                away_score=away_score,
+                minute=minute,
+                ht_home=ht_h,
+                ht_away=ht_a,
+                home_team=home_team,
+                away_team=away_team,
+            )
+            if blocked:
+                continue
+            assessment = _handicap_score_assessment(
+                market,
+                inplay,
+                home_score=home_score,
+                away_score=away_score,
+                minute=minute,
+                home_team=home_team,
+                away_team=away_team,
+            )
+            score_context = assessment.score_hint if assessment else None
+            label = format_handicap_label_with_score(label, assessment)
+        candidates.append((market, outcome, label, float(prob), float(odd), score_context))
     return candidates
 
 
@@ -891,7 +1105,7 @@ def scan_all_market_edges(
 
     rows: list[dict[str, Any]] = []
 
-    for market, outcome, label, prob, odd in _aporte_candidates(
+    for market, outcome, label, prob, odd, score_context in _aporte_candidates(
         inplay,
         snapshot,
         home_team=home_team,
@@ -908,7 +1122,7 @@ def scan_all_market_edges(
             ev.expected_value >= effective_threshold
             and edge_pp >= settings.live_min_edge_pp
         )
-        rows.append({
+        row: dict[str, Any] = {
             "market": market,
             "outcome": outcome,
             "label": label,
@@ -920,7 +1134,10 @@ def scan_all_market_edges(
             "suggested_stake_pct": suggested_pct,
             "suggested_stake_value": round(bankroll * suggested_pct / 100, 2),
             "meets_threshold": quality_pass,
-        })
+        }
+        if score_context:
+            row["score_context"] = score_context
+        rows.append(row)
 
     rows.sort(key=lambda x: (x["edge_pp"], x["model_prob"]), reverse=True)
     return rows, effective_threshold
@@ -988,11 +1205,13 @@ def advise_aportes(
     def _needs_high_confidence(market: str) -> bool:
         return "_ah_" in market or "_hcap_" in market or market.startswith("corners_") or market.startswith("cards_")
 
-    for market, outcome, label, prob, odd in _aporte_candidates(
+    for market, outcome, label, prob, odd, score_context in _aporte_candidates(
         inplay,
         snapshot,
         home_team=home_team,
         away_team=away_team,
+        home_score=_score_from_inplay(inplay)[0],
+        away_score=_score_from_inplay(inplay)[1],
         minute=minute,
     ):
         if live and is_market_blocked_by_minute(market, minute):
@@ -1013,9 +1232,29 @@ def advise_aportes(
             continue
         if ev.expected_value < threshold:
             continue
+        from models.bet_decision import assess_bet_recommendation
+
+        decision = assess_bet_recommendation(
+            market=market,
+            outcome=outcome,
+            ev=ev.expected_value,
+            edge_pp=edge_pp,
+            model_prob=prob,
+            odd=odd,
+            bankroll=bankroll,
+            kelly_quarter=ev.kelly_quarter,
+            confidence_score=confidence_score,
+            min_ev_threshold=max(threshold, settings.ev_recommendation_min_threshold),
+        )
+        if not decision.allowed:
+            continue
         kelly_q = ev.kelly_quarter
-        suggested_pct = round(min(5.0, kelly_q * 100), 2)
-        action = "aportar" if ev.expected_value >= threshold * 2 else "aportar_pequeno"
+        suggested_pct = decision.suggested_stake_pct or round(min(5.0, kelly_q * 100), 2)
+        action = (
+            "aportar"
+            if decision.classification in {"high_confidence", "value_bet"}
+            else "aportar_pequeno"
+        )
         out.append(
             AporteAdvice(
                 market=market,
@@ -1029,6 +1268,9 @@ def advise_aportes(
                 kelly_quarter=round(kelly_q, 4),
                 suggested_stake_pct=suggested_pct,
                 action=action,
+                score_context=score_context,
+                classification=decision.classification,
+                suggested_stake_brl=decision.suggested_stake_brl,
             )
         )
 
@@ -1046,10 +1288,16 @@ def build_bet_advice_report(
     minute: int = 0,
     bankroll: float | None = None,
     features: Any = None,
+    trend_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     cashout = None
     if user_bet is not None:
-        cashout = advise_cashout(user_bet, inplay, minute=minute)
+        cashout = advise_cashout(
+            user_bet,
+            inplay,
+            minute=minute,
+            trend_report=trend_report,
+        )
 
     # Calcular confiança da previsão
     score_parts = str(inplay.get("current_score", "0x0")).split("x")
@@ -1111,6 +1359,8 @@ def build_bet_advice_report(
             "remaining_ev": cashout.remaining_ev,
             "estimated_fair_cashout": cashout.estimated_fair_cashout,
             "potential_return": cashout.potential_return,
+            "trend_influenced": cashout.trend_influenced,
+            "trend_urgency": cashout.trend_urgency,
         },
         "aportes": [
             {
@@ -1126,6 +1376,7 @@ def build_bet_advice_report(
                 "suggested_stake_pct": a.suggested_stake_pct,
                 "suggested_stake_value": round((bankroll or 1000) * a.suggested_stake_pct / 100, 2),
                 "action": a.action,
+                **({"score_context": a.score_context} if a.score_context else {}),
             }
             for a in aportes
         ],

@@ -57,12 +57,12 @@ def _result_for_team(row: pd.Series, team: str) -> str:
 
 def _played_before(fixtures_df: pd.DataFrame, before_date: datetime, season: int | None = None) -> pd.DataFrame:
     df = fixtures_df.copy()
-    df["_date"] = pd.to_datetime(df["match_date"], utc=True)
+    df["match_date"] = pd.to_datetime(df["match_date"], errors="coerce", utc=True)
     cutoff = _parse_dt(before_date)
-    played = df[df["_date"] < cutoff]
+    played = df[df["match_date"] < cutoff]
     if season is not None:
         played = played[played["season"] == season]
-    return played.drop(columns=["_date"])
+    return played
 
 
 def compute_standings(

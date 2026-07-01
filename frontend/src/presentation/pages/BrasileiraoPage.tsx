@@ -10,6 +10,8 @@ export function BrasileiraoPage() {
   const query = useQuery({
     queryKey: ["brasileirao-round"],
     queryFn: () => getBrasileiraoRoundUseCase.execute(),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
   });
 
   if (query.isLoading) {
@@ -39,13 +41,13 @@ export function BrasileiraoPage() {
   const round = query.data!;
 
   return (
-    <PageTransition className="space-y-8">
+    <PageTransition className="space-y-4">
       <HeroPageHeader
         title={`${round.competition} — Rodada ${round.roundNumber}`}
-        subtitle="Previsões heurísticas baseadas em notícias e contexto dos times"
+        subtitle="Previsões heurísticas baseadas em notícias e contexto"
       />
 
-      <StaggerContainer className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <StaggerContainer className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {round.predictions.map((p, i) => (
           <StaggerItem key={`${p.homeTeam}-${p.awayTeam}`}>
             <BrasileiraoCard

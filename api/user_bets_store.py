@@ -47,6 +47,9 @@ class UserOpenBet(BaseModel):
     model_source: str | None = None
     combined_ev: float | None = None
     combined_prob: float | None = None
+    bonus_eligible: bool | None = None
+    bonus_percentage: float | None = None
+    final_payout: float | None = None
     proposal_minute: int | None = None
     register_minute: int | None = None
 
@@ -184,6 +187,55 @@ def update_bet_status(bet_id: str, status: str) -> bool:
             _save_store(store)
             return True
     return False
+
+
+def refresh_open_bets_cashouts(*, event_id: int | None = None) -> dict[str, Any]:
+    """Atualiza ``cashout_value`` via API Superbet para bilhetes com ``ticket_code``."""
+    from ingest.superbet.cashout_client import fetch_cashout_value
+
+    store = _load_store()
+    bets: list[dict[str, Any]] = store.get("bets", [])
+    updated = 0
+    skipped = 0
+    errors = 0
+    results: list[dict[str, Any]] = []
+
+    for b in bets:
+        if b.get("status") != "open":
+            continue
+        if event_id is not None and b.get("superbet_event_id") != event_id:
+            continue
+        ticket = b.get("ticket_code")
+        if not ticket:
+            skipped += 1
+            continue
+        payload = fetch_cashout_value(str(ticket))
+        if not payload:
+            errors += 1
+            results.append({"id": b.get("id"), "ticket_code": ticket, "ok": False})
+            continue
+        if payload.get("eligible"):
+            b["cashout_value"] = round(float(payload.get("value") or 0), 2)
+        else:
+            b["cashout_value"] = 0.0
+        updated += 1
+        results.append(
+            {
+                "id": b.get("id"),
+                "ticket_code": ticket,
+                "ok": True,
+                "cashout_value": b["cashout_value"],
+            }
+        )
+
+    if updated:
+        _save_store(store)
+    return {
+        "updated": updated,
+        "skipped": skipped,
+        "errors": errors,
+        "results": results,
+    }
 
 
 def move_open_to_settled(bet_id: str, settled_fields: dict[str, Any]) -> SettledBet | None:

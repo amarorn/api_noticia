@@ -1,17 +1,19 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getWcComboTicketUseCase } from "@/application/container";
-import type { WcScheduleMatch } from "@/domain/entities";
+import type { SuperbetLiveEvent, WcScheduleMatch } from "@/domain/entities";
 import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { IconX } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
+import { findSuperbetEventForMatch } from "@/presentation/utils/matchSuperbetEvent";
 import { isMatchPregame } from "@/presentation/utils/sofascore";
 
 interface ComboTicketModalProps {
   match: WcScheduleMatch | null;
   open: boolean;
   onClose: () => void;
+  liveEvents?: SuperbetLiveEvent[];
 }
 
 function formatKickoff(iso: string | null): string {
@@ -29,16 +31,19 @@ function formatKickoff(iso: string | null): string {
   }
 }
 
-export function ComboTicketModal({ match, open, onClose }: ComboTicketModalProps) {
+export function ComboTicketModal({ match, open, onClose, liveEvents = [] }: ComboTicketModalProps) {
   const pregame = match != null && isMatchPregame(match.kickoff);
+  const liveEvent =
+    match != null ? findSuperbetEventForMatch(liveEvents, match.homeTeam, match.awayTeam) : null;
 
   const comboQuery = useQuery({
-    queryKey: ["wc-combo-ticket", match?.homeTeam, match?.awayTeam],
+    queryKey: ["wc-combo-ticket", match?.homeTeam, match?.awayTeam, liveEvent?.eventId],
     queryFn: () =>
       getWcComboTicketUseCase.execute({
         homeTeam: match!.homeTeam,
         awayTeam: match!.awayTeam,
         bankroll: 1000,
+        ...(liveEvent ? { superbetEventId: liveEvent.eventId } : {}),
       }),
     enabled: open && pregame && Boolean(match?.homeTeam && match?.awayTeam),
     staleTime: 5 * 60_000,
@@ -128,6 +133,7 @@ export function ComboTicketModal({ match, open, onClose }: ComboTicketModalProps
               homeTeam={match.homeTeam}
               awayTeam={match.awayTeam}
               ticket={comboQuery.data}
+              superbetEventId={liveEvent?.eventId ?? null}
             />
           )}
         </div>

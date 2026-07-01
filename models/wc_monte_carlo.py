@@ -15,7 +15,6 @@ from typing import Any
 import numpy as np
 
 from models.poisson_wc import (
-    MAX_GOALS,
     dixon_coles_tau,
     expected_lambdas,
 )

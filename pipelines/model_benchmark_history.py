@@ -265,6 +265,7 @@ def run_model_benchmark(
     skip_wc_benchmark: bool = False,
     walkforward_max_editions: int = 6,
     user_id: str = "jamarorn",
+    enable_mlflow: bool = False,
 ) -> dict[str, Any]:
     eval_season = eval_season if eval_season is not None else settings.wc_validation_season
 
@@ -272,7 +273,7 @@ def run_model_benchmark(
     if not skip_wc_benchmark:
         from pipelines.wc_benchmark import run_benchmark
 
-        wc_report = run_benchmark(eval_season=eval_season, enable_mlflow=False)
+        wc_report = run_benchmark(eval_season=eval_season, enable_mlflow=enable_mlflow)
         out = settings.lake_root / "reports" / "wc_benchmark_report.json"
         out.write_text(json.dumps(wc_report, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -300,6 +301,18 @@ def run_model_benchmark(
         inplay_report=inplay_report,
         walkforward_report=walkforward_report,
     )
+
+    from models.wc_model_selection import save_model_selection
+
+    save_model_selection(source="benchmark")
+
+    if enable_mlflow:
+        try:
+            from pipelines.mlflow_registry import log_benchmark_snapshot
+
+            log_benchmark_snapshot(latest_snapshot=snapshot)
+        except Exception:
+            pass
 
     history = append_snapshot(snapshot)
     return {
@@ -393,6 +406,7 @@ def main() -> None:
     parser.add_argument("--skip-wc-benchmark", action="store_true", help="Pula benchmark de modelos WC")
     parser.add_argument("--seed-only", action="store_true", help="Só reconstrói histórico a partir de relatórios existentes")
     parser.add_argument("--force-seed", action="store_true", help="Recria histórico mesmo se já existir")
+    parser.add_argument("--mlflow", action="store_true", help="Registra benchmark e seleção no MLflow")
     args = parser.parse_args()
 
     if args.seed_only:
@@ -405,6 +419,7 @@ def main() -> None:
         eval_season=args.eval_season,
         skip_walkforward=args.skip_walkforward,
         skip_wc_benchmark=args.skip_wc_benchmark,
+        enable_mlflow=args.mlflow,
     )
     snap = result["snapshot"]["metrics"]
     print(f"\nBenchmark salvo. Histórico: {result['history_size']} entradas")

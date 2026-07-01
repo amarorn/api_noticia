@@ -117,6 +117,7 @@ def test_ensemble_shadow_summary():
         combo_markets={},
         btts_final=0.5,
         n_simulations=1000,
+        handicap_probs={},
     )
     poisson = InPlayResult(**base)
     ensemble = InPlayResult(**{**base, "prob_final_home": 0.55, "prob_final_draw": 0.25, "prob_final_away": 0.2})

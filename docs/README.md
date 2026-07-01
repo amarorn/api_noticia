@@ -18,6 +18,7 @@ Plataforma de previsões esportivas (bolão 1/X/2) que combina **datalake de not
 | [Motor KXL — Colisão](kxl-colisao.md) | Fórmulas Vcar, Vesc, TBRTL, letalidade×GK |
 | [Glossário](glossario.md) | Termos técnicos e siglas |
 | [Deploy Fly.io](deploy-fly.md) | Container + volume persistente (`gru`) |
+| [Super Múltipla](super-multipla.md) | Odds combinadas, bônus +5%, painel ao vivo |
 
 ## Início rápido
 

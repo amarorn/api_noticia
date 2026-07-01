@@ -40,6 +40,7 @@ def tiny_fixtures() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+@pytest.mark.slow
 def test_save_and_load_artifact_roundtrip(tmp_path, tiny_fixtures):
     with (
         patch("models.wc_artifact.settings") as mock_settings,
@@ -66,6 +67,7 @@ def test_save_and_load_artifact_roundtrip(tmp_path, tiny_fixtures):
         assert loaded.collaborative.metrics is not None
 
 
+@pytest.mark.slow
 def test_artifact_invalid_when_fingerprint_changes(tmp_path, tiny_fixtures):
     with (
         patch("models.wc_artifact.settings") as mock_settings,
@@ -85,6 +87,7 @@ def test_artifact_invalid_when_fingerprint_changes(tmp_path, tiny_fixtures):
         assert artifact_is_valid() is False
 
 
+@pytest.mark.slow
 def test_artifact_loadable_when_only_fixtures_stale(tmp_path, tiny_fixtures):
     with (
         patch("models.wc_artifact.settings") as mock_settings,
@@ -109,6 +112,7 @@ def test_artifact_loadable_when_only_fixtures_stale(tmp_path, tiny_fixtures):
         assert load_artifact() is not None
 
 
+@pytest.mark.slow
 def test_artifact_loadable_when_only_odds_stale(tmp_path, tiny_fixtures):
     with (
         patch("models.wc_artifact.settings") as mock_settings,

@@ -40,4 +40,41 @@ def before_date_for_match(match: dict[str, Any], *, now: datetime | None = None)
     return kickoff
 
 
-__all__ = ["before_date_for_match", "match_is_played", "parse_match_kickoff"]
+def resolve_inplay_before_date(
+    home: str,
+    away: str,
+    *,
+    kickoff_iso: str | None = None,
+    snapshot_utc_date: str | None = None,
+    now: datetime | None = None,
+) -> datetime:
+    """Cutoff temporal do modelo in-play: kickoff oficial (ou apito) até o momento atual."""
+    from pipelines.wc_schedule import find_schedule_match
+
+    now = now or datetime.now(UTC)
+
+    for raw in (kickoff_iso,):
+        dt = parse_match_kickoff({"kickoff": raw}) if raw else None
+        if dt is not None:
+            return min(dt, now)
+
+    schedule_match = find_schedule_match(home, away)
+    if schedule_match is not None:
+        dt = parse_match_kickoff(schedule_match)
+        if dt is not None:
+            return min(dt, now)
+
+    if snapshot_utc_date:
+        dt = parse_match_kickoff({"kickoff": snapshot_utc_date})
+        if dt is not None:
+            return min(dt, now)
+
+    return now
+
+
+__all__ = [
+    "before_date_for_match",
+    "match_is_played",
+    "parse_match_kickoff",
+    "resolve_inplay_before_date",
+]

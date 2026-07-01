@@ -321,6 +321,38 @@ Cruza probabilidades do modelo com odds The Odds API. Retorna `edges[]` com EV, 
 
 ---
 
+## Superbet ao vivo — Super Múltipla
+
+Documentação completa: [super-multipla.md](super-multipla.md).
+
+### `POST /worldcup/superbet/multiple/calculate`
+
+Calcula odds combinadas, prêmio e elegibilidade da promo Super Múltipla (+5% quando todas as pernas ≥ 1,35).
+
+```json
+{
+  "legs": [
+    { "market": "h2h", "outcome": "1", "market_odd": 1.80, "superbet_event_id": 13127506, "is_live": true },
+    { "market": "over_2_5", "outcome": "yes", "market_odd": 2.10, "superbet_event_id": 13127506, "is_live": true }
+  ],
+  "stake": 5.0,
+  "bet_type": "MULTIPLE",
+  "minute": 23
+}
+```
+
+Resposta: `total_odds`, `potential_payout`, `bonus_eligible`, `bonus_percentage`, `final_payout`, `builder_validation`.
+
+### `GET /worldcup/superbet/live/{event_id}/advice`
+
+Com `fast=false`, inclui bloco `super_multipla.suggested_combos` (pares compatíveis do `market_scan`).
+
+### `POST /user/open-bets`
+
+Múltiplas com 2+ pernas recebem `bonus_eligible`, `bonus_percentage` e `final_payout` recalculados no cadastro.
+
+---
+
 ## Códigos de erro comuns
 
 | HTTP | Causa |

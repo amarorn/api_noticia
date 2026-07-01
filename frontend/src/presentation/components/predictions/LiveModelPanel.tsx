@@ -171,6 +171,48 @@ export function LiveModelPanel({ data, recalibrationEvent }: LiveModelPanelProps
             )}
           </p>
         )}
+        {s.modelBeforeDate && (
+          <p className="mb-3 text-[10px] text-slate-500">
+            Features congeladas no apito:{" "}
+            <span className="font-medium text-slate-400">
+              {new Intl.DateTimeFormat("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(new Date(s.modelBeforeDate))}
+            </span>
+          </p>
+        )}
+        {s.lambdaAdjustment && (
+          <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/[0.04] px-2.5 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+              λ ajustado ao vivo
+            </p>
+            <div className="mt-1.5 grid grid-cols-2 gap-2 font-mono text-[10px] text-slate-300">
+              <span>
+                {teamLabel(data.homeTeam, 10)}: {s.lambdaAdjustment.lambdaPriorHome.toFixed(2)} →{" "}
+                <span className="text-amber-200">{s.lambdaAdjustment.lambdaFullHome.toFixed(2)}</span>
+              </span>
+              <span>
+                {teamLabel(data.awayTeam, 10)}: {s.lambdaAdjustment.lambdaPriorAway.toFixed(2)} →{" "}
+                <span className="text-amber-200">{s.lambdaAdjustment.lambdaFullAway.toFixed(2)}</span>
+              </span>
+            </div>
+            {(s.lambdaAdjustment.steps?.length ?? 0) > 0 && (
+              <p className="mt-1.5 text-[10px] text-slate-500">
+                {s.lambdaAdjustment.steps
+                  ?.filter((step) => step.applied !== false)
+                  .map((step) => {
+                    const label = String(step.step ?? step.source ?? "ajuste");
+                    const reasons = (step.reasons as string[] | undefined)?.join(", ");
+                    return reasons ? `${label}: ${reasons}` : label;
+                  })
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
         <div className="space-y-2.5">
           <ProbBar
             label={teamLabel(data.homeTeam)}

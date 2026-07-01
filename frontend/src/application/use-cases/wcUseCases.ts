@@ -85,6 +85,14 @@ export class PredictWcInPlayUseCase {
   }
 }
 
+export class GetHandicapAnalysisUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: { eventId: number; bankroll?: number; phase?: string }) {
+    return this.repository.getHandicapAnalysis(dto);
+  }
+}
+
 export class ResolveSofascoreEventUseCase {
   constructor(private readonly repository: IWcRepository) {}
 
@@ -153,6 +161,7 @@ export class GetSuperbetLiveAdviceUseCase {
     stake?: number;
     oddsPlaced?: number;
     fast?: boolean;
+    kickoff?: string;
   }) {
     return this.repository.getSuperbetLiveAdvice(dto);
   }
@@ -199,6 +208,22 @@ export class GetUserOpenBetsUseCase {
 
   execute(): Promise<UserOpenBetsList> {
     return this.repository.getUserOpenBets();
+  }
+}
+
+export class RefreshOpenBetsCashoutsUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(eventId?: number) {
+    return this.repository.refreshOpenBetsCashouts(eventId);
+  }
+}
+
+export class CalculateSuperMultiplaUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: Parameters<IWcRepository["calculateSuperMultipla"]>[0]) {
+    return this.repository.calculateSuperMultipla(dto);
   }
 }
 

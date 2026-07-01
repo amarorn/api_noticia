@@ -18,6 +18,7 @@ dependencies = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.27.0",
     "pyyaml>=6.0.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +29,7 @@ ml = [
     "peft>=0.12.0",
     "scikit-learn>=1.4.0",
     "mlflow>=2.14.0",
+    "matplotlib>=3.8.0",
     "lightgbm>=4.0.0",
 ]
 gcp = [
@@ -91,6 +93,7 @@ train-wc = "models.wc_artifact:main"
 walkforward-wc-models = "pipelines.wc_walkforward:main"
 benchmark-inplay = "pipelines.inplay_benchmark:main"
 poll-superbet-live = "pipelines.poll_superbet_live:main"
+regenerate-inplay-postmortem = "pipelines.inplay_postmortem:main"
 validate-inplay-phase1 = "pipelines.inplay_phase1_validate:main"
 build-wc-timeline = "pipelines.wc_build_timeline:main"
 tune-inplay = "pipelines.wc_inplay_tune:main"
@@ -103,12 +106,22 @@ run-full-improvement = "pipelines.wc_full_improvement:main"
 retrain-wc-hoje = "pipelines.retrain_wc_today:main"
 retrain-all-models = "pipelines.retrain_all_models:main"
 run-model-benchmark = "pipelines.model_benchmark_history:main"
+backfill-mlflow = "pipelines.mlflow_registry:main"
 check-inplay-ensemble = "pipelines.inplay_ensemble_readiness:main"
 tune-wc-hyperparams = "pipelines.wc_tune:main"
 tune-wc-kxl = "pipelines.wc_kxl_tune:main"
 run-pipeline = "pipelines.cli:main"
 lake-query = "pipelines.lake_query_cli:main"
 mlflow-ui = "pipelines.mlflow_ui:main"
+build-nextgoal-labels = "pipelines.wc_inplay_nextgoal_labels:main"
+train-ensemble-stack = "pipelines.wc_ensemble_stack_train:main"
+calibrate-wc-momentum = "pipelines.wc_momentum_calibrate_wc:main"
+inplay-train = "pipelines.wc_inplay_train:main"
+inplay-brier-benchmark = "pipelines.wc_inplay_brier_benchmark:main"
+train-event-seq2seq = "pipelines.wc_event_seq2seq_train:main"
+analyze-ab-test = "pipelines.wc_ab_analysis:main"
+automl-thresholds = "pipelines.wc_automl_thresholds:main"
+live-service = "live_service.app:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -124,3 +137,6 @@ target-version = "py311"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "slow: testes pesados (treino ML, benchmarks completos, carga de artefato)",
+]
