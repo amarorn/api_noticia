@@ -110,6 +110,20 @@ class Settings(BaseSettings):
     wc_draw_balanced_favorite_cap: float = 0.50
     wc_mc_simulations: int = 5000
     inplay_fast_mc_simulations: int = 1500
+    # ── Basquete In-Play ──
+    basket_sport_id: int = 7  # TODO: confirmar sport_id real da Superbet BR para basquete
+    basket_match_minutes: int = 48  # NBA
+    basket_mc_simulations: int = 5000
+    basket_fast_mc_simulations: int = 1500
+    basket_prior_weight: float = 96.0  # minutos-equivalente de confiança no prior de mercado (~2 jogos NBA)
+    basket_clutch_minute: int = 42  # últimos 6 minutos: aumenta variância
+    basket_clutch_boost_enabled: bool = True
+    basket_clutch_boost: float = 1.15
+    basket_lead_admin_factor: float = 0.92  # time vencendo administra ritmo
+    basket_trailing_push_factor: float = 1.08  # time perdendo força faltas/3pts
+    basket_sigma_ppm: float = 0.35  # desvio padrão de pontos por minuto (calibrável)
+    basket_spread_lines: tuple[float, ...] = (-12.5, -9.5, -7.5, -5.5, -4.5, -3.5, -2.5, -1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 7.5, 9.5, 12.5)
+    basket_total_lines: tuple[float, ...] = (205.5, 210.5, 215.5, 220.5, 225.5, 230.5)
     # Fase 1 in-play (docs/specs/spec-fase-1-quickwins-inplay.md)
     inplay_use_nhpp: bool = True
     inplay_use_market_shrinkage: bool = True

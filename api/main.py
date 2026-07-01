@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import api.deps as deps
 from api.auth import ApiKeyMiddleware, api_key_enabled
 from api.data_pulse import DataPulseMiddleware
-from api.routers import bets, live, news, system, user, wc
+from api.routers import basket, bets, live, news, system, user, wc
 
 
 def _warm_sofascore_imports() -> None:
@@ -81,6 +81,7 @@ app.include_router(wc.router)
 app.include_router(live.router)
 app.include_router(bets.router)
 app.include_router(user.router)
+app.include_router(basket.router)
 
 
 def _custom_openapi():

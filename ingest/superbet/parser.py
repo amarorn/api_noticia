@@ -105,8 +105,15 @@ class SuperbetEventSnapshot:
     half_markets: dict[str, dict[str, Any]]
     handicap_odds: dict[str, float]
     handicap_implied: dict[str, float]
-    raw_market_count: int
-    captured_at: str
+    # Basquete
+    moneyline_odds: dict[str, float] = field(default_factory=dict)
+    moneyline_implied: dict[str, float] = field(default_factory=dict)
+    spread_odds: dict[str, dict[str, float]] = field(default_factory=dict)
+    spread_implied: dict[str, dict[str, float]] = field(default_factory=dict)
+    total_points_odds: dict[str, dict[str, float]] = field(default_factory=dict)
+    total_points_implied: dict[str, dict[str, float]] = field(default_factory=dict)
+    raw_market_count: int = 0
+    captured_at: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -151,6 +158,12 @@ class SuperbetEventSnapshot:
             "half_markets": self.half_markets,
             "handicap_odds": self.handicap_odds,
             "handicap_implied": self.handicap_implied,
+            "moneyline_odds": self.moneyline_odds,
+            "moneyline_implied": self.moneyline_implied,
+            "spread_odds": self.spread_odds,
+            "spread_implied": self.spread_implied,
+            "total_points_odds": self.total_points_odds,
+            "total_points_implied": self.total_points_implied,
             "raw_market_count": self.raw_market_count,
             "captured_at": self.captured_at,
         }
@@ -750,6 +763,140 @@ def _extract_h2h_odds(markets: list[dict]) -> dict[str, float]:
     return h2h_odds
 
 
+# ---------------------------------------------------------------------------
+# Basquete
+# ---------------------------------------------------------------------------
+
+_BASKET_MONEYLINE_NAMES = (
+    "Vencedor da Partida",
+    "Vencedor",
+    "Moneyline",
+    "Resultado",
+    "Resultado Final",
+)
+
+_BASKET_SPREAD_NAMES = (
+    "Handicap",
+    "Handicap de Pontos",
+    "Handicap Asiático",
+    "Spread",
+    "Point Spread",
+)
+
+_BASKET_TOTAL_NAMES = (
+    "Total de Pontos",
+    "Total",
+    "Total Points",
+    "Over/Under",
+)
+
+
+def _is_basket_moneyline_market(name: str) -> bool:
+    lower = name.lower()
+    return any(k.lower() in lower for k in _BASKET_MONEYLINE_NAMES) and "3-way" not in lower
+
+
+def _is_basket_spread_market(name: str) -> bool:
+    lower = name.lower()
+    return any(k.lower() in lower for k in _BASKET_SPREAD_NAMES) and "3-way" not in lower
+
+
+def _is_basket_total_market(name: str) -> bool:
+    lower = name.lower()
+    return any(k.lower() in lower for k in _BASKET_TOTAL_NAMES)
+
+
+def _extract_basket_moneyline(
+    markets: list[dict],
+    home_team: str,
+    away_team: str,
+) -> dict[str, float]:
+    """Extrai odds de vencedor da partida (1 = casa, 2 = fora)."""
+    out: dict[str, float] = {}
+    home_l = home_team.lower()
+    away_l = away_team.lower()
+    for market in markets:
+        if not _is_basket_moneyline_market(str(market.get("name") or "")):
+            continue
+        for odd in market.get("odds") or []:
+            if not isinstance(odd, dict) or not _is_active_odd(odd):
+                continue
+            md = odd.get("metadata") or {}
+            code = str(md.get("code") or md.get("name") or "").upper()
+            label = str(md.get("name") or md.get("info") or "").lower()
+            price = float(odd["price"])
+            key: str | None = None
+            if code == "1" or code == "HOME" or (home_l and home_l in label):
+                key = "1"
+            elif code == "2" or code == "AWAY" or (away_l and away_l in label):
+                key = "2"
+            if key:
+                out[key] = price
+        if out:
+            break
+    return out
+
+
+def _extract_basket_spread(
+    markets: list[dict],
+    home_team: str,
+    away_team: str,
+) -> dict[str, dict[str, float]]:
+    """Extrai odds de spread por linha (home/away)."""
+    out: dict[str, dict[str, float]] = {}
+    home_l = home_team.lower()
+    away_l = away_team.lower()
+    for market in markets:
+        if not _is_basket_spread_market(str(market.get("name") or "")):
+            continue
+        for odd in market.get("odds") or []:
+            if not isinstance(odd, dict) or not _is_active_odd(odd):
+                continue
+            md = odd.get("metadata") or {}
+            line_raw = str(md.get("special_bet_value") or md.get("info") or md.get("name") or "")
+            line = _parse_handicap_line_value(line_raw)
+            if line is None:
+                continue
+            label = str(md.get("name") or md.get("info") or "").lower()
+            code = str(md.get("code") or "").upper()
+            side: str | None = None
+            if code == "1" or code == "HOME" or (home_l and home_l in label):
+                side = "home"
+            elif code == "2" or code == "AWAY" or (away_l and away_l in label):
+                side = "away"
+            if side is None:
+                continue
+            lk = _handicap_line_key(line)
+            out.setdefault(lk, {})[side] = float(odd["price"])
+    return out
+
+
+def _extract_basket_total_points(markets: list[dict]) -> dict[str, dict[str, float]]:
+    """Extrai odds de total de pontos por linha (over/under)."""
+    out: dict[str, dict[str, float]] = {}
+    for market in markets:
+        if not _is_basket_total_market(str(market.get("name") or "")):
+            continue
+        for odd in market.get("odds") or []:
+            if not isinstance(odd, dict) or not _is_active_odd(odd):
+                continue
+            md = odd.get("metadata") or {}
+            line_raw = str(md.get("special_bet_value") or md.get("info") or md.get("name") or "")
+            line = _parse_handicap_line_value(line_raw)
+            if line is None:
+                continue
+            label = str(md.get("name") or "").lower()
+            outcome: str | None = None
+            if label in {"over", "mais", "mais de", "o", "acima"}:
+                outcome = "over"
+            elif label in {"under", "menos", "menos de", "u", "abaixo"}:
+                outcome = "under"
+            if outcome is None:
+                continue
+            out.setdefault(f"{line:g}", {})[outcome] = float(odd["price"])
+    return out
+
+
 def parse_live_event_summary(ev: dict) -> SuperbetLiveEventSummary | None:
     fixture = ev.get("fixture") or {}
     sport_id = _safe_int(fixture.get("sport_id"), 0)
@@ -925,6 +1072,20 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
     handicap_odds = _extract_handicap_odds(markets, home_team, away_team)
     handicap_implied = _implied_from_prices(handicap_odds) if handicap_odds else {}
 
+    # Basquete
+    moneyline_odds = _extract_basket_moneyline(markets, home_team, away_team)
+    spread_odds = _extract_basket_spread(markets, home_team, away_team)
+    total_points_odds = _extract_basket_total_points(markets)
+    moneyline_implied = _implied_from_prices(moneyline_odds) if moneyline_odds else {}
+    spread_implied = {
+        line: _implied_from_prices(prices)
+        for line, prices in spread_odds.items()
+    }
+    total_points_implied = {
+        line: _implied_from_prices(prices)
+        for line, prices in total_points_odds.items()
+    }
+
     return SuperbetEventSnapshot(
         event_id=int(ev.get("event_id") or fixture.get("event_id") or 0),
         home_team=home_team,
@@ -954,6 +1115,12 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         half_markets=half_markets,
         handicap_odds=handicap_odds,
         handicap_implied=handicap_implied,
+        moneyline_odds=moneyline_odds,
+        moneyline_implied=moneyline_implied,
+        spread_odds=spread_odds,
+        spread_implied=spread_implied,
+        total_points_odds=total_points_odds,
+        total_points_implied=total_points_implied,
         raw_market_count=len(markets),
         captured_at=datetime.now(timezone.utc).isoformat(),
     )

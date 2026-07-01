@@ -737,6 +737,118 @@ class WcSuperbetPostmortemResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Basquete In-Play
+# ---------------------------------------------------------------------------
+
+
+class BasketAporteAdvice(BaseModel):
+    market: str
+    outcome: str
+    label: str
+    model_prob: float
+    market_odd: float
+    implied_prob: float
+    expected_value: float
+    edge_pp: float
+    kelly_quarter: float
+    suggested_stake_pct: float
+    suggested_stake_value: float | None = None
+    action: str
+
+
+class BasketConfidence(BaseModel):
+    score: float
+    label: str
+    max_edge_pp: float
+
+
+class BasketInPlaySummary(BaseModel):
+    prob_home_win: float | None = None
+    prob_away_win: float | None = None
+    expected_final_home: float | None = None
+    expected_final_away: float | None = None
+    expected_total: float | None = None
+    remaining_minutes: float | None = None
+    moneyline_probs: dict[str, float] = Field(default_factory=dict)
+    spread_probs: dict[str, float] = Field(default_factory=dict)
+    total_probs: dict[str, float] = Field(default_factory=dict)
+    ppm_home: float | None = None
+    ppm_away: float | None = None
+    market_total_line: float | None = None
+    market_spread_line: float | None = None
+
+
+class BasketSuperbetLiveEventResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    event_name: str
+    sport_id: int
+    tournament_id: int | None = None
+    utc_date: str | None = None
+    betradar_id: str | None = None
+    minute: int
+    home_score: int
+    away_score: int
+    period_label: str | None = None
+    status: str | None = None
+    market_count: int
+    h2h_odds: dict[str, float] = Field(default_factory=dict)
+    captured_at: str
+
+
+class BasketSuperbetLiveResponse(BaseModel):
+    count: int
+    sport_id: int | None
+    events: list[BasketSuperbetLiveEventResponse]
+    captured_at: str
+
+
+class BasketSuperbetEventResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    event_name: str
+    utc_date: str | None = None
+    betradar_id: str | None = None
+    is_live: bool
+    inplay: dict | None = None
+    moneyline_odds: dict[str, float] = Field(default_factory=dict)
+    moneyline_implied: dict[str, float] = Field(default_factory=dict)
+    spread_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    spread_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_points_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_points_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    raw_market_count: int = 0
+    captured_at: str
+    superbet_stale: bool = False
+
+
+class BasketSuperbetLiveAdviceResponse(BaseModel):
+    home_team: str
+    away_team: str
+    minute: int
+    current_score: str | None = None
+    period_label: str | None = None
+    status: str | None = None
+    is_finished: bool
+    is_live: bool
+    superbet_stale: bool
+    superbet_event_id: int
+    sport_id: int | None = None
+    captured_at: str
+    h2h_odds: dict[str, float] = Field(default_factory=dict)
+    h2h_implied: dict[str, float] = Field(default_factory=dict)
+    spread_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    spread_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_points_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_points_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    inplay_summary: BasketInPlaySummary = Field(default_factory=BasketInPlaySummary)
+    aportes: list[BasketAporteAdvice] = Field(default_factory=list)
+    confidence: BasketConfidence | None = None
+
+
+# ---------------------------------------------------------------------------
 # News
 # ---------------------------------------------------------------------------
 

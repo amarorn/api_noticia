@@ -4,7 +4,11 @@
       "Bash(ruff check *)",
       "Bash(python -m pytest tests/test_inplay_postmortem.py tests/test_wc_combo_optimizer.py tests/test_wc_referee_inplay.py tests/test_inplay_bet_resolver.py -q)",
       "Bash(python -m pytest tests/test_inplay_postmortem.py::test_build_postmortem_for_belgium_egypt -q)",
-      "Bash(python -m pytest -q)"
+      "Bash(python -m pytest -q)",
+      "Bash(uv lock *)",
+      "Bash(uv sync *)",
+      "Bash(.venv/bin/python -c \"import multipart; print\\('ok', multipart.__version__ if hasattr\\(multipart,'__version__'\\) else 'installed'\\)\")",
+      "Bash(python -m pytest tests/test_api.py tests/test_api_auth.py -q)"
     ]
   }
 }
