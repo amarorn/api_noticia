@@ -129,7 +129,6 @@ class TestAdjustCardProbForMinute:
         # Então o clip é o que limita, não a aceleração
         # Verificamos que a aceleração foi aplicada (sem clip seria > 1.82)
         # Aqui só verificamos que não é menor que o baseline
-        baseline_no_accel = 5.46 * (30/90)  # 1.82
         # Como está clipado em 0.95, e 0.95 < 1.82, o teste original falha
         # Vamos verificar que a aceleração foi calculada (prob seria maior sem clip)
         # Teste alternativo: verificar que a prob é exatamente 0.95 (clipado)

@@ -17,9 +17,8 @@ import numpy as np
 import pandas as pd
 
 from config import settings
-from models.wc_event_seq2seq import EventSeq2Seq, encode_events, SEQ_FEATURES
+from models.wc_event_seq2seq import EventSeq2Seq, encode_events
 from models.wc_live_momentum import GameEvent
-from pipelines.inplay_match_states import MATCH_STATES_PATH
 
 logger = logging.getLogger(__name__)
 

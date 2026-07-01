@@ -21,7 +21,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from config import settings
 from models.wc_inplay_coefficients import (
     InPlayCoefficients,
     MomentumBeta,
@@ -163,8 +162,7 @@ def _hawkes_loglik(
 
         # Integral da intensidade (compensador)
         all_minutes = events["minute"].values
-        for t_j, team_j in zip(all_minutes, events["team"].values):
-            alpha = alpha_s if team_j == team_j else alpha_c  # self/cross handled below
+        for t_j in all_minutes:
             # Contribuição de cada gol ao integral: integral_t_j^T [α exp(-β(t-t_j))] dt
             # = (α/β)(1 - exp(-β(T - t_j)))
             contrib_s = (alpha_s / beta) * (1 - np.exp(-beta * (T - t_j)))

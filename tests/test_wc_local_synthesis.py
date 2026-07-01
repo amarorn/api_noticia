@@ -1,7 +1,6 @@
 """Testes para models/wc_local_synthesis.py."""
 from __future__ import annotations
 
-import pytest
 
 from models.wc_local_synthesis import (
     _build_arbitro_from_context,

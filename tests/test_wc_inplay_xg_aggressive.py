@@ -1,7 +1,6 @@
 """Testes para xG ao vivo agressivo."""
 from __future__ import annotations
 
-import pytest
 
 from models.wc_inplay_xg_aggressive import (
     adjust_lambdas_from_xg_aggressive,

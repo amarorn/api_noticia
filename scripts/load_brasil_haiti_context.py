@@ -9,7 +9,6 @@ ou cria um contexto genérico para teste.
 """
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -108,23 +107,23 @@ def main() -> None:
     
     print(f"✅ Contexto salvo para event_id={event_id}")
     print(f"   Path: {path}")
-    print(f"\n📊 Dados do árbitro:")
+    print("\n📊 Dados do árbitro:")
     print(f"   Nome: {context['referee_name']}")
     print(f"   Perfil: {context['referee_profile']}")
     print(f"   Cartões/jogo: {context['referee_card_lambda']}")
     print(f"   Faltas/jogo: {context['referee_foul_lambda']}")
     print(f"   Pênaltis/jogo: {context['referee_penalty_rate']}")
     print(f"   Vermelhos/jogo: {context['referee_red_card_rate']}")
-    print(f"\n⚽ H2H:")
+    print("\n⚽ H2H:")
     print(f"   Jogos: {context['h2h_total_games']}")
     print(f"   Vitórias Brasil: {context['h2h_home_wins']}")
     print(f"   Média gols Brasil: {context['h2h_home_goals_avg']}")
     print(f"   Último: {context['h2h_last_result']} ({context['h2h_last_date']})")
     
-    print(f"\n💡 Para testar:")
-    print(f"   curl -H 'X-API-Key: dev-key-123' \\")
+    print("\n💡 Para testar:")
+    print("   curl -H 'X-API-Key: dev-key-123' \\")
     print(f"     'http://localhost:8000/worldcup/superbet/live/{event_id}/advice?fast=true' \\")
-    print(f"     | python3 -m json.tool | grep -A5 'referee'")
+    print("     | python3 -m json.tool | grep -A5 'referee'")
 
 
 if __name__ == "__main__":

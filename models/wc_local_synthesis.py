@@ -7,9 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from config import settings
 from ingest.superbet.match_context_store import load_match_context
-from models.wc_referee_inplay import RefereeProfile, parse_referee_from_match_context
+from models.wc_referee_inplay import parse_referee_from_match_context
 
 
 def _build_picks_from_model(model_data: dict[str, Any]) -> list[dict[str, Any]]:
@@ -105,7 +104,7 @@ def _build_picks_from_model(model_data: dict[str, Any]) -> list[dict[str, Any]]:
             picks.append({
                 "aposta": f"Placar exato {top_score} ({top_prob:.0%})",
                 "nivel_confianca": "Baixa",
-                "racional": f"Placar mais provável segundo modelo Monte Carlo",
+                "racional": "Placar mais provável segundo modelo Monte Carlo",
             })
 
     # Adiciona rank sequencial (esperado pelo frontend)
@@ -325,8 +324,6 @@ def _build_resumo_executivo(
         if isinstance(h2h, dict) and h2h.get("total", 0) >= 2:
             h2h_total = h2h["total"]
             h2h_home_wins = h2h.get("home_wins", 0)
-            h2h_away_wins = h2h.get("away_wins", 0)
-            h2h_draws = h2h.get("draws", 0)
             avg_goals = h2h.get("avg_total_goals", 0)
             if h2h_home_wins == h2h_total and h2h_total >= 3:
                 parts.append(f"Histórico perfeito do mandante: {h2h_home_wins}/{h2h_total} vitórias.")

@@ -214,10 +214,6 @@ def optimize_thresholds(
     if len(labeled) < 30:
         return {"error": f"Amostras insuficientes: {len(labeled)} < 30"}
 
-    # Detectar amostras com dados de aporte resolvidos (top_aporte_won preenchido)
-    has_won = labeled["top_aporte_won"].notna() if "top_aporte_won" in labeled.columns else pd.Series(False, index=labeled.index)
-    n_resolved = int(has_won.sum())
-
     # Split temporal 80/20; se val tiver < 10 apostas resolvidas, usa k-fold no total
     n_train = int(len(labeled) * 0.8)
     _val_candidate = labeled.iloc[n_train:]

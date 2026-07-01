@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -23,7 +22,7 @@ from models.wc_inplay_coefficients import (
     NHPPWeight,
     save_inplay_coefficients,
 )
-from pipelines.wc_build_timeline import build_timeline_from_fixtures, save_timeline
+from pipelines.wc_build_timeline import build_timeline_from_fixtures
 from pipelines.wc_inplay_ticks_dataset import build_timeline_from_live_ticks
 from pipelines.wc_inplay_tune import (
     MOMENTUM_FEATURES,

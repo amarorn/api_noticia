@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.auth import ApiKeyMiddleware, api_key_enabled
 from config import settings
-from live_service.dependencies import get_predictor, invalidate_predictor
+from live_service.dependencies import get_predictor
 from live_service.router import live_router
 
 

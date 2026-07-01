@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
 
 from ingest.superbet.client import SuperbetClientError
 from pipelines.poll_superbet_live import (

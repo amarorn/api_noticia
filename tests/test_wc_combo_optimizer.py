@@ -6,7 +6,6 @@ import pytest
 
 from models.wc_combo_optimizer import (
     Leg,
-    Ticket,
     _compute_combined_ev,
     _compute_combined_prob,
     _filter_alive,
@@ -345,15 +344,6 @@ def test_build_optimized_tickets_1h_has_valid_tickets(market_scan):
 
 
 def test_build_optimized_tickets_mixed_only_before_45(market_scan):
-    # Antes do intervalo: mistos disponíveis
-    result_before = build_optimized_tickets(
-        market_scan,
-        minute=30,
-        bankroll=1000,
-        max_legs=2,
-        min_legs=2,
-        top_k=5,
-    )
     # Após intervalo: mistos vazios (não pode ter 1h + 2h)
     result_after = build_optimized_tickets(
         market_scan,

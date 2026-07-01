@@ -26,7 +26,6 @@ def test_build_postmortem_for_belgium_egypt():
     assert report["n_ticks"] > 0
     assert report["tip_summary"]["unique_tips"] >= 1
     lost = [t for t in report["tips_by_market"] if t["result"] == "lost"]
-    won = [t for t in report["tips_by_market"] if t["result"] == "won"]
     assert any(t["market"] == "2h_hcap_away_m0_5" for t in lost)
     assert report["issues"]
     assert any(i["code"] == "bad_2h_away_minus_half" for i in report["issues"])

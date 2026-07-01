@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from pipelines.wc_inplay_tune import _merge_training_timelines
 

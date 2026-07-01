@@ -18,7 +18,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +86,9 @@ def evaluate_brier_from_ticks(
         return BrierResult(config_name="empty", n_observations=0)
 
     # Carrega resultados finais
-    from pipelines.wc_inplay_ticks_dataset import build_timeline_from_live_ticks
     from pipelines.inplay_event_finals import load_all_event_final_scores
 
-    finals = load_all_event_finals()
+    finals = load_all_event_final_scores()
     if not finals:
         return BrierResult(config_name="no_finals", n_observations=0)
 
@@ -242,7 +240,7 @@ def run_brier_benchmark(
             print(f"Config: {r['config_name']}")
             print(f"  Brier overall: {r['brier_overall']:.5f}")
             print(f"  Por mercado: 1={r['brier_by_market'].get('1', 0):.5f} X={r['brier_by_market'].get('X', 0):.5f} 2={r['brier_by_market'].get('2', 0):.5f}")
-            print(f"  Por minuto:")
+            print("  Por minuto:")
             for bucket, score in sorted(r['brier_by_minute'].items()):
                 print(f"    {bucket}: {score:.5f}")
             print()

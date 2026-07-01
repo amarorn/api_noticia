@@ -101,7 +101,6 @@ def synthesize_with_google_search(
             resp.raise_for_status()
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
-            text = exc.response.text[:200]
             if status == 429:
                 # Quota esgotada — marca flag, tenta próximo modelo
                 quota_exhausted = True
@@ -179,6 +178,7 @@ def _build_prompt(home: str, away: str, model_data: dict, extra: str) -> str:
 
     picks_txt = _format_picks(model_data.get("ticket", {}))
     scores_txt = _format_scorelines(model_data.get("top_scorelines", []))
+    extra_txt = f"Contexto adicional:\n{extra}" if extra else ""
 
     return f"""Analise a partida: {home} x {away} — Copa do Mundo 2026
 Data: {today}
@@ -201,7 +201,7 @@ Picks Kelly 25%:
 Placares mais prováveis:
 {scores_txt}
 
-{('Contexto adicional:\n' + extra) if extra else ''}
+{extra_txt}
 
 === TAREFA ===
 Busque no Google as informações mais recentes sobre esta partida:

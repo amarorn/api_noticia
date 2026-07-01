@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import pandas as pd
 
-from config import settings
 from ingest.superbet.live_ticks import live_ticks_path
 from pipelines.inplay_event_finals import load_all_event_final_scores
 

@@ -163,7 +163,6 @@ async def news_cards(
 @router.post("/context", response_model=MatchContextResponse)
 def get_match_context(req: MatchRequest):
     from ingest.fixtures.brasileirao import load_fixtures
-    from models.baseline import predict_baseline, predict_baseline_probs
     from pipelines.gold import build_gold_for_match
 
     silver_df = load_silver()

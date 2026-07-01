@@ -308,7 +308,6 @@ def _build_live_advice_payload(
             logger.info("sofascore_skip_cooldown event_id=%s remaining_sec=%s", event_id, remaining)
         else:
             try:
-                from datetime import UTC, datetime
 
                 from ingest.sofascore.live_momentum import enrich_momentum_from_sofascore
                 from ingest.sofascore.live_stats import fetch_live_match_stats
@@ -394,12 +393,11 @@ def _build_live_advice_payload(
 
     # --- Live Research Pulse: deep research em eventos críticos ---
     live_research_result: dict[str, Any] | None = None
-    live_research_applied = False
     logger.warning("live_research_check event_id=%s inplay=%s gemini=%s fast=%s minute=%s", 
                 event_id, snapshot.inplay is not None, bool(settings.gemini_api_key), fast, minute)
     if snapshot.inplay and settings.gemini_api_key and not fast and minute >= 15:
         try:
-            from ingest.research.live_research_pulse import live_research_pulse, apply_live_research_to_lambda
+            from ingest.research.live_research_pulse import live_research_pulse
 
             live_research_result = live_research_pulse(
                 event_id=str(event_id),
@@ -425,8 +423,6 @@ def _build_live_advice_payload(
     # Contexto de análise pré-jogo enviado pelo usuário (árbitro, xG, H2H…)
     from ingest.superbet.match_context_store import load_match_context, load_match_context_by_teams
     from models.wc_referee_inplay import (
-        RefereeProfile,
-        apply_referee_to_inplay_result,
         parse_referee_from_match_context,
         referee_card_market_probs,
     )
@@ -924,7 +920,6 @@ def _build_live_kelly_block(
     try:
         from models.wc_kelly_live import (
             compute_live_kxl_weight,
-            compute_live_kelly,
             enrich_opportunity_with_live_kelly,
         )
 

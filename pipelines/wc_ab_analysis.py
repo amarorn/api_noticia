@@ -13,13 +13,12 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 
-from models.wc_ab_test import ABVariant, load_ab_log
+from models.wc_ab_test import load_ab_log
 
 logger = logging.getLogger(__name__)
 

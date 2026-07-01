@@ -4,7 +4,6 @@ from __future__ import annotations
 import pytest
 
 from ingest.research.live_research_pulse import (
-    LiveResearchError,
     apply_live_research_to_lambda,
     _build_live_query,
     _get_cached,

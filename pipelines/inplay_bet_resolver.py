@@ -18,8 +18,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from models.wc_handicap_score import handicap_line_from_key, parse_any_handicap_market
+from models.wc_handicap_score import parse_any_handicap_market
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 @dataclass(frozen=True)
@@ -253,7 +257,7 @@ def resolve_bet(
     return None
 
 
-def build_ht_scores(ticks_df: "pd.DataFrame") -> "dict[int, tuple[int, int]]":  # type: ignore[name-defined]
+def build_ht_scores(ticks_df: "pd.DataFrame") -> "dict[int, tuple[int, int]]":
     """Extrai placar do intervalo por evento a partir dos ticks ao vivo.
 
     Estratégia: preferir ticks com period_label=='HT'; fallback no último tick

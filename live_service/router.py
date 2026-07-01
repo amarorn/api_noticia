@@ -12,7 +12,6 @@ import asyncio
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
 
 from live_service.dependencies import PredictorDep
 

@@ -214,7 +214,6 @@ def build_draw_training_rows(
         build_match_features,
         group_pressure_from_features,
         precompute_elo_timeline,
-        row_group_name,
     )
 
     elo_timeline = precompute_elo_timeline(fixtures_df)

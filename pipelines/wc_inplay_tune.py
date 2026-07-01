@@ -11,9 +11,14 @@ Spec: docs/specs/spec-fase-2-momentum-calibrado.md § 5.3 e 5.4
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 from scipy.optimize import minimize
 from scipy.special import gammaln
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 from models.wc_inplay_coefficients import (
     InPlayCoefficients,

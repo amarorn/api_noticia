@@ -22,7 +22,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from config import settings
 from models.wc_ensemble_stack import (
     StackedEnsemble,
     _META_FEATURES,

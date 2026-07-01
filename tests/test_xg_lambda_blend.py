@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import pandas as pd
 import pytest
 
-from models.poisson_wc import XgCalibration, goal_model_factors, _apply_xg_calibration
+from models.poisson_wc import XgCalibration, _apply_xg_calibration
 from models.xg_lambda_blend import build_xg_calibration
 
 

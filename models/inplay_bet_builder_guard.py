@@ -221,7 +221,6 @@ def _contradiction_warnings(legs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     
     for leg in legs:
         market = str(leg.get("market") or "")
-        outcome = str(leg.get("outcome") or "yes")
         label = str(leg.get("label") or market)
         
         if "handicap" in market.lower() or "handicap" in label.lower():

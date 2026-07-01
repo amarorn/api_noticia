@@ -21,7 +21,6 @@ from __future__ import annotations
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 
@@ -142,7 +141,9 @@ class _NumpySeqModel:
         w = self._weights
         h = np.zeros(self.hidden_size)
         c = np.zeros(self.hidden_size)
-        sigmoid = lambda x: 1 / (1 + np.exp(-np.clip(x, -10, 10)))
+        def sigmoid(x):
+            return 1 / (1 + np.exp(-np.clip(x, -10, 10)))
+
         tanh = np.tanh
 
         for t in range(len(X)):
@@ -319,7 +320,6 @@ class EventSeq2Seq:
         }
         if self._use_torch and self._torch_model is not None:
             try:
-                import torch
                 payload["torch_state"] = self._torch_model.state_dict()
             except Exception:
                 pass
@@ -340,7 +340,6 @@ class EventSeq2Seq:
             inst._fitted = data.get("fitted", False)
             inst._use_torch = data.get("use_torch", False)
             if inst._use_torch and "torch_state" in data:
-                import torch
                 import torch.nn as nn
 
                 class _LSTMClassifier(nn.Module):

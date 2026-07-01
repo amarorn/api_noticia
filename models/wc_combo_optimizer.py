@@ -27,7 +27,6 @@ from models.inplay_leg_compatibility import (
     is_superbet_bet_builder_market,
     period_of_market,
 )
-from models.ev_value import evaluate_outcome
 
 
 @dataclass(frozen=True)
@@ -421,9 +420,9 @@ def build_optimized_tickets(
     legs_ft = _filter_by_period(all_legs, "ft")
 
     # 3. Ordenar por EV decrescente (para greedy melhor)
-    legs_1h.sort(key=lambda l: l.expected_value, reverse=True)
-    legs_2h.sort(key=lambda l: l.expected_value, reverse=True)
-    legs_ft.sort(key=lambda l: l.expected_value, reverse=True)
+    legs_1h.sort(key=lambda leg: leg.expected_value, reverse=True)
+    legs_2h.sort(key=lambda leg: leg.expected_value, reverse=True)
+    legs_ft.sort(key=lambda leg: leg.expected_value, reverse=True)
 
     # 4. Limitar pool para performance (top-N por período)
     pool_size = settings.combo_optimizer_pool_size if hasattr(settings, "combo_optimizer_pool_size") else 12
@@ -485,7 +484,7 @@ def build_optimized_tickets(
     # Bilhetes mistos (1h + 2h) — só até minuto 45
     if minute is None or minute <= 45:
         mixed_legs = legs_1h[:6] + legs_2h[:6]
-        mixed_legs.sort(key=lambda l: l.expected_value, reverse=True)
+        mixed_legs.sort(key=lambda leg: leg.expected_value, reverse=True)
         for combo in _generate_combinations(mixed_legs, max_legs=max_legs, min_legs=min_legs):
             # Garantir que tem pelo menos uma perna de cada período
             periods = {leg.period for leg in combo}

@@ -64,6 +64,7 @@ Responda APENAS com o JSON válido, sem markdown, sem texto extra."""
 
 
 def _build_user_message(home_team: str, away_team: str, model_data: dict, extra_web: str = "") -> str:
+    extra_web_txt = f"=== PESQUISA WEB ADICIONAL ===\n{extra_web}" if extra_web else ""
     return f"""
 PARTIDA: {home_team} x {away_team} — Copa do Mundo 2026
 Data de análise: {_today_str()}
@@ -88,7 +89,7 @@ Top placares Poisson:
 Histórico H2H: {model_data.get('h2h_summary', 'Sem dados')}
 Grupo: {model_data.get('group', 'N/A')} | Fase: {model_data.get('phase', 'group')}
 
-{('=== PESQUISA WEB ADICIONAL ===\n' + extra_web) if extra_web else ''}
+{extra_web_txt}
 
 === INSTRUÇÃO ===
 Use sua busca na web para obter informações ATUAIS sobre esta partida:

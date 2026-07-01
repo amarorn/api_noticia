@@ -212,7 +212,6 @@ def adjust_lambdas_from_xg(
         return lambda_home, lambda_away, None
 
     elapsed_fraction = minute / match_minutes
-    remaining_fraction = max(0.0, 1.0 - elapsed_fraction)
 
     # Peso da evidência ao vivo cresce com o tempo, limitado por w_max
     # Usar uma curva quadrática: aos 45' ~25%, aos 90' ~w_max

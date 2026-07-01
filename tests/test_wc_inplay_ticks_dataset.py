@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 
 import pandas as pd
-import pytest
 
 from pipelines.wc_inplay_ticks_dataset import build_timeline_from_live_ticks
 

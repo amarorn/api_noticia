@@ -104,7 +104,6 @@ def _detect_issues(
 
     kickoff = ticks.sort_values("minute").iloc[0]
     pre_home = float(kickoff.get("prob_final_home") or 0)
-    pre_away = float(kickoff.get("prob_final_away") or 0)
     final_draw = home_score == away_score
 
     if pre_home >= 0.55 and home_score < away_score and final_draw:

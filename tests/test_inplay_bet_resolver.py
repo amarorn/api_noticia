@@ -1,6 +1,5 @@
 """Testes de resolução de apostas in-play a partir do placar final."""
 
-import pytest
 from pipelines.inplay_bet_resolver import GameResult, resolve_bet
 
 

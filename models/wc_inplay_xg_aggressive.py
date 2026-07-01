@@ -63,7 +63,6 @@ def adjust_lambdas_from_xg_aggressive(
         return lambda_home, lambda_away, None
 
     elapsed_fraction = minute / match_minutes
-    remaining_fraction = max(0.0, 1.0 - elapsed_fraction)
 
     # Curva de peso: linear pura (mais agressiva que quadrática)
     # Aos 30' → 33% do w_max, aos 60' → 67%, aos 90' → 100%

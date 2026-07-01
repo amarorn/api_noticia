@@ -25,14 +25,9 @@ from api.schemas import (
     WcGroupStandingsBlock,
     WcGroupStandingsResponse,
     WcHistoricalMatchItem,
-    WcMatchValueResponse,
-    WcModelBreakdown,
-    WcOutcomeValue,
     WcPredictRequest,
     WcPredictionResponse,
     WcRoundResponse,
-    WcScheduleGroup,
-    WcScheduleMatchItem,
     WcScheduleResponse,
     WcSimulationResponse,
     WcSofascoreResolveResponse,
@@ -57,7 +52,6 @@ from pipelines.wc_group_standings import (
 from pipelines.wc_schedule import build_schedule_response, load_wc_schedule, official_match_exists
 from pipelines.wc_squads import get_squad_by_team, list_squad_teams, load_wc_squads
 from schemas.national_teams import normalize_national_team
-from schemas.wc_kxl_dynamic import WcKxlMatchInput
 
 WC_ROUND_FILE = Path("data/rounds/wc_2026.json")
 
@@ -744,7 +738,6 @@ def worldcup_train_status():
 
 
 def _run_wc_retrain_background(*, enable_mlflow: bool = False) -> None:
-    import threading
 
     from models.wc_artifact import load_or_train_wc_predictor
     from models.wc_train_progress import WcTrainProgressReporter

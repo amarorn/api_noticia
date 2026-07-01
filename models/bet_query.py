@@ -12,11 +12,8 @@ Retorna bilhetes ranqueados por potencial de retorno, com explicação do score.
 """
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)

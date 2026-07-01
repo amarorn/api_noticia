@@ -8,7 +8,6 @@ from typing import Any
 
 from schemas.national_teams import normalize_national_team
 
-import re
 
 
 @dataclass

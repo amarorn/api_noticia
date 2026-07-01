@@ -10,10 +10,10 @@ import structlog
 
 from config import settings
 from models.wc_handicap import handicap_probs_from_samples
-
-logger = structlog.get_logger(__name__)
 from models.wc_monte_carlo import _sample_poisson_bivariate
 from pipelines.wc_intensity_profile import compute_half_lambdas_nhpp
+
+logger = structlog.get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
