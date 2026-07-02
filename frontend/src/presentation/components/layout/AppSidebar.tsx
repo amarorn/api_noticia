@@ -1,7 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
 import { navGroups } from "./navConfig";
 import { ApiStatusBadge } from "./ApiStatusBadge";
 import { BrandMark } from "./BrandMark";
+import { getUserOpenBetsUseCase } from "@/application/container";
 import type { HealthStatus } from "@/domain/entities";
 
 interface AppSidebarProps {
@@ -11,6 +13,14 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ health, healthPending, healthError }: AppSidebarProps) {
+  const openBetsQuery = useQuery({
+    queryKey: ["user-open-bets", "sidebar"],
+    queryFn: () => getUserOpenBetsUseCase.execute(),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+  const latestOpenBet = openBetsQuery.data?.bets[0];
+
   return (
     <aside
       className="fixed inset-y-0 left-0 z-40 hidden h-screen w-64 flex-col backdrop-blur-2xl lg:flex"
@@ -70,31 +80,16 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
                         <>
                           {isActive && (
                             <span
-                              className="absolute inset-0 rounded-xl"
-                              style={{
-                                background: "rgba(0, 245, 160, 0.08)",
-                                border: "1px solid rgba(0, 245, 160, 0.18)",
-                                boxShadow: "inset 3px 0 0 0 #00f5a0, 0 0 24px rgba(0,245,160,0.08)",
-                              }}
+                              className="absolute inset-0 rounded-xl bg-neon-green/8"
                             />
                           )}
 
-                          {/* Ícone com fundo arrojado quando ativo */}
                           <span
-                            className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                            className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 ${
                               isActive
-                                ? "text-neon-green"
+                                ? "bg-neon-green/15 text-neon-green"
                                 : "text-slate-500 group-hover:text-slate-300"
                             }`}
-                            style={
-                              isActive
-                                ? {
-                                    background: "rgba(0, 245, 160, 0.12)",
-                                    border: "1px solid rgba(0, 245, 160, 0.20)",
-                                    boxShadow: "0 0 12px rgba(0,245,160,0.12)",
-                                  }
-                                : undefined
-                            }
                           >
                             <Icon className="h-4 w-4" aria-hidden />
                           </span>
@@ -102,24 +97,17 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
                           <span className="relative z-10 min-w-0 flex-1">
                             <span
                               className={`block text-sm font-medium leading-tight transition-colors ${
-                                isActive ? "text-white neon-text" : "text-slate-400 group-hover:text-slate-200"
+                                isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200"
                               }`}
                             >
                               {label}
                             </span>
                           </span>
 
-                          {/* Bolinha + cursor CLI */}
                           {isActive && (
-                            <span className="relative z-10 flex items-center gap-1">
-                              <span
-                                className="h-1.5 w-1.5 rounded-full"
-                                style={{ background: "#00f5a0", boxShadow: "0 0 8px #00f5a0" }}
-                              />
-                              <span className="font-mono text-[10px]" style={{ color: "rgba(0, 245, 160, 0.5)" }}>
-                                _
-                              </span>
-                            </span>
+                            <span
+                              className="relative z-10 h-1.5 w-1.5 shrink-0 rounded-full bg-neon-green"
+                            />
                           )}
                         </>
                       )}
@@ -131,8 +119,19 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
           ))}
         </nav>
 
-        {/* Footer da Sidebar com status API */}
-        <div className="relative px-4 py-4" style={{ borderTop: "1px solid rgba(0, 245, 160, 0.06)" }}>
+        {/* Footer da Sidebar: estratégia ativa + status API */}
+        <div className="relative space-y-3 px-4 py-4" style={{ borderTop: "1px solid rgba(0, 245, 160, 0.06)" }}>
+          <div className="rounded-xl border border-neon-green/15 bg-neon-green/[0.04] px-3 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Estratégia ativa
+            </p>
+            <p className="mt-0.5 text-sm font-bold text-neon-green">V2 operacional</p>
+            <p className="mt-1 truncate font-mono text-[10px] text-slate-500">
+              {latestOpenBet
+                ? `Superbet #${latestOpenBet.ticketCode ?? latestOpenBet.id}`
+                : "Nenhuma aposta aberta"}
+            </p>
+          </div>
           <ApiStatusBadge
             health={health}
             isPending={healthPending}

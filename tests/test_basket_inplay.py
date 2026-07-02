@@ -53,6 +53,7 @@ class TestSimulateBasketInPlay:
             home_score=55,
             away_score=55,
             minute=24,
+            match_minutes=48,  # cenário NBA (linha de mercado 220.5 é escala NBA, não virtual/40min)
             total_points_odds={"220.5": {"over": 1.90, "under": 1.90}},
             spread_odds={"0": {"home": 1.90, "away": 1.90}},
         )

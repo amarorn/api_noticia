@@ -6,7 +6,6 @@ from typing import Any
 
 from config import settings
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
-from ingest.superbet.parser import SuperbetEventSnapshot
 from ingest.superbet.store import fetch_event_with_stale_fallback, save_event_snapshot
 from models.basket_bet_advice import build_basket_bet_advice_report
 from models.basket_inplay import simulate_basket_inplay
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 _BASKET_FINISHED_STATUSES = {"FINISHED", "ENDED", "CLOSED", "CANCELLED", "ABANDONED"}
 
 
-def _match_is_finished(status: str | None, minute: int, match_minutes: int = 48) -> bool:
+def _match_is_finished(status: str | None, minute: int, match_minutes: int = 40) -> bool:
     st = str(status or "").upper()
     if st in _BASKET_FINISHED_STATUSES:
         return True
@@ -69,10 +68,12 @@ def run_basket_live_advice(
         minute = ip.minute
         status = ip.status
         period_label = ip.period_label
+        basket_periods = ip.basket_periods
     else:
         home_score = away_score = minute = 0
         status = None
         period_label = None
+        basket_periods = []
 
     inplay_result = simulate_basket_inplay(
         home_team=home_team,
@@ -107,6 +108,7 @@ def run_basket_live_advice(
         "current_score": inplay_dict.get("current_score"),
         "period_label": period_label,
         "status": status,
+        "basket_periods": basket_periods,
         "is_finished": is_finished,
         "is_live": snapshot.is_live and not is_finished,
         "superbet_stale": superbet_stale,
@@ -133,6 +135,9 @@ def run_basket_live_advice(
             "ppm_away": inplay_dict.get("ppm_away"),
             "market_total_line": inplay_dict.get("market_total_line"),
             "market_spread_line": inplay_dict.get("market_spread_line"),
+            "next_quarter_number": inplay_dict.get("next_quarter_number"),
+            "next_quarter_projection_home": inplay_dict.get("next_quarter_projection_home"),
+            "next_quarter_projection_away": inplay_dict.get("next_quarter_projection_away"),
         },
         "aportes": report.get("aportes", []),
         "confidence": report.get("confidence"),

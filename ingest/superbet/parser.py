@@ -24,6 +24,7 @@ class SuperbetInPlayState:
     ht_away_score: int | None
     period_label: str | None
     status: str | None
+    basket_periods: list[dict[str, int]] = field(default_factory=list)
 
 
 @dataclass
@@ -137,6 +138,7 @@ class SuperbetEventSnapshot:
                 "ht_away_score": self.inplay.ht_away_score,
                 "period_label": self.inplay.period_label,
                 "status": self.inplay.status,
+                "basket_periods": self.inplay.basket_periods,
             },
             "h2h_odds": self.h2h_odds,
             "h2h_implied": self.h2h_implied,
@@ -370,21 +372,60 @@ def _extract_combo_yes_no(market: dict, key: str) -> dict[str, float] | None:
     return {key: v for k, v in _implied_from_prices(prices).items() for key, v in [(k, v)]}
 
 
+_BASKET_SPORT_IDS = {4}  # Superbet BR: sport_id 4 = Basquete (virtual/simulado, quartos de 10min)
+_BASKET_QUARTER_MINUTES = 10
+
+
+def _parse_basket_elapsed_minute(stats: dict, meta: dict) -> int:
+    """Converte o relógio do quarto (contagem regressiva) em minutos acumulados de jogo.
+
+    Ao contrário do futebol, `stats["minutes"]` no basquete é uma contagem regressiva
+    dentro do quarto atual (ex.: "9" = faltam 9min pro fim do quarto em andamento), não
+    tempo decorrido. `periods` traz o quarto em andamento como último item.
+    """
+    periods = stats.get("periods") or []
+    quarter_num = len(periods) if periods else 1
+    label = str(meta.get("event_status_label") or meta.get("period_status") or "")
+    if label.startswith("Q"):
+        try:
+            quarter_num = max(quarter_num, int(label[1:]))
+        except ValueError:
+            pass
+    countdown = max(0, min(_safe_int(stats.get("minutes")), _BASKET_QUARTER_MINUTES))
+    elapsed_in_quarter = _BASKET_QUARTER_MINUTES - countdown
+    return max(0, (quarter_num - 1) * _BASKET_QUARTER_MINUTES + elapsed_in_quarter)
+
+
 def _parse_inplay(ev: dict) -> SuperbetInPlayState | None:
     stats = ev.get("inplay_stats")
     if not isinstance(stats, dict) or not stats:
         return None
     meta = ev.get("inplay_stats_metadata") or {}
+    fixture = ev.get("fixture") or {}
+    sport_id = _safe_int(fixture.get("sport_id"), 0)
     periods = stats.get("periods") or []
     ht_home = ht_away = None
     for period in periods:
         if period.get("num") == 1:
             ht_home = _safe_int(period.get("home_team_score"))
             ht_away = _safe_int(period.get("away_team_score"))
-    minute = _parse_minute(stats.get("minutes"), stats.get("stoppage_time"))
     status = str(meta.get("status") or "")
-    if minute <= 0 and status in {"FINISHED", "ENDED", "CLOSED"}:
-        minute = 90
+    basket_periods: list[dict[str, int]] = []
+    if sport_id in _BASKET_SPORT_IDS:
+        minute = _parse_basket_elapsed_minute(stats, meta)
+        basket_periods = [
+            {
+                "num": _safe_int(period.get("num")),
+                "home": _safe_int(period.get("home_team_score")),
+                "away": _safe_int(period.get("away_team_score")),
+            }
+            for period in periods
+            if period.get("num") is not None
+        ]
+    else:
+        minute = _parse_minute(stats.get("minutes"), stats.get("stoppage_time"))
+        if minute <= 0 and status in {"FINISHED", "ENDED", "CLOSED"}:
+            minute = 90
 
     return SuperbetInPlayState(
         home_score=_safe_int(stats.get("home_team_score")),
@@ -395,6 +436,7 @@ def _parse_inplay(ev: dict) -> SuperbetInPlayState | None:
         away_corners=_safe_int(stats.get("away_team_corners")),
         home_yellow_cards=_safe_int(stats.get("home_team_yellow_cards")),
         away_yellow_cards=_safe_int(stats.get("away_team_yellow_cards")),
+        basket_periods=basket_periods,
         ht_home_score=ht_home,
         ht_away_score=ht_away,
         period_label=meta.get("event_status_label"),
@@ -768,42 +810,45 @@ def _extract_h2h_odds(markets: list[dict]) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 
 _BASKET_MONEYLINE_NAMES = (
-    "Vencedor da Partida",
     "Vencedor",
     "Moneyline",
-    "Resultado",
-    "Resultado Final",
 )
 
 _BASKET_SPREAD_NAMES = (
     "Handicap",
-    "Handicap de Pontos",
-    "Handicap Asiático",
     "Spread",
     "Point Spread",
 )
 
 _BASKET_TOTAL_NAMES = (
     "Total de Pontos",
-    "Total",
     "Total Points",
-    "Over/Under",
 )
 
 
+def _is_basket_full_match_market(name: str, keywords: tuple[str, ...]) -> bool:
+    """True se o nome do mercado COMEÇA com uma das keywords.
+
+    A Superbet reaproveita os mesmos nomes de mercado para o jogo completo
+    ("Total de Pontos (Inc. prorrogação)"), por quarto ("2º Quarto - Total de
+    Pontos"), por tempo ("1º Tempo - Handicap") e por time ("Southland Sharks -
+    Total de Pontos (...)"). Usar `startswith` em vez de substring evita misturar
+    linhas de períodos/times diferentes no mesmo dict de odds.
+    """
+    stripped = name.strip().lower()
+    return any(stripped.startswith(k.lower()) for k in keywords)
+
+
 def _is_basket_moneyline_market(name: str) -> bool:
-    lower = name.lower()
-    return any(k.lower() in lower for k in _BASKET_MONEYLINE_NAMES) and "3-way" not in lower
+    return _is_basket_full_match_market(name, _BASKET_MONEYLINE_NAMES)
 
 
 def _is_basket_spread_market(name: str) -> bool:
-    lower = name.lower()
-    return any(k.lower() in lower for k in _BASKET_SPREAD_NAMES) and "3-way" not in lower
+    return _is_basket_full_match_market(name, _BASKET_SPREAD_NAMES)
 
 
 def _is_basket_total_market(name: str) -> bool:
-    lower = name.lower()
-    return any(k.lower() in lower for k in _BASKET_TOTAL_NAMES)
+    return _is_basket_full_match_market(name, _BASKET_TOTAL_NAMES)
 
 
 def _extract_basket_moneyline(
@@ -886,10 +931,11 @@ def _extract_basket_total_points(markets: list[dict]) -> dict[str, dict[str, flo
             if line is None:
                 continue
             label = str(md.get("name") or "").lower()
+            code = str(md.get("code") or "").strip()
             outcome: str | None = None
-            if label in {"over", "mais", "mais de", "o", "acima"}:
+            if code == "+" or label.startswith(("over", "mais", "acima")):
                 outcome = "over"
-            elif label in {"under", "menos", "menos de", "u", "abaixo"}:
+            elif code == "-" or label.startswith(("under", "menos", "abaixo")):
                 outcome = "under"
             if outcome is None:
                 continue

@@ -234,3 +234,19 @@ export class RegisterComboProposalUseCase {
     return this.repository.registerComboProposal(buildProposalApiBody(proposal));
   }
 }
+
+export class GetBasketSuperbetLiveUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto?: { sportId?: number; allSports?: boolean }) {
+    return this.repository.getBasketSuperbetLive(dto);
+  }
+}
+
+export class GetBasketSuperbetLiveAdviceUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: { eventId: number; bankroll?: number; fast?: boolean }) {
+    return this.repository.getBasketSuperbetLiveAdvice(dto);
+  }
+}

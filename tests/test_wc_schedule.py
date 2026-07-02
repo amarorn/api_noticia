@@ -10,8 +10,11 @@ def test_wc_schedule_has_12_groups_and_72_matches() -> None:
     out = build_schedule_response(data)
     assert out["season"] == 2026
     assert len(out["groups"]) == 12
-    assert out["total_matches"] == 72
-    assert out["matchdays"] == [1, 2, 3]
+    group_matches = [m for m in out["matches"] if m["phase"] == "group"]
+    assert len(group_matches) == 72
+    # total_matches pode ser > 72 depois que o mata-mata é sincronizado (sync-wc-knockout-schedule)
+    assert out["total_matches"] >= 72
+    assert {1, 2, 3}.issubset(set(out["matchdays"]))
     group_ids = {g["id"] for g in out["groups"]}
     assert group_ids == set("ABCDEFGHIJKL")
 

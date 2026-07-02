@@ -178,8 +178,14 @@ def poll_once(
     bankroll: float = 1000.0,
     client: SuperbetClient | None = None,
     watchlist: set[int] | None = None,
+    fast: bool = False,
 ) -> dict:
-    """Executa um ciclo de poll para os event_ids informados."""
+    """Executa um ciclo de poll para os event_ids informados.
+
+    fast=True pula a pesquisa ao vivo (Gemini) por evento — cada chamada leva
+    ~2min, o que faz um ciclo com vários jogos monitorados nunca respeitar o
+    --interval e saturar a CPU/rede compartilhada com o resto da API.
+    """
     superbet_client = client or SuperbetClient()
     captured = 0
     skipped = 0
@@ -197,6 +203,7 @@ def poll_once(
                 save_bronze=True,
                 save_tick=True,
                 client=superbet_client,
+                fast=fast,
             )
         except SuperbetClientError as exc:
             errors += 1
@@ -273,6 +280,7 @@ def poll_loop(
     max_cycles: int | None = None,
     max_events: int | None = None,
     filter_international: bool = False,
+    fast: bool = False,
 ) -> int:
     """Loop de captura até max_cycles ou Ctrl+C."""
     predictor, _manifest = load_or_train_wc_predictor(allow_train=allow_train)
@@ -315,6 +323,7 @@ def poll_loop(
                 bankroll=bankroll,
                 client=client,
                 watchlist=watchlist,
+                fast=fast,
             )
             watchlist = set(result.get("watchlist") or watchlist)
             print(
@@ -384,6 +393,12 @@ def main() -> int:
         action="store_true",
         help="Falha se predictor.pkl estiver ausente/desatualizado",
     )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Pula pesquisa ao vivo (Gemini) por evento — cada chamada leva ~2min e "
+        "impede o loop de respeitar --interval em ciclos com vários jogos monitorados",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Logs detalhados")
     args = parser.parse_args()
 
@@ -416,6 +431,7 @@ def main() -> int:
             max_cycles=args.max_cycles,
             max_events=args.max_events,
             filter_international=args.filter_international,
+            fast=args.fast,
         )
 
     # Execução única
@@ -436,7 +452,9 @@ def main() -> int:
     if not ids:
         print("Nenhum evento ao vivo encontrado.")
         return 0
-    result = poll_once(ids, predictor, phase=args.phase, bankroll=args.bankroll, client=client)
+    result = poll_once(
+        ids, predictor, phase=args.phase, bankroll=args.bankroll, client=client, fast=args.fast
+    )
     print(
         f"\nResumo: {result['captured']} capturados, "
         f"{result['skipped']} ignorados, {result['errors']} erros"

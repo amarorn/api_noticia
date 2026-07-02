@@ -67,7 +67,8 @@ def _basket_snapshot_dict() -> dict:
 
 
 class TestBasketApi:
-    def test_basket_live_list(self):
+    def test_basket_live_list(self, monkeypatch):
+        monkeypatch.setattr("config.settings.api_key", None)
         with patch("ingest.superbet.client.SuperbetClient.fetch_live_events") as mock_fetch:
             mock_fetch.return_value = []
             response = client.get("/basket/superbet/live")
@@ -76,7 +77,8 @@ class TestBasketApi:
         assert data["count"] == 0
         assert data["sport_id"] is not None
 
-    def test_basket_event_snapshot(self):
+    def test_basket_event_snapshot(self, monkeypatch):
+        monkeypatch.setattr("config.settings.api_key", None)
         with patch(
             "api.routers.basket.fetch_event_with_stale_fallback"
         ) as mock_fetch:
@@ -139,7 +141,8 @@ class TestBasketApi:
         assert data["away_team"] == "GSW"
         assert data["moneyline_odds"]["1"] == pytest.approx(1.75)
 
-    def test_basket_live_advice(self):
+    def test_basket_live_advice(self, monkeypatch):
+        monkeypatch.setattr("config.settings.api_key", None)
         with patch(
             "api.routers.basket.run_basket_live_advice"
         ) as mock_advice:

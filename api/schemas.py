@@ -776,6 +776,15 @@ class BasketInPlaySummary(BaseModel):
     ppm_away: float | None = None
     market_total_line: float | None = None
     market_spread_line: float | None = None
+    next_quarter_number: int | None = None
+    next_quarter_projection_home: float | None = None
+    next_quarter_projection_away: float | None = None
+
+
+class BasketQuarterScore(BaseModel):
+    num: int
+    home: int
+    away: int
 
 
 class BasketSuperbetLiveEventResponse(BaseModel):
@@ -831,6 +840,7 @@ class BasketSuperbetLiveAdviceResponse(BaseModel):
     current_score: str | None = None
     period_label: str | None = None
     status: str | None = None
+    basket_periods: list[BasketQuarterScore] = Field(default_factory=list)
     is_finished: bool
     is_live: bool
     superbet_stale: bool

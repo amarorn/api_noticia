@@ -25,6 +25,8 @@ import {
   mapHandicapAnalysis,
   mapWcSimulation,
   mapUserOpenBets,
+  mapBasketSuperbetLiveFeed,
+  mapBasketSuperbetLiveAdvice,
 } from "../mappers";
 import {
   mapSuperMultiplaCalculate,
@@ -345,6 +347,34 @@ export class WcApiRepository implements IWcRepository {
         body: JSON.stringify(body),
       },
     );
+  }
+
+  async getBasketSuperbetLive(dto?: { sportId?: number; allSports?: boolean }) {
+    const params = new URLSearchParams();
+    if (dto?.sportId != null) {
+      params.set("sport_id", String(dto.sportId));
+    }
+    if (dto?.allSports) {
+      params.set("all_sports", "true");
+    }
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapBasketSuperbetLiveFeed>[0]>(
+      `/basket/superbet/live${qs}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapBasketSuperbetLiveFeed(raw);
+  }
+
+  async getBasketSuperbetLiveAdvice(dto: { eventId: number; bankroll?: number; fast?: boolean }) {
+    const params = new URLSearchParams();
+    if (dto.bankroll != null) params.set("bankroll", String(dto.bankroll));
+    if (dto.fast) params.set("fast", "true");
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapBasketSuperbetLiveAdvice>[0]>(
+      `/basket/superbet/live/${dto.eventId}/advice${qs}`,
+      { timeoutMs: dto.fast ? 60_000 : API_SYNC_TIMEOUT_MS },
+    );
+    return mapBasketSuperbetLiveAdvice(raw);
   }
 }
 

@@ -36,6 +36,8 @@ import {
   PredictWcMatchUseCase,
   ResolveSofascoreEventUseCase,
   SimulateWcMatchUseCase,
+  GetBasketSuperbetLiveUseCase,
+  GetBasketSuperbetLiveAdviceUseCase,
 } from "@/application/use-cases/wcUseCases";
 import {
   brasileiraoRepository,
@@ -67,6 +69,10 @@ export const getUserOpenBetsUseCase = new GetUserOpenBetsUseCase(wcRepository);
 export const refreshOpenBetsCashoutsUseCase = new RefreshOpenBetsCashoutsUseCase(wcRepository);
 export const registerComboProposalUseCase = new RegisterComboProposalUseCase(wcRepository);
 export const calculateSuperMultiplaUseCase = new CalculateSuperMultiplaUseCase(wcRepository);
+export const getBasketSuperbetLiveUseCase = new GetBasketSuperbetLiveUseCase(wcRepository);
+export const getBasketSuperbetLiveAdviceUseCase = new GetBasketSuperbetLiveAdviceUseCase(
+  wcRepository,
+);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
   brasileiraoRepository,
 );

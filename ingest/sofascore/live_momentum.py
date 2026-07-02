@@ -62,19 +62,29 @@ def resolve_sofascore_event_id(
         when = match_date or datetime.now(UTC).date()
         client = SofascoreClient(waf_max_retries=waf_max_retries)
         team_map = load_team_map()
+        home_normalized = normalize_national_team(home_team)
+        away_normalized = normalize_national_team(away_team)
         for offset in (0, -1, 1):
             probe = when + timedelta(days=offset)
             try:
                 event = find_event_id(
                     client,
-                    home_team=normalize_national_team(home_team),
-                    away_team=normalize_national_team(away_team),
+                    home_team=home_normalized,
+                    away_team=away_normalized,
                     match_date=probe,
                     team_map=team_map,
                 )
                 return int(event["id"])
             except LookupError:
                 continue
+        logger.info(
+            "sofascore_event_nao_encontrado",
+            home=home_team,
+            away=away_team,
+            home_normalized=home_normalized,
+            away_normalized=away_normalized,
+            match_date=str(when),
+        )
     except Exception as exc:
         logger.warning(
             "sofascore_event_resolve_falha",

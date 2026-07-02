@@ -88,9 +88,15 @@ def parse_timeline_events(
         main_text = (main.get("text") or {}).get("args") or []
         if main_text and isinstance(main_text[0], str) and ":" in main_text[0]:
             score_text = main_text[0]
+        added_time_node = event.get("added_time")
+        added_time = (
+            added_time_node.get("value")
+            if isinstance(added_time_node, dict)
+            else added_time_node
+        )
         rows.append({
             "minute": int(minute),
-            "added_time": event.get("added_time"),
+            "added_time": added_time,
             "team": team,
             "side": side,
             "type": event_type,

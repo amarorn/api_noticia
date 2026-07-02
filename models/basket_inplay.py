@@ -16,6 +16,9 @@ from config import settings
 
 logger = structlog.get_logger(__name__)
 
+# Deve bater com ingest/superbet/parser.py::_BASKET_QUARTER_MINUTES (feed virtual/simulado).
+_BASKET_QUARTER_MINUTES = 10
+
 
 @dataclass
 class BasketInPlayResult:
@@ -41,6 +44,9 @@ class BasketInPlayResult:
     n_simulations: int
     market_total_line: float | None = None
     market_spread_line: float | None = None
+    next_quarter_number: int | None = None
+    next_quarter_projection_home: float = 0.0
+    next_quarter_projection_away: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -65,6 +71,9 @@ class BasketInPlayResult:
             "market_total_line": self.market_total_line,
             "market_spread_line": self.market_spread_line,
             "n_simulations": self.n_simulations,
+            "next_quarter_number": self.next_quarter_number,
+            "next_quarter_projection_home": round(self.next_quarter_projection_home, 1),
+            "next_quarter_projection_away": round(self.next_quarter_projection_away, 1),
         }
 
 
@@ -156,26 +165,20 @@ def _estimate_market_priors(
     if spread_info:
         expected_spread = spread_info[1]
         market_spread_line = expected_spread
+    elif moneyline_info:
+        # Deriva spread apenas do moneyline quando não há spread de mercado
+        ml_implied = _implied_from_odds(moneyline_info)
+        prob_home = ml_implied["1"]
+        expected_spread = np.log(max(prob_home, 1e-6) / max(1 - prob_home, 1e-6)) * 4.0
+        market_spread_line = expected_spread
     else:
         expected_spread = default_spread
         market_spread_line = None
 
-    # Refina spread com moneyline se disponível
-    if moneyline_info:
-        ml_implied = _implied_from_odds(moneyline_info)
-        prob_home = ml_implied["1"]
-        # Aproximação: cada 4 pontos ≈ 0.10 de prob em torno de 50%
-        implied_spread_from_ml = np.log(max(prob_home, 1e-6) / max(1 - prob_home, 1e-6)) * 4.0
-        if spread_info:
-            expected_spread = (expected_spread + implied_spread_from_ml) / 2.0
-        else:
-            expected_spread = implied_spread_from_ml
-        market_spread_line = expected_spread
-
     return expected_total, expected_spread, market_total_line, market_spread_line
 
 
-def _estimate_remaining_expectations(
+def _posterior_rate_and_diff(
     *,
     home_score: int,
     away_score: int,
@@ -183,11 +186,12 @@ def _estimate_remaining_expectations(
     match_minutes: int,
     market_total: float,
     market_spread: float,
-) -> tuple[float, float, float, float]:
-    """Estima média e variância dos pontos restantes de cada time.
+) -> tuple[float, float, float]:
+    """Taxa de pontos/min posterior (após Bayesian update + clutch/lead) e diferença
+    esperada para o restante do jogo. Compartilhado entre a simulação Monte Carlo
+    (horizonte = jogo inteiro) e a projeção por janela (ex.: próximo quarto).
 
-    Faz Bayesian update da taxa total de pontos (não por time) e ajusta a
-    diferença esperada no restante pelo spread de mercado menos diferença atual.
+    Retorna (rate_post, diff_remaining, remaining_minutes).
     """
     remaining = max(0.0, float(match_minutes - minute))
 
@@ -220,10 +224,34 @@ def _estimate_remaining_expectations(
             lead_factor = settings.basket_lead_admin_factor
 
     rate_post *= clutch_factor * lead_factor
-    total_remaining = rate_post * remaining
 
-    # Expectativa de diferença no restante: spread de mercado menos diferença atual
-    diff_remaining = market_spread - score_diff
+    # Expectativa de diferença final: -market_spread (linha é handicap aplicado ao home)
+    expected_final_diff = -market_spread
+    # Expectativa de diferença no restante
+    diff_remaining = expected_final_diff - score_diff
+
+    return rate_post, diff_remaining, remaining
+
+
+def _estimate_remaining_expectations(
+    *,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    match_minutes: int,
+    market_total: float,
+    market_spread: float,
+) -> tuple[float, float, float, float]:
+    """Estima média e variância dos pontos restantes (jogo inteiro) de cada time."""
+    rate_post, diff_remaining, remaining = _posterior_rate_and_diff(
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        match_minutes=match_minutes,
+        market_total=market_total,
+        market_spread=market_spread,
+    )
+    total_remaining = rate_post * remaining
 
     mu_home_rem = (total_remaining + diff_remaining) / 2.0
     mu_away_rem = (total_remaining - diff_remaining) / 2.0
@@ -234,6 +262,50 @@ def _estimate_remaining_expectations(
     sigma_away = sigma_ppm * np.sqrt(remaining) * max(rate_post / 2.0, 0.5)
 
     return mu_home_rem, mu_away_rem, sigma_home, sigma_away
+
+
+def _estimate_window_points(
+    *,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    match_minutes: int,
+    market_total: float,
+    market_spread: float,
+    window_start_minute: float,
+    window_end_minute: float,
+) -> tuple[float, float]:
+    """Projeta pontos esperados (home, away) apenas na janela [start, end) de minutos.
+
+    Reusa a mesma taxa posterior (rate_post) da simulação de jogo inteiro — o total
+    esperado na janela escala linearmente pelo tamanho da janela. A diferença
+    esperada (home - away) assume convergência linear até a diferença final
+    implícita no mercado, então a fatia da janela usa a fração do tempo restante
+    que ela ocupa.
+    """
+    rate_post, diff_remaining, remaining = _posterior_rate_and_diff(
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        match_minutes=match_minutes,
+        market_total=market_total,
+        market_spread=market_spread,
+    )
+    if remaining <= 0:
+        return 0.0, 0.0
+
+    window_start = max(float(minute), window_start_minute)
+    window_end = min(float(match_minutes), window_end_minute)
+    window_len = max(0.0, window_end - window_start)
+    if window_len <= 0:
+        return 0.0, 0.0
+
+    frac_start = (window_start - minute) / remaining
+    frac_end = (window_end - minute) / remaining
+    diff_window = diff_remaining * (frac_end - frac_start)
+    total_window = rate_post * window_len
+
+    return (total_window + diff_window) / 2.0, (total_window - diff_window) / 2.0
 
 
 def _simulate_remaining(
@@ -341,7 +413,7 @@ def simulate_basket_inplay(
     home_score: int,
     away_score: int,
     minute: int,
-    match_minutes: int = 48,
+    match_minutes: int = 40,
     moneyline_odds: dict[str, float] | None = None,
     spread_odds: dict[str, dict[str, float]] | None = None,
     total_points_odds: dict[str, dict[str, float]] | None = None,
@@ -383,9 +455,23 @@ def simulate_basket_inplay(
     sp_probs = _spread_probs(final_h, final_a, spread_odds, settings.basket_spread_lines, n)
     tp_probs = _total_probs(final_h, final_a, total_points_odds, settings.basket_total_lines, n)
 
-    ppm_total = (market_total / match_minutes) if match_minutes > 0 else 0.0
     ppm_home_prior = (market_total + market_spread) / (2.0 * match_minutes)
     ppm_away_prior = (market_total - market_spread) / (2.0 * match_minutes)
+
+    total_quarters = max(1, round(match_minutes / _BASKET_QUARTER_MINUTES))
+    current_quarter = min(total_quarters, int(minute // _BASKET_QUARTER_MINUTES) + 1)
+    next_quarter = current_quarter + 1
+    next_quarter_number = next_quarter if next_quarter <= total_quarters else None
+    next_q_home, next_q_away = _estimate_window_points(
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        match_minutes=match_minutes,
+        market_total=market_total,
+        market_spread=market_spread,
+        window_start_minute=(current_quarter) * _BASKET_QUARTER_MINUTES,
+        window_end_minute=(current_quarter + 1) * _BASKET_QUARTER_MINUTES,
+    )
 
     return BasketInPlayResult(
         home_team=home_team,
@@ -410,4 +496,7 @@ def simulate_basket_inplay(
         n_simulations=n,
         market_total_line=market_total_line,
         market_spread_line=market_spread_line,
+        next_quarter_number=next_quarter_number,
+        next_quarter_projection_home=next_q_home,
+        next_quarter_projection_away=next_q_away,
     )

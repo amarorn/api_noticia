@@ -145,6 +145,15 @@ export interface IWcRepository {
   registerComboProposal(
     body: import("@/application/dtos/comboProposal").ComboProposalApiBody,
   ): Promise<import("@/application/dtos/comboProposal").RegisterComboProposalResult>;
+  getBasketSuperbetLive(request?: {
+    sportId?: number;
+    allSports?: boolean;
+  }): Promise<import("@/domain/entities").BasketSuperbetLiveFeed>;
+  getBasketSuperbetLiveAdvice(request: {
+    eventId: number;
+    bankroll?: number;
+    fast?: boolean;
+  }): Promise<import("@/domain/entities").BasketSuperbetLiveAdvice>;
 }
 
 export interface IBrasileiraoRepository {

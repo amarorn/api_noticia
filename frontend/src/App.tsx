@@ -16,6 +16,7 @@ import { SchedulePage } from "@/presentation/pages/SchedulePage";
 import { FriendliesPage } from "@/presentation/pages/FriendliesPage";
 import { LivePage } from "@/presentation/pages/LivePage";
 import { LiveDashboardPage } from "@/presentation/pages/LiveDashboardPage";
+import { BasketLiveInPlayPage } from "@/presentation/pages/BasketLiveInPlayPage";
 import { AlbumPage } from "@/presentation/pages/AlbumPage";
 import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
 import { CarteiraPage } from "@/presentation/pages/CarteiraPage";
@@ -63,6 +64,7 @@ export function App() {
               <Route path="ao-vivo" element={<LivePage />} />
               <Route path="ao-vivo/:eventId" element={<LiveDashboardPage />} />
               <Route path="ao-vivo/:eventId/painel" element={<Navigate to="/ao-vivo/:eventId" replace />} />
+              <Route path="ao-vivo/basquete/:eventId" element={<BasketLiveInPlayPage />} />
               <Route path="convocacoes" element={<SquadsPage />} />
               <Route path="grupos" element={<WcGroupsPage />} />
               <Route path="album/:teamSlug" element={<TeamAlbumPage />} />

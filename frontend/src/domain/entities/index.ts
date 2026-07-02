@@ -1603,3 +1603,104 @@ export interface UserOpenBetsList {
   count: number;
   bets: UserOpenBet[];
 }
+
+// ---------------------------------------------------------------------------
+// Basquete In-Play (NBA / Superbet)
+// ---------------------------------------------------------------------------
+
+export interface BasketSuperbetLiveEvent {
+  eventId: number;
+  homeTeam: string;
+  awayTeam: string;
+  eventName: string;
+  sportId: number;
+  tournamentId: number | null;
+  utcDate: string | null;
+  betradarId: string | null;
+  minute: number;
+  homeScore: number;
+  awayScore: number;
+  periodLabel: string | null;
+  status: string | null;
+  marketCount: number;
+  h2hOdds: Record<string, number>;
+  capturedAt: string;
+}
+
+export interface BasketSuperbetLiveFeed {
+  count: number;
+  sportId: number | null;
+  events: BasketSuperbetLiveEvent[];
+  capturedAt: string;
+}
+
+export interface BasketInPlaySummary {
+  probHomeWin: number | null;
+  probAwayWin: number | null;
+  expectedFinalHome: number | null;
+  expectedFinalAway: number | null;
+  expectedTotal: number | null;
+  remainingMinutes: number | null;
+  moneylineProbs: Record<string, number>;
+  spreadProbs: Record<string, number>;
+  totalProbs: Record<string, number>;
+  ppmHome: number | null;
+  ppmAway: number | null;
+  marketTotalLine: number | null;
+  marketSpreadLine: number | null;
+  nextQuarterNumber: number | null;
+  nextQuarterProjectionHome: number | null;
+  nextQuarterProjectionAway: number | null;
+}
+
+export interface BasketQuarterScore {
+  num: number;
+  home: number;
+  away: number;
+}
+
+export interface BasketAporteAdvice {
+  market: string;
+  outcome: string;
+  label: string;
+  modelProb: number;
+  marketOdd: number;
+  impliedProb: number;
+  expectedValue: number;
+  edgePp: number;
+  kellyQuarter: number;
+  suggestedStakePct: number;
+  suggestedStakeValue: number | null;
+  action: string;
+}
+
+export interface BasketConfidence {
+  score: number;
+  label: string;
+  maxEdgePp: number;
+}
+
+export interface BasketSuperbetLiveAdvice {
+  homeTeam: string;
+  awayTeam: string;
+  minute: number;
+  currentScore: string | null;
+  periodLabel: string | null;
+  status: string | null;
+  basketPeriods: BasketQuarterScore[];
+  isFinished: boolean;
+  isLive: boolean;
+  superbetStale: boolean;
+  superbetEventId: number;
+  sportId: number | null;
+  capturedAt: string | null;
+  h2hOdds: Record<string, number>;
+  h2hImplied: Record<string, number>;
+  spreadOdds: Record<string, Record<string, number>>;
+  spreadImplied: Record<string, Record<string, number>>;
+  totalPointsOdds: Record<string, Record<string, number>>;
+  totalPointsImplied: Record<string, Record<string, number>>;
+  inplaySummary: BasketInPlaySummary;
+  aportes: BasketAporteAdvice[];
+  confidence: BasketConfidence | null;
+}

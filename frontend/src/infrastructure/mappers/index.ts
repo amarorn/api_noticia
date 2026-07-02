@@ -32,6 +32,8 @@ import type {
   WcSimulationLineupPlayer,
   SuperbetLiveAdvice,
   SuperbetLiveEvent,
+  BasketSuperbetLiveFeed,
+  BasketSuperbetLiveAdvice,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -2265,5 +2267,180 @@ export function mapUserOpenBets(raw: {
       bonusPercentage: b.bonus_percentage ?? null,
       finalPayout: b.final_payout ?? null,
     })),
+  };
+}
+
+interface ApiBasketSuperbetLiveFeed {
+  count: number;
+  sport_id: number | null;
+  captured_at: string;
+  events: Array<{
+    event_id: number;
+    home_team: string;
+    away_team: string;
+    event_name: string;
+    sport_id: number;
+    tournament_id: number | null;
+    utc_date: string | null;
+    betradar_id: string | null;
+    minute: number;
+    home_score: number;
+    away_score: number;
+    period_label: string | null;
+    status: string | null;
+    market_count: number;
+    h2h_odds: Record<string, number>;
+    captured_at: string;
+  }>;
+}
+
+export function mapBasketSuperbetLiveFeed(raw: ApiBasketSuperbetLiveFeed): BasketSuperbetLiveFeed {
+  return {
+    count: raw.count,
+    sportId: raw.sport_id,
+    capturedAt: raw.captured_at,
+    events: raw.events.map((event) => ({
+      eventId: event.event_id,
+      homeTeam: event.home_team,
+      awayTeam: event.away_team,
+      eventName: event.event_name,
+      sportId: event.sport_id,
+      tournamentId: event.tournament_id,
+      utcDate: event.utc_date,
+      betradarId: event.betradar_id,
+      minute: event.minute,
+      homeScore: event.home_score,
+      awayScore: event.away_score,
+      periodLabel: event.period_label,
+      status: event.status,
+      marketCount: event.market_count,
+      h2hOdds: event.h2h_odds ?? {},
+      capturedAt: event.captured_at,
+    })),
+  };
+}
+
+interface ApiBasketSuperbetLiveAdvice {
+  home_team: string;
+  away_team: string;
+  minute: number;
+  current_score: string | null;
+  period_label: string | null;
+  status: string | null;
+  basket_periods?: Array<{ num: number; home: number; away: number }>;
+  is_finished: boolean;
+  is_live: boolean;
+  superbet_stale: boolean;
+  superbet_event_id: number;
+  sport_id: number | null;
+  captured_at: string;
+  h2h_odds: Record<string, number>;
+  h2h_implied: Record<string, number>;
+  spread_odds: Record<string, Record<string, number>>;
+  spread_implied: Record<string, Record<string, number>>;
+  total_points_odds: Record<string, Record<string, number>>;
+  total_points_implied: Record<string, Record<string, number>>;
+  inplay_summary: {
+    prob_home_win?: number | null;
+    prob_away_win?: number | null;
+    expected_final_home?: number | null;
+    expected_final_away?: number | null;
+    expected_total?: number | null;
+    remaining_minutes?: number | null;
+    moneyline_probs?: Record<string, number>;
+    spread_probs?: Record<string, number>;
+    total_probs?: Record<string, number>;
+    ppm_home?: number | null;
+    ppm_away?: number | null;
+    market_total_line?: number | null;
+    market_spread_line?: number | null;
+    next_quarter_number?: number | null;
+    next_quarter_projection_home?: number | null;
+    next_quarter_projection_away?: number | null;
+  };
+  aportes: Array<{
+    market: string;
+    outcome: string;
+    label: string;
+    model_prob: number;
+    market_odd: number;
+    implied_prob: number;
+    expected_value: number;
+    edge_pp: number;
+    kelly_quarter: number;
+    suggested_stake_pct: number;
+    suggested_stake_value?: number | null;
+    action: string;
+  }>;
+  confidence: { score: number; label: string; max_edge_pp: number } | null;
+}
+
+export function mapBasketSuperbetLiveAdvice(
+  raw: ApiBasketSuperbetLiveAdvice,
+): BasketSuperbetLiveAdvice {
+  const summary = raw.inplay_summary ?? {};
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    minute: raw.minute,
+    currentScore: raw.current_score,
+    periodLabel: raw.period_label,
+    status: raw.status,
+    basketPeriods: (raw.basket_periods ?? []).map((p) => ({
+      num: p.num,
+      home: p.home,
+      away: p.away,
+    })),
+    isFinished: raw.is_finished,
+    isLive: raw.is_live,
+    superbetStale: raw.superbet_stale,
+    superbetEventId: raw.superbet_event_id,
+    sportId: raw.sport_id ?? null,
+    capturedAt: raw.captured_at ?? null,
+    h2hOdds: raw.h2h_odds ?? {},
+    h2hImplied: raw.h2h_implied ?? {},
+    spreadOdds: raw.spread_odds ?? {},
+    spreadImplied: raw.spread_implied ?? {},
+    totalPointsOdds: raw.total_points_odds ?? {},
+    totalPointsImplied: raw.total_points_implied ?? {},
+    inplaySummary: {
+      probHomeWin: summary.prob_home_win ?? null,
+      probAwayWin: summary.prob_away_win ?? null,
+      expectedFinalHome: summary.expected_final_home ?? null,
+      expectedFinalAway: summary.expected_final_away ?? null,
+      expectedTotal: summary.expected_total ?? null,
+      remainingMinutes: summary.remaining_minutes ?? null,
+      moneylineProbs: summary.moneyline_probs ?? {},
+      spreadProbs: summary.spread_probs ?? {},
+      totalProbs: summary.total_probs ?? {},
+      ppmHome: summary.ppm_home ?? null,
+      ppmAway: summary.ppm_away ?? null,
+      marketTotalLine: summary.market_total_line ?? null,
+      marketSpreadLine: summary.market_spread_line ?? null,
+      nextQuarterNumber: summary.next_quarter_number ?? null,
+      nextQuarterProjectionHome: summary.next_quarter_projection_home ?? null,
+      nextQuarterProjectionAway: summary.next_quarter_projection_away ?? null,
+    },
+    aportes: (raw.aportes ?? []).map((a) => ({
+      market: a.market,
+      outcome: a.outcome,
+      label: a.label,
+      modelProb: a.model_prob,
+      marketOdd: a.market_odd,
+      impliedProb: a.implied_prob,
+      expectedValue: a.expected_value,
+      edgePp: a.edge_pp,
+      kellyQuarter: a.kelly_quarter,
+      suggestedStakePct: a.suggested_stake_pct,
+      suggestedStakeValue: a.suggested_stake_value ?? null,
+      action: a.action,
+    })),
+    confidence: raw.confidence
+      ? {
+          score: raw.confidence.score,
+          label: raw.confidence.label,
+          maxEdgePp: raw.confidence.max_edge_pp,
+        }
+      : null,
   };
 }

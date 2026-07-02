@@ -506,6 +506,28 @@ Superbet API → fetch_event_with_stale_fallback() → SuperbetEventSnapshot
 - O modelo in-play usa λ (força de ataque) **fixo do pré-jogo** — não se adapta a eventos reais (gol, cartão, substituição, posse). Ver `docs/analise-inplay-backend.md`.
 - Fallback stale serve dados desatualizados; poll precisa capturar ao menos um tick para popular bronze.
 
+### Basquete In-Play (MVP — NBA)
+Modelo dedicado separado do futebol (`models/basket_inplay.py`). Usa prior de mercado (total/spread/moneyline) e simula o restante do jogo por distribuição normal de pontos por minuto, com Bayesian update no total e ajustes de clutch/lead.
+
+| Camada | Responsabilidade |
+|--------|------------------|
+| `models/basket_inplay.py` | `simulate_basket_inplay()` — Monte Carlo de pontos, moneyline/spread/total |
+| `models/basket_bet_advice.py` | EV/Kelly para basquete, reutiliza `evaluate_outcome` |
+| `ingest/superbet/basket_advice.py` | `run_basket_live_advice()` — orquestra snapshot → modelo → JSON |
+| `ingest/superbet/parser.py` | Extração de `moneyline_odds`, `spread_odds`, `total_points_odds` |
+| `api/routers/basket.py` | Endpoints `/basket/superbet/*` |
+
+**Endpoints API:**
+- `GET /basket/superbet/live` — lista eventos ao vivo de basquete (`sport_id` configurável)
+- `GET /basket/superbet/live/{event_id}/advice` — inplay_summary + aportes
+- `GET /basket/superbet/events/{event_id}` — snapshot bruto
+
+**Config:** `BASKET_SPORT_ID`, `BASKET_MATCH_MINUTES`, `BASKET_PRIOR_WEIGHT`, etc. (ver `.env.example`).
+
+**Limitações conhecidas:**
+- MVP cobre apenas NBA (48 min); mercados por quarto e Euroleague ficam para versões futuras.
+- `BASKET_SPORT_ID` precisa ser confirmado para a Superbet BR (default `7`).
+
 ### Amistosos internacionais (Sofascore + FIFA)
 Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no frontend).
 
