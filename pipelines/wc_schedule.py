@@ -38,6 +38,7 @@ def build_schedule_response(data: dict) -> dict:
         "matchdays": sorted({m["round"] for m in matches}),
         "matches": matches,
         "total_matches": len(matches),
+        "results_synced_at": data.get("results_synced_at"),
         "predictions_summary": {
             "loaded": len(predictions_map),
             "distribution": dist,
@@ -94,6 +95,9 @@ def _normalize_match(match: dict, data: dict) -> dict:
     home = match["home_team"]
     away = match["away_team"]
     match_id = match.get("id") or _slug_match(home, away, match.get("round", 1))
+    home_score = match.get("home_score")
+    away_score = match.get("away_score")
+    played = home_score is not None and away_score is not None
     return {
         "match_id": match_id,
         "home_team": home,
@@ -104,6 +108,10 @@ def _normalize_match(match: dict, data: dict) -> dict:
         "kickoff": match.get("kickoff"),
         "venue": match.get("venue"),
         "city": match.get("city"),
+        "fifa_stage": match.get("fifa_stage"),
+        "home_score": home_score,
+        "away_score": away_score,
+        "played": played,
     }
 
 

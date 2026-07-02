@@ -81,7 +81,7 @@ export function MatchTicketsPage() {
     comboOdd != null ? Math.round(LONGSHOT_STAKE_BRL * comboOdd * 100) / 100 : null;
 
   return (
-    <PageTransition className="space-y-8 pb-24">
+    <PageTransition>
       <HeroPageHeader
         title={`${homeTeam} × ${awayTeam}`}
         subtitle="Monte bilhetes com R$ 5 e alvo de retorno alto (longshot @100+)"

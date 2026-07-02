@@ -47,6 +47,8 @@ import { LivePredictionEvolutionChart } from "@/presentation/components/live-das
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
 import { useLiveCopilotQuery } from "@/presentation/hooks/useLiveCopilotQuery";
 import { useLiveCopilotActionAlerts } from "@/presentation/hooks/useLiveCopilotActionAlerts";
+import { useLiveCopilotAgentSession } from "@/presentation/hooks/useLiveCopilotAgentSession";
+import { useCopilotAlertsPreference } from "@/presentation/hooks/useCopilotAlertsPreference";
 import { useLivePossessionHistory } from "@/presentation/hooks/useLivePossessionHistory";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
 import { useLivePredictionHistory } from "@/presentation/hooks/useLivePredictionHistory";
@@ -1153,6 +1155,7 @@ export function LiveDashboardPage() {
   } = useLiveAdviceQueries(eventId, 1000, null, advicePhase);
 
   const copilotEnabled = Boolean(data?.isLive && !data?.isFinished && eventId > 0);
+  const { alertsActive: copilotAlertsActive } = useCopilotAlertsPreference();
   const copilotQuery = useLiveCopilotQuery({
     eventId,
     sport: "football",
@@ -1165,7 +1168,53 @@ export function LiveDashboardPage() {
     eventId,
     homeTeam: data?.homeTeam,
     awayTeam: data?.awayTeam,
+    enabled: copilotEnabled && copilotAlertsActive,
+  });
+
+  const addCopilotLegsToTicket = useCallback(
+    (legs: import("@/domain/entities").LiveCopilotUiLeg[]) => {
+      if (!data) return;
+      legs.forEach((perna) => {
+        ticket.add({
+          id: `${eventId}_${perna.market}_${perna.outcome}`,
+          home: data.homeTeam,
+          away: data.awayTeam,
+          group: null,
+          kickoff: "",
+          label: perna.label,
+          market: perna.market,
+          fairOdd:
+            perna.modelProb != null && perna.modelProb > 0
+              ? +(1 / perna.modelProb).toFixed(2)
+              : perna.marketOdd ?? 0,
+          modelProb: perna.modelProb ?? 0,
+          confidence:
+            (perna.expectedValue ?? 0) >= 0.1
+              ? "Alta"
+              : (perna.expectedValue ?? 0) >= 0.05
+                ? "Média"
+                : "Baixa",
+          type: "live",
+          liveMinute: data.minute,
+          liveScore: data.currentScore ?? undefined,
+        });
+      });
+    },
+    [data, eventId, ticket],
+  );
+
+  const { displayCopilot, agentChat } = useLiveCopilotAgentSession({
+    eventId,
+    sport: "football",
+    phase: advicePhase,
+    bankroll: 1000,
     enabled: copilotEnabled,
+    baseCopilot: copilotQuery.data,
+    onAddTicketLegs: (legs) => {
+      addCopilotLegsToTicket(legs);
+      setActiveTab("bilhete");
+    },
+    onSwitchTab: (tab) => setActiveTab(tab),
   });
 
   const possessionHistory = useLivePossessionHistory(data);
@@ -1369,7 +1418,7 @@ export function LiveDashboardPage() {
   ]);
 
   return (
-    <PageTransition className="space-y-0 pb-24">
+    <PageTransition live className="space-y-0 pb-24">
 
       {/* Placar + abas (top bar unificada no AppLayout) */}
       <div className="sticky top-0 z-30 -mx-2 sm:-mx-4">
@@ -1445,37 +1494,24 @@ export function LiveDashboardPage() {
                 {activeTab === "resumo" && (
                   <div className="space-y-4">
                     <LiveCopilotPanel
-                      copilot={copilotQuery.data}
+                      copilot={displayCopilot}
                       isLoading={copilotQuery.isLoading}
                       isFetching={copilotQuery.isFetching}
+                      agentChat={agentChat}
                       onAddBilheteToTicket={() => {
-                        const bilhete = copilotQuery.data?.bilhete;
+                        const bilhete = displayCopilot?.bilhete;
                         if (!bilhete?.pernas.length || !data) return;
-                        bilhete.pernas.forEach((perna) => {
-                          ticket.add({
-                            id: `${eventId}_${perna.market}_${perna.outcome}`,
-                            home: data.homeTeam,
-                            away: data.awayTeam,
-                            group: null,
-                            kickoff: "",
-                            label: perna.label,
+                        addCopilotLegsToTicket(
+                          bilhete.pernas.map((perna) => ({
                             market: perna.market,
-                            fairOdd:
-                              perna.modelProb != null && perna.modelProb > 0
-                                ? +(1 / perna.modelProb).toFixed(2)
-                                : perna.marketOdd ?? 0,
-                            modelProb: perna.modelProb ?? 0,
-                            confidence:
-                              (perna.expectedValue ?? 0) >= 0.1
-                                ? "Alta"
-                                : (perna.expectedValue ?? 0) >= 0.05
-                                  ? "Média"
-                                  : "Baixa",
-                            type: "live",
-                            liveMinute: data.minute,
-                            liveScore: data.currentScore ?? undefined,
-                          });
-                        });
+                            outcome: perna.outcome,
+                            label: perna.label,
+                            modelProb: perna.modelProb,
+                            marketOdd: perna.marketOdd,
+                            expectedValue: perna.expectedValue,
+                            edgePp: perna.edgePp,
+                          })),
+                        );
                         setActiveTab("bilhete");
                       }}
                     />

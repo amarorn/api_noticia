@@ -54,7 +54,7 @@ export function HistoricalValidationPage() {
   };
 
   return (
-    <PageTransition className="space-y-4">
+    <PageTransition>
       <HeroPageHeader
         title="Validar histórico"
         subtitle="Backtest jogo a jogo com recorte temporal — sem vazamento de dados futuros"

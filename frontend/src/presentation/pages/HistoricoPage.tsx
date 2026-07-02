@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/infrastructure/api/client";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
+import { AppTableShell } from "@/presentation/components/layout/AppTableShell";
+import { AppKpiCard } from "@/presentation/components/layout/AppKpiCard";
 import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { FilterBar, FilterChip } from "@/presentation/components/ui/FilterBar";
@@ -122,7 +124,7 @@ export function HistoricoPage() {
   const isError = settledQuery.isError || openQuery.isError;
 
   return (
-    <PageTransition className="space-y-5">
+    <PageTransition>
       <PageHeader
         title="Histórico de palpites"
         subtitle="Apostas abertas e finalizadas — previsto vs. resultado real"
@@ -148,12 +150,12 @@ export function HistoricoPage() {
             { label: "ROI", value: `${summary.roi_pct.toFixed(1)}%` },
             { label: "Hit rate", value: `${summary.win_rate_pct.toFixed(0)}%` },
           ].map((card) => (
-            <div key={card.label} className="glass-card p-3">
-              <p className="text-[11px] text-slate-500">{card.label}</p>
-              <p className={`font-mono text-lg font-bold ${card.color || "text-white"}`}>
-                {card.value}
-              </p>
-            </div>
+            <AppKpiCard
+              key={card.label}
+              label={card.label}
+              value={card.value}
+              valueClassName={`font-mono text-lg font-bold ${card.color || "text-white"}`}
+            />
           ))}
         </div>
       )}
@@ -164,7 +166,7 @@ export function HistoricoPage() {
           placeholder="Filtrar seleção..."
           value={teamQuery}
           onChange={(e) => setTeamQuery(e.target.value)}
-          className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-white"
+          className="app-input w-full max-w-xs sm:w-64"
         />
       </div>
 
@@ -216,9 +218,9 @@ export function HistoricoPage() {
           description="Cadastre apostas na tela Ao Vivo ou importe finalizados via extensão Superbet."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-700/50">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-slate-700/50 text-slate-400">
+        <AppTableShell>
+          <table className="w-full min-w-full text-left text-xs">
+            <thead>
               <tr>
                 <th className="px-3 py-2">Jogo</th>
                 <th className="hidden px-3 py-2 sm:table-cell">Mercado</th>
@@ -231,7 +233,7 @@ export function HistoricoPage() {
             </thead>
             <tbody>
               {filtered.map((row, idx) => (
-                <tr key={`${row.id ?? idx}-${row.kind}`} className="border-b border-slate-800/60">
+                <tr key={`${row.id ?? idx}-${row.kind}`} className="text-slate-200">
                   <td className="px-3 py-2 text-white">
                     {row.home_team} × {row.away_team}
                   </td>
@@ -251,7 +253,7 @@ export function HistoricoPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </AppTableShell>
       )}
 
       {!performanceQuery.data?.report && !performanceQuery.isLoading && (

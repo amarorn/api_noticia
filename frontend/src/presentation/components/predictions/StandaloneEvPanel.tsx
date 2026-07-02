@@ -58,7 +58,7 @@ export function StandaloneEvPanel({ homeTeam, awayTeam, probabilities }: Standal
                 className={`rounded-lg border px-3 py-2 text-left text-xs ${
                   market === opt.value
                     ? "border-neon-green/40 bg-neon-green/10 text-neon-green"
-                    : "border-slate-700 text-slate-300"
+                    : "border-white/8 text-slate-300"
                 }`}
               >
                 <span className="block font-medium">{opt.label}</span>
@@ -77,12 +77,12 @@ export function StandaloneEvPanel({ homeTeam, awayTeam, probabilities }: Standal
               placeholder="Ex: 2.35"
               value={manualOdd}
               onChange={(e) => setManualOdd(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 font-mono text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-white/8 bg-black/25 px-3 py-2 font-mono text-sm text-white"
             />
           </label>
 
           {hasOdd && ev != null && (
-            <div className="rounded-lg border border-slate-700/50 bg-slate-900/40 p-3 text-xs">
+            <div className="rounded-lg border border-white/8 bg-slate-900/40 p-3 text-xs">
               <p className="text-slate-400">
                 Prob. modelo: <span className="font-mono text-white">{formatPercent(prob)}</span>
               </p>

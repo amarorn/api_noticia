@@ -28,14 +28,14 @@ interface FilterBarProps {
 
 export function FilterBar({ label, children }: FilterBarProps) {
   return (
-    <section className="space-y-3" aria-label={label}>
+    <section className="live-glass-panel space-y-2.5 px-3 py-3 sm:px-4" aria-label={label}>
       <p className="section-label">{label}</p>
-      <div className="relative -mx-1">
-        <div className="flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin snap-x snap-mandatory">
+      <div className="relative -mx-0.5">
+        <div className="flex flex-wrap gap-2 overflow-x-auto px-0.5 pb-0.5 scrollbar-thin snap-x snap-mandatory">
           {children}
         </div>
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-surface/90 to-transparent"
+          className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[rgba(10,16,32,0.9)] to-transparent sm:hidden"
           aria-hidden
         />
       </div>

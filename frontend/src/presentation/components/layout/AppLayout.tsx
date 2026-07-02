@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getHealthUseCase, getWcScheduleUseCase } from "@/application/container";
 import { AppSidebar } from "./AppSidebar";
 import { AppMobileHeader } from "./AppMobileHeader";
-import { PageBreadcrumb } from "./PageBreadcrumb";
 import { AmbientBackground } from "./AmbientBackground";
 import { AnimatedOutlet } from "./AnimatedOutlet";
 import { ApiOfflineBanner } from "./ApiOfflineBanner";
@@ -106,7 +105,7 @@ function AppLayoutInner() {
 
   return (
     <AppShellContext.Provider value={shellValue}>
-    <div className={`flex h-screen w-screen overflow-hidden ${isLiveDashboard ? "flex-col bg-transparent" : "bg-surface"}`}>
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-transparent">
       <a href="#main-content" className="skip-link">
         Ir para o conteúdo
       </a>
@@ -153,31 +152,16 @@ function AppLayoutInner() {
         {/* Scroll wrapper com scroll inteligente */}
         <main
           id="main-scroll"
-          className={`relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin ${
-            isLiveDashboard ? "live-dashboard-main bg-transparent" : ""
-          }`}
+          className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin live-dashboard-main bg-transparent"
           onScroll={handleScroll}
         >
-          {/* Breadcrumb / banner — omitido no dashboard ao vivo (header próprio) */}
-          {!isLiveDashboard && (
-            <div className="sticky top-0 z-30">
-              <div
-                className="absolute inset-0 backdrop-blur-xl"
-                style={{
-                  background: "linear-gradient(to bottom, rgba(5,8,17,0.95) 0%, rgba(5,8,17,0.80) 50%, transparent 100%)",
-                  WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-                  maskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-                }}
+          {/* Breadcrumb omitido — navegação via sidebar, padrão dashboard ao vivo */}
+          {!isLiveDashboard && !healthPending && healthError && !bannerDismissed && (
+            <div className="sticky top-0 z-40 px-4 pt-2 sm:px-6">
+              <ApiOfflineBanner
+                onRetry={() => refetchHealth()}
+                onDismiss={() => setBannerDismissed(true)}
               />
-              <div className="relative mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4">
-                {!healthPending && healthError && !bannerDismissed && (
-                  <ApiOfflineBanner
-                    onRetry={() => refetchHealth()}
-                    onDismiss={() => setBannerDismissed(true)}
-                  />
-                )}
-                <PageBreadcrumb />
-              </div>
             </div>
           )}
           {isLiveDashboard && !healthPending && healthError && !bannerDismissed && (
@@ -190,12 +174,7 @@ function AppLayoutInner() {
           )}
 
           {/* Conteúdo da página */}
-          <div
-            id="main-content"
-            className={`relative mx-auto pb-4 sm:pb-6 ${
-              isLiveDashboard ? "max-w-none px-2 pt-0 sm:px-4" : "max-w-7xl px-4 sm:px-6"
-            }`}
-          >
+          <div id="main-content" className="relative mx-auto max-w-none">
             <AnimatedOutlet />
           </div>
 

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/infrastructure/api/client";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
+import { LiveDashboardTabs } from "@/presentation/components/live-dashboard/LiveDashboardTabs";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { teamColor } from "@/data/teamColors";
@@ -21,6 +22,7 @@ interface TodayMatch {
   group: string | null;
   phase: string;
   played: boolean;
+  status?: string;
   home_score?: number | null;
   away_score?: number | null;
   prob_home: number;
@@ -119,6 +121,11 @@ interface AnalysisResponse {
   away_team: string;
   phase: string;
   group: string | null;
+  kickoff_utc?: string | null;
+  kickoff_date?: string | null;
+  kickoff_local?: string | null;
+  venue?: string | null;
+  city?: string | null;
   prediction: string;
   confidence: number;
   prob_home: number;
@@ -155,7 +162,7 @@ function ProbBar({ home, draw, away, homeTeam, awayTeam }: {
   const aPct = Math.round(away * 100);
   return (
     <div className="space-y-1">
-      <div className="flex text-xs text-neutral-400 justify-between mb-1">
+      <div className="flex text-xs text-slate-400 justify-between mb-1">
         <span>{homeTeam}</span>
         <span>Empate</span>
         <span>{awayTeam}</span>
@@ -173,7 +180,7 @@ function ProbBar({ home, draw, away, homeTeam, awayTeam }: {
       </div>
       <div className="flex text-xs justify-between font-mono">
         <span className="text-blue-400">{hPct}%</span>
-        <span className="text-neutral-400">{dPct}%</span>
+        <span className="text-slate-400">{dPct}%</span>
         <span className="text-orange-400">{aPct}%</span>
       </div>
     </div>
@@ -217,14 +224,14 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
       ? "text-emerald-400 bg-emerald-900/30 border-emerald-700/40"
       : c === "Média"
       ? "text-blue-400 bg-blue-900/30 border-blue-700/40"
-      : "text-neutral-400 bg-neutral-800/40 border-neutral-600/30";
+      : "text-slate-400 bg-white/5 border-white/8";
 
   if (!triggered) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
         <div className="text-4xl">🔬</div>
-        <div className="text-base font-semibold text-neutral-200">Deep Research com IA</div>
-        <div className="text-sm text-neutral-400 max-w-xs">
+        <div className="text-base font-semibold text-slate-200">Deep Research com IA</div>
+        <div className="text-sm text-slate-400 max-w-xs">
           Pesquisa em tempo real via <span className="text-blue-400 font-semibold">Google Search</span> +
           síntese com <span className="text-purple-400 font-semibold">Gemini</span>.
           <br />Pode levar até 30s.
@@ -243,9 +250,9 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3">
         <div className="animate-spin text-3xl">🔬</div>
-        <div className="text-sm text-neutral-400 text-center">
+        <div className="text-sm text-slate-400 text-center">
           Pesquisando no Google e sintetizando com IA...
-          <br /><span className="text-xs text-neutral-600">Gemini + Google Search Grounding</span>
+          <br /><span className="text-xs text-slate-600">Gemini + Google Search Grounding</span>
         </div>
       </div>
     );
@@ -257,10 +264,10 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
       <div className="flex flex-col items-center justify-center py-10 gap-4 text-center px-4">
         <div className="text-3xl">⚠️</div>
         <div className="text-sm text-red-400 font-semibold">Falha na pesquisa</div>
-        <div className="text-xs text-neutral-500 max-w-sm">{msg}</div>
+        <div className="text-xs text-slate-500 max-w-sm">{msg}</div>
         <button
           onClick={() => { setTriggered(false); setTimeout(() => setTriggered(true), 50); }}
-          className="mt-2 px-5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-semibold transition-colors"
+          className="mt-2 px-5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors"
         >
           Tentar novamente
         </button>
@@ -280,7 +287,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {data.from_cache && (
-            <span className="text-xs text-neutral-500 bg-neutral-800 px-2 py-0.5 rounded-full">{cacheInfo}</span>
+            <span className="text-xs text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">{cacheInfo}</span>
           )}
           {isLocalSynthesis && (
             <span className="text-xs text-emerald-400 bg-emerald-900/20 border border-emerald-700/30 px-2 py-0.5 rounded-full">
@@ -295,7 +302,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
         </div>
         <button
           onClick={() => { setForceRefresh(true); void refetch(); }}
-          className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+          className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
         >
           ↻ Atualizar
         </button>
@@ -320,8 +327,8 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
                 Confiança {s.confianca_geral}
               </span>
             </div>
-            <p className="text-sm text-neutral-200 leading-relaxed">{s.resumo_executivo}</p>
-            <div className="mt-2 text-xs text-neutral-400">
+            <p className="text-sm text-slate-200 leading-relaxed">{s.resumo_executivo}</p>
+            <div className="mt-2 text-xs text-slate-400">
               Favorito: <span className="text-white font-semibold">{s.favorito}</span>
               {" · "}Placar provável: <span className="text-emerald-300 font-mono font-bold">{s.placar_provavel}</span>
             </div>
@@ -330,7 +337,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
           {/* Picks recomendados */}
           {s.picks_recomendados?.length > 0 && (
             <div>
-              <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Picks Recomendados pela IA
               </div>
               <div className="space-y-2">
@@ -342,11 +349,11 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
                         <span className="text-lg w-7 flex-shrink-0 text-center">{medal}</span>
                         <div>
                           <div className="font-semibold text-sm text-white">{p.aposta}</div>
-                          <div className="text-xs text-neutral-400 mt-0.5">{p.racional}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">{p.racional}</div>
                         </div>
                         <span className={`ml-auto text-xs font-semibold flex-shrink-0 ${
                           p.nivel_confianca === "Alta" ? "text-emerald-400" :
-                          p.nivel_confianca === "Média" ? "text-blue-400" : "text-neutral-400"
+                          p.nivel_confianca === "Média" ? "text-blue-400" : "text-slate-400"
                         }`}>{p.nivel_confianca}</span>
                       </div>
                     </div>
@@ -362,8 +369,8 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
               { team: data.home_team, esc: s.escalacao_home },
               { team: data.away_team, esc: s.escalacao_away },
             ].map(({ team, esc }) => (
-              <div key={team} className="rounded-lg bg-neutral-800/40 p-3">
-                <div className="text-xs font-bold text-neutral-300 mb-1">{team}</div>
+              <div key={team} className="rounded-lg bg-white/5 p-3">
+                <div className="text-xs font-bold text-slate-300 mb-1">{team}</div>
                 <div className={`text-xs mb-1 ${esc.status === "Completo" ? "text-emerald-400" : "text-amber-400"}`}>
                   {esc.status}
                 </div>
@@ -373,7 +380,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
                   </ul>
                 )}
                 {esc.destaque && (
-                  <div className="text-xs text-neutral-400 mt-1">⭐ {esc.destaque}</div>
+                  <div className="text-xs text-slate-400 mt-1">⭐ {esc.destaque}</div>
                 )}
               </div>
             ))}
@@ -381,28 +388,28 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
 
           {/* Árbitro + Projeção de Cartões */}
           {s.arbitro?.nome !== "Não divulgado" && (
-            <div className="rounded-lg bg-neutral-800/40 p-3 space-y-2">
-              <div className="text-xs font-bold text-neutral-400 mb-1">⚖️ Árbitro</div>
+            <div className="rounded-lg bg-white/5 p-3 space-y-2">
+              <div className="text-xs font-bold text-slate-400 mb-1">⚖️ Árbitro</div>
               <div className="text-sm text-white">{s.arbitro.nome}</div>
-              <div className="text-xs text-neutral-400">{s.arbitro.perfil}</div>
+              <div className="text-xs text-slate-400">{s.arbitro.perfil}</div>
               {/* Dados numéricos para projeção de cartões */}
               {(data.pregame_context?.referee_card_lambda != null || s.arbitro?.card_lambda != null) && (() => {
                 const lambda = data.pregame_context?.referee_card_lambda ?? s.arbitro?.card_lambda;
                 const penRate = data.pregame_context?.referee_penalty_rate ?? s.arbitro?.penalty_rate;
                 return (
-                  <div className="mt-2 pt-2 border-t border-neutral-700/40 grid grid-cols-2 gap-2">
+                  <div className="mt-2 pt-2 border-t border-white/10 grid grid-cols-2 gap-2">
                     {lambda != null && (
                       <div className="bg-amber-900/20 rounded-lg p-2 text-center border border-amber-700/30">
                         <div className="text-xs text-amber-400 font-semibold">Cartões/Jogo</div>
                         <div className="text-lg font-black text-amber-300 font-mono">{Number(lambda).toFixed(1)}</div>
-                        <div className="text-xs text-neutral-500">λ amarelos</div>
+                        <div className="text-xs text-slate-500">λ amarelos</div>
                       </div>
                     )}
                     {penRate != null && (
                       <div className="bg-red-900/20 rounded-lg p-2 text-center border border-red-700/30">
                         <div className="text-xs text-red-400 font-semibold">Pênaltis</div>
                         <div className="text-lg font-black text-red-300 font-mono">{(Number(penRate) * 100).toFixed(0)}%</div>
-                        <div className="text-xs text-neutral-500">% jogos com pen.</div>
+                        <div className="text-xs text-slate-500">% jogos com pen.</div>
                       </div>
                     )}
                   </div>
@@ -419,27 +426,27 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
 
           {/* Fatores + riscos */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-neutral-800/40 p-3">
+            <div className="rounded-lg bg-white/5 p-3">
               <div className="text-xs font-bold text-emerald-400 mb-2">✅ Principais Fatores</div>
               <ul className="space-y-1">
                 {s.principais_fatores?.map((f, i) => (
-                  <li key={i} className="text-xs text-neutral-300">• {f}</li>
+                  <li key={i} className="text-xs text-slate-300">• {f}</li>
                 ))}
               </ul>
             </div>
-            <div className="rounded-lg bg-neutral-800/40 p-3">
+            <div className="rounded-lg bg-white/5 p-3">
               <div className="text-xs font-bold text-amber-400 mb-2">⚠️ Alertas de Risco</div>
               <ul className="space-y-1">
                 {s.alertas_risco?.map((r, i) => (
-                  <li key={i} className="text-xs text-neutral-300">• {r}</li>
+                  <li key={i} className="text-xs text-slate-300">• {r}</li>
                 ))}
               </ul>
             </div>
           </div>
 
           {/* Análise mercados */}
-          <div className="rounded-lg bg-neutral-800/40 p-3 space-y-2">
-            <div className="text-xs font-bold text-neutral-400 mb-1">📊 Análise de Mercados</div>
+          <div className="rounded-lg bg-white/5 p-3 space-y-2">
+            <div className="text-xs font-bold text-slate-400 mb-1">📊 Análise de Mercados</div>
             {[
               ["1X2", s.analise_mercados?.resultado],
               ["Over/Under", s.analise_mercados?.over_under],
@@ -447,8 +454,8 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
               ["Handicap", s.analise_mercados?.handicap],
             ].filter(([, v]) => v).map(([k, v]) => (
               <div key={k as string}>
-                <span className="text-xs font-semibold text-neutral-500">{k}: </span>
-                <span className="text-xs text-neutral-300">{v}</span>
+                <span className="text-xs font-semibold text-slate-500">{k}: </span>
+                <span className="text-xs text-slate-300">{v}</span>
               </div>
             ))}
           </div>
@@ -463,10 +470,10 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
           {/* Fontes */}
           {data.web_research.citations.length > 0 && (
             <div>
-              <div className="text-xs font-semibold text-neutral-600 mb-1">Fontes consultadas</div>
+              <div className="text-xs font-semibold text-slate-600 mb-1">Fontes consultadas</div>
               <div className="space-y-0.5">
                 {data.web_research.citations.slice(0, 5).map((c, i) => (
-                  <div key={i} className="text-xs text-neutral-600 truncate">{i + 1}. {c}</div>
+                  <div key={i} className="text-xs text-slate-600 truncate">{i + 1}. {c}</div>
                 ))}
               </div>
             </div>
@@ -478,7 +485,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
           <div className="rounded-xl border border-amber-700/30 bg-amber-900/10 p-4 text-center">
             <div className="text-2xl mb-2">🤖</div>
             <div className="text-sm font-semibold text-amber-300 mb-1">Análise Local Ativa</div>
-            <div className="text-xs text-neutral-400 leading-relaxed">
+            <div className="text-xs text-slate-400 leading-relaxed">
               A síntese com IA externa (Gemini/Moonshot) está temporariamente indisponível.
               <br />
               <span className="text-emerald-400 font-semibold">
@@ -489,15 +496,15 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
             </div>
             <button
               onClick={() => { setForceRefresh(true); void refetch(); }}
-              className="mt-3 px-4 py-1.5 rounded-lg bg-neutral-700 hover:bg-neutral-600 text-xs text-neutral-300 transition-colors"
+              className="mt-3 px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs text-slate-300 transition-colors"
             >
               ↻ Tentar novamente com IA
             </button>
           </div>
           {data.web_research?.text && (
-            <div className="rounded-lg bg-neutral-800/40 p-4">
-              <div className="text-xs font-bold text-neutral-400 mb-2">Pesquisa Web coletada</div>
-              <p className="text-xs text-neutral-300 leading-relaxed whitespace-pre-wrap">
+            <div className="rounded-lg bg-white/5 p-4">
+              <div className="text-xs font-bold text-slate-400 mb-2">Pesquisa Web coletada</div>
+              <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
                 {data.web_research.text}
               </p>
             </div>
@@ -538,66 +545,66 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* Match header */}
-      <div className="p-4 border-b border-neutral-800">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex-1 text-center">
-            <div className="text-2xl font-bold" style={{ color: homeColor }}>{home}</div>
-            <div className="text-xs text-neutral-400 mt-1">Casa</div>
+      <div className="live-scoreboard mx-2 mt-2 border-b-0 sm:mx-4">
+        <div className="relative px-5 py-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold" style={{ color: homeColor }}>{home}</div>
+              <div className="mt-1 text-xs text-slate-400">Casa</div>
+            </div>
+            <div className="px-4 text-center">
+              <div className="font-mono text-3xl font-black text-white">VS</div>
+              {data.group && (
+                <div className="mt-1 text-xs font-semibold text-neon-green">Grupo {data.group}</div>
+              )}
+            </div>
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold" style={{ color: awayColor }}>{away}</div>
+              <div className="mt-1 text-xs text-slate-400">Visitante</div>
+            </div>
           </div>
-          <div className="text-center px-4">
-            <div className="text-3xl font-black text-neutral-300">VS</div>
-            {data.group && (
-              <div className="text-xs text-emerald-400 font-semibold mt-1">Grupo {data.group}</div>
+
+          <ProbBar
+            home={data.prob_home}
+            draw={data.prob_draw}
+            away={data.prob_away}
+            homeTeam={home}
+            awayTeam={away}
+          />
+
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            {data.kickoff_date && (
+              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-slate-300">
+                {data.kickoff_date === new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })
+                  ? "Hoje"
+                  : new Date(`${data.kickoff_date}T12:00:00`).toLocaleDateString("pt-BR")}{" "}
+                ·{" "}
+                {data.kickoff_utc
+                  ? formatKickoff(data.kickoff_utc)
+                  : data.kickoff_local ?? ""}
+              </span>
             )}
+            <span className="rounded-full border border-neon-green/30 bg-neon-green/10 px-3 py-1 font-semibold text-neon-green">
+              {data.prediction}
+            </span>
+            <span className="text-slate-400">
+              conf. <span className="font-mono text-white">{(data.confidence * 100).toFixed(1)}%</span>
+            </span>
+            <span className="text-slate-500">|</span>
+            <span className="text-slate-400">
+              xG <span className="font-mono text-white">{data.expected_goals}</span>
+            </span>
           </div>
-          <div className="flex-1 text-center">
-            <div className="text-2xl font-bold" style={{ color: awayColor }}>{away}</div>
-            <div className="text-xs text-neutral-400 mt-1">Visitante</div>
-          </div>
-        </div>
-
-        <ProbBar
-          home={data.prob_home}
-          draw={data.prob_draw}
-          away={data.prob_away}
-          homeTeam={home}
-          awayTeam={away}
-        />
-
-        <div className="mt-3 flex items-center gap-3 text-sm">
-          <span className="px-3 py-1 rounded-full bg-emerald-900/40 border border-emerald-600/40 text-emerald-300 font-semibold">
-            {data.prediction}
-          </span>
-          <span className="text-neutral-400">
-            conf. <span className="text-white font-mono">{(data.confidence * 100).toFixed(1)}%</span>
-          </span>
-          <span className="text-neutral-500">|</span>
-          <span className="text-neutral-400">
-            xG <span className="text-white font-mono">{data.expected_goals}</span>
-          </span>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-neutral-800 overflow-x-auto">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-              tab === t.key
-                ? "text-emerald-400 border-b-2 border-emerald-500"
-                : "text-neutral-400 hover:text-neutral-200"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <LiveDashboardTabs
+        tabs={TABS.map((t) => ({ id: t.key, label: t.label }))}
+        activeId={tab}
+        onChange={(id) => setTab(id as Tab)}
+      />
 
-      {/* Tab content */}
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4 pt-3">
 
         {/* ── BILHETE ── */}
         {tab === "bilhete" && (
@@ -614,19 +621,19 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
                 </div>
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   <div className="bg-black/30 rounded-lg p-2 text-center">
-                    <div className="text-xs text-neutral-400">Odd Justa</div>
+                    <div className="text-xs text-slate-400">Odd Justa</div>
                     <div className="text-xl font-black text-emerald-300 font-mono">
                       {data.ticket.combo.fair_odd?.toFixed(2) ?? "—"}
                     </div>
                   </div>
                   <div className="bg-black/30 rounded-lg p-2 text-center">
-                    <div className="text-xs text-neutral-400">Prob. Modelo</div>
+                    <div className="text-xs text-slate-400">Prob. Modelo</div>
                     <div className="text-xl font-black text-blue-300 font-mono">
                       {(data.ticket.combo.model_prob * 100).toFixed(0)}%
                     </div>
                   </div>
                   <div className="bg-black/30 rounded-lg p-2 text-center">
-                    <div className="text-xs text-neutral-400">Kelly 25%</div>
+                    <div className="text-xs text-slate-400">Kelly 25%</div>
                     <div className="text-xl font-black text-amber-300 font-mono">
                       {data.ticket.combo.kelly_units.toFixed(1)}u
                     </div>
@@ -637,7 +644,7 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
                     ? "bg-emerald-800/60 text-emerald-300"
                     : data.ticket.combo.confidence === "Média"
                     ? "bg-blue-800/60 text-blue-300"
-                    : "bg-neutral-700/60 text-neutral-300"
+                    : "bg-white/10 text-slate-300"
                 }`}>
                   Confiança: {data.ticket.combo.confidence}
                 </div>
@@ -646,7 +653,7 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
 
             {/* Singles recomendadas */}
             <div>
-              <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Apostas Individuais Recomendadas
               </div>
               <div className="space-y-2">
@@ -657,7 +664,7 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
                       ? "text-emerald-400 bg-emerald-900/30 border-emerald-700/40"
                       : pick.confidence === "Média"
                       ? "text-blue-400 bg-blue-900/30 border-blue-700/40"
-                      : "text-neutral-400 bg-neutral-800/40 border-neutral-600/30";
+                      : "text-slate-400 bg-white/5 border-white/8";
                   return (
                     <div
                       key={pick.market}
@@ -666,13 +673,13 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
                       <span className="text-xl w-7 text-center">{medal}</span>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-sm text-white truncate">{pick.label}</div>
-                        <div className="text-xs text-neutral-500 font-mono">{pick.market}</div>
+                        <div className="text-xs text-slate-500 font-mono">{pick.market}</div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-base font-black font-mono text-white">
                           {pick.fair_odd?.toFixed(2) ?? "—"}
                         </div>
-                        <div className="text-xs text-neutral-400">
+                        <div className="text-xs text-slate-400">
                           {(pick.model_prob * 100).toFixed(0)}% · {pick.kelly_units.toFixed(1)}u
                         </div>
                       </div>
@@ -683,15 +690,15 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
             </div>
 
             {/* Placar mais provável */}
-            <div className="rounded-lg bg-neutral-800/40 p-3">
-              <div className="text-xs text-neutral-400 mb-2">Placar Mais Provável</div>
+            <div className="rounded-lg bg-white/5 p-3">
+              <div className="text-xs text-slate-400 mb-2">Placar Mais Provável</div>
               <div className="flex gap-3 flex-wrap">
                 {data.top_scorelines.slice(0, 4).map((s, i) => {
                   const [hg, ag] = s.score.split("x").map(Number);
-                  const outColor = hg > ag ? "text-blue-400" : hg === ag ? "text-neutral-400" : "text-orange-400";
+                  const outColor = hg > ag ? "text-blue-400" : hg === ag ? "text-slate-400" : "text-orange-400";
                   return (
                     <div key={s.score} className="flex items-center gap-1.5 bg-black/30 rounded-lg px-3 py-2">
-                      <span className="text-xs text-neutral-500">{i + 1}º</span>
+                      <span className="text-xs text-slate-500">{i + 1}º</span>
                       <span className={`font-mono font-bold ${outColor}`}>{s.score}</span>
                       <span className="text-xs text-emerald-400 font-mono">{(s.prob * 100).toFixed(0)}%</span>
                     </div>
@@ -700,7 +707,7 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
               </div>
             </div>
 
-            <div className="text-xs text-neutral-600 italic">{data.ticket.note}</div>
+            <div className="text-xs text-slate-600 italic">{data.ticket.note}</div>
           </div>
         )}
 
@@ -708,7 +715,7 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
           <div className="space-y-4">
             <div className="rounded-lg border border-blue-700/40 bg-blue-900/20 p-3">
               <div className="text-xs font-semibold text-blue-400 mb-1">Contexto</div>
-              <p className="text-sm text-neutral-200">{data.h2h_summary}</p>
+              <p className="text-sm text-slate-200">{data.h2h_summary}</p>
             </div>
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -716,8 +723,8 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
                 { label: "xG Esperado", value: data.expected_goals },
                 { label: "Fase", value: data.phase === "group" ? "Grupos" : "Mata-mata" },
               ].map((item) => (
-                <div key={item.label} className="rounded-lg bg-neutral-800/60 p-3 text-center">
-                  <div className="text-xs text-neutral-400 mb-1">{item.label}</div>
+                <div key={item.label} className="rounded-lg bg-white/5/60 p-3 text-center">
+                  <div className="text-xs text-slate-400 mb-1">{item.label}</div>
                   <div className="text-base font-bold text-white">{item.value}</div>
                 </div>
               ))}
@@ -725,11 +732,11 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: home, value: `${(data.prob_home * 100).toFixed(1)}%`, color: "text-blue-400" },
-                { label: "Empate", value: `${(data.prob_draw * 100).toFixed(1)}%`, color: "text-neutral-300" },
+                { label: "Empate", value: `${(data.prob_draw * 100).toFixed(1)}%`, color: "text-slate-300" },
                 { label: away, value: `${(data.prob_away * 100).toFixed(1)}%`, color: "text-orange-400" },
               ].map((item) => (
-                <div key={item.label} className="rounded-lg bg-neutral-800/60 p-3 text-center">
-                  <div className="text-xs text-neutral-400 mb-1">{item.label}</div>
+                <div key={item.label} className="rounded-lg bg-white/5/60 p-3 text-center">
+                  <div className="text-xs text-slate-400 mb-1">{item.label}</div>
                   <div className={`text-lg font-black font-mono ${item.color}`}>{item.value}</div>
                 </div>
               ))}
@@ -739,18 +746,18 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
 
         {tab === "placar" && (
           <div className="space-y-2">
-            <div className="text-sm text-neutral-400 mb-3">
+            <div className="text-sm text-slate-400 mb-3">
               Top placares mais prováveis (distribuição Poisson)
             </div>
             {data.top_scorelines.map((s, i) => {
               const [hg, ag] = s.score.split("x").map(Number);
               const outcome = hg > ag ? "home" : hg === ag ? "draw" : "away";
-              const outColor = outcome === "home" ? "text-blue-400" : outcome === "draw" ? "text-neutral-400" : "text-orange-400";
+              const outColor = outcome === "home" ? "text-blue-400" : outcome === "draw" ? "text-slate-400" : "text-orange-400";
               return (
-                <div key={s.score} className="flex items-center gap-3 p-2 rounded-lg bg-neutral-800/50">
-                  <span className="text-xs text-neutral-500 w-4 text-right">{i + 1}</span>
+                <div key={s.score} className="flex items-center gap-3 p-2 rounded-lg bg-white/5">
+                  <span className="text-xs text-slate-500 w-4 text-right">{i + 1}</span>
                   <span className={`font-mono font-bold text-base w-12 text-center ${outColor}`}>{s.score}</span>
-                  <div className="flex-1 h-2 rounded-full bg-neutral-700 overflow-hidden">
+                  <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-emerald-500/70"
                       style={{ width: `${Math.min(100, s.prob * 100 * 5)}%` }}
@@ -767,28 +774,28 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
 
         {tab === "picks" && (
           <div className="space-y-2">
-            <div className="text-xs text-neutral-500 mb-2">Todos os mercados — ordenados por probabilidade</div>
+            <div className="text-xs text-slate-500 mb-2">Todos os mercados — ordenados por probabilidade</div>
             {[...data.picks].sort((a, b) => b.model_prob - a.model_prob).map((p) => (
-              <div key={p.market} className="flex items-center gap-3 p-2.5 rounded-lg bg-neutral-800/50 border border-neutral-700/30">
+              <div key={p.market} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/5 border border-white/8">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-neutral-200 truncate">{p.label}</div>
-                  <div className="text-xs text-neutral-600 font-mono">{p.market}</div>
+                  <div className="text-sm font-semibold text-slate-200 truncate">{p.label}</div>
+                  <div className="text-xs text-slate-600 font-mono">{p.market}</div>
                 </div>
                 <div className="flex gap-4 items-center text-right">
                   <div>
-                    <div className="text-xs text-neutral-500">Prob.</div>
+                    <div className="text-xs text-slate-500">Prob.</div>
                     <div className="text-sm font-bold text-emerald-400 font-mono">
                       {(p.model_prob * 100).toFixed(0)}%
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-neutral-500">Odd Justa</div>
+                    <div className="text-xs text-slate-500">Odd Justa</div>
                     <div className="text-sm font-bold text-white font-mono">
                       {p.fair_odd?.toFixed(2) ?? "—"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-neutral-500">Kelly</div>
+                    <div className="text-xs text-slate-500">Kelly</div>
                     <div className="text-sm font-bold text-amber-400 font-mono">
                       {p.kelly_units.toFixed(1)}u
                     </div>
@@ -808,9 +815,9 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
 
         {tab === "h2h" && (
           <div className="space-y-3">
-            <div className="text-sm text-neutral-400">Histórico de confrontos</div>
-            <div className="rounded-lg bg-neutral-800/50 p-4">
-              <p className="text-sm text-neutral-200 leading-relaxed">{data.h2h_summary}</p>
+            <div className="text-sm text-slate-400">Histórico de confrontos</div>
+            <div className="rounded-lg bg-white/5 p-4">
+              <p className="text-sm text-slate-200 leading-relaxed">{data.h2h_summary}</p>
             </div>
           </div>
         )}
@@ -822,31 +829,31 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
                 <div className="rounded-lg border border-emerald-700/30 bg-emerald-900/10 p-3">
                   <div className="text-xs font-semibold text-emerald-400 mb-2">Contexto carregado</div>
                   {!!data.match_context.referee_name && (
-                    <div className="text-sm text-neutral-200">
+                    <div className="text-sm text-slate-200">
                       Árbitro: <span className="text-white font-semibold">{String(data.match_context.referee_name)}</span>
                     </div>
                   )}
                   {data.match_context.referee_card_lambda != null && (
-                    <div className="text-sm text-neutral-300">
+                    <div className="text-sm text-slate-300">
                       Média cartões: <span className="font-mono text-amber-400">{Number(data.match_context.referee_card_lambda).toFixed(2)}/jogo</span>
                     </div>
                   )}
                   {data.match_context.home_pregame_xg != null && (
-                    <div className="text-sm text-neutral-300">
+                    <div className="text-sm text-slate-300">
                       xG pré-jogo: <span className="font-mono text-blue-400">{Number(data.match_context.home_pregame_xg).toFixed(2)}</span>
                       {" "}x{" "}
                       <span className="font-mono text-orange-400">{Number(data.match_context.away_pregame_xg ?? 0).toFixed(2)}</span>
                     </div>
                   )}
                   {data.match_context.h2h_avg_goals != null && (
-                    <div className="text-sm text-neutral-300">
+                    <div className="text-sm text-slate-300">
                       H2H média gols: <span className="font-mono text-white">{Number(data.match_context.h2h_avg_goals).toFixed(2)}</span>
                     </div>
                   )}
                 </div>
               </>
             ) : (
-              <div className="rounded-lg bg-neutral-800/50 p-4 text-sm text-neutral-400 text-center">
+              <div className="rounded-lg bg-white/5 p-4 text-sm text-slate-400 text-center">
                 Nenhum arquivo de contexto carregado.<br />
                 <span className="text-xs">Faça upload via tela Ao Vivo para enriquecer a análise.</span>
               </div>
@@ -864,20 +871,40 @@ export function PreGameAnalysisPage() {
   const [selected, setSelected] = useState<TodayMatch | null>(null);
 
   const { data, isLoading, error } = useQuery<TodayResponse>({
-    queryKey: ["pregame-today"],
-    queryFn: () => apiFetch("/worldcup/pregame/today"),
-    staleTime: 5 * 60 * 1000,
+    queryKey: ["pregame-today", "v2", "today_only", "America/Sao_Paulo"],
+    queryFn: () =>
+      apiFetch("/worldcup/pregame/today?today_only=true&tz=America/Sao_Paulo"),
+    staleTime: 60_000,
+    refetchOnMount: "always",
   });
+
+  const todayMatches = useMemo(() => {
+    if (!data) return [];
+    return data.matches.filter((m) => m.kickoff_date === data.date);
+  }, [data]);
+
+  useEffect(() => {
+    if (!data) return;
+    if (selected && !todayMatches.some((m) => m.id === selected.id)) {
+      setSelected(null);
+    }
+  }, [data, selected, todayMatches]);
+
+  useEffect(() => {
+    if (todayMatches.length === 1 && !selected) {
+      setSelected(todayMatches[0]);
+    }
+  }, [todayMatches, selected]);
 
   return (
     <PageTransition>
       <div className="flex flex-col h-full min-h-screen">
         <HeroPageHeader
           title="Análise Pré-Jogo"
-          subtitle="Jogos de hoje · Copa 2026"
+          subtitle="Jogos de hoje · horário de Brasília"
         />
 
-        <div className="flex flex-1 overflow-hidden gap-0 divide-x divide-neutral-800">
+        <div className="flex flex-1 overflow-hidden gap-0 divide-x divide-white/8">
           {/* Sidebar — games list */}
           <div className="w-72 flex-shrink-0 overflow-auto p-3 space-y-1">
             {isLoading && (
@@ -888,27 +915,44 @@ export function PreGameAnalysisPage() {
 
             {error && <ErrorState message="Não foi possível carregar os jogos." />}
 
-            {data && data.matches.length === 0 && (
-              <div className="text-sm text-neutral-400 text-center py-8">
-                Nenhum jogo disponível.
+            {data && todayMatches.length === 0 && (
+              <div className="text-sm text-slate-400 text-center py-8 px-2">
+                Nenhum jogo da Copa hoje ({new Date(data.date + "T12:00:00").toLocaleDateString("pt-BR")}).
+                <span className="mt-2 block text-xs text-slate-500">
+                  A FIFA ainda não publicou confrontos neste dia — rode{" "}
+                  <code className="text-slate-300">sync-wc-knockout-schedule</code> quando a próxima
+                  fase sair.
+                </span>
               </div>
             )}
 
-            {data && (() => {
-              // Agrupar por data
+            {data && todayMatches.length > 0 && (() => {
               const byDate = new Map<string, TodayMatch[]>();
-              for (const m of data.matches) {
+              for (const m of todayMatches) {
                 const d = m.kickoff_date;
                 if (!byDate.has(d)) byDate.set(d, []);
                 byDate.get(d)!.push(m);
               }
               const today = data.date;
+              const yesterday = (() => {
+                const d = new Date(today + "T12:00:00");
+                d.setDate(d.getDate() - 1);
+                return d.toISOString().slice(0, 10);
+              })();
 
               return Array.from(byDate.entries()).map(([date, matches]) => (
                 <div key={date} className="mb-1">
-                  <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider px-1 py-2 sticky top-0 bg-neutral-950/80 backdrop-blur-sm z-10">
-                    {date === today ? "Hoje" : new Date(date + "T12:00:00Z").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}
-                    <span className="ml-2 text-neutral-600 font-normal normal-case">
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1 py-2 sticky top-0 bg-black/60 backdrop-blur-sm z-10">
+                    {date === today
+                      ? "Hoje"
+                      : date === yesterday
+                        ? "Ontem"
+                        : new Date(date + "T12:00:00Z").toLocaleDateString("pt-BR", {
+                            weekday: "short",
+                            day: "2-digit",
+                            month: "2-digit",
+                          })}
+                    <span className="ml-2 text-slate-600 font-normal normal-case">
                       {matches.filter(m => !m.played).length} a jogar
                     </span>
                   </div>
@@ -923,14 +967,14 @@ export function PreGameAnalysisPage() {
                           onClick={() => setSelected(match)}
                           className={`w-full text-left rounded-xl border p-3 transition-all ${
                             isSelected
-                              ? "border-emerald-600/60 bg-emerald-900/20"
+                              ? "border-neon-green/40 bg-neon-green/10"
                               : match.played
-                              ? "border-neutral-800/40 bg-neutral-900/20 hover:bg-neutral-800/30"
-                              : "border-neutral-700/40 bg-neutral-800/30 hover:bg-neutral-800/60"
+                              ? "border-white/8 bg-black/15 hover:bg-white/5"
+                              : "live-glass-panel border-white/10 hover:border-neon-green/20"
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className={`text-xs ${match.played ? "text-neutral-600" : "text-neutral-500"}`}>
+                            <span className={`text-xs ${match.played ? "text-slate-600" : "text-slate-500"}`}>
                               {formatKickoff(match.kickoff_utc)}
                             </span>
                             <div className="flex items-center gap-1.5">
@@ -938,7 +982,7 @@ export function PreGameAnalysisPage() {
                                 <span className="text-xs text-emerald-600 font-semibold">G{match.group}</span>
                               )}
                               {match.played && (
-                                <span className="text-xs text-neutral-600 bg-neutral-800 px-1.5 py-0.5 rounded-full">
+                                <span className="text-xs text-slate-600 bg-white/5 px-1.5 py-0.5 rounded-full">
                                   {match.home_score ?? 0}–{match.away_score ?? 0}
                                 </span>
                               )}
@@ -949,7 +993,7 @@ export function PreGameAnalysisPage() {
                               <div className="text-sm font-semibold truncate" style={{ color: homeColor }}>
                                 {match.home_team}
                               </div>
-                              <div className="text-xs text-neutral-600">vs</div>
+                              <div className="text-xs text-slate-600">vs</div>
                               <div className="text-sm font-semibold truncate" style={{ color: awayColor }}>
                                 {match.away_team}
                               </div>
@@ -958,7 +1002,7 @@ export function PreGameAnalysisPage() {
                           {!match.played && (
                             <div className="mt-2 flex gap-2 text-xs font-mono">
                               <span className="text-blue-400">{(match.prob_home * 100).toFixed(0)}%</span>
-                              <span className="text-neutral-500">{(match.prob_draw * 100).toFixed(0)}%</span>
+                              <span className="text-slate-500">{(match.prob_draw * 100).toFixed(0)}%</span>
                               <span className="text-orange-400">{(match.prob_away * 100).toFixed(0)}%</span>
                               <span className="ml-auto text-emerald-500 truncate text-xs">{match.prediction}</span>
                             </div>
@@ -982,7 +1026,7 @@ export function PreGameAnalysisPage() {
                 phase={selected.phase}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-neutral-500 text-sm">
+              <div className="flex items-center justify-center h-full text-slate-500 text-sm">
                 Selecione um jogo para ver a análise detalhada
               </div>
             )}

@@ -138,65 +138,40 @@ export function NewsFeedPage() {
   const lastSync = syncQuery.data;
 
   return (
-    <PageTransition className="space-y-4">
-      <header className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-surface-card via-surface-elevated to-transparent p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-neon-purple/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-12 left-1/4 h-32 w-32 rounded-full bg-neon-green/15 blur-3xl" />
+    <PageTransition>
+      <HeroPageHeader
+        title="Feed de notícias"
+        subtitle="Notícias coletadas de Globo Esporte, ESPN, UOL e outros portais — com times detectados e análise de sentimento."
+        badges={[
+          { label: `${total} artigos (30d)`, color: "blue" },
+          ...(lastSync
+            ? [{ label: `+${lastSync.collected} coletados agora`, color: "green" as const }]
+            : []),
+        ]}
+        imageSrc="/images/hero-pitch.png"
+      />
 
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neon-blue/20 bg-neon-blue/10 px-3 py-1 text-xs font-medium text-neon-blue">
-              <span className="text-neon-green" aria-hidden>
-                ✦
-              </span>
-              {lastSync
-                ? `Atualizado agora • +${lastSync.collected} coletados`
-                : "Datalake em tempo real"}
-            </div>
-            <h1 className="text-3xl font-bold gradient-text sm:text-4xl">Feed de notícias</h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Notícias coletadas de Globo Esporte, ESPN, UOL e outros portais — com times
-              detectados e análise de sentimento para alimentar seus palpites.
-            </p>
-            <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-              <span>
-                <strong className="text-slate-300">{total}</strong> artigos nos últimos 30 dias
-              </span>
-              {lastSync && (
-                <>
-                  <span className="text-slate-700">•</span>
-                  <span>
-                    Base silver:{" "}
-                    <strong className="text-slate-300">{lastSync.articlesSilver}</strong>
-                  </span>
-                </>
-              )}
-            </p>
-          </div>
-
-          <div className="relative w-full max-w-md">
-            <svg
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-            <input
-              type="search"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Buscar times, jogadores, temas..."
-              className="input-field pl-10"
-              aria-label="Buscar notícias"
-            />
-          </div>
-        </div>
-      </header>
+      <div className="relative w-full max-w-md">
+        <svg
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Buscar times, jogadores, temas..."
+          className="app-input w-full pl-10"
+          aria-label="Buscar notícias"
+        />
+      </div>
 
       {sources.length > 0 && (
         <div className="flex flex-wrap gap-2">

@@ -670,6 +670,47 @@ class LiveCopilotResponse(BaseModel):
     bilhete: LiveCopilotBilheteResponse | None = None
 
 
+class LiveCopilotChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str = Field(..., min_length=1, max_length=1500)
+
+
+class LiveCopilotAgentRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[LiveCopilotChatMessage] = Field(default_factory=list, max_length=8)
+    phase: str = "friendly"
+    bankroll: float = Field(1000, gt=0)
+    fast: bool = True
+    kickoff: str | None = None
+
+
+class LiveCopilotUiLegResponse(BaseModel):
+    market: str
+    outcome: str
+    label: str = ""
+    model_prob: float | None = None
+    market_odd: float | None = None
+    expected_value: float | None = None
+    edge_pp: float | None = None
+    suggested_stake_pct: float | None = None
+
+
+class LiveCopilotUiActionResponse(BaseModel):
+    type: str
+    title: str | None = None
+    body: str | None = None
+    tab: str | None = None
+    legs: list[LiveCopilotUiLegResponse] = Field(default_factory=list)
+
+
+class LiveCopilotAgentResponse(LiveCopilotResponse):
+    mode: str = "narrate"
+    reply: str = ""
+    tools_used: list[str] = Field(default_factory=list)
+    ui_actions: list[LiveCopilotUiActionResponse] = Field(default_factory=list)
+    auto_apply_ui: bool = False
+
+
 class HandicapLineResponse(BaseModel):
     line: float
     side: str

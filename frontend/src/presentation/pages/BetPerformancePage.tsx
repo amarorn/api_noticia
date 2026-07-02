@@ -111,7 +111,7 @@ function SummaryCards({ data }: { data: PerformanceData["summary"] }) {
       {cards.map((c) => (
         <div
           key={c.label}
-          className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50"
+          className="live-glass-panel p-4"
         >
           <div className="text-xs text-slate-400 mb-1">{c.label}</div>
           <div className={`text-lg font-bold ${c.color || "text-white"}`}>
@@ -126,14 +126,14 @@ function SummaryCards({ data }: { data: PerformanceData["summary"] }) {
 function MarketTable({ markets }: { markets: MarketPerf[] }) {
   if (!markets.length) return null;
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-700/50">
+    <div className="live-glass-panel overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/8">
         <h3 className="text-sm font-semibold text-white">Performance por Mercado</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-slate-400 border-b border-slate-700/50">
+            <tr className="text-slate-400 border-b border-white/8">
               <th className="text-left px-4 py-2">Mercado</th>
               <th className="text-center px-2 py-2">Apostas</th>
               <th className="text-center px-2 py-2">W/L/C</th>
@@ -147,7 +147,7 @@ function MarketTable({ markets }: { markets: MarketPerf[] }) {
             {markets.map((m) => (
               <tr
                 key={m.market}
-                className={`border-b border-slate-700/30 hover:bg-slate-700/30 ${
+                className={`border-b border-white/6 hover:bg-white/5 ${
                   m.market === "unknown" || m.roi_pct < 0 ? "bg-red-500/5" : ""
                 }`}
               >
@@ -187,14 +187,14 @@ function MarketTable({ markets }: { markets: MarketPerf[] }) {
 function OddRangeTable({ ranges }: { ranges: OddRangePerf[] }) {
   if (!ranges.length) return null;
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-700/50">
+    <div className="live-glass-panel overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/8">
         <h3 className="text-sm font-semibold text-white">Performance por Faixa de Odd</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-slate-400 border-b border-slate-700/50">
+            <tr className="text-slate-400 border-b border-white/8">
               <th className="text-left px-4 py-2">Faixa</th>
               <th className="text-center px-2 py-2">Apostas</th>
               <th className="text-center px-2 py-2">Wins</th>
@@ -208,7 +208,7 @@ function OddRangeTable({ ranges }: { ranges: OddRangePerf[] }) {
             {ranges.map((r) => (
               <tr
                 key={r.range}
-                className="border-b border-slate-700/30 hover:bg-slate-700/30"
+                className="border-b border-white/6 hover:bg-white/5"
               >
                 <td className="px-4 py-2 font-medium text-white">{r.range}</td>
                 <td className="text-center px-2 py-2 text-slate-300">
@@ -266,7 +266,7 @@ function LossPatterns({ patterns }: { patterns: LossPattern[] }) {
 function Suggestions({ items }: { items: string[] }) {
   if (!items.length) return null;
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-4">
+    <div className="live-glass-panel p-4">
       <h3 className="text-sm font-semibold text-white mb-3">Sugestoes de Melhoria</h3>
       <ul className="space-y-2">
         {items.map((s, i) => (
@@ -330,7 +330,7 @@ function EquityCurve({ bets }: { bets: Array<{ settled_at?: string; profit?: num
     .join(" ");
 
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-4">
+    <div className="live-glass-panel p-4">
       <h3 className="text-sm font-semibold text-white mb-3">Equity curve</h3>
       <svg viewBox="0 0 100 100" className="h-32 w-full" preserveAspectRatio="none">
         <path d={path} fill="none" stroke="#34d399" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />

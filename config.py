@@ -248,6 +248,10 @@ class Settings(BaseSettings):
     live_copilot_cache_ttl_sec: int = 25
     live_copilot_temperature: float = 0.2
     live_copilot_max_tokens: int = 1200
+    # narrate = só GET /copilot (atual); agent = POST /copilot/agent com tools; autopilot = agent + auto UI
+    live_copilot_mode: str = "narrate"
+    live_copilot_auto_ui: bool = False
+    live_copilot_max_agent_turns: int = 6
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
 

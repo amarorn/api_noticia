@@ -883,9 +883,18 @@ async def worldcup_combo_ticket(
 
 
 @router.get("/pregame/today")
-def pregame_today(days_ahead: int = Query(2, ge=1, le=7)):
-    from dateutil.parser import parse as _parse_dt
-    from datetime import timedelta
+def pregame_today(
+    days_ahead: int = Query(1, ge=1, le=7),
+    days_back: int = Query(0, ge=0, le=3),
+    tz: str = Query("America/Sao_Paulo", description="Fuso para definir 'hoje' na sidebar"),
+    today_only: bool = Query(True, description="Somente jogos com kickoff no dia local de hoje"),
+):
+    import structlog
+    from zoneinfo import ZoneInfo
+
+    from pipelines.wc_pregame_today import build_pregame_window, match_status
+
+    logger = structlog.get_logger()
 
     try:
         predictor = deps.get_wc_predictor()
@@ -893,19 +902,15 @@ def pregame_today(days_ahead: int = Query(2, ge=1, le=7)):
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     schedule = load_wc_schedule()
-    today = datetime.now(timezone.utc).date()
-    end_date = today + timedelta(days=days_ahead - 1)
-
-    window_matches = []
-    for m in schedule.get("matches", []):
-        try:
-            ko = _parse_dt(m["kickoff"]).astimezone(timezone.utc)
-        except Exception:
-            continue
-        if today <= ko.date() <= end_date:
-            window_matches.append((ko, m))
-
-    window_matches.sort(key=lambda x: x[0])
+    now = datetime.now(timezone.utc)
+    window_matches, meta = build_pregame_window(
+        schedule,
+        now=now,
+        tz_name=tz,
+        days_ahead=days_ahead,
+        days_back=days_back,
+        today_only=today_only,
+    )
 
     results = []
     for ko, m in window_matches:
@@ -913,38 +918,55 @@ def pregame_today(days_ahead: int = Query(2, ge=1, le=7)):
         away = normalize_national_team(m["away_team"])
         phase = m.get("phase", "group")
         group_name = lookup_2026_group(home, away) if phase == "group" else None
+        played = m.get("home_score") is not None and m.get("away_score") is not None
+
+        pred_payload: dict[str, Any]
         try:
             pred = predictor.predict(home, away, phase=phase, season=2026, group_name=group_name)
-        except Exception:
-            continue
+            pred_payload = {
+                "prob_home": round(pred.prob_home, 4),
+                "prob_draw": round(pred.prob_draw, 4),
+                "prob_away": round(pred.prob_away, 4),
+                "prediction": pred.prediction,
+                "confidence": round(pred.confidence, 4),
+                "poisson_score": pred.poisson_score,
+                "expected_goals": pred.expected_goals,
+                "predict_error": None,
+            }
+        except Exception as exc:
+            logger.warning("pregame_predict_fallback", home=home, away=away, error=str(exc))
+            pred_payload = {
+                "prob_home": 0.33,
+                "prob_draw": 0.34,
+                "prob_away": 0.33,
+                "prediction": "X",
+                "confidence": 0.34,
+                "poisson_score": "1x1",
+                "expected_goals": "1.3x1.1",
+                "predict_error": str(exc)[:160],
+            }
 
+        local_date = ko.astimezone(ZoneInfo(tz)).date().isoformat()
         results.append({
             "id": m.get("id", f"{home}-{away}"),
             "home_team": home,
             "away_team": away,
             "kickoff_utc": ko.isoformat(),
             "kickoff_local": m["kickoff"],
-            "kickoff_date": ko.date().isoformat(),
+            "kickoff_date": local_date,
             "venue": m.get("venue"),
             "city": m.get("city"),
             "group": m.get("group"),
             "phase": phase,
-            "played": "home_score" in m,
+            "played": played,
+            "status": match_status(ko, m, now=now),
             "home_score": m.get("home_score"),
             "away_score": m.get("away_score"),
-            "prob_home": round(pred.prob_home, 4),
-            "prob_draw": round(pred.prob_draw, 4),
-            "prob_away": round(pred.prob_away, 4),
-            "prediction": pred.prediction,
-            "confidence": round(pred.confidence, 4),
-            "poisson_score": pred.poisson_score,
-            "expected_goals": pred.expected_goals,
+            **pred_payload,
         })
 
     return {
-        "date": today.isoformat(),
-        "end_date": end_date.isoformat(),
-        "days_ahead": days_ahead,
+        **meta,
         "total": len(results),
         "matches": results,
     }
@@ -957,6 +979,8 @@ def pregame_analysis(
     phase: str = Query("group"),
 ):
     from ingest.superbet.match_context_store import load_match_context
+    from dateutil.parser import parse as parse_dt
+    from zoneinfo import ZoneInfo
 
     try:
         predictor = deps.get_wc_predictor()
@@ -1050,10 +1074,22 @@ def pregame_analysis(
 
     match_context = None
     schedule = load_wc_schedule()
+    kickoff_utc = None
+    kickoff_date = None
+    kickoff_local = None
+    venue = None
+    city = None
     for m in schedule.get("matches", []):
         h = normalize_national_team(m.get("home_team", ""))
         a = normalize_national_team(m.get("away_team", ""))
         if h == home_n and a == away_n:
+            kickoff_local = m.get("kickoff")
+            if kickoff_local:
+                ko = parse_dt(str(kickoff_local)).astimezone(ZoneInfo("America/Sao_Paulo"))
+                kickoff_utc = ko.astimezone(UTC).isoformat()
+                kickoff_date = ko.date().isoformat()
+            venue = m.get("venue")
+            city = m.get("city")
             eid = m.get("sofascore_event_id") or m.get("event_id")
             if eid:
                 match_context = load_match_context(int(eid))
@@ -1061,6 +1097,11 @@ def pregame_analysis(
 
     return {
         "home_team": home_n, "away_team": away_n, "phase": phase, "group": group_name,
+        "kickoff_utc": kickoff_utc,
+        "kickoff_date": kickoff_date,
+        "kickoff_local": kickoff_local,
+        "venue": venue,
+        "city": city,
         "prediction": pred.prediction, "confidence": round(pred.confidence, 4),
         "prob_home": round(pred.prob_home, 4), "prob_draw": round(pred.prob_draw, 4), "prob_away": round(pred.prob_away, 4),
         "poisson_score": pred.poisson_score, "expected_goals": pred.expected_goals, "h2h_summary": pred.h2h_summary,

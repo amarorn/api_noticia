@@ -560,6 +560,19 @@ def build_bet_strategy_report(
     if fast:
         pattern_accuracy = None
         combo_ticket = None
+        from models.live_hedge_pair_strategies import build_hedge_pair_strategies
+
+        hedge_pair_strategies = build_hedge_pair_strategies(
+            market_scan=all_edges,
+            inplay=inplay,
+            home_team=home_team,
+            away_team=away_team,
+            minute=minute,
+            bankroll=bankroll,
+            posture=posture,
+            confidence=confidence,
+            use_llm=False,
+        )
     else:
         pattern_accuracy = pattern_accuracy_score(home_team, away_team)
         combo_ticket = build_combo_ticket(
@@ -570,6 +583,19 @@ def build_bet_strategy_report(
                 "Bilhete combo KXL disponível — use a seção abaixo; "
                 "não duplique stakes no combo e nas oportunidades EV."
             )
+        from models.live_hedge_pair_strategies import build_hedge_pair_strategies
+
+        hedge_pair_strategies = build_hedge_pair_strategies(
+            market_scan=all_edges,
+            inplay=inplay,
+            home_team=home_team,
+            away_team=away_team,
+            minute=minute,
+            bankroll=bankroll,
+            posture=posture,
+            confidence=confidence,
+            use_llm=True,
+        )
 
     return {
         "posture": posture,
@@ -589,6 +615,7 @@ def build_bet_strategy_report(
         "cashout": cashout,
         "pattern_accuracy": pattern_accuracy,
         "combo_ticket": combo_ticket,
+        "hedge_pair_strategies": hedge_pair_strategies,
     }
 
 

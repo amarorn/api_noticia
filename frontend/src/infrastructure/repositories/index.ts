@@ -28,6 +28,7 @@ import {
   mapBasketSuperbetLiveFeed,
   mapBasketSuperbetLiveAdvice,
   mapLiveCopilot,
+  mapLiveCopilotAgent,
 } from "../mappers";
 import {
   mapSuperMultiplaCalculate,
@@ -400,6 +401,35 @@ export class WcApiRepository implements IWcRepository {
       timeoutMs: 90_000,
     });
     return mapLiveCopilot(raw);
+  }
+
+  async postLiveCopilotAgent(dto: {
+    eventId: number;
+    sport: "football" | "basketball";
+    message: string;
+    history: import("@/domain/entities").LiveCopilotChatMessage[];
+    phase?: string;
+    bankroll?: number;
+    fast?: boolean;
+    kickoff?: string;
+  }) {
+    const base =
+      dto.sport === "basketball"
+        ? `/basket/superbet/live/${dto.eventId}/copilot/agent`
+        : `/worldcup/superbet/live/${dto.eventId}/copilot/agent`;
+    const raw = await apiFetch<Record<string, unknown>>(base, {
+      method: "POST",
+      body: JSON.stringify({
+        message: dto.message,
+        history: dto.history.map((m) => ({ role: m.role, content: m.content })),
+        phase: dto.phase ?? "friendly",
+        bankroll: dto.bankroll ?? 1000,
+        fast: dto.fast !== false,
+        kickoff: dto.kickoff ?? undefined,
+      }),
+      timeoutMs: 120_000,
+    });
+    return mapLiveCopilotAgent(raw);
   }
 }
 

@@ -11,6 +11,8 @@ from api.schemas import (
     BasketSuperbetLiveAdviceResponse,
     BasketSuperbetLiveEventResponse,
     BasketSuperbetLiveResponse,
+    LiveCopilotAgentRequest,
+    LiveCopilotAgentResponse,
     LiveCopilotResponse,
 )
 from config import settings
@@ -110,3 +112,32 @@ async def basket_superbet_live_copilot(
 
     payload = await asyncio.to_thread(run_live_copilot, advice, sport="basketball")
     return LiveCopilotResponse(**payload)
+
+
+@router.post("/superbet/live/{event_id}/copilot/agent", response_model=LiveCopilotAgentResponse)
+async def basket_superbet_live_copilot_agent(event_id: int, req: LiveCopilotAgentRequest):
+    from ingest.superbet.live_advice_cache import get_stale_advice_for_event
+    from models.live_copilot_agent import run_live_copilot_agent
+
+    advice = get_stale_advice_for_event(event_id)
+    if advice is None:
+        try:
+            advice = await asyncio.to_thread(
+                run_basket_live_advice,
+                event_id,
+                bankroll=req.bankroll,
+                save_bronze=False,
+                fast=req.fast,
+            )
+        except SuperbetClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    history = [{"role": m.role, "content": m.content} for m in req.history]
+    payload = await asyncio.to_thread(
+        run_live_copilot_agent,
+        advice,
+        sport="basketball",
+        message=req.message,
+        history=history,
+    )
+    return LiveCopilotAgentResponse(**payload)

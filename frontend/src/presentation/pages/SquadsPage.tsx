@@ -12,6 +12,7 @@ import {
 import { teamColor } from "@/data/teamColors";
 import type { WcSquadSection } from "@/domain/entities";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
+import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { IconSearch } from "@/presentation/components/ui/Icons";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
@@ -167,7 +168,7 @@ export function SquadsPage() {
 
   if (indexQuery.isLoading) {
     return (
-      <PageTransition className="space-y-3">
+      <PageTransition>
         <Skeleton className="h-36 w-full rounded-2xl" />
         <Skeleton className="h-96 w-full rounded-2xl" />
       </PageTransition>
@@ -192,34 +193,12 @@ export function SquadsPage() {
   const meta = indexQuery.data;
 
   return (
-    <PageTransition className="space-y-4">
-      <header className="relative overflow-hidden rounded-2xl border border-white/[0.06]">
-        <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/10 via-surface to-neon-green/5" />
-        <div className="relative p-6 sm:p-8">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-extrabold gradient-text sm:text-3xl">
-              Convocações Copa 2026
-            </h1>
-            <span className="rounded-full border border-neon-purple/25 bg-neon-purple/8 px-2.5 py-0.5 text-xs font-medium text-neon-purple">
-              {meta.teamCount} seleções
-            </span>
-          </div>
-          <p className="mt-1.5 text-sm text-slate-400">
-            Listas oficiais de 26 jogadores · Fonte:{" "}
-            <a
-              href={meta.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-neon-green hover:underline"
-            >
-              ge.globo.com
-            </a>
-            {meta.updatedAt && (
-              <span className="text-slate-500"> · atualizado em {meta.updatedAt}</span>
-            )}
-          </p>
-        </div>
-      </header>
+    <PageTransition>
+      <HeroPageHeader
+        title="Convocações Copa 2026"
+        subtitle={`Listas oficiais de 26 jogadores · ${meta.teamCount} seleções`}
+        badges={[{ label: `${meta.teamCount} seleções`, color: "purple" }]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-5">
         <aside className="lg:col-span-2 space-y-4">

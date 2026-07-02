@@ -211,7 +211,7 @@ function SummaryCards({ summary }: { summary: QuerySummary }) {
       {cards.map((c) => (
         <div
           key={c.label}
-          className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50"
+          className="live-glass-panel p-4"
         >
           <div className="text-xs text-slate-400 mb-1">{c.label}</div>
           <div className={`text-lg font-bold ${c.color || "text-white"}`}>
@@ -227,7 +227,7 @@ function SummaryCards({ summary }: { summary: QuerySummary }) {
 function UserPatternsPanel({ patterns }: { patterns: UserPatterns }) {
   if (!patterns.has_history) {
     return (
-      <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-4">
+      <div className="live-glass-panel p-4">
         <h3 className="text-sm font-semibold text-white mb-2">Seu Histórico</h3>
         <p className="text-xs text-slate-400">
           Nenhuma aposta liquidada encontrada. A análise usa defaults conservadores.
@@ -238,7 +238,7 @@ function UserPatternsPanel({ patterns }: { patterns: UserPatterns }) {
   }
 
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-4 space-y-4">
+    <div className="live-glass-panel p-4 space-y-4">
       <h3 className="text-sm font-semibold text-white">Seu Perfil (Baseado em {patterns.total_settled} apostas)</h3>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -6,6 +6,7 @@ import type { BasketSuperbetLiveEvent, SuperbetLiveEvent } from "@/domain/entiti
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import { useAdaptivePollClock } from "@/presentation/hooks/useAdaptivePollClock";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
+import { AppTableShell } from "@/presentation/components/layout/AppTableShell";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
 import { SuperbetPulseBadge } from "@/presentation/components/layout/SuperbetPulseBadge";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
@@ -493,42 +494,43 @@ export function LivePage() {
             onRetry={() => basketLiveQuery.refetch()}
           />
         ) : (basketLiveQuery.data?.events.length ?? 0) === 0 ? (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-6 py-12 text-center text-sm text-slate-400">
+          <div className="app-empty-state">
             Nenhum jogo de basquete ao vivo no momento na Superbet.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02]">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/8 text-left text-[11px] uppercase tracking-widest text-slate-500">
-                    <th className="px-4 py-3">Confronto</th>
-                    <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
-                    <th className="px-4 py-3">Placar</th>
-                    <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
-                    <th className="hidden px-4 py-3 md:table-cell">Odds vencedor</th>
-                    <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
-                    <th className="px-4 py-3 text-right">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(basketLiveQuery.data?.events ?? []).map((event) => (
-                    <BasketEventRow key={event.eventId} event={event} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="border-t border-white/8 px-4 py-3 text-xs text-slate-500">
-              {basketLiveQuery.data?.events.length ?? 0} jogo(s) exibido(s) · fonte Superbet
-              {basketLiveQuery.data?.capturedAt
-                ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  }).format(new Date(basketLiveQuery.data.capturedAt))}`
-                : ""}
-            </div>
-          </div>
+          <AppTableShell
+            footer={
+              <>
+                {basketLiveQuery.data?.events.length ?? 0} jogo(s) exibido(s) · fonte Superbet
+                {basketLiveQuery.data?.capturedAt
+                  ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    }).format(new Date(basketLiveQuery.data.capturedAt))}`
+                  : ""}
+              </>
+            }
+          >
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3">Confronto</th>
+                  <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
+                  <th className="px-4 py-3">Placar</th>
+                  <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
+                  <th className="hidden px-4 py-3 md:table-cell">Odds vencedor</th>
+                  <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
+                  <th className="px-4 py-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(basketLiveQuery.data?.events ?? []).map((event) => (
+                  <BasketEventRow key={event.eventId} event={event} />
+                ))}
+              </tbody>
+            </table>
+          </AppTableShell>
         )
       ) : liveQuery.isLoading ? (
         <DashboardSkeleton />
@@ -542,16 +544,12 @@ export function LivePage() {
           onRetry={() => liveQuery.refetch()}
         />
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-6 py-12 text-center text-sm text-slate-400">
-          {emptyMessage}
-        </div>
+        <div className="app-empty-state">{emptyMessage}</div>
       ) : (
         <>
           {topPicks.length > 0 ? (
-            <section className="mb-6">
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-400/90">
-                Melhores agora
-              </h2>
+            <section className="live-glass-panel mb-6 p-4">
+              <h2 className="section-label mb-3">Melhores agora</h2>
               <div className="flex flex-wrap gap-3">
                 {topPicks.map((event) => (
                   <TopPickCard key={event.eventId} event={event} />
@@ -560,42 +558,43 @@ export function LivePage() {
             </section>
           ) : null}
 
-          <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02]">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/8 text-left text-[11px] uppercase tracking-widest text-slate-500">
-                    <th className="hidden px-4 py-3 sm:table-cell">Palpite</th>
-                    <th className="px-4 py-3">Confronto</th>
-                    <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
-                    <th className="px-4 py-3">Placar</th>
-                    <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
-                    <th className="hidden px-4 py-3 md:table-cell">Odds 1X2</th>
-                    <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
-                    <th className="px-4 py-3 text-right">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((event) => (
-                    <LiveEventRow key={event.eventId} event={event} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="border-t border-white/8 px-4 py-3 text-xs text-slate-500">
-              {rows.length} jogo(s) exibido(s)
-              {tierFilter !== "all" ? ` · filtro: ${tierFilterLabel[tierFilter]}` : ""}
-              {nationalOnly ? " · seleções" : ""}
-              {" · "}ordenados por score de palpite · fonte Superbet
-              {liveQuery.data?.capturedAt
-                ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  }).format(new Date(liveQuery.data.capturedAt))}`
-                : ""}
-            </div>
-          </div>
+          <AppTableShell
+            footer={
+              <>
+                {rows.length} jogo(s) exibido(s)
+                {tierFilter !== "all" ? ` · filtro: ${tierFilterLabel[tierFilter]}` : ""}
+                {nationalOnly ? " · seleções" : ""}
+                {" · "}ordenados por score de palpite · fonte Superbet
+                {liveQuery.data?.capturedAt
+                  ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    }).format(new Date(liveQuery.data.capturedAt))}`
+                  : ""}
+              </>
+            }
+          >
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="hidden px-4 py-3 sm:table-cell">Palpite</th>
+                  <th className="px-4 py-3">Confronto</th>
+                  <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
+                  <th className="px-4 py-3">Placar</th>
+                  <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
+                  <th className="hidden px-4 py-3 md:table-cell">Odds 1X2</th>
+                  <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
+                  <th className="px-4 py-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((event) => (
+                  <LiveEventRow key={event.eventId} event={event} />
+                ))}
+              </tbody>
+            </table>
+          </AppTableShell>
         </>
       )}
     </PageTransition>

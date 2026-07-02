@@ -17,7 +17,7 @@ export function EmptyState({
   iconColor = "#00d4ff",
 }: EmptyStateProps) {
   return (
-    <div className="relative overflow-hidden rounded-2.5xl border border-white/[0.06]">
+    <div className="live-glass-panel-glow glow-border relative overflow-hidden">
       {/* Background mesh sutil */}
       <div
         className="absolute inset-0 opacity-20"

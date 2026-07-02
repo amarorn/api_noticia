@@ -175,7 +175,7 @@ export function MatchDetailPage({
 
   if (query.isError) {
     return (
-      <PageTransition className="space-y-5">
+      <PageTransition>
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
@@ -218,7 +218,7 @@ export function MatchDetailPage({
 
   if (!query.data) {
     return (
-      <PageTransition className="space-y-5">
+      <PageTransition>
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
@@ -249,7 +249,7 @@ export function MatchDetailPage({
   const winnerColor = outcomeColors[pred.prediction];
 
   return (
-    <PageTransition className="space-y-5">
+    <PageTransition>
       <Link
         to="/"
         className="inline-flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-white"
@@ -283,8 +283,8 @@ export function MatchDetailPage({
 
       {/* Match hero */}
       <div
-        className="relative overflow-hidden rounded-2xl border"
-        style={{ borderColor: `${winnerColor}25` }}
+        className="live-scoreboard glow-border relative overflow-hidden rounded-2xl"
+        style={{ borderColor: `${winnerColor}40` }}
       >
         <img
           src="/images/match-duel-banner.png"

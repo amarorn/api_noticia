@@ -302,7 +302,7 @@ export function AlbumPage() {
   const progress = albumProgress(collected, TEAMS.length);
 
   return (
-    <PageTransition className="space-y-3">
+    <PageTransition>
       {collected.size === 0 && (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 text-sm text-amber-100/90">
           <p className="font-semibold text-amber-300">Nenhuma figurinha coletada ainda</p>
@@ -318,7 +318,7 @@ export function AlbumPage() {
         </div>
       )}
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl border border-yellow-500/20" style={{ minHeight: 160 }}>
+      <div className="live-scoreboard glow-border relative overflow-hidden rounded-2xl border-yellow-500/25" style={{ minHeight: 160 }}>
         <img
           src="/images/album-hero.png"
           alt=""

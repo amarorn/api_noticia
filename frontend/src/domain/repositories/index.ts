@@ -162,6 +162,16 @@ export interface IWcRepository {
     fast?: boolean;
     kickoff?: string;
   }): Promise<import("@/domain/entities").LiveCopilot>;
+  postLiveCopilotAgent(request: {
+    eventId: number;
+    sport: "football" | "basketball";
+    message: string;
+    history: import("@/domain/entities").LiveCopilotChatMessage[];
+    phase?: string;
+    bankroll?: number;
+    fast?: boolean;
+    kickoff?: string;
+  }): Promise<import("@/domain/entities").LiveCopilotAgent>;
 }
 
 export interface IBrasileiraoRepository {

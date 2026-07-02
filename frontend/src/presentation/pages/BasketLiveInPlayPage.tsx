@@ -22,6 +22,8 @@ import { LiveDashboardTabs } from "@/presentation/components/live-dashboard/Live
 import { LiveCopilotPanel } from "@/presentation/components/live-dashboard/LiveCopilotPanel";
 import { useLiveCopilotQuery } from "@/presentation/hooks/useLiveCopilotQuery";
 import { useLiveCopilotActionAlerts } from "@/presentation/hooks/useLiveCopilotActionAlerts";
+import { useLiveCopilotAgentSession } from "@/presentation/hooks/useLiveCopilotAgentSession";
+import { useCopilotAlertsPreference } from "@/presentation/hooks/useCopilotAlertsPreference";
 import {
   ModelSimulationMeta,
   PpmPacePanel,
@@ -441,6 +443,7 @@ export function BasketLiveInPlayPage() {
   const kpis = useMemo(() => (data ? buildKpis(data) : null), [data]);
   const matchMinutes = data?.inplaySummary.matchMinutes ?? DEFAULT_BASKET_MATCH_MINUTES;
   const headerIsLiveEarly = Boolean(data?.isLive && !data?.isFinished);
+  const { alertsActive: copilotAlertsActive } = useCopilotAlertsPreference();
 
   const copilotQuery = useLiveCopilotQuery({
     eventId,
@@ -453,7 +456,20 @@ export function BasketLiveInPlayPage() {
     eventId,
     homeTeam: data?.homeTeam,
     awayTeam: data?.awayTeam,
+    enabled: enabled && headerIsLiveEarly && copilotAlertsActive,
+  });
+
+  const { displayCopilot, agentChat } = useLiveCopilotAgentSession({
+    eventId,
+    sport: "basketball",
+    bankroll: 1000,
     enabled: enabled && headerIsLiveEarly,
+    baseCopilot: copilotQuery.data,
+    onSwitchTab: (tab) => {
+      if (tab === "resumo" || tab === "mercados" || tab === "qualidade") {
+        setActiveTab(tab);
+      }
+    },
   });
 
   useEffect(() => {
@@ -496,7 +512,7 @@ export function BasketLiveInPlayPage() {
   ];
 
   return (
-    <PageTransition className="space-y-0 pb-24">
+    <PageTransition live className="space-y-0 pb-24">
       <div className="sticky top-0 z-30 -mx-2 sm:-mx-4">
         {data ? (
           <div className="live-scoreboard mx-2 mt-2 sm:mx-4">
@@ -566,9 +582,10 @@ export function BasketLiveInPlayPage() {
             {activeTab === "resumo" && kpis && (
               <div className="space-y-4">
                 <LiveCopilotPanel
-                  copilot={copilotQuery.data}
+                  copilot={displayCopilot}
                   isLoading={copilotQuery.isLoading}
                   isFetching={copilotQuery.isFetching}
+                  agentChat={agentChat}
                 />
 
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">

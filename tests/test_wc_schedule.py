@@ -34,6 +34,17 @@ def test_each_group_has_four_teams_and_six_matches() -> None:
         assert teams_in_matches == set(group["teams"])
 
 
+def test_schedule_includes_scores_when_present() -> None:
+    data = load_wc_schedule(WC_JSON)
+    out = build_schedule_response(data)
+    scored = [m for m in out["matches"] if m.get("played")]
+    assert len(scored) >= 1
+    first = scored[0]
+    assert first["home_score"] is not None
+    assert first["away_score"] is not None
+    assert first["played"] is True
+
+
 def test_official_match_exists_respects_home_away() -> None:
     assert official_match_exists("Brasil", "Marrocos", phase="group", path=WC_JSON)
     assert not official_match_exists("Marrocos", "Brasil", phase="group", path=WC_JSON)

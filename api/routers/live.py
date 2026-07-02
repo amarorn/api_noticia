@@ -12,6 +12,8 @@ from api.schemas import (
     BetBuilderValidateRequest,
     BetBuilderValidateResponse,
     HandicapAnalysisResponse,
+    LiveCopilotAgentRequest,
+    LiveCopilotAgentResponse,
     LiveCopilotResponse,
     WcBetAdviceRequest,
     WcBetAdviceResponse,
@@ -255,6 +257,67 @@ async def worldcup_superbet_live_copilot_latest(event_id: int):
         raise HTTPException(status_code=404, detail="Copiloto ainda não disponível para este evento.")
     stale["cached"] = True
     return LiveCopilotResponse(**stale)
+
+
+async def _load_football_advice_for_copilot(
+    event_id: int,
+    *,
+    phase: str,
+    bankroll: float,
+    fast: bool,
+    kickoff: str | None,
+) -> dict:
+    from ingest.superbet.advice import run_live_advice
+    from ingest.superbet.client import SuperbetClientError
+    from ingest.superbet.live_advice_cache import get_stale_advice_for_event
+
+    advice = get_stale_advice_for_event(event_id)
+    if advice is not None:
+        return advice
+
+    predictor = deps.get_wc_predictor()
+    try:
+        return await asyncio.to_thread(
+            run_live_advice,
+            event_id,
+            predictor,
+            phase=phase,
+            bankroll=bankroll,
+            save_bronze=False,
+            save_tick=False,
+            use_sofascore_live=False,
+            fast=fast,
+            kickoff=kickoff,
+        )
+    except SuperbetClientError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/superbet/live/{event_id}/copilot/agent", response_model=LiveCopilotAgentResponse)
+async def worldcup_superbet_live_copilot_agent(event_id: int, req: LiveCopilotAgentRequest):
+    """Copiloto modo agente — LLM consulta tools sobre o advice quantitativo."""
+    from models.live_copilot_agent import run_live_copilot_agent
+
+    try:
+        advice = await _load_football_advice_for_copilot(
+            event_id,
+            phase=req.phase,
+            bankroll=req.bankroll,
+            fast=req.fast,
+            kickoff=req.kickoff,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    history = [{"role": m.role, "content": m.content} for m in req.history]
+    payload = await asyncio.to_thread(
+        run_live_copilot_agent,
+        advice,
+        sport="football",
+        message=req.message,
+        history=history,
+    )
+    return LiveCopilotAgentResponse(**payload)
 
 
 @router.post("/superbet/live/{event_id}/context")

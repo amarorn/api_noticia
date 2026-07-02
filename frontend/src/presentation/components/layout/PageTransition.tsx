@@ -8,10 +8,13 @@ import {
 interface PageTransitionProps {
   children: ReactNode;
   className?: string;
+  /** Dashboard ao vivo — sem padding automático (layout próprio). */
+  live?: boolean;
 }
 
-export function PageTransition({ children, className }: PageTransitionProps) {
-  return <div className={className}>{children}</div>;
+export function PageTransition({ children, className, live }: PageTransitionProps) {
+  const shell = live ? "app-page-shell app-page-shell--live" : "app-page-shell";
+  return <div className={className ? `${shell} ${className}` : shell}>{children}</div>;
 }
 
 export function StaggerContainer({

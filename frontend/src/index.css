@@ -125,11 +125,11 @@
 
   /* ── Cartões ───────────────────────────────────────── */
   .glass-card {
-    @apply rounded-2xl border backdrop-blur-xl;
-    border-color: rgba(0, 245, 160, 0.10);
-    background: rgba(10, 16, 32, 0.82);
+    @apply live-glass-panel;
+    border-color: rgba(0, 245, 160, 0.12);
     box-shadow:
-      0 8px 40px rgba(0, 0, 0, 0.60),
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      0 0 20px rgba(0, 245, 160, 0.06),
       inset 0 1px 0 rgba(0, 245, 160, 0.06);
     transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -774,6 +774,412 @@
 
   .live-kpi-card {
     @apply live-glass-panel relative overflow-hidden p-3;
+  }
+
+  /* ── Shell unificado (páginas fora do dashboard ao vivo) ── */
+  .app-page-shell {
+    @apply relative space-y-4 pb-24 px-4 pt-3;
+  }
+
+  .app-page-shell--live {
+    @apply space-y-0 p-0 px-2 pt-0 sm:px-4;
+  }
+
+  .live-page-body {
+    @apply space-y-4;
+  }
+
+  .app-table-shell {
+    @apply overflow-hidden rounded-2xl border;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(
+      145deg,
+      rgba(15, 23, 42, 0.42) 0%,
+      rgba(10, 16, 32, 0.28) 100%
+    );
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .app-table-shell thead tr {
+    @apply border-b text-left text-[11px] uppercase tracking-widest text-slate-500;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .app-table-shell tbody tr {
+    @apply transition-colors hover:bg-white/[0.03];
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .app-input {
+    @apply rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-sm text-white backdrop-blur-sm;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .app-input:focus {
+    @apply outline-none ring-2 ring-neon-green/25 border-neon-green/30;
+  }
+
+  .app-section-panel {
+    @apply live-glass-panel p-4 sm:p-5;
+  }
+
+  .app-empty-state {
+    @apply live-glass-panel px-6 py-12 text-center text-sm text-slate-400;
+  }
+
+  /* ── Chaveamento estilo árvore (WC) ── */
+  .wc-bracket-shell {
+    @apply overflow-hidden rounded-2xl border border-neon-green/20;
+    background: linear-gradient(180deg, rgba(6, 18, 12, 0.98) 0%, rgba(5, 8, 17, 0.99) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(0, 245, 160, 0.15),
+      0 0 48px rgba(0, 245, 160, 0.08);
+  }
+
+  .wc-bracket-hero {
+    @apply relative z-[2] border-b border-white/[0.08] px-4 py-5 text-center sm:px-6;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
+  }
+
+  .wc-bracket-hero-title {
+    @apply font-display text-xl font-black uppercase tracking-[0.18em] sm:text-2xl;
+    background: linear-gradient(90deg, #fde047 0%, #fbbf24 50%, #00f5a0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.25));
+  }
+
+  .wc-bracket-hero-badge {
+    @apply mt-2 inline-flex rounded-full border border-neon-blue/40 bg-neon-blue/10 px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-neon-blue;
+    box-shadow: 0 0 24px rgba(0, 224, 255, 0.18);
+  }
+
+  .wc-bracket-stats {
+    @apply mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-slate-300;
+  }
+
+  .wc-bracket-stats span:not(.wc-bracket-sync) {
+    @apply relative pl-3;
+  }
+
+  .wc-bracket-stats span:not(.wc-bracket-sync)::before {
+    content: "";
+    @apply absolute left-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-neon-green;
+    box-shadow: 0 0 6px rgba(0, 245, 160, 0.8);
+  }
+
+  .wc-bracket-sync {
+    @apply font-mono text-slate-500;
+  }
+
+  .wc-bracket-scroll {
+    @apply relative overflow-x-auto px-2 py-4 scrollbar-thin sm:px-4 sm:py-5;
+  }
+
+  .wc-bracket-pitch {
+    @apply relative mx-auto min-w-fit rounded-xl border border-white/[0.08] px-2 py-4 sm:px-4;
+    background: linear-gradient(180deg, #1a6b42 0%, #134d30 42%, #0c3521 100%);
+    box-shadow:
+      inset 0 0 80px rgba(0, 0, 0, 0.35),
+      inset 0 2px 0 rgba(255, 255, 255, 0.06),
+      0 8px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .wc-bracket-pitch-grass {
+    @apply pointer-events-none absolute inset-0 rounded-xl opacity-90;
+    background: repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.045) 0px,
+      rgba(255, 255, 255, 0.045) 28px,
+      rgba(0, 0, 0, 0.06) 28px,
+      rgba(0, 0, 0, 0.06) 56px
+    );
+  }
+
+  .wc-bracket-pitch-markings {
+    @apply pointer-events-none absolute inset-0 overflow-hidden rounded-xl;
+  }
+
+  .wc-bracket-pitch-line-center {
+    @apply absolute left-1/2 top-0 h-full w-px -translate-x-1/2;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.22) 12%,
+      rgba(255, 255, 255, 0.22) 88%,
+      transparent 100%
+    );
+  }
+
+  .wc-bracket-pitch-circle {
+    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full;
+    width: min(220px, 38vw);
+    height: min(220px, 38vw);
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 0 30px rgba(0, 0, 0, 0.15),
+      0 0 20px rgba(255, 255, 255, 0.04);
+  }
+
+  .wc-bracket-board {
+    @apply relative z-[1] mx-auto flex w-fit items-start gap-0;
+  }
+
+  .wc-bracket-half-board {
+    @apply relative shrink-0 flex flex-col;
+  }
+
+  .wc-bracket-half-labels {
+    @apply mb-2 flex shrink-0;
+    gap: 22px;
+    height: 18px;
+  }
+
+  .wc-bracket-half-labels .wc-bracket-column-label {
+    @apply mb-0 flex w-[108px] items-center justify-center;
+  }
+
+  .wc-bracket-half-row {
+    @apply flex items-stretch;
+  }
+
+  .wc-bracket-grid-stage {
+    @apply relative shrink-0;
+  }
+
+  .wc-bracket-columns {
+    @apply relative z-[1] flex h-full;
+    gap: 22px;
+  }
+
+  .wc-bracket-wires {
+    @apply pointer-events-none absolute inset-0 z-0;
+  }
+
+  .wc-bracket-semi-wire {
+    @apply relative z-0 shrink-0 self-stretch;
+  }
+
+  .wc-bracket-wire-base {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .wc-bracket-wire-neon {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .wc-bracket-wire-final {
+    stroke-width: 2.5;
+  }
+
+  .wc-bracket-wire-node {
+    fill: #00f5a0;
+    filter: drop-shadow(0 0 6px rgba(0, 245, 160, 0.95));
+  }
+
+  .wc-bracket-wire-node-final {
+    fill: #fde047;
+    filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.9));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .wc-bracket-wire-neon {
+      animation: wc-bracket-wire-pulse 3.2s ease-in-out infinite;
+    }
+
+    .wc-bracket-wire-node {
+      animation: wc-bracket-node-pulse 2.4s ease-in-out infinite;
+    }
+
+    .wc-bracket-trophy-glow {
+      animation: wc-bracket-trophy-glow 2.8s ease-in-out infinite;
+    }
+  }
+
+  @keyframes wc-bracket-wire-pulse {
+    0%,
+    100% {
+      opacity: 0.72;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes wc-bracket-node-pulse {
+    0%,
+    100% {
+      opacity: 0.75;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes wc-bracket-trophy-glow {
+    0%,
+    100% {
+      opacity: 0.65;
+      transform: scale(0.92);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+
+  .wc-bracket-column {
+    @apply flex w-[108px] flex-col;
+  }
+
+  .wc-bracket-column-label {
+    @apply text-center text-[10px] font-black uppercase tracking-[0.14em];
+    color: rgba(255, 255, 255, 0.82);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  }
+
+  .wc-bracket-column-grid {
+    display: grid;
+    grid-template-rows: repeat(8, 54px);
+    height: 432px;
+    width: 108px;
+  }
+
+  .wc-bracket-cell {
+    @apply flex items-center justify-center;
+  }
+
+  .wc-bracket-card {
+    @apply w-full overflow-hidden rounded-lg border border-white/20 bg-black/55 backdrop-blur-sm;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 4px 14px rgba(0, 0, 0, 0.45);
+  }
+
+  .wc-bracket-card.is-resolved {
+    border-color: rgba(0, 245, 160, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(0, 245, 160, 0.2),
+      0 0 22px rgba(0, 245, 160, 0.22);
+  }
+
+  .wc-bracket-card.is-placeholder {
+    @apply border-dashed border-white/25 bg-black/30;
+  }
+
+  .wc-bracket-card-divider {
+    @apply h-px bg-white/15;
+  }
+
+  .wc-bracket-row {
+    @apply relative flex items-center gap-1.5 px-1.5 py-1;
+    min-height: 26px;
+  }
+
+  .wc-bracket-row.winner {
+    background: linear-gradient(90deg, rgba(0, 245, 160, 0.28) 0%, rgba(0, 245, 160, 0.06) 100%);
+  }
+
+  .wc-bracket-row.loser,
+  .wc-bracket-row.eliminated {
+    @apply opacity-35 grayscale;
+  }
+
+  .wc-bracket-row.tbd {
+    @apply opacity-55;
+  }
+
+  .wc-bracket-row-tbd {
+    @apply block h-5 w-5 shrink-0 rounded-sm border border-dashed border-white/25 bg-white/[0.05];
+  }
+
+  .wc-bracket-row-label {
+    @apply min-w-0 flex-1 truncate text-[10px] font-bold uppercase tracking-wide text-white;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .wc-bracket-row-score {
+    @apply font-mono text-[10px] font-bold text-white;
+  }
+
+  .wc-bracket-row-badge {
+    @apply flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-neon-green text-[8px] font-bold text-black;
+    box-shadow: 0 0 10px rgba(0, 245, 160, 0.85);
+  }
+
+  .wc-bracket-center {
+    @apply flex w-[130px] shrink-0 flex-col sm:w-[150px];
+  }
+
+  .wc-bracket-center-head-label {
+    @apply mb-2 flex h-[18px] items-center justify-center text-[10px] font-black uppercase tracking-[0.22em] text-amber-200;
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
+  }
+
+  .wc-bracket-center-stage {
+    @apply relative flex items-center justify-center;
+  }
+
+  .wc-bracket-final-inner {
+    @apply flex w-full flex-col items-center;
+  }
+
+  .wc-bracket-trophy-wrap {
+    @apply relative flex h-16 w-16 items-center justify-center;
+  }
+
+  .wc-bracket-trophy {
+    @apply relative z-[1] text-5xl;
+    filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.7));
+  }
+
+  .wc-bracket-trophy-glow {
+    @apply absolute inset-0 rounded-full;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.45) 0%, transparent 68%);
+  }
+
+  .wc-bracket-center-label {
+    @apply mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-200/80;
+  }
+
+  .wc-bracket-final-card {
+    @apply mt-3 w-full rounded-xl border border-amber-300/35 bg-black/60 p-1 backdrop-blur-md;
+    box-shadow:
+      0 0 32px rgba(253, 224, 71, 0.18),
+      0 0 18px rgba(0, 245, 160, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .wc-bracket-final-card .wc-bracket-row {
+    @apply py-1.5;
+  }
+
+  .wc-bracket-final-card .wc-bracket-row-label {
+    @apply text-[11px];
+  }
+
+  .wc-bracket-champion {
+    @apply mt-2 border-t border-white/15 pt-2 text-center text-[10px] text-slate-200;
+  }
+
+  .wc-bracket-champion strong {
+    @apply text-neon-green;
+    text-shadow: 0 0 10px rgba(0, 245, 160, 0.5);
+  }
+
+  .wc-bracket-legend {
+    @apply relative z-[2] border-t border-white/[0.06] px-4 py-3 text-center text-[10px] text-slate-500;
+    background: rgba(0, 0, 0, 0.25);
   }
 
   .live-kpi-icon {

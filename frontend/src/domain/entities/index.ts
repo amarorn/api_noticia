@@ -328,6 +328,10 @@ export interface WcScheduleMatch {
   kickoff: string | null;
   venue: string | null;
   city: string | null;
+  fifaStage?: string | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  played?: boolean;
   prediction?: "1" | "X" | "2" | null;
   confidence?: number | null;
   probHome?: number | null;
@@ -349,6 +353,7 @@ export interface WcSchedule {
   matchdays: number[];
   matches: WcScheduleMatch[];
   totalMatches: number;
+  resultsSyncedAt?: string | null;
   predictionsSummary?: WcSchedulePredictionsSummary | null;
 }
 
@@ -742,6 +747,50 @@ export interface SuperbetLiveAdvice {
           }>;
         }>;
       } | null;
+    } | null;
+    hedgePairStrategies: {
+      enabled: boolean;
+      available: boolean;
+      candidateCount: number;
+      error: string | null;
+      strategies: Array<{
+        id: string;
+        titulo: string;
+        resumo: string;
+        stakeSplit: string;
+        cenarioChave: string;
+        llmEnriched: boolean;
+        stakeHintPct: number;
+        stakeHintValue: number;
+        scenarioA: string;
+        scenarioB: string;
+        scenarioBoth: string;
+        coverage: {
+          probLegA: number;
+          probLegB: number;
+          probBothWin: number;
+          probAtLeastOne: number;
+          probBothLose: number;
+        };
+        legA: {
+          market: string;
+          outcome: string;
+          label: string;
+          modelProb: number;
+          marketOdd: number;
+          expectedValue: number;
+          edgePp: number;
+        };
+        legB: {
+          market: string;
+          outcome: string;
+          label: string;
+          modelProb: number;
+          marketOdd: number;
+          expectedValue: number;
+          edgePp: number;
+        };
+      }>;
     } | null;
   } | null;
   cashout: {
@@ -1739,6 +1788,42 @@ export interface LiveCopilot {
   picks: LiveCopilotPick[];
   alertas: string[];
   bilhete: LiveCopilotBilhete | null;
+}
+
+export type LiveCopilotUiActionType = "notify" | "add_ticket_legs" | "switch_tab";
+
+export type LiveCopilotTabId = "resumo" | "mercados" | "qualidade" | "bilhete";
+
+export interface LiveCopilotUiLeg {
+  market: string;
+  outcome: string;
+  label: string;
+  modelProb?: number | null;
+  marketOdd?: number | null;
+  expectedValue?: number | null;
+  edgePp?: number | null;
+  suggestedStakePct?: number | null;
+}
+
+export interface LiveCopilotUiAction {
+  type: LiveCopilotUiActionType;
+  title?: string | null;
+  body?: string | null;
+  tab?: LiveCopilotTabId | null;
+  legs: LiveCopilotUiLeg[];
+}
+
+export interface LiveCopilotChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface LiveCopilotAgent extends LiveCopilot {
+  mode: string;
+  reply: string;
+  toolsUsed: string[];
+  uiActions: LiveCopilotUiAction[];
+  autoApplyUi: boolean;
 }
 
 export interface LiveCopilotBilheteLeg {

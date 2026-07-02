@@ -133,6 +133,8 @@ export function BetStrategyPanel({ strategy }: BetStrategyPanelProps) {
         </p>
       )}
 
+      <HedgePairStrategiesSection hedgePairs={strategy.hedgePairStrategies} />
+
       <div className="rounded-xl border border-white/8 bg-white/[0.02] px-3 py-3">
         <p className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">
           Regras do plano
@@ -149,6 +151,108 @@ export function BetStrategyPanel({ strategy }: BetStrategyPanelProps) {
         </ul>
       </div>
     </section>
+  );
+}
+
+function HedgePairStrategiesSection({
+  hedgePairs,
+}: {
+  hedgePairs: NonNullable<SuperbetLiveAdvice["strategy"]>["hedgePairStrategies"];
+}) {
+  if (!hedgePairs?.available || hedgePairs.strategies.length === 0) return null;
+
+  return (
+    <div className="mb-4 space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-[11px] uppercase tracking-wider text-slate-500">
+          Estratégias pareadas (blindagem)
+        </p>
+        {hedgePairs.enabled && (
+          <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2 py-0.5 text-[9px] font-bold uppercase text-violet-200">
+            GPT
+          </span>
+        )}
+      </div>
+      {hedgePairs.error && (
+        <p className="text-[10px] text-slate-500">{hedgePairs.error}</p>
+      )}
+      <div className="grid gap-3 lg:grid-cols-2">
+        {hedgePairs.strategies.map((pair) => (
+          <div
+            key={pair.id}
+            className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-3"
+          >
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <h3 className="text-sm font-semibold text-white">{pair.titulo}</h3>
+              <span className="shrink-0 rounded-md border border-neon-green/20 bg-neon-green/10 px-2 py-0.5 text-[10px] font-bold text-neon-green">
+                {(pair.coverage.probAtLeastOne * 100).toFixed(0)}% cobertura
+              </span>
+            </div>
+            {pair.resumo && (
+              <p className="mb-3 text-xs leading-relaxed text-slate-300">{pair.resumo}</p>
+            )}
+            <div className="space-y-2">
+              {[pair.legA, pair.legB].map((leg, idx) => (
+                <div
+                  key={`${pair.id}-${leg.market}-${idx}`}
+                  className="rounded-lg border border-white/[0.06] bg-black/25 px-3 py-2"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold text-white">
+                        Perna {idx + 1}: {leg.label}
+                      </p>
+                      <p className="mt-0.5 text-[10px] text-slate-500">
+                        Prob modelo {(leg.modelProb * 100).toFixed(0)}%
+                        {leg.expectedValue !== 0 && (
+                          <>
+                            {" "}
+                            · EV {(leg.expectedValue * 100).toFixed(1)}%
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <span className="shrink-0 font-mono text-xs font-bold text-slate-200">
+                      @{leg.marketOdd.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 space-y-1 text-[10px] text-slate-400">
+              {pair.cenarioChave && (
+                <p>
+                  <span className="text-cyan-300">Chave:</span> {pair.cenarioChave}
+                </p>
+              )}
+              {pair.scenarioA && <p>{pair.scenarioA}</p>}
+              {pair.scenarioB && <p>{pair.scenarioB}</p>}
+              {pair.scenarioBoth && (
+                <p className="text-neon-green/80">{pair.scenarioBoth}</p>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-slate-500">
+              <span>Split: {pair.stakeSplit}</span>
+              {pair.stakeHintPct > 0 && (
+                <span>
+                  Stake total sugerida: {pair.stakeHintPct.toFixed(1)}% (R${" "}
+                  {pair.stakeHintValue.toFixed(0)})
+                </span>
+              )}
+              {pair.coverage.probBothLose > 0 && (
+                <span className="text-amber-300/90">
+                  Risco dupla perda: {(pair.coverage.probBothLose * 100).toFixed(0)}%
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] leading-relaxed text-slate-600">
+        Pares complementares — se uma perna falhar, a outra tende a compensar. Odds e probabilidades
+        vêm do motor in-play; narrativa enriquecida por GPT quando ativo.
+      </p>
+    </div>
   );
 }
 

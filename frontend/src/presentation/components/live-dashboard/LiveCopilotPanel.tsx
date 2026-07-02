@@ -1,12 +1,11 @@
-import type { LiveCopilot } from "@/domain/entities";
+import type {
+  LiveCopilot,
+  LiveCopilotChatMessage,
+  LiveCopilotUiAction,
+} from "@/domain/entities";
 import { useToast } from "@/presentation/components/ui/toast/ToastContext";
-import {
-  ensureNotificationPermission,
-  notificationPermission,
-} from "@/presentation/utils/browserNotifications";
-import { useCallback, useEffect, useState } from "react";
-
-const COPILOT_ALERTS_KEY = "bolao-copilot-alerts-active";
+import { useCopilotAlertsPreference } from "@/presentation/hooks/useCopilotAlertsPreference";
+import { useEffect, useRef, useState } from "react";
 
 const ACTION_STYLES: Record<
   LiveCopilot["acaoAgora"],
@@ -34,6 +33,15 @@ interface LiveCopilotPanelProps {
   isLoading?: boolean;
   isFetching?: boolean;
   onAddBilheteToTicket?: () => void;
+  agentChat?: {
+    history: LiveCopilotChatMessage[];
+    pendingActions: LiveCopilotUiAction[];
+    isPending: boolean;
+    lastMode?: string | null;
+    onSend: (message: string) => void;
+    onApplyActions: () => void;
+    onDismissActions: () => void;
+  };
 }
 
 function BilheteSection({
@@ -138,20 +146,17 @@ function BilheteSection({
   );
 }
 
-function readAlertsActive(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(COPILOT_ALERTS_KEY) === "1";
-}
-
 function CopilotAlertsControl({
   permission,
   alertsActive,
   onActivate,
+  onDeactivate,
   onRefresh,
 }: {
   permission: NotificationPermission | "unsupported";
   alertsActive: boolean;
   onActivate: () => void;
+  onDeactivate: () => void;
   onRefresh: () => void;
 }) {
   if (permission === "unsupported") {
@@ -164,16 +169,18 @@ function CopilotAlertsControl({
 
   if (permission === "granted" && alertsActive) {
     return (
-      <span
-        className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-neon-green/35 bg-neon-green/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-neon-green"
-        title="Você receberá toast e notificação quando o copiloto sinalizar apostar ou cash-out"
+      <button
+        type="button"
+        onClick={onDeactivate}
+        className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-neon-green/35 bg-neon-green/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-neon-green transition hover:border-rose-400/35 hover:bg-rose-400/10 hover:text-rose-200"
+        title="Clique para desativar alertas de apostar e cash-out"
       >
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-green/60 opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-neon-green" />
         </span>
         Alertas ativos
-      </span>
+      </button>
     );
   }
 
@@ -205,36 +212,195 @@ function CopilotAlertsControl({
   );
 }
 
-export function LiveCopilotPanel({ copilot, isLoading, isFetching, onAddBilheteToTicket }: LiveCopilotPanelProps) {
-  const [notifyPermission, setNotifyPermission] = useState(notificationPermission());
-  const [alertsActive, setAlertsActive] = useState(readAlertsActive);
+const AGENT_QUICK_PROMPTS = [
+  "O que apostar agora?",
+  "Monte um bilhete seguro",
+  "Devo fazer cash-out?",
+];
 
-  const refreshPermission = useCallback(() => {
-    const current = notificationPermission();
-    setNotifyPermission(current);
-    if (current === "granted") {
-      setAlertsActive(true);
-      window.localStorage.setItem(COPILOT_ALERTS_KEY, "1");
-    }
-  }, []);
+function CopilotAgentChat({
+  enabled,
+  agentChat,
+}: {
+  enabled: boolean;
+  agentChat: NonNullable<LiveCopilotPanelProps["agentChat"]>;
+}) {
+  const [input, setInput] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    refreshPermission();
-    const onVisible = () => {
-      if (document.visibilityState === "visible") refreshPermission();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [refreshPermission]);
+    if (agentChat.history.length > 0) setExpanded(true);
+  }, [agentChat.history.length]);
 
-  const handleActivateAlerts = async () => {
-    const ok = await ensureNotificationPermission();
-    const current = notificationPermission();
-    setNotifyPermission(current);
-    if (ok && current === "granted") {
-      setAlertsActive(true);
-      window.localStorage.setItem(COPILOT_ALERTS_KEY, "1");
-    }
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [agentChat.history, agentChat.isPending]);
+
+  if (!enabled) return null;
+
+  const submit = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || agentChat.isPending) return;
+    setInput("");
+    agentChat.onSend(trimmed);
+  };
+
+  return (
+    <div className="mt-4 rounded-xl border border-violet-400/15 bg-violet-400/[0.04] p-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center gap-2 text-left"
+      >
+        <span className="text-[11px] font-black uppercase tracking-widest text-white">
+          Agente interativo
+        </span>
+        {agentChat.lastMode && agentChat.lastMode !== "narrate" && (
+          <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2 py-0.5 text-[9px] font-bold uppercase text-violet-200">
+            {agentChat.lastMode}
+          </span>
+        )}
+        <svg
+          viewBox="0 0 24 24"
+          className={`ml-auto h-4 w-4 text-slate-400 transition ${expanded ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <>
+          <div
+            ref={scrollRef}
+            className="mt-3 max-h-52 space-y-2 overflow-y-auto rounded-lg border border-white/[0.06] bg-black/25 p-2"
+          >
+            {agentChat.history.length === 0 && !agentChat.isPending && (
+              <p className="px-2 py-3 text-xs text-slate-500">
+                Pergunte ao agente — ele consulta o motor EV/Kelly e pode montar bilhete ou trocar
+                de aba. Requer <code className="text-slate-400">LIVE_COPILOT_MODE=agent</code>.
+              </p>
+            )}
+            {agentChat.history.map((msg, idx) => (
+              <div
+                key={`${msg.role}-${idx}`}
+                className={`rounded-lg px-3 py-2 text-xs leading-relaxed ${
+                  msg.role === "user"
+                    ? "ml-6 border border-sky-400/20 bg-sky-400/10 text-sky-100"
+                    : "mr-6 border border-white/[0.06] bg-white/[0.04] text-slate-200"
+                }`}
+              >
+                {msg.content}
+              </div>
+            ))}
+            {agentChat.isPending && (
+              <div className="mr-6 rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-2 text-xs text-slate-400">
+                Analisando jogo…
+              </div>
+            )}
+          </div>
+
+          {agentChat.pendingActions.length > 0 && (
+            <div className="mt-3 rounded-lg border border-neon-green/20 bg-neon-green/[0.06] p-3">
+              <p className="text-[11px] font-semibold text-neon-green">
+                Plano sugerido ({agentChat.pendingActions.length}{" "}
+                {agentChat.pendingActions.length === 1 ? "ação" : "ações"})
+              </p>
+              <ul className="mt-2 space-y-1 text-[11px] text-slate-300">
+                {agentChat.pendingActions.map((action, idx) => (
+                  <li key={`${action.type}-${idx}`}>
+                    {action.type === "notify" && (action.title || action.body || "Notificação")}
+                    {action.type === "add_ticket_legs" &&
+                      `Adicionar ${action.legs.length} perna(s) ao simulador`}
+                    {action.type === "switch_tab" && `Ir para aba ${action.tab ?? "?"}`}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={agentChat.onApplyActions}
+                  className="flex-1 rounded-lg border border-neon-green/30 bg-neon-green/10 py-2 text-xs font-bold text-neon-green transition hover:bg-neon-green/15"
+                >
+                  Executar plano
+                </button>
+                <button
+                  type="button"
+                  onClick={agentChat.onDismissActions}
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-400 hover:bg-white/10"
+                >
+                  Ignorar
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {AGENT_QUICK_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                disabled={agentChat.isPending}
+                onClick={() => submit(prompt)}
+                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-slate-300 transition hover:border-violet-400/30 hover:text-violet-200 disabled:opacity-50"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          <form
+            className="mt-3 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submit(input);
+            }}
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ex.: vale entrar no over 2.5 agora?"
+              disabled={agentChat.isPending}
+              maxLength={2000}
+              className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-violet-400/40 focus:outline-none disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={agentChat.isPending || !input.trim()}
+              className="shrink-0 rounded-xl border border-violet-400/30 bg-violet-400/10 px-4 py-2 text-xs font-bold text-violet-200 transition hover:bg-violet-400/15 disabled:opacity-50"
+            >
+              Enviar
+            </button>
+          </form>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function LiveCopilotPanel({
+  copilot,
+  isLoading,
+  isFetching,
+  onAddBilheteToTicket,
+  agentChat,
+}: LiveCopilotPanelProps) {
+  const { addToast } = useToast();
+  const {
+    alertsActive,
+    notifyPermission,
+    activateAlerts,
+    deactivateAlerts,
+    refreshPermission,
+  } = useCopilotAlertsPreference();
+
+  const handleDeactivateAlerts = () => {
+    deactivateAlerts();
+    addToast("Alertas do copiloto desativados.", "info");
   };
 
   if (isLoading && !copilot) {
@@ -293,7 +459,8 @@ export function LiveCopilotPanel({ copilot, isLoading, isFetching, onAddBilheteT
           <CopilotAlertsControl
             permission={notifyPermission}
             alertsActive={alertsActive}
-            onActivate={handleActivateAlerts}
+            onActivate={activateAlerts}
+            onDeactivate={handleDeactivateAlerts}
             onRefresh={refreshPermission}
           />
         </div>
@@ -391,6 +558,10 @@ export function LiveCopilotPanel({ copilot, isLoading, isFetching, onAddBilheteT
         )}
 
         <BilheteSection copilot={copilot} onAddBilheteToTicket={onAddBilheteToTicket} />
+
+        {agentChat && (
+          <CopilotAgentChat enabled={copilot.enabled} agentChat={agentChat} />
+        )}
 
         {copilot.error && copilot.enabled && (
           <p className="mt-3 text-[11px] text-rose-300/80">Fallback ativo: {copilot.error}</p>

@@ -15,6 +15,8 @@ import { QuickActions } from "@/presentation/components/layout/QuickActions";
 import { MatchCard } from "@/presentation/components/predictions/MatchCard";
 import { ValueBetsSection } from "@/presentation/components/predictions/ValueBetCard";
 import { RoundTabs } from "@/presentation/components/ui/RoundTabs";
+import { LiveDashboardTabs } from "@/presentation/components/live-dashboard/LiveDashboardTabs";
+import { WcKnockoutBracket } from "@/presentation/components/predictions/WcKnockoutBracket";
 import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
 import { SlowLoadingPanel } from "@/presentation/components/ui/SlowLoadingPanel";
 import { EmptyState, ErrorState } from "@/presentation/components/ui/EmptyState";
@@ -26,9 +28,12 @@ import {
 } from "@/presentation/utils/officialSchedule";
 import { buildMatchTicketsPath } from "@/presentation/utils/matchSuperbetEvent";
 
+type DashboardView = "predictions" | "bracket";
+
 export function DashboardPage() {
   const [selectedGroup, setSelectedGroup] = useState<string | "all">("all");
   const [activeRound, setActiveRound] = useState<number | "all">(1);
+  const [dashboardView, setDashboardView] = useState<DashboardView>("predictions");
   const [selectedMatch, setSelectedMatch] = useState<{
     homeTeam: string;
     awayTeam: string;
@@ -60,7 +65,8 @@ export function DashboardPage() {
   const scheduleQuery = useQuery({
     queryKey: ["wc-schedule"],
     queryFn: () => getWcScheduleUseCase.execute(),
-    staleTime: 10 * 60_000,
+    staleTime: dashboardView === "bracket" ? 30_000 : 10 * 60_000,
+    refetchInterval: dashboardView === "bracket" ? 60_000 : false,
   });
 
   const roundQueries: Record<number, typeof round1Query> = {
@@ -184,7 +190,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <PageTransition className="space-y-4">
+    <PageTransition>
       {/* Hero compacto */}
       <HeroPageHeader
         title={roundMeta?.competition ?? "Copa do Mundo 2026"}
@@ -200,6 +206,32 @@ export function DashboardPage() {
         ]}
       />
 
+      {/* Modo: palpites ou chaveamento */}
+      <LiveDashboardTabs
+        tabs={[
+          { id: "predictions", label: "Palpites", count: allPredictions.length },
+          {
+            id: "bracket",
+            label: "Chaveamento",
+            count: scheduleQuery.data?.matches.filter((m) => m.phase !== "group").length,
+          },
+        ]}
+        activeId={dashboardView}
+        onChange={(id) => setDashboardView(id as DashboardView)}
+      />
+
+      {dashboardView === "bracket" ? (
+        scheduleQuery.isLoading ? (
+          <DashboardSkeleton />
+        ) : (
+          <WcKnockoutBracket
+            matches={scheduleQuery.data?.matches ?? []}
+            predictions={allPredictions}
+            resultsSyncedAt={scheduleQuery.data?.resultsSyncedAt}
+          />
+        )
+      ) : (
+        <>
       {/* Barra de controle: rodada + filtro + ações */}
       <div className="flex flex-wrap items-center gap-2">
         <RoundTabs tabs={tabs} active={activeRound} onChange={setActiveRound} />
@@ -348,6 +380,8 @@ export function DashboardPage() {
             <IconChevronRight className="h-3 w-3" />
           </Link>
         </motion.div>
+      )}
+        </>
       )}
     </PageTransition>
   );

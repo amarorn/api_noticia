@@ -293,7 +293,7 @@ export function PredictPage() {
   const friendlyKickoffHint = dateFromUrl ?? kickoffDateFromIso(selectedMatch?.kickoff);
 
   return (
-    <PageTransition className="space-y-4">
+    <PageTransition>
       <HeroPageHeader
         title={
           friendlyMode

@@ -31,29 +31,42 @@ export function PageHeader({
   const lead = subtitle ?? description;
 
   return (
-    <motion.header
-      className="mb-5"
-      initial={reduced ? false : "hidden"}
-      animate="visible"
-      variants={fadeUpVariants}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-xl font-extrabold tracking-tight gradient-text sm:text-2xl">
-              {title}
-            </h1>
-            {badge && (
-              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${badgeClasses[badgeColor]}`}>
-                {badge}
-              </span>
-            )}
-          </div>
-          {lead && <p className="mt-1 text-xs leading-relaxed text-slate-400">{lead}</p>}
+    <div className="sticky top-0 z-30 -mx-2 sm:-mx-4">
+      <motion.header
+        className="live-scoreboard mx-2 mt-2 sm:mx-4 px-5 py-4"
+        initial={reduced ? false : "hidden"}
+        animate="visible"
+        variants={fadeUpVariants}
+      >
+        <div className="mb-1 flex items-center gap-2">
+          <span
+            className="font-mono text-[9px] font-bold tracking-widest"
+            style={{ color: "rgba(0,245,160,0.35)" }}
+          >
+            {":: BOLÃO AI"}
+          </span>
+          <span className="h-px flex-1 bg-gradient-to-r from-neon-green/10 to-transparent" />
         </div>
-        {children}
-      </div>
-    </motion.header>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-xl font-extrabold tracking-tight gradient-text-cli sm:text-2xl">
+                {title}
+              </h1>
+              {badge && (
+                <span
+                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${badgeClasses[badgeColor]}`}
+                >
+                  {badge}
+                </span>
+              )}
+            </div>
+            {lead && <p className="mt-1 text-xs leading-relaxed text-slate-400">{lead}</p>}
+          </div>
+          {children}
+        </div>
+      </motion.header>
+    </div>
   );
 }
 
@@ -80,16 +93,14 @@ export function HeroPageHeader({
   const reduced = useReducedMotion();
 
   return (
-    <motion.div
-      className="relative mb-5 overflow-hidden rounded-xl border shadow-card"
-      style={{
-        minHeight: 100,
-        borderColor: "rgba(0, 245, 160, 0.10)",
-      }}
-      initial={reduced ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="sticky top-0 z-30 -mx-2 sm:-mx-4">
+      <motion.div
+        className="live-scoreboard glow-border relative mx-2 mt-2 overflow-hidden rounded-2xl sm:mx-4"
+        style={{ minHeight: 100 }}
+        initial={reduced ? false : { opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
       <img
         src={imageSrc}
         alt=""
@@ -137,5 +148,6 @@ export function HeroPageHeader({
         )}
       </div>
     </motion.div>
+    </div>
   );
 }

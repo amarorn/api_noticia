@@ -367,7 +367,7 @@ export function LiveInPlayPage() {
   }
 
   return (
-    <PageTransition className="space-y-4">
+    <PageTransition>
       {/* ── Cabeçalho de navegação ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link

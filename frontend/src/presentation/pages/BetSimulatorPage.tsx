@@ -407,7 +407,7 @@ export function BetSimulatorPage() {
         />
 
         {/* Formulário */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5 space-y-4">
+        <div className="live-glass-panel p-5 space-y-4">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2">
             <IconTarget className="h-4 w-4 text-emerald-400" />
             Monte seu bilhete
@@ -646,8 +646,8 @@ export function BetSimulatorPage() {
         {/* Modal de seleção de mercados */}
         {showMarketPicker && activePickIndex !== null && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-slate-700 max-w-lg w-full max-h-[80vh] overflow-y-auto">
-              <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+            <div className="live-glass-panel-glow max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl">
+              <div className="p-4 border-b border-white/8 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">
                   📋 Palpites disponíveis — {MARKET_OPTIONS.find(m => m.value === picks[activePickIndex]?.market)?.label}
                 </h3>
@@ -671,7 +671,7 @@ export function BetSimulatorPage() {
                       className={`w-full text-left rounded-lg border p-3 transition-colors hover:bg-white/5 ${
                         edge.meets_threshold
                           ? "border-emerald-500/30 bg-emerald-500/5"
-                          : "border-slate-700 bg-slate-800/50"
+                          : "border-white/8 bg-black/25"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -754,7 +754,7 @@ export function BetSimulatorPage() {
             </div>
 
             {/* Resumo rápido */}
-            <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+            <div className="live-glass-panel p-4">
               <h4 className="text-sm font-semibold text-white mb-3">Resumo da Análise</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div className="bg-white/5 rounded-lg p-3 text-center">

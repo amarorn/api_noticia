@@ -265,3 +265,20 @@ export class GetLiveCopilotUseCase {
     return this.repository.getLiveCopilot(dto);
   }
 }
+
+export class PostLiveCopilotAgentUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    eventId: number;
+    sport: "football" | "basketball";
+    message: string;
+    history: import("@/domain/entities").LiveCopilotChatMessage[];
+    phase?: string;
+    bankroll?: number;
+    fast?: boolean;
+    kickoff?: string;
+  }) {
+    return this.repository.postLiveCopilotAgent(dto);
+  }
+}

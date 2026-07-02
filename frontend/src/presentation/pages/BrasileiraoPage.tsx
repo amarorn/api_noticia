@@ -41,7 +41,7 @@ export function BrasileiraoPage() {
   const round = query.data!;
 
   return (
-    <PageTransition className="space-y-4">
+    <PageTransition>
       <HeroPageHeader
         title={`${round.competition} — Rodada ${round.roundNumber}`}
         subtitle="Previsões heurísticas baseadas em notícias e contexto"

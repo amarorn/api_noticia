@@ -298,7 +298,7 @@ export function TeamAlbumPage() {
   const total = roster?.players.length ?? 0;
 
   return (
-    <PageTransition className="space-y-3">
+    <PageTransition>
       {/* Breadcrumb */}
       <Link
         to="/album"

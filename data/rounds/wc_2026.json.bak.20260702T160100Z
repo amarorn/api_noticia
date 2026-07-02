@@ -1261,10 +1261,10 @@
       "round": 4,
       "phase": "round_of_32",
       "kickoff": "2026-07-01T20:00:00+00:00",
-      "venue": null,
-      "city": null,
+      "venue": "Lumen Field",
+      "city": "Seattle",
       "fifa_stage": "Segundas de final",
-      "fifa_id_match": "400021525"
+      "fifa_id_match": null
     },
     {
       "id": "round_of_32-estados-unidos-bosnia",
@@ -1278,33 +1278,7 @@
       "city": "Santa Clara",
       "fifa_stage": "Segundas de final",
       "fifa_id_match": null
-    },
-    {
-      "id": "round_of_32-inglaterra-rd-do-congo",
-      "home_team": "Inglaterra",
-      "away_team": "RD do Congo",
-      "group": null,
-      "round": 4,
-      "phase": "round_of_32",
-      "kickoff": "2026-07-01T16:00:00+00:00",
-      "venue": null,
-      "city": null,
-      "fifa_stage": "Segundas de final",
-      "fifa_id_match": "400021512"
-    },
-    {
-      "id": "round_of_32-eua-bosnia",
-      "home_team": "EUA",
-      "away_team": "Bósnia",
-      "group": null,
-      "round": 4,
-      "phase": "round_of_32",
-      "kickoff": "2026-07-02T00:00:00+00:00",
-      "venue": null,
-      "city": null,
-      "fifa_stage": "Segundas de final",
-      "fifa_id_match": "400021524"
     }
   ],
-  "results_synced_at": "2026-07-02T16:48:29.871632+00:00"
+  "results_synced_at": "2026-07-01T15:51:27.870786+00:00"
 }

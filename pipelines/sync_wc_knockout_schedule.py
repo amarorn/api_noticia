@@ -162,30 +162,43 @@ def fetch_knockout_matches(client: FifaClient | None = None) -> list[dict[str, A
     return out
 
 
+def _pair_key(match: dict[str, Any]) -> tuple[str, str, str]:
+    return (
+        normalize_national_team(str(match.get("home_team") or "")),
+        normalize_national_team(str(match.get("away_team") or "")),
+        str(match.get("kickoff") or ""),
+    )
+
+
 def merge_knockout_matches(
     round_data: dict[str, Any],
     knockout_matches: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], int, int]:
-    """Mescla jogos do mata-mata no round_data existente (por id, substitui se já existir)."""
+    """Mescla jogos do mata-mata no round_data (por id ou par normalizado + horário)."""
     matches: list[dict[str, Any]] = round_data.setdefault("matches", [])
     by_id = {m.get("id"): idx for idx, m in enumerate(matches)}
+    by_pair = {_pair_key(m): idx for idx, m in enumerate(matches)}
 
     added = 0
     updated = 0
     for km in knockout_matches:
         idx = by_id.get(km["id"])
         if idx is None:
+            idx = by_pair.get(_pair_key(km))
+        if idx is None:
             matches.append(km)
             by_id[km["id"]] = len(matches) - 1
+            by_pair[_pair_key(km)] = len(matches) - 1
             added += 1
         else:
             existing = matches[idx]
             km_merged = {**existing, **km}
-            # Preserva placar/resultado já sincronizado, se houver.
             for score_key in ("home_score", "away_score", "result_source", "result_synced_at"):
                 if score_key in existing:
                     km_merged[score_key] = existing[score_key]
             matches[idx] = km_merged
+            by_id[km_merged["id"]] = idx
+            by_pair[_pair_key(km_merged)] = idx
             updated += 1
 
     round_data["matches"] = matches

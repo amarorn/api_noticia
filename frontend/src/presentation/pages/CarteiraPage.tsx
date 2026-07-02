@@ -158,7 +158,7 @@ function KpiCard({
   const trendIcon = trend === "up" ? "▲" : trend === "down" ? "▼" : "━";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="live-glass-panel p-5">
       <div className="text-xs uppercase tracking-wider text-slate-400">{label}</div>
       <div className={`mt-2 text-2xl font-bold ${trendColor}`}>
         {trend && <span className="mr-2 text-base">{trendIcon}</span>}
@@ -232,7 +232,7 @@ function BalanceChart({ summary }: { summary: WalletSummary }) {
   const stroke = trend === "up" ? "#10b981" : "#ef4444";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="live-glass-panel p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-200">Saldo ao longo do tempo</h3>
         <div className="text-xs text-slate-500">
@@ -275,7 +275,7 @@ function RoiBreakdownSection({
   }, [reconciliationItems]);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-5">
+    <div className="live-glass-panel p-5 space-y-5">
       <div>
         <h3 className="text-sm font-semibold text-slate-200">Seu ROI</h3>
         <p className="mt-1 text-xs text-slate-500">
@@ -427,7 +427,7 @@ function DailyPnlBars({ summary }: { summary: WalletSummary }) {
   const maxAbs = Math.max(...days.map((d) => Math.abs(d.pnl)), 1);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="live-glass-panel p-5">
       <h3 className="mb-3 text-sm font-semibold text-slate-200">P&L por dia</h3>
       <div className="space-y-2">
         {days.map((d) => {
@@ -473,7 +473,7 @@ function BetTypeBreakdown({ summary }: { summary: WalletSummary }) {
   if (!summary.by_game_type.length) return null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="live-glass-panel p-5">
       <h3 className="mb-3 text-sm font-semibold text-slate-200">Onde o dinheiro vai</h3>
       <div className="space-y-2">
         {summary.by_game_type.map((g) => {
@@ -508,14 +508,14 @@ function BetTypeBreakdown({ summary }: { summary: WalletSummary }) {
 function ReconciliationTable({ items }: { items: ReconciliationItem[] }) {
   if (!items.length) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-slate-400">
+      <div className="live-glass-panel p-6 text-center text-sm text-slate-400">
         Nenhuma aposta reconciliada ainda. Clique em "Reconciliar" acima após o upload.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+    <div className="live-glass-panel overflow-hidden">
       <div className="px-5 py-3 border-b border-white/10">
         <h3 className="text-sm font-semibold text-slate-200">Aposta × Modelo</h3>
         <div className="text-xs text-slate-500">
@@ -617,7 +617,7 @@ function ModelErrorHeatmap({
 
   if (!buckets.length || !minLabels.length || !diffLabels.length) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-slate-400">
+      <div className="live-glass-panel p-6 text-center text-sm text-slate-400">
         Heatmap exigirá mais bilhetes reconciliados para ser significativo.
       </div>
     );
@@ -637,7 +637,7 @@ function ModelErrorHeatmap({
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="live-glass-panel p-5">
       <h3 className="mb-3 text-sm font-semibold text-slate-200">Onde o modelo erra</h3>
       <div className="text-xs text-slate-500 mb-3">
         Eixo Y: minuto · Eixo X: |goal_diff| · Cor: Brier (verde = acurado, vermelho = errado)
@@ -793,7 +793,7 @@ export function CarteiraPage() {
         )}
 
         {summaryQ.data?.n_transactions === 0 && !summaryQ.isLoading && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-400">
+          <div className="live-glass-panel p-8 text-center text-slate-400">
             Nenhuma transação encontrada para <span className="font-mono">{userId}</span>.
             Suba um CSV acima para começar.
           </div>

@@ -34,6 +34,10 @@ import type {
   SuperbetLiveEvent,
   BasketSuperbetLiveFeed,
   BasketSuperbetLiveAdvice,
+  LiveCopilotAgent,
+  LiveCopilotTabId,
+  LiveCopilotUiAction,
+  LiveCopilotUiLeg,
 } from "@/domain/entities";
 
 export interface ApiModelBreakdown {
@@ -520,6 +524,10 @@ interface ApiWcScheduleMatch {
   kickoff: string | null;
   venue: string | null;
   city: string | null;
+  fifa_stage?: string | null;
+  home_score?: number | null;
+  away_score?: number | null;
+  played?: boolean;
   prediction?: "1" | "X" | "2" | null;
   confidence?: number | null;
   prob_home?: number | null;
@@ -535,6 +543,7 @@ interface ApiWcSchedule {
   matchdays: number[];
   matches: ApiWcScheduleMatch[];
   total_matches: number;
+  results_synced_at?: string | null;
   predictions_summary?: {
     loaded: number;
     distribution: Record<string, number>;
@@ -553,6 +562,10 @@ function mapWcScheduleMatch(raw: ApiWcScheduleMatch): WcScheduleMatch {
     kickoff: raw.kickoff,
     venue: raw.venue,
     city: raw.city,
+    fifaStage: raw.fifa_stage ?? null,
+    homeScore: raw.home_score ?? null,
+    awayScore: raw.away_score ?? null,
+    played: raw.played ?? false,
     prediction: raw.prediction ?? null,
     confidence: raw.confidence ?? null,
     probHome: raw.prob_home ?? null,
@@ -702,6 +715,7 @@ export function mapWcSchedule(raw: ApiWcSchedule): WcSchedule {
     matchdays: raw.matchdays,
     matches: raw.matches.map(mapWcScheduleMatch),
     totalMatches: raw.total_matches,
+    resultsSyncedAt: raw.results_synced_at ?? null,
     predictionsSummary: raw.predictions_summary
       ? {
           loaded: raw.predictions_summary.loaded,
@@ -1518,6 +1532,57 @@ function mapBetStrategy(raw: Record<string, unknown> | null | undefined) {
       : null,
     patternAccuracy: mapPatternAccuracy(raw.pattern_accuracy as Record<string, unknown> | null),
     comboTicket: mapComboTicket(raw.combo_ticket as Record<string, unknown> | null),
+    hedgePairStrategies: mapHedgePairStrategies(
+      raw.hedge_pair_strategies as Record<string, unknown> | null,
+    ),
+  };
+}
+
+function mapHedgePairLeg(raw: Record<string, unknown>) {
+  return {
+    market: String(raw.market ?? ""),
+    outcome: String(raw.outcome ?? ""),
+    label: String(raw.label ?? ""),
+    modelProb: Number(raw.model_prob ?? 0),
+    marketOdd: Number(raw.market_odd ?? 0),
+    expectedValue: Number(raw.expected_value ?? 0),
+    edgePp: Number(raw.edge_pp ?? 0),
+  };
+}
+
+function mapHedgePairStrategies(raw: Record<string, unknown> | null | undefined) {
+  if (!raw) return null;
+  const strategiesRaw = (raw.strategies as Array<Record<string, unknown>>) ?? [];
+  return {
+    enabled: Boolean(raw.enabled),
+    available: Boolean(raw.available),
+    candidateCount: Number(raw.candidate_count ?? 0),
+    error: raw.error != null ? String(raw.error) : null,
+    strategies: strategiesRaw.map((s) => {
+      const cov = (s.coverage as Record<string, unknown>) ?? {};
+      return {
+        id: String(s.id ?? ""),
+        titulo: String(s.titulo ?? s.name ?? ""),
+        resumo: String(s.resumo ?? ""),
+        stakeSplit: String(s.stake_split ?? "50% / 50%"),
+        cenarioChave: String(s.cenario_chave ?? ""),
+        llmEnriched: Boolean(s.llm_enriched),
+        stakeHintPct: Number(s.stake_hint_pct ?? 0),
+        stakeHintValue: Number(s.stake_hint_value ?? 0),
+        scenarioA: String(s.scenario_a ?? ""),
+        scenarioB: String(s.scenario_b ?? ""),
+        scenarioBoth: String(s.scenario_both ?? ""),
+        coverage: {
+          probLegA: Number(cov.prob_leg_a ?? 0),
+          probLegB: Number(cov.prob_leg_b ?? 0),
+          probBothWin: Number(cov.prob_both_win ?? 0),
+          probAtLeastOne: Number(cov.prob_at_least_one ?? 0),
+          probBothLose: Number(cov.prob_both_lose ?? 0),
+        },
+        legA: mapHedgePairLeg((s.leg_a as Record<string, unknown>) ?? {}),
+        legB: mapHedgePairLeg((s.leg_b as Record<string, unknown>) ?? {}),
+      };
+    }),
   };
 }
 
@@ -2567,5 +2632,43 @@ export function mapLiveCopilot(raw: ApiLiveCopilot) {
     })),
     alertas: raw.alertas ?? [],
     bilhete: mapCopilotBilhete(raw.bilhete),
+  };
+}
+
+function mapCopilotUiLeg(raw: Record<string, unknown>): LiveCopilotUiLeg {
+  return {
+    market: String(raw.market ?? ""),
+    outcome: String(raw.outcome ?? ""),
+    label: String(raw.label ?? ""),
+    modelProb: raw.model_prob != null ? Number(raw.model_prob) : null,
+    marketOdd: raw.market_odd != null ? Number(raw.market_odd) : null,
+    expectedValue: raw.expected_value != null ? Number(raw.expected_value) : null,
+    edgePp: raw.edge_pp != null ? Number(raw.edge_pp) : null,
+    suggestedStakePct: raw.suggested_stake_pct != null ? Number(raw.suggested_stake_pct) : null,
+  };
+}
+
+function mapCopilotUiAction(raw: Record<string, unknown>): LiveCopilotUiAction {
+  const legsRaw = Array.isArray(raw.legs) ? raw.legs : [];
+  return {
+    type: (raw.type as LiveCopilotUiAction["type"]) ?? "notify",
+    title: raw.title != null ? String(raw.title) : null,
+    body: raw.body != null ? String(raw.body) : null,
+    tab: raw.tab != null ? (String(raw.tab) as LiveCopilotTabId) : null,
+    legs: legsRaw.map((leg) => mapCopilotUiLeg(leg as Record<string, unknown>)),
+  };
+}
+
+export function mapLiveCopilotAgent(raw: Record<string, unknown>): LiveCopilotAgent {
+  const base = mapLiveCopilot(raw as Parameters<typeof mapLiveCopilot>[0]);
+  const actionsRaw = Array.isArray(raw.ui_actions) ? raw.ui_actions : [];
+  const toolsRaw = Array.isArray(raw.tools_used) ? raw.tools_used : [];
+  return {
+    ...base,
+    mode: String(raw.mode ?? "agent"),
+    reply: String(raw.reply ?? ""),
+    toolsUsed: toolsRaw.map(String),
+    uiActions: actionsRaw.map((a) => mapCopilotUiAction(a as Record<string, unknown>)),
+    autoApplyUi: Boolean(raw.auto_apply_ui),
   };
 }

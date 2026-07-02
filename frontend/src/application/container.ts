@@ -39,6 +39,7 @@ import {
   GetBasketSuperbetLiveUseCase,
   GetBasketSuperbetLiveAdviceUseCase,
   GetLiveCopilotUseCase,
+  PostLiveCopilotAgentUseCase,
 } from "@/application/use-cases/wcUseCases";
 import {
   brasileiraoRepository,
@@ -75,6 +76,7 @@ export const getBasketSuperbetLiveAdviceUseCase = new GetBasketSuperbetLiveAdvic
   wcRepository,
 );
 export const getLiveCopilotUseCase = new GetLiveCopilotUseCase(wcRepository);
+export const postLiveCopilotAgentUseCase = new PostLiveCopilotAgentUseCase(wcRepository);
 export const getBrasileiraoRoundUseCase = new GetBrasileiraoRoundUseCase(
   brasileiraoRepository,
 );

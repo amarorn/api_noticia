@@ -78,7 +78,7 @@ function AdviceCard({ advice }: { advice: BetAdvice }) {
 
       {/* Sugestão de hedge */}
       {advice.hedge && (
-        <div className="mt-2 bg-slate-800/50 rounded p-2 border border-slate-600/30">
+        <div className="mt-2 live-glass-panel rounded p-2 border border-slate-600/30">
           <p className="text-xs text-amber-300 font-medium">
             Contra-aposta sugerida: R$ {advice.hedge.stake_suggested.toFixed(2)} em{" "}
             {outcomeLabel(advice.hedge.outcome, advice.hedge.market)} @ {advice.hedge.odd_current.toFixed(2)}
@@ -108,7 +108,7 @@ export default function LiveHedgeAlert({ report }: Props) {
   const hasCritical = sorted.some((a) => a.urgency === "critical");
 
   return (
-    <div className={`rounded-xl p-4 mb-4 ${hasCritical ? "bg-red-950/30 border border-red-700/40" : "bg-slate-800/40 border border-slate-700/30"}`}>
+    <div className={`rounded-xl p-4 mb-4 ${hasCritical ? "bg-red-950/30 border border-red-700/40" : "live-glass-panel/40 border border-white/8/30"}`}>
       {/* Título */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-slate-200">

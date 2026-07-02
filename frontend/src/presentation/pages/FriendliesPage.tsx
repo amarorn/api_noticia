@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getWcFriendliesUseCase, getWcTeamsUseCase } from "@/application/container";
 import type { WcFriendlyMatch } from "@/domain/entities";
+import { AppTableShell } from "@/presentation/components/layout/AppTableShell";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { PageHeader } from "@/presentation/components/layout/PageHeader";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
@@ -164,7 +165,7 @@ export function FriendliesPage() {
           <select
             value={team}
             onChange={(e) => setTeam(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-neon-green/40"
+            className="app-input w-full"
           >
             {teamOptions.map((name) => (
               <option key={name} value={name} className="bg-slate-900">
@@ -205,15 +206,21 @@ export function FriendliesPage() {
           onRetry={() => friendliesQuery.refetch()}
         />
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] px-6 py-12 text-center text-sm text-slate-400">
+        <div className="app-empty-state">
           Nenhum amistoso em {new Date().getFullYear()} para {team} com os filtros atuais.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02]">
-          <div className="overflow-x-auto">
+        <AppTableShell
+          footer={
+            <>
+              {rows.length} amistoso(s) em {friendliesQuery.data?.year ?? new Date().getFullYear()} ·
+              fonte {friendliesQuery.data?.source ?? "sofascore"}
+            </>
+          }
+        >
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-white/8 text-left text-[11px] uppercase tracking-widest text-slate-500">
+                <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Confronto</th>
                   <th className="px-4 py-3">Placar</th>
@@ -294,12 +301,7 @@ export function FriendliesPage() {
                 })}
               </tbody>
             </table>
-          </div>
-          <div className="border-t border-white/8 px-4 py-3 text-xs text-slate-500">
-            {rows.length} amistoso(s) em {friendliesQuery.data?.year ?? new Date().getFullYear()} ·
-            fonte {friendliesQuery.data?.source ?? "sofascore"}
-          </div>
-        </div>
+        </AppTableShell>
       )}
     </PageTransition>
   );
