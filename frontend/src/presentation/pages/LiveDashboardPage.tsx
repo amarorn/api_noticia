@@ -49,6 +49,7 @@ import { useLiveCopilotQuery } from "@/presentation/hooks/useLiveCopilotQuery";
 import { useLiveCopilotActionAlerts } from "@/presentation/hooks/useLiveCopilotActionAlerts";
 import { useLivePossessionHistory } from "@/presentation/hooks/useLivePossessionHistory";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
+import { useLivePredictionHistory } from "@/presentation/hooks/useLivePredictionHistory";
 import { resolveLiveAdvicePhase } from "@/presentation/utils/liveAdvicePhase";
 import { useTicket, type TicketLeg } from "@/presentation/hooks/useTicket";
 import { TicketSimulator, FloatingTicketBadge } from "@/presentation/components/ticket/TicketSimulator";
@@ -350,6 +351,8 @@ function PressureChart({
 
   const displayHome = history.length > 0 ? history[history.length - 1].home : 50;
   const displayAway = history.length > 0 ? history[history.length - 1].away : 50;
+  const labels = history.map((point) => `${point.minute}'`);
+  const currentMinuteLabel = `${currentMinute}'`;
 
   const chartOptions: ApexOptions = {
     chart: {
@@ -358,29 +361,45 @@ function PressureChart({
       toolbar: { show: false },
       fontFamily: "inherit",
       animations: { enabled: true, speed: 800 },
-      dropShadow: {
-        enabled: true,
-        top: 0,
-        left: 0,
-        blur: 8,
-        opacity: 0.35,
-        color: "#00ff88",
-      },
+      zoom: { enabled: false },
+      dropShadow: { enabled: false },
     },
     colors: ["#00ff88", "#38bdf8"],
-    stroke: { curve: "smooth", width: [3, 3] },
+    stroke: { curve: "smooth", width: [2.5, 2.5] },
     fill: {
       type: "gradient",
       gradient: {
         shadeIntensity: 1,
-        opacityFrom: 0.35,
+        opacityFrom: 0.22,
         opacityTo: 0.01,
         stops: [0, 85, 100],
       },
     },
     dataLabels: { enabled: false },
+    markers: {
+      size: 0,
+      hover: { size: 4 },
+      discrete: history.length
+        ? [
+            {
+              seriesIndex: 0,
+              dataPointIndex: history.length - 1,
+              fillColor: "#00ff88",
+              strokeColor: "#052e1f",
+              size: 5,
+            },
+            {
+              seriesIndex: 1,
+              dataPointIndex: history.length - 1,
+              fillColor: "#38bdf8",
+              strokeColor: "#082f49",
+              size: 5,
+            },
+          ]
+        : [],
+    },
     xaxis: {
-      categories: history.map((h) => `${h.minute}'`),
+      categories: labels,
       labels: { style: { colors: "#475569", fontSize: "10px" }, rotate: 0 },
       axisBorder: { show: false },
       axisTicks: { show: false },
@@ -393,21 +412,32 @@ function PressureChart({
         formatter: (v) => `${v.toFixed(0)}%`,
         style: { colors: "#475569", fontSize: "10px" },
       },
+      tickAmount: 4,
     },
     grid: {
       borderColor: "rgba(30, 41, 59, 0.6)",
       strokeDashArray: 3,
-      padding: { left: 0, right: 8, top: 8 },
+      xaxis: { lines: { show: false } },
+      padding: { left: 0, right: 8, top: 8, bottom: -6 },
     },
     legend: { show: false },
     tooltip: {
       theme: "dark",
-      y: { formatter: (val) => `${val.toFixed(0)}%` },
+      shared: true,
+      intersect: false,
+      y: { formatter: (val) => `${val.toFixed(1)}%` },
     },
     annotations: {
+      yaxis: [
+        {
+          y: 50,
+          borderColor: "rgba(148, 163, 184, 0.28)",
+          strokeDashArray: 4,
+        },
+      ],
       xaxis: [
         {
-          x: `${currentMinute}'`,
+          x: labels.includes(currentMinuteLabel) ? currentMinuteLabel : labels[labels.length - 1],
           borderColor: "rgba(255, 209, 102, 0.55)",
           strokeDashArray: 4,
           label: {
@@ -468,7 +498,9 @@ function PressureChart({
       </div>
 
       {hasData ? (
-        <Chart options={chartOptions} series={series} type="area" height={200} />
+        <div className="rounded-2xl border border-white/6 bg-[radial-gradient(circle_at_top,rgba(20,184,166,0.08),transparent_55%),linear-gradient(180deg,rgba(15,23,42,0.32),rgba(15,23,42,0.12))] p-2">
+          <Chart options={chartOptions} series={series} type="area" height={220} />
+        </div>
       ) : (
         <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-white/10 text-xs text-slate-600">
           Acumulando amostras de posse ao longo dos polls…
@@ -1137,6 +1169,36 @@ export function LiveDashboardPage() {
   });
 
   const possessionHistory = useLivePossessionHistory(data);
+  const { history: predictionHistory } = useLivePredictionHistory(data);
+  const pressureHistory = useMemo(() => {
+    const marketHistory = predictionHistory
+      .map((tick) => {
+        const rawHome =
+          tick.h2hImplied["1"] != null
+            ? tick.h2hImplied["1"] * 100
+            : tick.h2hOdds["1"] != null
+              ? 100 / tick.h2hOdds["1"]
+              : null;
+        const rawAway =
+          tick.h2hImplied["2"] != null
+            ? tick.h2hImplied["2"] * 100
+            : tick.h2hOdds["2"] != null
+              ? 100 / tick.h2hOdds["2"]
+              : null;
+        if (rawHome == null || rawAway == null) return null;
+        const total = rawHome + rawAway;
+        if (total <= 0) return null;
+        return {
+          minute: tick.minute,
+          home: (rawHome / total) * 100,
+          away: (rawAway / total) * 100,
+          capturedAt: tick.capturedAt,
+        };
+      })
+      .filter((sample): sample is { minute: number; home: number; away: number; capturedAt: string | null } => sample != null);
+
+    return marketHistory.length >= 2 ? marketHistory.slice(-36) : possessionHistory;
+  }, [predictionHistory, possessionHistory]);
   const recalibrationEvent = useLiveRecalibration(data, isFetching);
   useOddsDropMonitor(data, handleRiskAlerts);
 
@@ -1447,7 +1509,7 @@ export function LiveDashboardPage() {
                         <PressureChart
                           homeTeam={data.homeTeam}
                           awayTeam={data.awayTeam}
-                          history={possessionHistory}
+                          history={pressureHistory}
                           currentMinute={liveHeader?.minute ?? data.minute}
                         />
                       </div>
