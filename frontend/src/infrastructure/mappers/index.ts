@@ -2352,6 +2352,10 @@ interface ApiBasketSuperbetLiveAdvice {
     total_probs?: Record<string, number>;
     ppm_home?: number | null;
     ppm_away?: number | null;
+    ppm_home_prior?: number | null;
+    ppm_away_prior?: number | null;
+    match_minutes?: number | null;
+    n_simulations?: number | null;
     market_total_line?: number | null;
     market_spread_line?: number | null;
     next_quarter_number?: number | null;
@@ -2415,6 +2419,10 @@ export function mapBasketSuperbetLiveAdvice(
       totalProbs: summary.total_probs ?? {},
       ppmHome: summary.ppm_home ?? null,
       ppmAway: summary.ppm_away ?? null,
+      ppmHomePrior: summary.ppm_home_prior ?? null,
+      ppmAwayPrior: summary.ppm_away_prior ?? null,
+      matchMinutes: summary.match_minutes ?? null,
+      nSimulations: summary.n_simulations ?? null,
       marketTotalLine: summary.market_total_line ?? null,
       marketSpreadLine: summary.market_spread_line ?? null,
       nextQuarterNumber: summary.next_quarter_number ?? null,
@@ -2442,5 +2450,122 @@ export function mapBasketSuperbetLiveAdvice(
           maxEdgePp: raw.confidence.max_edge_pp,
         }
       : null,
+  };
+}
+
+type ApiLiveCopilot = {
+  enabled: boolean;
+  available: boolean;
+  sport: string;
+  event_id: number;
+  captured_at?: string | null;
+  cached?: boolean;
+  model?: string | null;
+  error?: string | null;
+  wait_reason?: string | null;
+  momento?: string;
+  acao_agora?: string;
+  confianca_geral?: string;
+  picks?: Array<{
+    rank: number;
+    market: string;
+    outcome: string;
+    label: string;
+    rationale: string;
+    confidence: string;
+    model_prob?: number | null;
+    market_odd?: number | null;
+    expected_value?: number | null;
+    edge_pp?: number | null;
+    suggested_stake_pct?: number | null;
+  }>;
+  alertas?: string[];
+  bilhete?: {
+    tipo?: string;
+    titulo?: string;
+    resumo?: string;
+    valid?: boolean;
+    combined_odd?: number | null;
+    combined_odd_simple?: number | null;
+    pricing_mode?: string | null;
+    avisos_correlacao?: string[];
+    validation_warnings?: string[];
+    pernas?: Array<{
+      rank: number;
+      market: string;
+      outcome: string;
+      label: string;
+      papel?: string;
+      rationale?: string;
+      market_odd?: number | null;
+      model_prob?: number | null;
+      expected_value?: number | null;
+      edge_pp?: number | null;
+    }>;
+  } | null;
+};
+
+function parseCopilotAction(value: string | undefined): "apostar" | "aguardar" | "cashout" {
+  const acao = String(value ?? "aguardar").toLowerCase();
+  if (acao === "apostar" || acao === "cashout") return acao;
+  return "aguardar";
+}
+
+function mapCopilotBilhete(raw: ApiLiveCopilot["bilhete"]) {
+  if (!raw) return null;
+  return {
+    tipo: raw.tipo ?? "nenhum",
+    titulo: raw.titulo ?? "",
+    resumo: raw.resumo ?? "",
+    pernas: (raw.pernas ?? []).map((p) => ({
+      rank: p.rank,
+      market: p.market,
+      outcome: p.outcome,
+      label: p.label,
+      papel: p.papel ?? "complemento",
+      rationale: p.rationale ?? "",
+      marketOdd: p.market_odd ?? null,
+      modelProb: p.model_prob ?? null,
+      expectedValue: p.expected_value ?? null,
+      edgePp: p.edge_pp ?? null,
+    })),
+    valid: Boolean(raw.valid),
+    combinedOdd: raw.combined_odd ?? null,
+    combinedOddSimple: raw.combined_odd_simple ?? null,
+    pricingMode: raw.pricing_mode ?? null,
+    avisosCorrelacao: raw.avisos_correlacao ?? [],
+    validationWarnings: raw.validation_warnings ?? [],
+  };
+}
+
+export function mapLiveCopilot(raw: ApiLiveCopilot) {
+  return {
+    enabled: Boolean(raw.enabled),
+    available: Boolean(raw.available),
+    sport: raw.sport,
+    eventId: raw.event_id,
+    capturedAt: raw.captured_at ?? null,
+    cached: Boolean(raw.cached),
+    model: raw.model ?? null,
+    error: raw.error ?? null,
+    waitReason: raw.wait_reason ?? null,
+    momento: raw.momento ?? "",
+    acaoAgora: parseCopilotAction(raw.acao_agora),
+    confiancaGeral: raw.confianca_geral ?? "Baixa",
+    picks: (raw.picks ?? []).map((p) => ({
+      rank: p.rank,
+      market: p.market,
+      outcome: p.outcome,
+      label: p.label,
+      rationale: p.rationale,
+      confidence: p.confidence,
+      modelProb: p.model_prob ?? null,
+      marketOdd: p.market_odd ?? null,
+      expectedValue: p.expected_value ?? null,
+      edgePp: p.edge_pp ?? null,
+      suggestedStakePct: p.suggested_stake_pct ?? null,
+    })),
+    alertas: raw.alertas ?? [],
+    bilhete: mapCopilotBilhete(raw.bilhete),
   };
 }

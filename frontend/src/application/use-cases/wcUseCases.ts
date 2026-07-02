@@ -250,3 +250,18 @@ export class GetBasketSuperbetLiveAdviceUseCase {
     return this.repository.getBasketSuperbetLiveAdvice(dto);
   }
 }
+
+export class GetLiveCopilotUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    eventId: number;
+    sport: "football" | "basketball";
+    phase?: string;
+    bankroll?: number;
+    fast?: boolean;
+    kickoff?: string;
+  }) {
+    return this.repository.getLiveCopilot(dto);
+  }
+}

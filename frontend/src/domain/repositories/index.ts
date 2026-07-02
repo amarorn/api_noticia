@@ -154,6 +154,14 @@ export interface IWcRepository {
     bankroll?: number;
     fast?: boolean;
   }): Promise<import("@/domain/entities").BasketSuperbetLiveAdvice>;
+  getLiveCopilot(request: {
+    eventId: number;
+    sport: "football" | "basketball";
+    phase?: string;
+    bankroll?: number;
+    fast?: boolean;
+    kickoff?: string;
+  }): Promise<import("@/domain/entities").LiveCopilot>;
 }
 
 export interface IBrasileiraoRepository {

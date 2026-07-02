@@ -1,12 +1,16 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
-import { DashboardSkeleton } from "@/presentation/components/ui/Skeleton";
-import { IconArrowLeft, IconChevronRight } from "@/presentation/components/ui/Icons";
+import { LiveDashboardContentSkeleton, MatchScoreboardSkeleton } from "@/presentation/components/ui/Skeleton";
+import { useLiveDashboardChrome } from "@/presentation/components/layout/liveDashboardChromeContext";
+import { IconChevronRight } from "@/presentation/components/ui/Icons";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
+import { LiveMatchProgressBar } from "@/presentation/components/live-dashboard/LiveMatchProgressBar";
+import { LiveDashboardTabs } from "@/presentation/components/live-dashboard/LiveDashboardTabs";
+import { LiveCopilotPanel } from "@/presentation/components/live-dashboard/LiveCopilotPanel";
 
 // Painéis de análise e mercado
 import { LiveModelVsMarketHero } from "@/presentation/components/predictions/LiveModelVsMarketHero";
@@ -39,10 +43,10 @@ import { LiveMatchStatsPanel } from "@/presentation/components/live-dashboard/Li
 import { LiveEvLeaderboard } from "@/presentation/components/live-dashboard/LiveEvLeaderboard";
 import { LiveTrendSignals } from "@/presentation/components/live-dashboard/LiveTrendSignals";
 import { LivePredictionEvolutionChart } from "@/presentation/components/live-dashboard/LivePredictionEvolutionChart";
-import { LiveMatchProbCard } from "@/presentation/components/predictions/LiveMatchProbCard";
-import { LiveStatsProjectionPanel } from "@/presentation/components/predictions/LiveStatsProjectionPanel";
 
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
+import { useLiveCopilotQuery } from "@/presentation/hooks/useLiveCopilotQuery";
+import { useLiveCopilotActionAlerts } from "@/presentation/hooks/useLiveCopilotActionAlerts";
 import { useLivePossessionHistory } from "@/presentation/hooks/useLivePossessionHistory";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
 import { resolveLiveAdvicePhase } from "@/presentation/utils/liveAdvicePhase";
@@ -55,7 +59,7 @@ import type { SuperbetLiveAdvice } from "@/domain/entities";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Tab = "resumo" | "mercados" | "qualidade" | "bilhete";
+type LiveDashboardTab = "resumo" | "mercados" | "qualidade" | "bilhete";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -100,6 +104,23 @@ function formatCapturedAt(iso: string | null): string {
   }
 }
 
+function formatRelativeCapturedAt(iso: string | null): { time: string; ago: string | null } {
+  if (!iso) return { time: "—", ago: null };
+  try {
+    const diff = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+    const time = formatCapturedAt(iso);
+    return { time, ago: diff < 120 ? `há ${diff}s` : null };
+  } catch {
+    return { time: "—", ago: null };
+  }
+}
+
+function impliedPressureLabel(pct: number): string {
+  if (pct >= 60) return "alta";
+  if (pct >= 40) return "média";
+  return "baixa";
+}
+
 function computeQualityScore(data: SuperbetLiveAdvice): { score: number; label: string; color: string } {
   let score = 0;
   if (data.confidence) score += Math.round(data.confidence.score * 40);
@@ -113,58 +134,73 @@ function computeQualityScore(data: SuperbetLiveAdvice): { score: number; label: 
   return { score: Math.min(100, score), label, color };
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function MatchProgressBar({ minute, isLive }: { minute: number; isLive: boolean }) {
-  const fullTime = 90;
-  const pct = Math.min(100, (minute / fullTime) * 100);
-  const extraTime = minute > 90;
-
-  return (
-    <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
-      <div
-        className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000"
-        style={{
-          width: `${pct}%`,
-          background: extraTime
-            ? "linear-gradient(90deg, #f59e0b, #ef4444)"
-            : "linear-gradient(90deg, #00ff88, #38bdf8)",
-        }}
-      />
-      {isLive && !extraTime && (
-        <div
-          className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 animate-pulse rounded-full bg-white shadow-[0_0_6px_2px_rgba(255,255,255,0.4)]"
-          style={{ left: `${pct}%` }}
-        />
-      )}
-    </div>
-  );
+function MiniIcon({ name }: { name: "trend" | "activity" | "shield" | "clock" | "bell" | "db" }) {
+  const p = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    className: "h-3.5 w-3.5",
+  };
+  switch (name) {
+    case "trend":
+      return (<svg {...p}><path d="M3 17l6-6 4 4 8-8" /><path d="M14 7h7v7" /></svg>);
+    case "activity":
+      return (<svg {...p}><path d="M3 12h4l3 8 4-16 3 8h4" /></svg>);
+    case "shield":
+      return (<svg {...p}><path d="M12 3l8 3v6c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6z" /></svg>);
+    case "clock":
+      return (<svg {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>);
+    case "bell":
+      return (<svg {...p}><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>);
+    case "db":
+      return (<svg {...p}><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5" /><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></svg>);
+  }
 }
+
+type KpiDelta = { text: string; trend: "up" | "down" | "flat" };
 
 function KpiCard({
   label,
   value,
   sub,
   delta,
-  deltaPositive,
   accentColor,
   badge,
+  icon,
+  highlight = false,
 }: {
   label: string;
   value: string;
   sub?: string;
-  delta?: string;
-  deltaPositive?: boolean;
+  delta?: KpiDelta;
   accentColor: string;
   badge?: { text: string; color: string };
+  icon?: "trend" | "activity" | "shield" | "clock" | "bell" | "db";
+  highlight?: boolean;
 }) {
+  const arrow = delta?.trend === "up" ? "↑" : delta?.trend === "down" ? "↓" : "—";
+  const deltaColor =
+    delta?.trend === "up"
+      ? "text-emerald-400"
+      : delta?.trend === "down"
+        ? "text-red-400"
+        : "text-slate-500";
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-3 backdrop-blur-sm">
+    <div className={`live-kpi-card ${highlight ? "border-white/20" : ""}`}>
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-80"
-        style={{ background: accentColor }}
-      />
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
+        className="live-kpi-icon"
+        style={{
+          color: accentColor,
+          boxShadow: `0 0 18px ${accentColor}33, inset 0 0 12px ${accentColor}12`,
+          border: `1px solid ${accentColor}22`,
+        }}
+      >
+        {icon ? <MiniIcon name={icon} /> : null}
+      </div>
+      <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
       <div className="mt-1.5 flex items-end gap-2">
         <span className="font-mono text-2xl font-bold leading-none text-white">{value}</span>
         {badge && (
@@ -176,21 +212,20 @@ function KpiCard({
           </span>
         )}
       </div>
-      {delta && (
-        <p
-          className={`mt-1 text-[11px] font-semibold ${deltaPositive ? "text-emerald-400" : "text-red-400"}`}
-        >
-          {deltaPositive ? "↑" : "↓"} {delta}
+      {delta ? (
+        <p className={`mt-1 flex items-center gap-1 text-[11px] font-semibold ${deltaColor}`}>
+          <span aria-hidden>{arrow}</span>
+          {delta.text}
         </p>
-      )}
-      {sub && !delta && (
+      ) : sub ? (
         <p className="mt-1 truncate text-[11px] text-slate-500">{sub}</p>
-      )}
+      ) : null}
     </div>
   );
 }
 
 function OpportunityCard({
+  label,
   market,
   outcome,
   ev,
@@ -217,43 +252,46 @@ function OpportunityCard({
   const confPct = Math.round(confidence * 100);
   const circumference = 2 * Math.PI * 16;
   const dashOffset = circumference * (1 - confidence);
+  const title = label?.trim() || formatOutcomeLabel(outcome, homeTeam, awayTeam);
+
+  const confColor = confPct >= 60 ? "#00ff88" : confPct >= 40 ? "#fbbf24" : "#64748b";
 
   return (
     <div
-      className={`relative flex min-w-[200px] flex-col gap-3 rounded-2xl border p-4 transition-all ${
+      role={onAdd ? "button" : undefined}
+      tabIndex={onAdd ? 0 : undefined}
+      onClick={onAdd}
+      onKeyDown={onAdd ? (e) => e.key === "Enter" && onAdd() : undefined}
+      className={`relative flex min-w-[220px] flex-col gap-3 overflow-hidden rounded-2xl border p-4 transition-all ${
         isTop
-          ? "border-neon-green/30 bg-gradient-to-b from-neon-green/8 to-transparent"
-          : "border-white/8 bg-white/[0.02]"
-      }`}
+          ? "live-opp-card-top border-neon-green/35 bg-gradient-to-b from-neon-green/12 via-neon-green/[0.04] to-transparent"
+          : "live-glass-panel border-white/8 hover:border-white/15"
+      } ${onAdd ? "cursor-pointer" : ""}`}
     >
-      {/* Badge */}
-      <div className="flex items-center gap-1.5">
-        {isTop && (
-          <span className="rounded bg-neon-green/20 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-neon-green">
+      {isTop && (
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-14 w-14 overflow-hidden">
+          <div className="absolute -left-7 top-2.5 w-24 rotate-[-45deg] bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 py-0.5 text-center text-[8px] font-black uppercase tracking-wider text-black shadow-lg">
             TOP
-          </span>
-        )}
-        {isHot && <span className="text-sm">🔥</span>}
-        <span className="ml-auto text-[11px] font-bold text-neon-blue">
-          #{rank}
-        </span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-1.5">
+        {isHot && <span className="text-sm" aria-hidden>🔥</span>}
+        <span className="ml-auto text-[11px] font-bold text-neon-blue">#{rank}</span>
       </div>
 
-      {/* Market info */}
       <div>
-        <p className="text-sm font-bold leading-tight text-white">
-          {formatOutcomeLabel(outcome, homeTeam, awayTeam)}
-        </p>
+        <p className="text-sm font-bold leading-tight text-white">{title}</p>
         <p className="mt-0.5 text-[11px] text-slate-500">{formatMarketLabel(market)}</p>
       </div>
 
-      {/* Metrics */}
       <div className="flex items-end justify-between gap-2">
         <div className="space-y-1">
           <div>
             <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">EV</p>
             <p
-              className={`font-mono text-base font-bold ${ev > 0.1 ? "text-neon-green" : ev > 0 ? "text-sky-400" : "text-red-400"}`}
+              className={`font-mono text-lg font-bold ${ev > 0.1 ? "text-neon-green neon-text" : ev > 0 ? "text-sky-400" : "text-red-400"}`}
             >
               {ev > 0 ? "+" : ""}
               {(ev * 100).toFixed(1)}%
@@ -265,17 +303,21 @@ function OpportunityCard({
           </div>
         </div>
 
-        {/* Circular confidence */}
         <div className="relative flex flex-col items-center">
-          <svg width="44" height="44" className="-rotate-90">
-            <circle cx="22" cy="22" r="16" strokeWidth="3" className="fill-none stroke-white/10" />
+          <svg
+            width="48"
+            height="48"
+            className="-rotate-90"
+            style={{ filter: `drop-shadow(0 0 6px ${confColor}88)` }}
+          >
+            <circle cx="24" cy="24" r="17" strokeWidth="3" className="fill-none stroke-white/10" />
             <circle
-              cx="22"
-              cy="22"
-              r="16"
+              cx="24"
+              cy="24"
+              r="17"
               strokeWidth="3"
               className="fill-none"
-              stroke={confPct >= 60 ? "#00ff88" : confPct >= 40 ? "#fbbf24" : "#64748b"}
+              stroke={confColor}
               strokeDasharray={circumference}
               strokeDashoffset={dashOffset}
               strokeLinecap="round"
@@ -289,16 +331,6 @@ function OpportunityCard({
           </span>
         </div>
       </div>
-
-      {onAdd && (
-        <button
-          type="button"
-          onClick={onAdd}
-          className="w-full rounded-xl border border-neon-green/30 bg-neon-green/10 py-1.5 text-xs font-semibold text-neon-green transition hover:bg-neon-green/20"
-        >
-          + Bilhete
-        </button>
-      )}
     </div>
   );
 }
@@ -326,16 +358,24 @@ function PressureChart({
       toolbar: { show: false },
       fontFamily: "inherit",
       animations: { enabled: true, speed: 800 },
+      dropShadow: {
+        enabled: true,
+        top: 0,
+        left: 0,
+        blur: 8,
+        opacity: 0.35,
+        color: "#00ff88",
+      },
     },
     colors: ["#00ff88", "#38bdf8"],
-    stroke: { curve: "smooth", width: [2, 2] },
+    stroke: { curve: "smooth", width: [3, 3] },
     fill: {
       type: "gradient",
       gradient: {
         shadeIntensity: 1,
-        opacityFrom: 0.3,
-        opacityTo: 0.02,
-        stops: [0, 100],
+        opacityFrom: 0.35,
+        opacityTo: 0.01,
+        stops: [0, 85, 100],
       },
     },
     dataLabels: { enabled: false },
@@ -355,9 +395,9 @@ function PressureChart({
       },
     },
     grid: {
-      borderColor: "#1e293b",
-      strokeDashArray: 4,
-      padding: { left: 0, right: 0 },
+      borderColor: "rgba(30, 41, 59, 0.6)",
+      strokeDashArray: 3,
+      padding: { left: 0, right: 8, top: 8 },
     },
     legend: { show: false },
     tooltip: {
@@ -368,11 +408,21 @@ function PressureChart({
       xaxis: [
         {
           x: `${currentMinute}'`,
-          borderColor: "#ffffff30",
+          borderColor: "rgba(255, 209, 102, 0.55)",
           strokeDashArray: 4,
           label: {
             text: `${currentMinute}'`,
-            style: { color: "#fff", background: "#1e293b", fontSize: "10px", padding: { top: 2, bottom: 2, left: 6, right: 6 } },
+            borderColor: "#ffd166",
+            borderWidth: 0,
+            position: "top",
+            offsetY: -6,
+            style: {
+              color: "#050811",
+              background: "#ffd166",
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: { top: 3, bottom: 3, left: 8, right: 8 },
+            },
           },
         },
       ],
@@ -385,42 +435,107 @@ function PressureChart({
   ];
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex items-end gap-6">
           <div>
-            <p className="font-mono text-2xl font-bold text-neon-green">
+            <p className="font-mono text-3xl font-bold leading-none text-neon-green neon-text">
               {displayHome.toFixed(0)}%
             </p>
-            <p className="text-xs font-semibold text-slate-400">{homeTeam}</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              {homeTeam}
+            </p>
           </div>
-          <div className="h-8 w-px bg-white/10" />
           <div>
-            <p className="font-mono text-2xl font-bold text-sky-400">
+            <p className="font-mono text-3xl font-bold leading-none text-sky-400">
               {displayAway.toFixed(0)}%
             </p>
-            <p className="text-xs font-semibold text-slate-400">{awayTeam}</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              {awayTeam}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+        <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-4 rounded-full bg-neon-green/60" />
+            <span className="h-2 w-5 rounded-full bg-neon-green/70 shadow-[0_0_8px_rgba(0,255,136,0.4)]" />
             {homeTeam}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-4 rounded-full bg-sky-400/60" />
+            <span className="h-2 w-5 rounded-full bg-sky-400/70 shadow-[0_0_8px_rgba(56,189,248,0.35)]" />
             {awayTeam}
           </span>
         </div>
       </div>
 
       {hasData ? (
-        <Chart options={chartOptions} series={series} type="area" height={180} />
+        <Chart options={chartOptions} series={series} type="area" height={200} />
       ) : (
         <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-white/10 text-xs text-slate-600">
           Acumulando amostras de posse ao longo dos polls…
         </div>
       )}
+    </div>
+  );
+}
+
+function MarketTypeIcon({ market }: { market: string }) {
+  const p = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    className: "h-3.5 w-3.5 shrink-0 text-slate-500",
+  };
+  if (market.includes("over") || market.includes("total")) {
+    return (
+      <svg {...p}>
+        <path d="M4 18h16" />
+        <path d="M8 14l4-8 4 8" />
+      </svg>
+    );
+  }
+  if (market === "btts") {
+    return (
+      <svg {...p}>
+        <circle cx="9" cy="12" r="3" />
+        <circle cx="15" cy="12" r="3" />
+      </svg>
+    );
+  }
+  if (market.includes("handicap")) {
+    return (
+      <svg {...p}>
+        <path d="M4 12h16" />
+        <path d="M14 8l4 4-4 4" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...p}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l2 2" />
+    </svg>
+  );
+}
+
+function ConfidenceBar({ pct }: { pct: number }) {
+  const color = pct >= 60 ? "#00ff88" : pct >= 40 ? "#fbbf24" : "#64748b";
+  const segments = 5;
+  const filled = Math.round((pct / 100) * segments);
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: segments }).map((_, i) => (
+        <div
+          key={i}
+          className="h-2 w-1.5 rounded-sm transition-colors"
+          style={{
+            backgroundColor: i < filled ? color : "rgba(255,255,255,0.08)",
+            boxShadow: i < filled ? `0 0 6px ${color}55` : undefined,
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -453,24 +568,23 @@ function MarketRow({
   const fairOdd = modelProb > 0 ? 1 / modelProb : 0;
   const impliedPct = marketOdd > 0 ? (1 / marketOdd) * 100 : 0;
   const isPositive = ev > 0;
-  const direction = ev > 0.1 ? "↗ Valor" : ev > 0 ? "→ Estável" : "↘ Encurtando";
-  const directionColor = ev > 0.1 ? "#00ff88" : ev > 0 ? "#94a3b8" : "#ef4444";
+  const direction =
+    ev > 0.05 ? "Esticando" : ev <= -0.02 ? "Encurtando" : "Estável";
+  const directionIcon = ev > 0.05 ? "↗" : ev <= -0.02 ? "↘" : "→";
+  const directionColor = ev > 0.05 ? "#00ff88" : ev <= -0.02 ? "#ef4444" : "#94a3b8";
   const confPct = Math.min(100, Math.max(0, Math.round(50 + ev * 200)));
+  const captured = formatRelativeCapturedAt(capturedAt);
+
+  const confColor = confPct >= 60 ? "#00ff88" : confPct >= 40 ? "#fbbf24" : "#64748b";
 
   return (
-    <tr className="group border-t border-white/[0.04] transition-colors hover:bg-white/[0.02]">
-      {/* Mercado */}
+    <tr className="group border-t border-white/[0.04] transition-colors hover:bg-white/[0.03]">
       <td className="py-2.5 pl-4 pr-2">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onToggleFav}
-            className={`text-sm transition ${isFavorite ? "text-amber-400" : "text-white/20 hover:text-white/40"}`}
-          >
-            ★
-          </button>
+        <div className="flex items-start gap-2">
+          <MarketTypeIcon market={market} />
           <div>
             <p className="text-xs font-semibold text-white">{formatMarketLabel(market)}</p>
-            <p className="text-[10px] text-slate-600">{label.slice(0, 32)}</p>
+            <p className="text-[10px] text-slate-600">{label.slice(0, 36)}</p>
           </div>
         </div>
       </td>
@@ -504,36 +618,45 @@ function MarketRow({
         </span>
       </td>
 
-      {/* Pressão implícita */}
       <td className="px-2 py-2.5 text-right">
-        <span className="text-xs text-slate-400">{impliedPct.toFixed(0)}% mercado</span>
+        <span className="text-xs text-slate-300">
+          {impliedPct.toFixed(0)}%{" "}
+          <span className="text-slate-500">{impliedPressureLabel(impliedPct)}</span>
+        </span>
       </td>
 
-      {/* Direção */}
       <td className="px-2 py-2.5">
-        <span className="text-xs font-semibold" style={{ color: directionColor }}>
+        <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: directionColor }}>
+          <span aria-hidden>{directionIcon}</span>
           {direction}
         </span>
       </td>
 
-      {/* Última mudança */}
       <td className="px-2 py-2.5">
-        <span className="text-[11px] text-slate-600">{formatCapturedAt(capturedAt)}</span>
+        <div className="flex flex-col">
+          <span className="text-[11px] text-slate-400">{captured.time}</span>
+          {captured.ago && <span className="text-[10px] text-slate-600">{captured.ago}</span>}
+        </div>
       </td>
 
-      {/* Confiança */}
       <td className="py-2.5 pl-2 pr-4">
-        <div className="flex items-center gap-1.5">
-          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${confPct}%`,
-                backgroundColor: confPct >= 60 ? "#00ff88" : confPct >= 40 ? "#fbbf24" : "#64748b",
-              }}
-            />
-          </div>
-          <span className="w-8 text-right text-[10px] text-slate-500">{confPct}%</span>
+        <div className="flex items-center gap-2">
+          <ConfidenceBar pct={confPct} />
+          <span className="w-8 text-right text-[10px] font-semibold" style={{ color: confColor }}>
+            {confPct}%
+          </span>
+          <button
+            type="button"
+            onClick={onToggleFav}
+            className={`text-sm transition ${
+              isFavorite
+                ? "text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]"
+                : "text-white/20 hover:text-amber-300/60"
+            }`}
+            aria-label={isFavorite ? "Remover favorito" : "Marcar favorito"}
+          >
+            ★
+          </button>
         </div>
       </td>
     </tr>
@@ -972,12 +1095,14 @@ function LiveBootstrapHero({
 export function LiveDashboardPage() {
   const { eventId: eventIdParam } = useParams();
   const [searchParams] = useSearchParams();
+  const { setChrome } = useLiveDashboardChrome();
   const advicePhase = resolveLiveAdvicePhase(searchParams);
   const eventId = Number.parseInt(eventIdParam ?? "", 10);
-  const [activeTab, setActiveTab] = useState<Tab>("resumo");
+  const [activeTab, setActiveTab] = useState<LiveDashboardTab>("resumo");
   const [riskAlerts, setRiskAlerts] = useState<OddsDropAlert[]>([]);
   const [favoriteMarkets, setFavoriteMarkets] = useState<Set<string>>(new Set());
   const [showOnlyFavs, setShowOnlyFavs] = useState(false);
+  const [nextCountdown, setNextCountdown] = useState(0);
   const ticket = useTicket();
 
   const handleRiskAlerts = useCallback((newAlerts: OddsDropAlert[]) => {
@@ -995,9 +1120,37 @@ export function LiveDashboardPage() {
     isFetching, refetch, timelineReactive, pollMs,
   } = useLiveAdviceQueries(eventId, 1000, null, advicePhase);
 
+  const copilotEnabled = Boolean(data?.isLive && !data?.isFinished && eventId > 0);
+  const copilotQuery = useLiveCopilotQuery({
+    eventId,
+    sport: "football",
+    phase: advicePhase,
+    bankroll: 1000,
+    enabled: copilotEnabled,
+  });
+
+  useLiveCopilotActionAlerts(copilotQuery.data, {
+    eventId,
+    homeTeam: data?.homeTeam,
+    awayTeam: data?.awayTeam,
+    enabled: copilotEnabled,
+  });
+
   const possessionHistory = useLivePossessionHistory(data);
   const recalibrationEvent = useLiveRecalibration(data, isFetching);
   useOddsDropMonitor(data, handleRiskAlerts);
+
+  useEffect(() => {
+    if (isFetching) return;
+    setNextCountdown(Math.round(pollMs.fast / 1000));
+  }, [isFetching, pollMs.fast]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setNextCountdown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const liveSuggestions = useMemo<TicketLeg[]>(() => {
     if (!data?.aportes) return [];
@@ -1026,14 +1179,42 @@ export function LiveDashboardPage() {
     if (!data) return null;
     const scan = [...(data.strategy?.marketScan ?? [])];
     const bestEv = scan.sort((a, b) => b.expectedValue - a.expectedValue)[0];
+    const total = scan.length;
     const positiveCount = scan.filter((r) => r.expectedValue > 0).length;
+    const evPositivePct = total ? Math.round((positiveCount / total) * 100) : 0;
+    const activeMarkets = data.rawMarketCount;
     const conf = data.confidence?.score ?? 0;
     const quality = computeQualityScore(data);
     const alertCount = data.strategy?.opportunityCount ?? 0;
     const pollSec = Math.round(pollMs.fast / 1000);
 
-    return { bestEv, positiveCount, conf, quality, alertCount, pollSec };
+    return { bestEv, total, positiveCount, evPositivePct, activeMarkets, conf, quality, alertCount, pollSec };
   }, [data, pollMs.fast]);
+
+  // Delta vs. leitura anterior (recalcula quando qualquer métrica muda)
+  const kpiSig = kpis
+    ? `${kpis.evPositivePct}|${kpis.activeMarkets}|${Math.round(kpis.conf * 100)}|${kpis.pollSec}|${kpis.alertCount}|${kpis.quality.score}`
+    : "";
+  const [kpiDeltas, setKpiDeltas] = useState<{
+    ev: number; markets: number; conf: number; poll: number; alerts: number; quality: number;
+  } | null>(null);
+  const prevKpiRef = useRef<typeof kpis>(null);
+  useEffect(() => {
+    if (!kpis) return;
+    const prev = prevKpiRef.current;
+    if (prev) {
+      setKpiDeltas({
+        ev: kpis.evPositivePct - prev.evPositivePct,
+        markets: kpis.activeMarkets - prev.activeMarkets,
+        conf: Math.round(kpis.conf * 100) - Math.round(prev.conf * 100),
+        poll: kpis.pollSec - prev.pollSec,
+        alerts: kpis.alertCount - prev.alertCount,
+        quality: kpis.quality.score - prev.quality.score,
+      });
+    }
+    prevKpiRef.current = kpis;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kpiSig]);
 
   // ── Market table data ──
   const marketRows = useMemo(() => {
@@ -1074,127 +1255,115 @@ export function LiveDashboardPage() {
   const opportunityCount = data?.strategy?.opportunityCount ?? 0;
   const strongCount = data?.strategy?.strongOpportunityCount ?? 0;
 
-  const TABS: { id: Tab; label: string; count?: number }[] = [
+  // Deltas formatados dos KPIs (vs. leitura anterior)
+  const trendOf = (d: number): "up" | "down" | "flat" => (d > 0 ? "up" : d < 0 ? "down" : "flat");
+  const dd = kpiDeltas;
+  const dEv: KpiDelta | undefined = dd ? { trend: trendOf(dd.ev), text: dd.ev === 0 ? "estável" : `${Math.abs(dd.ev)}pp vs anterior` } : undefined;
+  const dMarkets: KpiDelta | undefined = dd ? { trend: trendOf(dd.markets), text: dd.markets === 0 ? "estável" : `${Math.abs(dd.markets)} ${dd.markets > 0 ? "novos" : "a menos"}` } : undefined;
+  const dConf: KpiDelta | undefined = dd ? { trend: trendOf(dd.conf), text: dd.conf === 0 ? "estável" : `${dd.conf > 0 ? "+" : "-"}${Math.abs(dd.conf)}pp` } : undefined;
+  const dPoll: KpiDelta | undefined = dd ? { trend: dd.poll === 0 ? "flat" : dd.poll > 0 ? "down" : "up", text: dd.poll === 0 ? "estável" : `${dd.poll > 0 ? "+" : "-"}${Math.abs(dd.poll)}s` } : undefined;
+  const dAlerts: KpiDelta | undefined = dd ? { trend: trendOf(dd.alerts), text: dd.alerts === 0 ? "estável" : `${Math.abs(dd.alerts)} ${dd.alerts > 0 ? (Math.abs(dd.alerts) > 1 ? "novos" : "novo") : "a menos"}` } : undefined;
+  const dQuality: KpiDelta | undefined = dd ? { trend: trendOf(dd.quality), text: dd.quality === 0 ? "estável" : `${dd.quality > 0 ? "+" : "-"}${Math.abs(dd.quality)} vs anterior` } : undefined;
+
+  // Header: labels de atualização
+  const nextSec = Math.round(pollMs.fast / 1000);
+  const nextUpdateLabel = `${String(Math.floor((nextCountdown || nextSec) / 60)).padStart(2, "0")}:${String((nextCountdown || nextSec) % 60).padStart(2, "0")}`;
+  const lastUpdateLabel = formatCapturedAt(liveHeader?.capturedAt ?? data?.capturedAt ?? null);
+  const headerMinute = liveHeader?.minute ?? data?.minute ?? bootstrap?.minute ?? 0;
+  const headerPeriod = liveHeader?.periodLabel ?? data?.periodLabel ?? bootstrap?.periodLabel ?? null;
+  const scoreParts = ((liveHeader?.currentScore ?? data?.currentScore ?? bootstrap?.currentScore ?? "0x0").split(/x/i).map((s) => s.trim()));
+
+  const matchHome = data?.homeTeam ?? bootstrap?.homeTeam ?? "—";
+  const matchAway = data?.awayTeam ?? bootstrap?.awayTeam ?? "—";
+  const hasScoreboardData = Boolean(data || bootstrap);
+
+  const TABS: { id: LiveDashboardTab; label: string; count?: number }[] = [
     { id: "resumo", label: "Resumo Operacional" },
     { id: "mercados", label: "Mercados", count: opportunityCount > 0 ? (strongCount || opportunityCount) : undefined },
     { id: "qualidade", label: "Qualidade dos Dados" },
-    { id: "bilhete", label: "Meu Bilhete", count: ticket.legs.length > 0 ? ticket.legs.length : riskAlerts.length > 0 ? riskAlerts.length : undefined },
   ];
+  const bilheteCount =
+    ticket.legs.length > 0 ? ticket.legs.length : riskAlerts.length > 0 ? riskAlerts.length : 0;
+  const headerIsLive =
+    (data?.isLive && !data?.isFinished) ||
+    (Boolean(bootstrap) && headerMinute > 0 && !data?.isFinished);
+
+  useEffect(() => {
+    setChrome({
+      isLive: headerIsLive,
+      lastUpdate: lastUpdateLabel,
+      nextUpdate: nextUpdateLabel,
+      isFetching,
+      onRefresh: refetch,
+    });
+    return () => setChrome(null);
+  }, [
+    headerIsLive,
+    lastUpdateLabel,
+    nextUpdateLabel,
+    isFetching,
+    refetch,
+    setChrome,
+  ]);
 
   return (
     <PageTransition className="space-y-0 pb-24">
 
-      {/* ══ MATCH HERO ══ */}
-      <div className="sticky top-0 z-30 bg-[#0a0e1a]/95 p-3 backdrop-blur-xl">
-        <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02]">
-          {/* Nav bar */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <Link
-              to="/ao-vivo"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-white"
-            >
-              <IconArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Ao vivo</span>
-            </Link>
-
-            {/* Score compact */}
-            {data && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <TeamFlag team={data.homeTeam} size={28} />
-                  <span className="text-sm font-medium text-slate-300 hidden sm:inline">
-                    {data.homeTeam}
-                  </span>
+      {/* Placar + abas (top bar unificada no AppLayout) */}
+      <div className="sticky top-0 z-30 -mx-2 sm:-mx-4">
+        {hasScoreboardData ? (
+          <div className="live-scoreboard mx-2 mt-2 sm:mx-4">
+            <div className="relative flex items-center justify-between gap-4 px-5 py-4">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/[0.06] shadow-[0_0_16px_rgba(0,245,160,0.12)]">
+                  {matchHome !== "—" ? <TeamFlag team={matchHome} size={44} /> : null}
                 </div>
-                <div className="flex flex-col items-center px-2">
-                  <span className="font-mono text-2xl font-bold leading-none text-white">
-                    {(liveHeader?.currentScore ?? data.currentScore)?.replace("x", " × ") ?? "0 × 0"}
-                  </span>
-                  <span className="mt-1 text-[10px] text-amber-300 font-semibold">
-                    {liveHeader?.minute ?? data.minute}&apos;
-                    {(liveHeader?.periodLabel ?? data.periodLabel) ? ` · ${liveHeader?.periodLabel ?? data.periodLabel}` : ""}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-slate-300 hidden sm:inline">
-                    {data.awayTeam}
-                  </span>
-                  <TeamFlag team={data.awayTeam} size={28} />
-                </div>
+                <span className="truncate text-base font-bold text-white sm:text-lg">{matchHome}</span>
               </div>
-            )}
 
-            <div className="flex items-center gap-2">
-              {data?.isLive && !data?.isFinished && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-300">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
-                  AO VIVO
+              <div className="flex shrink-0 flex-col items-center px-2">
+                <div className="flex items-center gap-3 font-mono text-4xl font-extrabold leading-none text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.08)]">
+                  <span>{scoreParts[0] ?? "0"}</span>
+                  <span className="text-2xl text-slate-500">×</span>
+                  <span>{scoreParts[1] ?? "0"}</span>
+                </div>
+                <span className="mt-1.5 text-xs font-semibold text-amber-300">
+                  {headerMinute}&apos;{headerPeriod ? ` · ${headerPeriod}` : ""}
+                  {(data?.isLive && !data?.isFinished) || (bootstrap && headerMinute > 0 && !data?.isFinished)
+                    ? " · Ao vivo"
+                    : ""}
                 </span>
-              )}
-              <button
-                onClick={refetch}
-                disabled={isFetching}
-                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-400 transition hover:border-white/20 hover:text-white disabled:opacity-50"
-                title="Atualizar"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
-                >
-                  <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.46-.33Zm-7.66-8.848A5.5 5.5 0 0 1 18.5 10a.75.75 0 0 0 1.5 0 7 7 0 0 0-11.712-5.138l-.31.31V2.75a.75.75 0 0 0-1.5 0v4.243c0 .414.336.75.75.75h4.243a.75.75 0 0 0 0-1.5h-2.43l.31-.31Z" clipRule="evenodd" />
-                </svg>
-              </button>
-              <div className="hidden flex-col items-end text-[10px] text-slate-600 sm:flex">
-                <span>Última atualização {formatCapturedAt(liveHeader?.capturedAt ?? data?.capturedAt ?? null)}</span>
-                <span>Próxima atualização {Math.round(pollMs.fast / 1000)}s</span>
+              </div>
+
+              <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+                <span className="truncate text-right text-base font-bold text-white sm:text-lg">{matchAway}</span>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/[0.06] shadow-[0_0_16px_rgba(0,224,255,0.12)]">
+                  {matchAway !== "—" ? <TeamFlag team={matchAway} size={44} /> : null}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Progress bar */}
-          {data?.isLive && !data?.isFinished && (
-            <div className="px-4 pb-3">
-              <MatchProgressBar minute={liveHeader?.minute ?? data.minute} isLive={data.isLive} />
-            </div>
-          )}
-
-          {/* Tabs */}
-          <div className="flex gap-1 border-t border-white/[0.04] p-2">
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-[11px] font-semibold transition-colors ${
-                    isActive
-                      ? "bg-neon-green/15 text-neon-green"
-                      : "text-slate-500 hover:bg-white/[0.03] hover:text-slate-300"
-                  }`}
-                >
-                  {tab.label}
-                  {tab.count != null && tab.count > 0 && (
-                    <span className={`flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-black ${
-                      tab.id === "bilhete" && riskAlerts.length > 0
-                        ? "bg-red-500 text-white animate-pulse"
-                        : "bg-neon-green text-black"
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {(data?.isLive && !data?.isFinished) || (bootstrap && headerMinute > 0) ? (
+              <div className="px-5 pb-5 pt-1">
+                <LiveMatchProgressBar minute={headerMinute} isLive={data?.isLive ?? Boolean(bootstrap)} />
+              </div>
+            ) : null}
           </div>
-        </div>
+        ) : (
+          <MatchScoreboardSkeleton />
+        )}
+
+        <LiveDashboardTabs
+          tabs={TABS.map((tab) => ({ id: tab.id, label: tab.label, count: tab.count }))}
+          activeId={activeTab}
+          onChange={(id) => setActiveTab(id as LiveDashboardTab)}
+        />
       </div>
 
       {/* ══ CONTENT ══ */}
-      <div className="space-y-4 p-4">
-        {isLoading ? (
-          <DashboardSkeleton />
+      <div className="space-y-4 p-4 pt-3">
+        {isLoading || (bootstrap && !data && activeTab === "resumo") ? (
+          <LiveDashboardContentSkeleton />
         ) : isError ? (
           <ErrorState
             message={error instanceof Error ? error.message : "Falha ao capturar jogo na Superbet"}
@@ -1213,17 +1382,61 @@ export function LiveDashboardPage() {
                 {/* ══ ABA: RESUMO OPERACIONAL ══ */}
                 {activeTab === "resumo" && (
                   <div className="space-y-4">
+                    <LiveCopilotPanel
+                      copilot={copilotQuery.data}
+                      isLoading={copilotQuery.isLoading}
+                      isFetching={copilotQuery.isFetching}
+                      onAddBilheteToTicket={() => {
+                        const bilhete = copilotQuery.data?.bilhete;
+                        if (!bilhete?.pernas.length || !data) return;
+                        bilhete.pernas.forEach((perna) => {
+                          ticket.add({
+                            id: `${eventId}_${perna.market}_${perna.outcome}`,
+                            home: data.homeTeam,
+                            away: data.awayTeam,
+                            group: null,
+                            kickoff: "",
+                            label: perna.label,
+                            market: perna.market,
+                            fairOdd:
+                              perna.modelProb != null && perna.modelProb > 0
+                                ? +(1 / perna.modelProb).toFixed(2)
+                                : perna.marketOdd ?? 0,
+                            modelProb: perna.modelProb ?? 0,
+                            confidence:
+                              (perna.expectedValue ?? 0) >= 0.1
+                                ? "Alta"
+                                : (perna.expectedValue ?? 0) >= 0.05
+                                  ? "Média"
+                                  : "Baixa",
+                            type: "live",
+                            liveMinute: data.minute,
+                            liveScore: data.currentScore ?? undefined,
+                          });
+                        });
+                        setActiveTab("bilhete");
+                      }}
+                    />
 
-                    {/* Pressão implícita + KPIs */}
-                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
-
-                      {/* Gráfico pressão */}
-                      <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-                        <div className="mb-3 flex items-center gap-2">
-                          <h2 className="text-sm font-bold text-white">Pressão Implícita</h2>
-                          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
+                      <div className="live-glass-panel-glow glow-border rounded-2xl p-4">
+                        <div className="mb-4 flex items-center gap-2">
+                          <h2 className="text-xs font-black uppercase tracking-widest text-white">
+                            Pressão Implícita
+                          </h2>
+                          <span className="rounded-full border border-neon-green/20 bg-neon-green/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-neon-green">
                             Ao Vivo
                           </span>
+                          <button
+                            type="button"
+                            className="ml-1 text-slate-600 hover:text-slate-400"
+                            aria-label="Info pressão implícita"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="9" />
+                              <path d="M12 10v6M12 7h.01" strokeLinecap="round" />
+                            </svg>
+                          </button>
                           {data.isLive && (
                             <span className="ml-auto flex items-center gap-1 text-[10px] text-slate-600">
                               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
@@ -1239,45 +1452,56 @@ export function LiveDashboardPage() {
                         />
                       </div>
 
-                      {/* KPIs 3×2 */}
                       {kpis && (
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-2">
                           <KpiCard
                             label="EV Positivo"
-                            value={kpis.bestEv ? `${(kpis.bestEv.expectedValue * 100).toFixed(0)}%` : "—"}
-                            delta={kpis.bestEv ? `${kpis.positiveCount} mercados` : undefined}
-                            deltaPositive
-                            accentColor="#00ff88"
+                            value={`${kpis.evPositivePct}%`}
+                            icon="trend"
+                            delta={dEv}
+                            sub={`${kpis.positiveCount}/${kpis.total} mercados`}
+                            accentColor="#00f5a0"
                           />
                           <KpiCard
                             label="Mercados Ativos"
-                            value={String(data.rawMarketCount)}
+                            value={String(kpis.activeMarkets)}
+                            icon="activity"
+                            delta={dMarkets}
                             sub={`${kpis.positiveCount} com EV positivo`}
-                            accentColor="#38bdf8"
+                            accentColor="#00e0ff"
                           />
                           <KpiCard
                             label="Confiança Média"
                             value={`${Math.round(kpis.conf * 100)}%`}
+                            icon="shield"
+                            delta={dConf}
                             sub={data.confidence?.label ?? "—"}
-                            accentColor="#a855f7"
+                            accentColor="#c084fc"
                           />
                           <KpiCard
                             label="Intervalo Médio"
                             value={`${kpis.pollSec}s`}
-                            sub={pollMs.tier === "urgent" ? "poll urgente" : pollMs.tier === "accelerated" ? "acelerado" : "normal"}
-                            accentColor="#fbbf24"
+                            icon="clock"
+                            delta={dPoll}
+                            sub={pollMs.tier === "urgent" ? "poll urgente" : pollMs.tier === "accelerated" ? "acelerado" : "estável"}
+                            accentColor="#ffd166"
                           />
                           <KpiCard
                             label="Alertas Ativos"
                             value={String(kpis.alertCount)}
+                            icon="bell"
+                            delta={dAlerts}
                             sub={`${data.strategy?.strongOpportunityCount ?? 0} fortes`}
-                            accentColor={kpis.alertCount > 0 ? "#00ff88" : "#475569"}
+                            accentColor={kpis.alertCount > 0 ? "#00f5a0" : "#475569"}
                           />
                           <KpiCard
                             label="Qualidade dos Dados"
                             value={String(kpis.quality.score)}
+                            icon="db"
                             badge={{ text: kpis.quality.label, color: kpis.quality.color }}
+                            delta={dQuality}
                             accentColor={kpis.quality.color}
+                            highlight
                           />
                         </div>
                       )}
@@ -1285,21 +1509,14 @@ export function LiveDashboardPage() {
 
                     {/* Oportunidades em Destaque */}
                     {topOpportunities.length > 0 && (
-                      <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+                      <div className="live-glass-panel rounded-2xl p-4">
                         <div className="mb-3 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-sm font-bold text-white">Oportunidades em Destaque</h2>
-                            <span className="rounded-full bg-neon-green/15 px-2 py-0.5 text-[10px] font-bold text-neon-green">
-                              {topOpportunities.length}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => setActiveTab("bilhete")}
-                            className="flex items-center gap-1 text-[11px] font-semibold text-neon-blue transition hover:text-white"
-                          >
-                            Ver bilhete
-                            <IconChevronRight className="h-3 w-3" />
-                          </button>
+                          <h2 className="text-xs font-black uppercase tracking-widest text-white">
+                            Oportunidades em Destaque
+                          </h2>
+                          <span className="rounded-full bg-neon-green/15 px-2 py-0.5 text-[10px] font-bold text-neon-green">
+                            {topOpportunities.length}
+                          </span>
                         </div>
                         <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                           {topOpportunities.map((opp) => (
@@ -1340,20 +1557,22 @@ export function LiveDashboardPage() {
                     )}
 
                     {/* Visão Geral de Mercados */}
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden">
+                    <div className="live-glass-panel overflow-hidden rounded-2xl">
                       <div className="flex items-center justify-between gap-2 border-b border-white/[0.04] px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <h2 className="text-sm font-bold text-white">Visão Geral de Mercados</h2>
+                          <h2 className="text-xs font-black uppercase tracking-widest text-white">
+                            Visão Geral de Mercados
+                          </h2>
                           <span className="text-[11px] text-slate-600">{marketRows.length} mercados</span>
                         </div>
-                        <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-0.5">
+                        <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/20 p-0.5">
                           <button
                             onClick={() => setShowOnlyFavs(false)}
-                            className={`rounded-md px-2.5 py-1 text-[10px] font-semibold transition ${
+                            className={
                               !showOnlyFavs
-                                ? "bg-neon-green/15 text-neon-green"
-                                : "text-slate-500 hover:text-slate-300"
-                            }`}
+                                ? "live-filter-pill-active"
+                                : "rounded-md px-2.5 py-1 text-[10px] font-semibold text-slate-500 transition hover:text-slate-300"
+                            }
                           >
                             Todos os mercados
                           </button>
@@ -1361,7 +1580,7 @@ export function LiveDashboardPage() {
                             onClick={() => setShowOnlyFavs(true)}
                             className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-semibold transition ${
                               showOnlyFavs
-                                ? "bg-amber-500/15 text-amber-300"
+                                ? "live-filter-pill-active border-amber-500/35 bg-amber-500/12 text-amber-300"
                                 : "text-slate-500 hover:text-slate-300"
                             }`}
                           >
@@ -1423,9 +1642,19 @@ export function LiveDashboardPage() {
                       </div>
                     </div>
 
-                    {/* Stats adicionais */}
-                    <LiveMatchProbCard data={data} />
-                    <LiveStatsProjectionPanel data={data} />
+                    <div className="live-glass-panel flex items-center justify-center gap-3 px-4 py-3 text-[11px] text-slate-500">
+                      <svg viewBox="0 0 40 12" className={`live-status-pulse h-3 w-10 text-neon-green ${isFetching ? "animate-pulse" : ""}`} aria-hidden>
+                        <polyline
+                          points="0,6 4,6 6,2 8,10 10,6 14,6 16,3 18,9 20,6 24,6 26,1 28,11 30,6 40,6"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      Atualizando odds e recalculando sinais…
+                    </div>
                   </div>
                 )}
 
@@ -1530,7 +1759,7 @@ export function LiveDashboardPage() {
                   </div>
                 )}
               </>
-            ) : bootstrap ? (
+            ) : bootstrap && activeTab !== "resumo" ? (
               <LiveBootstrapHero
                 homeTeam={bootstrap.homeTeam}
                 awayTeam={bootstrap.awayTeam}
@@ -1551,7 +1780,7 @@ export function LiveDashboardPage() {
 
       {activeTab !== "bilhete" && (
         <FloatingTicketBadge
-          count={ticket.legs.length}
+          count={bilheteCount}
           onClick={() => setActiveTab("bilhete")}
         />
       )}

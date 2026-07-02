@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getHealthUseCase, getWcScheduleUseCase } from "@/application/container";
@@ -10,13 +10,29 @@ import { AnimatedOutlet } from "./AnimatedOutlet";
 import { ApiOfflineBanner } from "./ApiOfflineBanner";
 import { ToastContainer } from "@/presentation/components/ui/toast";
 import { allNavItems } from "./navConfig";
+import { AppShellContext } from "./appShellContext";
+import { LiveDashboardChromeProvider, useLiveDashboardChromeOptional } from "./liveDashboardChromeContext";
+import { LiveDashboardTopBar } from "@/presentation/components/live-dashboard/LiveDashboardTopBar";
 
 export function AppLayout() {
+  return (
+    <LiveDashboardChromeProvider>
+      <AppLayoutInner />
+    </LiveDashboardChromeProvider>
+  );
+}
+
+function AppLayoutInner() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const location = useLocation();
   const queryClient = useQueryClient();
+  const isBasketLiveDashboard = /^\/ao-vivo\/basquete\/[^/]+$/.test(location.pathname);
+  const isFootballLiveDashboard =
+    /^\/ao-vivo\/[^/]+$/.test(location.pathname) &&
+    !location.pathname.includes("/basquete/");
+  const isLiveDashboard = isFootballLiveDashboard || isBasketLiveDashboard;
 
   const {
     data: health,
@@ -83,8 +99,14 @@ export function AppLayout() {
     }
   }, []);
 
+  const toggleMobileNav = useCallback(() => setMobileOpen((v) => !v), []);
+
+  const shellValue = useMemo(() => ({ toggleMobileNav }), [toggleMobileNav]);
+  const liveChrome = useLiveDashboardChromeOptional()?.chrome;
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-surface">
+    <AppShellContext.Provider value={shellValue}>
+    <div className={`flex h-screen w-screen overflow-hidden ${isLiveDashboard ? "flex-col bg-transparent" : "bg-surface"}`}>
       <a href="#main-content" className="skip-link">
         Ir para o conteúdo
       </a>
@@ -95,17 +117,31 @@ export function AppLayout() {
       <ToastContainer />
       <AmbientBackground />
 
-      {/* Sidebar Desktop — fixa e com scroll próprio */}
+      {isLiveDashboard && liveChrome && (
+        <LiveDashboardTopBar
+          isLive={liveChrome.isLive}
+          lastUpdate={liveChrome.lastUpdate}
+          nextUpdate={liveChrome.nextUpdate}
+          isFetching={liveChrome.isFetching}
+          onRefresh={liveChrome.onRefresh}
+          onMenu={toggleMobileNav}
+        />
+      )}
+
+      <div className={`flex min-h-0 flex-1 overflow-hidden ${isLiveDashboard ? "" : ""}`}>
+      {/* Sidebar Desktop */}
       <AppSidebar
         health={health}
         healthPending={healthPending}
         healthError={healthError}
+        hideHeader={isLiveDashboard}
       />
 
-      {/* Área de conteúdo — scroll apenas aqui, margin para sidebar em desktop */}
+      {/* Área de conteúdo */}
       <div className="relative flex flex-1 flex-col overflow-hidden lg:ml-64">
-        {/* Mobile Header */}
+        {/* Mobile Header — barra oculta no dashboard ao vivo (top bar própria) */}
         <AppMobileHeader
+          hideBar={isLiveDashboard}
           mobileOpen={mobileOpen}
           onToggle={() => setMobileOpen((v) => !v)}
           onClose={() => setMobileOpen(false)}
@@ -117,41 +153,55 @@ export function AppLayout() {
         {/* Scroll wrapper com scroll inteligente */}
         <main
           id="main-scroll"
-          className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin"
+          className={`relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth scrollbar-thin ${
+            isLiveDashboard ? "live-dashboard-main bg-transparent" : ""
+          }`}
           onScroll={handleScroll}
         >
-          {/* Header sticky compacto com breadcrumb e banner */}
-          <div className="sticky top-0 z-30">
-            <div
-              className="absolute inset-0 backdrop-blur-xl"
-              style={{
-                background: "linear-gradient(to bottom, rgba(5,8,17,0.95) 0%, rgba(5,8,17,0.80) 50%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-                maskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-              }}
-            />
-            <div className="relative mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4">
-              {!healthPending && healthError && !bannerDismissed && (
-                <ApiOfflineBanner
-                  onRetry={() => refetchHealth()}
-                  onDismiss={() => setBannerDismissed(true)}
-                />
-              )}
-              <PageBreadcrumb />
+          {/* Breadcrumb / banner — omitido no dashboard ao vivo (header próprio) */}
+          {!isLiveDashboard && (
+            <div className="sticky top-0 z-30">
+              <div
+                className="absolute inset-0 backdrop-blur-xl"
+                style={{
+                  background: "linear-gradient(to bottom, rgba(5,8,17,0.95) 0%, rgba(5,8,17,0.80) 50%, transparent 100%)",
+                  WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
+                  maskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
+                }}
+              />
+              <div className="relative mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4">
+                {!healthPending && healthError && !bannerDismissed && (
+                  <ApiOfflineBanner
+                    onRetry={() => refetchHealth()}
+                    onDismiss={() => setBannerDismissed(true)}
+                  />
+                )}
+                <PageBreadcrumb />
+              </div>
             </div>
-          </div>
+          )}
+          {isLiveDashboard && !healthPending && healthError && !bannerDismissed && (
+            <div className="px-2 pt-2 sm:px-4">
+              <ApiOfflineBanner
+                onRetry={() => refetchHealth()}
+                onDismiss={() => setBannerDismissed(true)}
+              />
+            </div>
+          )}
 
           {/* Conteúdo da página */}
           <div
             id="main-content"
-            className="relative mx-auto max-w-7xl px-4 pb-4 sm:px-6 sm:pb-6"
+            className={`relative mx-auto pb-4 sm:pb-6 ${
+              isLiveDashboard ? "max-w-none px-2 pt-0 sm:px-4" : "max-w-7xl px-4 sm:px-6"
+            }`}
           >
             <AnimatedOutlet />
           </div>
 
           {/* Footer dentro do scroll */}
           <footer
-            className="relative z-20 border-t px-4 py-5 sm:px-6"
+            className={`relative z-20 border-t px-4 py-5 sm:px-6 ${isLiveDashboard ? "hidden lg:block" : ""}`}
             style={{ borderColor: "rgba(0, 245, 160, 0.06)" }}
           >
             <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
@@ -209,7 +259,9 @@ export function AppLayout() {
           </svg>
         </button>
       </div>
+      </div>
     </div>
+    </AppShellContext.Provider>
   );
 }
 

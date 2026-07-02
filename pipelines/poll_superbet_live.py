@@ -255,6 +255,17 @@ def poll_once(
             f"{payload.get('current_score')} @ {payload.get('minute')}' "
             f"— {aportes} aportes"
         )
+        try:
+            from models.live_llm_copilot import warm_live_copilot
+
+            copilot = warm_live_copilot(payload, sport="football")
+            if copilot and copilot.get("acao_agora") == "apostar":
+                picks = copilot.get("picks") or []
+                pick_label = picks[0].get("label") if picks else ""
+                if pick_label:
+                    msg += f" · copilot: {pick_label}"
+        except Exception:
+            pass
         details.append(msg)
         print(msg)
 

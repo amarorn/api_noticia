@@ -14,6 +14,7 @@ interface AppMobileHeaderProps {
   health: HealthStatus | undefined;
   healthPending: boolean;
   healthError: boolean;
+  hideBar?: boolean;
 }
 
 export function AppMobileHeader({
@@ -23,8 +24,11 @@ export function AppMobileHeader({
   health,
   healthPending,
   healthError,
+  hideBar = false,
 }: AppMobileHeaderProps) {
   return (
+    <>
+    {!hideBar && (
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-surface/85 backdrop-blur-2xl lg:hidden">
       <div className="flex items-center gap-3 px-4 py-3">
         <NavLink
@@ -58,7 +62,21 @@ export function AppMobileHeader({
         </button>
       </div>
 
+    </header>
+    )}
+
       <AnimatePresence>
+        {hideBar && mobileOpen && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+            aria-label="Fechar menu"
+            onClick={onClose}
+          />
+        )}
         {mobileOpen && (
           <motion.nav
             id="mobile-nav"
@@ -66,9 +84,19 @@ export function AppMobileHeader({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={springSoft}
-            className="overflow-hidden border-t border-white/[0.06] bg-surface-100/95 backdrop-blur-xl"
+            className={`overflow-hidden border-t border-white/[0.06] bg-surface-100/95 backdrop-blur-xl ${
+              hideBar ? "fixed inset-x-0 top-0 z-50 max-h-screen border-b lg:hidden" : ""
+            }`}
             aria-label="Principal"
           >
+            {hideBar && (
+              <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+                <p className="font-display text-sm font-bold text-white">Menu</p>
+                <button type="button" onClick={onClose} className="btn-icon" aria-label="Fechar menu">
+                  <IconX />
+                </button>
+              </div>
+            )}
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -128,6 +156,6 @@ export function AppMobileHeader({
           </motion.nav>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }

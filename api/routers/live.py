@@ -12,6 +12,7 @@ from api.schemas import (
     BetBuilderValidateRequest,
     BetBuilderValidateResponse,
     HandicapAnalysisResponse,
+    LiveCopilotResponse,
     WcBetAdviceRequest,
     WcBetAdviceResponse,
     WcInPlayRequest,
@@ -199,6 +200,61 @@ async def worldcup_superbet_live_advice(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return WcSuperbetLiveAdviceResponse(**payload)
+
+
+@router.get("/superbet/live/{event_id}/copilot", response_model=LiveCopilotResponse)
+async def worldcup_superbet_live_copilot(
+    event_id: int,
+    phase: str = Query("friendly"),
+    bankroll: float = Query(1000, gt=0),
+    fast: bool = Query(True),
+    kickoff: str | None = Query(None),
+):
+    from ingest.superbet.advice import run_live_advice
+    from ingest.superbet.client import SuperbetClientError
+    from ingest.superbet.live_advice_cache import get_stale_advice_for_event
+    from models.live_llm_copilot import run_live_copilot
+
+    advice = get_stale_advice_for_event(event_id)
+    if advice is None:
+        try:
+            predictor = deps.get_wc_predictor()
+        except ValueError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        try:
+            advice = await asyncio.to_thread(
+                run_live_advice,
+                event_id,
+                predictor,
+                phase=phase,
+                bankroll=bankroll,
+                save_bronze=False,
+                save_tick=False,
+                use_sofascore_live=False,
+                fast=fast,
+                kickoff=kickoff,
+            )
+        except SuperbetClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    payload = await asyncio.to_thread(run_live_copilot, advice, sport="football")
+    return LiveCopilotResponse(**payload)
+
+
+@router.get("/superbet/live/{event_id}/copilot/latest", response_model=LiveCopilotResponse)
+async def worldcup_superbet_live_copilot_latest(event_id: int):
+    """Retorna último copiloto em cache (sem recomputar GPT)."""
+    from config import settings
+    from models.live_copilot_cache import get_stale_copilot_for_event
+
+    stale = get_stale_copilot_for_event(
+        event_id,
+        max_age_sec=float(settings.live_copilot_cache_ttl_sec),
+    )
+    if stale is None:
+        raise HTTPException(status_code=404, detail="Copiloto ainda não disponível para este evento.")
+    stale["cached"] = True
+    return LiveCopilotResponse(**stale)
 
 
 @router.post("/superbet/live/{event_id}/context")

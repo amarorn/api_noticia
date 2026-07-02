@@ -612,6 +612,64 @@ class WcSuperbetLiveAdviceResponse(WcBetAdviceResponse):
     optimized_tickets: dict | None = None
 
 
+class LiveCopilotPickResponse(BaseModel):
+    rank: int
+    market: str
+    outcome: str
+    label: str
+    rationale: str
+    confidence: str
+    model_prob: float | None = None
+    market_odd: float | None = None
+    expected_value: float | None = None
+    edge_pp: float | None = None
+    suggested_stake_pct: float | None = None
+
+
+class LiveCopilotBilheteLegResponse(BaseModel):
+    rank: int
+    market: str
+    outcome: str
+    label: str
+    papel: str = "complemento"
+    rationale: str = ""
+    market_odd: float | None = None
+    model_prob: float | None = None
+    expected_value: float | None = None
+    edge_pp: float | None = None
+
+
+class LiveCopilotBilheteResponse(BaseModel):
+    tipo: str = "nenhum"
+    titulo: str = ""
+    resumo: str = ""
+    pernas: list[LiveCopilotBilheteLegResponse] = Field(default_factory=list)
+    valid: bool = False
+    combined_odd: float | None = None
+    combined_odd_simple: float | None = None
+    pricing_mode: str | None = None
+    avisos_correlacao: list[str] = Field(default_factory=list)
+    validation_warnings: list[str] = Field(default_factory=list)
+
+
+class LiveCopilotResponse(BaseModel):
+    enabled: bool
+    available: bool
+    sport: str
+    event_id: int
+    captured_at: str | None = None
+    cached: bool = False
+    model: str | None = None
+    error: str | None = None
+    wait_reason: str | None = None
+    momento: str = ""
+    acao_agora: str = "aguardar"
+    confianca_geral: str = "Baixa"
+    picks: list[LiveCopilotPickResponse] = Field(default_factory=list)
+    alertas: list[str] = Field(default_factory=list)
+    bilhete: LiveCopilotBilheteResponse | None = None
+
+
 class HandicapLineResponse(BaseModel):
     line: float
     side: str
@@ -774,6 +832,10 @@ class BasketInPlaySummary(BaseModel):
     total_probs: dict[str, float] = Field(default_factory=dict)
     ppm_home: float | None = None
     ppm_away: float | None = None
+    ppm_home_prior: float | None = None
+    ppm_away_prior: float | None = None
+    match_minutes: int | None = None
+    n_simulations: int | None = None
     market_total_line: float | None = None
     market_spread_line: float | None = None
     next_quarter_number: int | None = None

@@ -1646,6 +1646,10 @@ export interface BasketInPlaySummary {
   totalProbs: Record<string, number>;
   ppmHome: number | null;
   ppmAway: number | null;
+  ppmHomePrior: number | null;
+  ppmAwayPrior: number | null;
+  matchMinutes: number | null;
+  nSimulations: number | null;
   marketTotalLine: number | null;
   marketSpreadLine: number | null;
   nextQuarterNumber: number | null;
@@ -1703,4 +1707,62 @@ export interface BasketSuperbetLiveAdvice {
   inplaySummary: BasketInPlaySummary;
   aportes: BasketAporteAdvice[];
   confidence: BasketConfidence | null;
+}
+
+export interface LiveCopilotPick {
+  rank: number;
+  market: string;
+  outcome: string;
+  label: string;
+  rationale: string;
+  confidence: string;
+  modelProb?: number | null;
+  marketOdd?: number | null;
+  expectedValue?: number | null;
+  edgePp?: number | null;
+  suggestedStakePct?: number | null;
+}
+
+export interface LiveCopilot {
+  enabled: boolean;
+  available: boolean;
+  sport: string;
+  eventId: number;
+  capturedAt: string | null;
+  cached: boolean;
+  model: string | null;
+  error: string | null;
+  waitReason: string | null;
+  momento: string;
+  acaoAgora: "apostar" | "aguardar" | "cashout";
+  confiancaGeral: string;
+  picks: LiveCopilotPick[];
+  alertas: string[];
+  bilhete: LiveCopilotBilhete | null;
+}
+
+export interface LiveCopilotBilheteLeg {
+  rank: number;
+  market: string;
+  outcome: string;
+  label: string;
+  papel: string;
+  rationale: string;
+  marketOdd?: number | null;
+  modelProb?: number | null;
+  expectedValue?: number | null;
+  edgePp?: number | null;
+}
+
+export interface LiveCopilotBilhete {
+  tipo: string;
+  titulo: string;
+  resumo: string;
+  pernas: LiveCopilotBilheteLeg[];
+  valid: boolean;
+  combinedOdd?: number | null;
+  combinedOddSimple?: number | null;
+  pricingMode?: string | null;
+  avisosCorrelacao: string[];
+  validationWarnings: string[];
 }

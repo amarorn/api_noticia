@@ -242,6 +242,14 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.0-flash"
     pregame_research_cache_ttl_sec: int = 3600  # 1h de cache por partida
+    # ── Copiloto ao vivo (OpenAI GPT) ──
+    live_copilot_enabled: bool = True
+    live_copilot_poll_enabled: bool = True
+    live_copilot_cache_ttl_sec: int = 25
+    live_copilot_temperature: float = 0.2
+    live_copilot_max_tokens: int = 1200
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
 
     @property
     def bronze_path(self) -> Path:

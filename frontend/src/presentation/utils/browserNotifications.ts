@@ -55,3 +55,27 @@ export function showCashoutAlert(payload: CashoutAlertPayload): void {
     /* ignore — Safari/iOS podem falhar silenciosamente */
   }
 }
+
+export interface CopilotAlertPayload {
+  eventId: number;
+  title: string;
+  body: string;
+  acao: "apostar" | "cashout" | "aguardar";
+}
+
+export function showCopilotAlert(payload: CopilotAlertPayload): void {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+    return;
+  }
+
+  const tag = `bolao-copilot-${payload.eventId}-${payload.acao}`;
+  try {
+    new Notification(payload.title, {
+      body: payload.body,
+      tag,
+      icon: "/favicon.ico",
+    });
+  } catch {
+    /* ignore */
+  }
+}

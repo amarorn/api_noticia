@@ -631,4 +631,189 @@
     width: 12px;
     height: 12px;
   }
+
+  /* ── Live Dashboard (mockup WC) ─────────────────────── */
+  .live-unified-chrome {
+    background: linear-gradient(
+      180deg,
+      rgba(8, 14, 28, 0.97) 0%,
+      rgba(5, 10, 22, 0.94) 100%
+    );
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .live-glass-panel {
+    @apply rounded-2xl border backdrop-blur-xl;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(
+      145deg,
+      rgba(15, 23, 42, 0.52) 0%,
+      rgba(10, 16, 32, 0.38) 100%
+    );
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .live-glass-panel-glow {
+    @apply live-glass-panel;
+    border-color: rgba(0, 245, 160, 0.14);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      0 0 28px rgba(0, 245, 160, 0.08),
+      inset 0 1px 0 rgba(0, 245, 160, 0.08);
+  }
+
+  .live-dashboard-main {
+    background: transparent;
+  }
+
+  .live-skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0.09) 45%,
+      rgba(255, 255, 255, 0.03) 100%
+    );
+    background-size: 220% 100%;
+    animation: liveShimmer 1.6s ease-in-out infinite;
+  }
+
+  @keyframes liveShimmer {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
+
+  .live-scoreboard {
+    @apply live-glass-panel-glow relative overflow-hidden;
+    border-color: rgba(0, 245, 160, 0.16);
+  }
+
+  .live-scoreboard::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      rgba(0, 245, 160, 0.04) 0%,
+      transparent 40%,
+      transparent 60%,
+      rgba(0, 224, 255, 0.04) 100%
+    );
+  }
+
+  .live-dashboard-tabs {
+    @apply relative z-10 pt-3 pb-1;
+  }
+
+  .live-dashboard-tabs-track {
+    display: flex;
+    width: 100%;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(
+      180deg,
+      rgba(8, 12, 24, 0.75) 0%,
+      rgba(5, 8, 17, 0.55) 100%
+    );
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 4px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .live-tab-btn {
+    @apply relative flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all duration-200;
+  }
+
+  .live-tab-active {
+    background: linear-gradient(
+      135deg,
+      rgba(0, 245, 160, 0.96) 0%,
+      rgba(0, 196, 125, 0.9) 100%
+    ) !important;
+    color: #050811 !important;
+    box-shadow:
+      0 0 20px rgba(0, 245, 160, 0.32),
+      0 2px 6px rgba(0, 245, 160, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+    transform: translateY(-0.5px);
+  }
+
+  .live-tab-idle {
+    color: #94a3b8;
+    background: transparent;
+  }
+
+  .live-tab-idle:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .live-tab-count {
+    @apply flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none;
+    background: rgba(0, 245, 160, 0.12);
+    color: #00f5a0;
+    border: 1px solid rgba(0, 245, 160, 0.22);
+  }
+
+  .live-tab-count.is-active {
+    background: rgba(5, 8, 17, 0.22);
+    color: #050811;
+    border-color: rgba(5, 8, 17, 0.15);
+  }
+
+  .live-kpi-card {
+    @apply live-glass-panel relative overflow-hidden p-3;
+  }
+
+  .live-kpi-icon {
+    @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-lg;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .live-progress-track {
+    @apply relative h-1.5 w-full overflow-visible rounded-full;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .live-progress-fill {
+    @apply h-full rounded-full;
+    box-shadow: 0 0 14px rgba(0, 245, 160, 0.55);
+  }
+
+  .live-progress-thumb {
+    @apply absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neon-green;
+    box-shadow:
+      0 0 14px rgba(0, 245, 160, 0.95),
+      0 0 4px rgba(0, 245, 160, 0.6),
+      0 0 0 2px rgba(0, 245, 160, 0.35);
+  }
+
+  .live-opp-card-top {
+    box-shadow:
+      0 0 28px rgba(0, 245, 160, 0.12),
+      inset 0 1px 0 rgba(0, 245, 160, 0.15);
+  }
+
+  .live-filter-pill-active {
+    @apply rounded-md px-2.5 py-1 text-[10px] font-semibold;
+    border: 1px solid rgba(0, 245, 160, 0.35);
+    background: rgba(0, 245, 160, 0.12);
+    color: #00f5a0;
+    box-shadow: 0 0 16px rgba(0, 245, 160, 0.12);
+  }
+
+  .live-status-pulse svg polyline {
+    filter: drop-shadow(0 0 4px rgba(0, 245, 160, 0.6));
+  }
 }

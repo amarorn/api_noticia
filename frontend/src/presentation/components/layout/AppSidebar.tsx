@@ -4,15 +4,22 @@ import { navGroups } from "./navConfig";
 import { ApiStatusBadge } from "./ApiStatusBadge";
 import { BrandMark } from "./BrandMark";
 import { getUserOpenBetsUseCase } from "@/application/container";
+import { LIVE_TOPBAR_HEIGHT_PX } from "./liveDashboardChromeContext";
 import type { HealthStatus } from "@/domain/entities";
 
 interface AppSidebarProps {
   health: HealthStatus | undefined;
   healthPending: boolean;
   healthError: boolean;
+  hideHeader?: boolean;
 }
 
-export function AppSidebar({ health, healthPending, healthError }: AppSidebarProps) {
+export function AppSidebar({
+  health,
+  healthPending,
+  healthError,
+  hideHeader = false,
+}: AppSidebarProps) {
   const openBetsQuery = useQuery({
     queryKey: ["user-open-bets", "sidebar"],
     queryFn: () => getUserOpenBetsUseCase.execute(),
@@ -23,27 +30,31 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
 
   return (
     <aside
-      className="fixed inset-y-0 left-0 z-40 hidden h-screen w-64 flex-col backdrop-blur-2xl lg:flex"
+      className={`fixed left-0 z-40 hidden w-64 flex-col lg:flex ${
+        hideHeader ? "live-unified-chrome bottom-0" : "inset-y-0 h-screen backdrop-blur-2xl"
+      }`}
       style={{
-        background: "rgba(5, 8, 17, 0.92)",
+        top: hideHeader ? LIVE_TOPBAR_HEIGHT_PX : undefined,
+        background: hideHeader ? undefined : "rgba(5, 8, 17, 0.92)",
         borderRight: "1px solid rgba(0, 245, 160, 0.08)",
-        boxShadow: "8px 0 40px rgba(0,0,0,0.50), inset -1px 0 0 rgba(0, 245, 160, 0.04)",
+        boxShadow: hideHeader
+          ? "inset -1px 0 0 rgba(0, 245, 160, 0.04)"
+          : "8px 0 40px rgba(0,0,0,0.50), inset -1px 0 0 rgba(0, 245, 160, 0.04)",
       }}
     >
       <div className="flex h-full flex-col">
-        {/* Header da Sidebar */}
+        {!hideHeader && (
         <div className="relative">
-          {/* Cantos decorativos */}
-          <div className="absolute right-0 top-0 h-4 w-4 border-r border-t border-neon-green/20 rounded-tr-md" />
+          <div className="absolute right-0 top-0 h-4 w-4 rounded-tr-md border-r border-t border-neon-green/20" />
 
           <NavLink
             to="/"
-            className="flex items-center gap-3 px-5 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 transition-colors"
+            className="flex items-center gap-3 px-5 py-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40"
             style={{ borderBottom: "1px solid rgba(0, 245, 160, 0.08)" }}
           >
             <BrandMark />
             <div>
-              <p className="font-display text-base font-bold gradient-text-cli leading-tight">
+              <p className="font-display text-base font-bold leading-tight gradient-text-cli">
                 Bolão AI
               </p>
               <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: "#475569" }}>
@@ -52,9 +63,12 @@ export function AppSidebar({ health, healthPending, healthError }: AppSidebarPro
             </div>
           </NavLink>
         </div>
+        )}
 
-        {/* Navegação */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin" aria-label="Principal">
+        <nav
+          className={`flex-1 overflow-y-auto px-3 scrollbar-thin ${hideHeader ? "pt-3" : "py-4"}`}
+          aria-label="Principal"
+        >
           {navGroups.map((group) => (
             <div key={group.id} className="mb-5 last:mb-0">
               {/* Rótulo do grupo com linha decorativa CLI */}
