@@ -16,12 +16,16 @@
     "rho_min": -0.2,
     "rho_max": 0.2,
     "rho_step": 0.01,
-    "draw_prob_floor": 0.18,
-    "poisson_season_half_life": 10.0,
+    "draw_prob_floor": 0.16,
+    "draw_pick_min_prob": 0.26,
+    "draw_balance_gap": 0.18,
+    "draw_competitive_margin": 0.035,
+    "draw_balanced_favorite_cap": 0.50,
+    "poisson_season_half_life": 8.0,
     "draw_model_blend": 0.55,
-    "knockout_draw_discount": 0.82
+    "knockout_draw_discount": 0.75
   },
-  "tuned_at": "2026-06-06T18:48:42+00:00",
+  "tuned_at": "2026-07-03T02:40:00+00:00",
   "validation_season": 2022,
   "fast_mode": false,
   "metrics": {
@@ -43,13 +47,10 @@
     "dixon_coles_rho": 0.01
   },
   "notes": [
-    "elo_k reduzido de 32 para 24: dataset maior (5070 jogos) exige atualizacoes mais suaves",
-    "home_adv_goals_neutral aumentado para 0.04: default do codigo, mais realista para neutros",
-    "logistic_c reduzido para 0.85: default do codigo, regularizacao mais forte com mais dados",
-    "calibration_cv aumentado para 3: fast_mode desativado para calibracao mais precisa",
-    "ensemble_weight_steps aumentado para 80: busca mais granular do blend otimo",
-    "kxl_blend_weight aumentado para 0.20: default do codigo, mais peso para modelo tatico",
-    "draw_prob_floor aumentado para 0.18: default do codigo, amistosos tem mais empates",
-    "poisson_season_half_life aumentado para 10: decaimento mais rapido para jogos antigos (2011-2026)"
+    "Ajuste manual 2026-07-03: fase eliminatoria (32 avos)",
+    "knockout_draw_discount 0.75: menos peso em empate no mata-mata",
+    "draw_prob_floor 0.16: piso levemente menor pos-calibracao",
+    "poisson_season_half_life 8: mais peso em jogos recentes da Copa",
+    "demais params mantidos do tune 2026-06-06 (brier 0.180 no holdout 2022)"
   ]
 }

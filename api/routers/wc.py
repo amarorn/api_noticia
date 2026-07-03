@@ -887,7 +887,10 @@ def pregame_today(
     days_ahead: int = Query(1, ge=1, le=7),
     days_back: int = Query(0, ge=0, le=3),
     tz: str = Query("America/Sao_Paulo", description="Fuso para definir 'hoje' na sidebar"),
-    today_only: bool = Query(True, description="Somente jogos com kickoff no dia local de hoje"),
+    today_only: bool = Query(
+        True,
+        description="Somente jogos do dia local (+ madrugada nas próximas 8h)",
+    ),
 ):
     import structlog
     from zoneinfo import ZoneInfo

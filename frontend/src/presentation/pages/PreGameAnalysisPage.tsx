@@ -878,10 +878,7 @@ export function PreGameAnalysisPage() {
     refetchOnMount: "always",
   });
 
-  const todayMatches = useMemo(() => {
-    if (!data) return [];
-    return data.matches.filter((m) => m.kickoff_date === data.date);
-  }, [data]);
+  const todayMatches = useMemo(() => data?.matches ?? [], [data]);
 
   useEffect(() => {
     if (!data) return;
@@ -934,6 +931,11 @@ export function PreGameAnalysisPage() {
                 byDate.get(d)!.push(m);
               }
               const today = data.date;
+              const tomorrow = (() => {
+                const d = new Date(today + "T12:00:00");
+                d.setDate(d.getDate() + 1);
+                return d.toISOString().slice(0, 10);
+              })();
               const yesterday = (() => {
                 const d = new Date(today + "T12:00:00");
                 d.setDate(d.getDate() - 1);
@@ -945,6 +947,8 @@ export function PreGameAnalysisPage() {
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1 py-2 sticky top-0 bg-black/60 backdrop-blur-sm z-10">
                     {date === today
                       ? "Hoje"
+                      : date === tomorrow
+                        ? "Madrugada"
                       : date === yesterday
                         ? "Ontem"
                         : new Date(date + "T12:00:00Z").toLocaleDateString("pt-BR", {

@@ -166,7 +166,7 @@ start_api() {
   if [[ "${DEV_API_RELOAD:-1}" == "1" ]]; then
     api_cmd=(
       uvicorn api.main:app --reload --host 127.0.0.1 --port "$API_PORT"
-      --reload-dir api --reload-dir ingest --reload-dir models --reload-dir schemas
+      --reload-dir api --reload-dir ingest --reload-dir models --reload-dir schemas --reload-dir pipelines
     )
   else
     api_cmd=(uvicorn api.main:app --host 127.0.0.1 --port "$API_PORT")

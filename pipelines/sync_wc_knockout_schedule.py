@@ -29,16 +29,23 @@ from schemas.national_teams import normalize_national_team
 logger = structlog.get_logger()
 
 ROUND_FILE = Path("data/rounds/wc_2026.json")
-COMPETITION_MARKER = "Copa do Mundo da FIFA 2026"
 
-# Mapa nome do estágio (PT, retornado pela FIFA) → (phase slug, round sequencial).
-# Estágios futuros ainda não vistos caem no fallback genérico em _phase_for_stage.
+# IDs conhecidos dos 32 avos WC 2026 (400021512–400021527). A janela rolante da FIFA
+# nem sempre inclui todos — ex.: Suíça x Argélia (400021527) fica fora até perto do apito.
+_WC_2026_ROUND_OF_32_IDS = tuple(range(400021512, 400021528))
+
+# Mapa nome do estágio (PT/EN, retornado pela FIFA) → (phase slug, round sequencial).
 _STAGE_PHASE_MAP: dict[str, tuple[str, int]] = {
     "Segundas de final": ("round_of_32", 4),
+    "Round of 32": ("round_of_32", 4),
     "Oitavas de final": ("round_of_16", 5),
+    "Round of 16": ("round_of_16", 5),
     "Quartas de final": ("quarterfinal", 6),
+    "Quarter-finals": ("quarterfinal", 6),
     "Semifinais": ("semifinal", 7),
+    "Semi-finals": ("semifinal", 7),
     "Disputa de 3º lugar": ("third_place", 8),
+    "Play-off for third place": ("third_place", 8),
     "Final": ("final", 9),
 }
 
@@ -57,6 +64,21 @@ def _phase_for_stage(stage_name: str) -> tuple[str, int]:
     return (_slug_part(stage_name) or "knockout", 99)
 
 
+def _is_wc_2026_match(season_names: str) -> bool:
+    low = season_names.lower()
+    return "2026" in low and ("world cup" in low or "copa do mundo" in low)
+
+
+def _localized_label(items: list[dict[str, Any]] | None, *, prefer_pt: bool = True) -> str:
+    if not items:
+        return ""
+    if prefer_pt:
+        for item in items:
+            if str(item.get("Locale", "")).lower().startswith("pt"):
+                return str(item.get("Description", ""))
+    return str(items[0].get("Description", ""))
+
+
 def _team_name(side: dict[str, Any]) -> str:
     names = side.get("TeamName") or []
     for n in names:
@@ -65,6 +87,18 @@ def _team_name(side: dict[str, Any]) -> str:
     if names:
         return normalize_national_team(names[0].get("Description", ""))
     return ""
+
+
+def _venue_city(m: dict[str, Any]) -> tuple[str | None, str | None]:
+    stadium = m.get("Stadium")
+    if isinstance(stadium, dict):
+        return (
+            _localized_label(stadium.get("Name"), prefer_pt=False) or None,
+            _localized_label(stadium.get("CityName"), prefer_pt=False) or None,
+        )
+    if isinstance(stadium, str):
+        return stadium, None
+    return None, None
 
 
 def _iter_window_matches(data: dict[str, Any] | list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -89,20 +123,23 @@ def _parse_knockout_match(m: dict[str, Any]) -> dict[str, Any] | None:
     season_names = " ".join(
         s.get("Description", "") for s in (m.get("SeasonName") or [])
     )
-    if COMPETITION_MARKER not in season_names:
+    if not _is_wc_2026_match(season_names):
         return None
-    stage_name = (m.get("StageName") or [{}])[0].get("Description", "")
-    if stage_name == "Primeira fase":
+    stage_name = _localized_label(m.get("StageName"))
+    if stage_name in {"Primeira fase", "Group Stage"}:
         return None  # fase de grupos já vem do build_wc_2026_schedule.py
+    if stage_name in {"Repescagem", "Play-offs", "Play-Offs"}:
+        return None
 
-    home = _team_name(m.get("Home") or {})
-    away = _team_name(m.get("Away") or {})
+    home = _team_name(m.get("Home") or m.get("HomeTeam") or {})
+    away = _team_name(m.get("Away") or m.get("AwayTeam") or {})
     if not home or not away:
         return None
 
     phase, round_no = _phase_for_stage(stage_name)
     id_match = _match_id(m)
     kickoff = m.get("Date")  # já vem em ISO UTC (ex.: 2026-06-29T17:00:00+00:00)
+    venue, city = _venue_city(m)
 
     return {
         "id": f"{phase}-{_slug_part(home)}-{_slug_part(away)}",
@@ -112,11 +149,41 @@ def _parse_knockout_match(m: dict[str, Any]) -> dict[str, Any] | None:
         "round": round_no,
         "phase": phase,
         "kickoff": kickoff,
-        "venue": m.get("Stadium"),
-        "city": None,
+        "venue": venue,
+        "city": city,
         "fifa_stage": stage_name,
         "fifa_id_match": id_match or None,
     }
+
+
+def _supplement_knockout_by_known_ids(
+    client: FifaClient,
+    *,
+    seen_ids: set[str],
+    out: list[dict[str, Any]],
+) -> int:
+    """Busca por IdMatch os 32 avos que a janela rolante ainda não devolveu."""
+    added = 0
+    for match_id in _WC_2026_ROUND_OF_32_IDS:
+        id_str = str(match_id)
+        if id_str in seen_ids:
+            continue
+        try:
+            details = client.match_details(id_str)
+        except Exception as exc:
+            logger.debug("wc_knockout_id_fetch_skip", match_id=id_str, error=str(exc))
+            continue
+        if not isinstance(details, dict):
+            continue
+        parsed = _parse_knockout_match(details)
+        if parsed is None:
+            continue
+        out.append(parsed)
+        seen_ids.add(id_str)
+        added += 1
+    if added:
+        logger.info("wc_knockout_supplemented_by_id", added=added)
+    return added
 
 
 def fetch_knockout_matches(client: FifaClient | None = None) -> list[dict[str, Any]]:
@@ -157,6 +224,8 @@ def fetch_knockout_matches(client: FifaClient | None = None) -> list[dict[str, A
         if dup_key in {(o["home_team"], o["away_team"], o["kickoff"]) for o in out}:
             continue
         out.append(parsed)
+
+    _supplement_knockout_by_known_ids(fifa_client, seen_ids=seen_ids, out=out)
 
     logger.info("wc_knockout_matches_fetched", source=source, count=len(out))
     return out

@@ -11,6 +11,9 @@ from schemas.national_teams import normalize_national_team
 
 DEFAULT_PREGAME_TZ = "America/Sao_Paulo"
 MATCH_DURATION_MIN = 105
+# Jogos após meia-noite local ainda entram em "hoje" se começarem nas próximas N horas
+# (ex.: Suíça x Argélia 00:00 BRT enquanto ainda é 23h do dia anterior).
+PREGAME_TODAY_SPILLOVER_HOURS = 8
 
 
 def _parse_kickoff(raw: str) -> datetime | None:
@@ -106,6 +109,18 @@ def build_pregame_window(
 
         local_ko_day = _local_date(ko, tz)
         if local_start_day <= local_ko_day <= local_end_day:
+            pair_key = (
+                normalize_national_team(str(match.get("home_team") or "")),
+                normalize_national_team(str(match.get("away_team") or "")),
+                local_ko_day.isoformat(),
+            )
+            if pair_key in seen:
+                continue
+            seen.add(pair_key)
+            window.append((ko, match))
+            continue
+
+        if today_only and ko > now and ko <= now + timedelta(hours=PREGAME_TODAY_SPILLOVER_HOURS):
             pair_key = (
                 normalize_national_team(str(match.get("home_team") or "")),
                 normalize_national_team(str(match.get("away_team") or "")),

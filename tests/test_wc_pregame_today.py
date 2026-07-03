@@ -61,6 +61,37 @@ def test_pregame_today_only_excludes_yesterday_evening_brt():
     assert len(window) == 0
 
 
+def test_pregame_today_only_includes_midnight_spillover_brt():
+    """00:00 BRT (03:00 UTC) ainda aparece à noite do dia anterior."""
+    now = datetime(2026, 7, 3, 2, 37, tzinfo=UTC)  # 23:37 BRT em 02/07
+    schedule = _sched(
+        {
+            "id": "round_of_32-suica-argelia",
+            "home_team": "Suíça",
+            "away_team": "Argélia",
+            "kickoff": "2026-07-03T03:00:00Z",
+            "phase": "round_of_32",
+        },
+        {
+            "id": "por-cro",
+            "home_team": "Portugal",
+            "away_team": "Croácia",
+            "kickoff": "2026-07-02T23:00:00+00:00",
+            "phase": "round_of_32",
+        },
+    )
+    window, meta = build_pregame_window(
+        schedule,
+        now=now,
+        tz_name="America/Sao_Paulo",
+        today_only=True,
+    )
+    ids = {m.get("id") for _, m in window}
+    assert "round_of_32-suica-argelia" in ids
+    assert "por-cro" in ids
+    assert meta["date"] == "2026-07-02"
+
+
 def test_pregame_window_with_days_back_includes_yesterday():
     now = datetime(2026, 7, 2, 10, 0, tzinfo=UTC)
     schedule = _sched(
