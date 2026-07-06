@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/presentation/components/ui/toast";
+import { NotificationsProvider } from "@/presentation/components/ui/notifications";
 import { AppLayout } from "@/presentation/components/layout/AppLayout";
 import { DashboardPage } from "@/presentation/pages/DashboardPage";
 import { PredictPage } from "@/presentation/pages/PredictPage";
@@ -27,6 +28,7 @@ import { ModelBenchmarkPage } from "@/presentation/pages/ModelBenchmarkPage";
 import { MatchTicketsPage } from "@/presentation/pages/MatchTicketsPage";
 import { PreGameAnalysisPage } from "@/presentation/pages/PreGameAnalysisPage";
 import { CopaCentralPage } from "@/presentation/pages/CopaCentralPage";
+import { CasinoPage } from "@/presentation/pages/CasinoPage";
 import { NotFoundPage } from "@/presentation/pages/NotFoundPage";
 
 const queryClient = new QueryClient({
@@ -42,6 +44,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
+        <NotificationsProvider>
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>
@@ -65,6 +68,7 @@ export function App() {
               <Route path="ao-vivo/:eventId" element={<LiveDashboardPage />} />
               <Route path="ao-vivo/:eventId/painel" element={<Navigate to="/ao-vivo/:eventId" replace />} />
               <Route path="ao-vivo/basquete/:eventId" element={<BasketLiveInPlayPage />} />
+              <Route path="casino" element={<CasinoPage />} />
               <Route path="convocacoes" element={<SquadsPage />} />
               <Route path="grupos" element={<WcGroupsPage />} />
               <Route path="album/:teamSlug" element={<TeamAlbumPage />} />
@@ -79,6 +83,7 @@ export function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </NotificationsProvider>
       </ToastProvider>
     </QueryClientProvider>
   );

@@ -14,6 +14,7 @@ import {
   IconZap,
   IconTarget,
   IconFlask,
+  IconDice,
 } from "@/presentation/components/ui/Icons";
 
 export interface NavItem {
@@ -53,6 +54,12 @@ export const navGroups: NavGroup[] = [
         label: "Ao vivo",
         Icon: IconLive,
         description: "Jogos Superbet live",
+      },
+      {
+        to: "/casino",
+        label: "Casino",
+        Icon: IconDice,
+        description: "Live casino Superbet",
       },
       {
         to: "/pre-jogo",

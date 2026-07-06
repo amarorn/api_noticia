@@ -100,6 +100,38 @@ class WcValueResponse(BaseModel):
     edges: list[WcMatchValueResponse]
 
 
+class SurebetLegResponse(BaseModel):
+    outcome: str
+    label: str
+    bookmaker: str
+    odd: float
+    stake_pct: float
+    stake_value: float
+
+
+class SurebetOpportunityResponse(BaseModel):
+    market_type: str
+    home_team: str
+    away_team: str
+    commence_time: str | None = None
+    arbitrage_index: float
+    margin_pct: float
+    bankroll: float
+    total_stake_value: float
+    profit_value: float
+    warnings: list[str] = Field(default_factory=list)
+    legs: list[SurebetLegResponse]
+
+
+class SurebetScanResponse(BaseModel):
+    source: str
+    regions: str
+    bookmakers_seen: int
+    events_scanned: int
+    opportunities: list[SurebetOpportunityResponse]
+    note: str
+
+
 # ---------------------------------------------------------------------------
 # WC — Corners
 # ---------------------------------------------------------------------------
@@ -711,6 +743,28 @@ class LiveCopilotAgentResponse(LiveCopilotResponse):
     auto_apply_ui: bool = False
 
 
+class PregameSummaryResponse(BaseModel):
+    enabled: bool = True
+    home_team: str = ""
+    away_team: str = ""
+    narrative: str = ""
+    confianca: str = "Baixa"
+    acao_sugerida: str = "aguardar"
+    alertas: list[str] = Field(default_factory=list)
+    modelo_vs_noticias: str | None = None
+    from_cache: bool = False
+    provider: str = "local"
+    error: str | None = None
+
+
+class PregameCopilotAgentRequest(BaseModel):
+    home: str = Field(..., min_length=1)
+    away: str = Field(..., min_length=1)
+    phase: str = "group"
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[LiveCopilotChatMessage] = Field(default_factory=list, max_length=8)
+
+
 class HandicapLineResponse(BaseModel):
     line: float
     side: str
@@ -1012,3 +1066,72 @@ class NewsSyncResponse(BaseModel):
     silver_path: str | None = None
     articles_silver: int
     synced_at: str
+
+
+# ---------------------------------------------------------------------------
+# Casino Superbet (catálogo público)
+# ---------------------------------------------------------------------------
+
+
+class CasinoGameResponse(BaseModel):
+    seo_id: str
+    title: str
+    slug: str
+    provider_id: str
+    integrator: str
+    min_stake: float
+    has_demo: bool
+    has_anonymous_demo: bool
+    product: str
+    game_category: str | None = None
+    studio: str | None = None
+    image_url: str | None = None
+    superbet_url: str
+    tags: list[str] = Field(default_factory=list)
+    note: str | None = None
+
+
+class CasinoCatalogResponse(BaseModel):
+    count: int
+    seo_ids: list[str]
+    games: list[CasinoGameResponse]
+    captured_at: str
+    betting_note: str
+
+
+class BacboRoundItem(BaseModel):
+    round_id: str
+    table_id: str
+    winner: str
+    player_score: int | None = None
+    banker_score: int | None = None
+    msg_type: str | None = None
+    captured_at: str | None = None
+
+
+class BacboTableSummary(BaseModel):
+    table_id: str
+    total_rounds: int
+    stats: dict[str, int]
+
+
+class BacboIngestRequest(BaseModel):
+    messages: list[str] = Field(..., min_length=1, max_length=200)
+    table_id: str | None = None
+    ws_url: str | None = None
+
+
+class BacboIngestResponse(BaseModel):
+    inserted: int
+    parsed: int
+    table_id: str
+    updated_at: str | None = None
+
+
+class BacboRoundsResponse(BaseModel):
+    table_id: str | None = None
+    count: int = 0
+    stats: dict[str, int] = Field(default_factory=dict)
+    rounds: list[BacboRoundItem] = Field(default_factory=list)
+    updated_at: str | None = None
+    tables: list[BacboTableSummary] | None = None

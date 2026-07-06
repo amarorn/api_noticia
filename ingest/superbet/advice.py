@@ -559,27 +559,61 @@ def _build_live_advice_payload(
                 inplay_dict["card_line_probs"] = ht_report.get("card_line_probs") or {}
             else:
                 ht_report = None
-        elif (
-            snapshot.inplay
-            and corner_lambda_home is not None
-            and corner_lambda_away is not None
-        ):
-            from models.wc_halftime_adjust import project_live_corners
+        elif corner_lambda_home is not None and corner_lambda_away is not None:
+            from models.wc_halftime_adjust import project_live_corners, project_pregame_corners
 
             live_corner_lines = corner_lines or (7.5, 8.5, 9.5, 10.5, 11.5)
-            corners_proj = project_live_corners(
-                home_corners=int(snapshot.inplay.home_corners),
-                away_corners=int(snapshot.inplay.away_corners),
-                minute=minute,
-                lambda_home_ft=corner_lambda_home,
-                lambda_away_ft=corner_lambda_away,
-                lines=live_corner_lines,
-            )
+            if snapshot.inplay:
+                corners_proj = project_live_corners(
+                    home_corners=int(snapshot.inplay.home_corners),
+                    away_corners=int(snapshot.inplay.away_corners),
+                    minute=minute,
+                    lambda_home_ft=corner_lambda_home,
+                    lambda_away_ft=corner_lambda_away,
+                    lines=live_corner_lines,
+                )
+            else:
+                corners_proj = project_pregame_corners(
+                    lambda_home_ft=corner_lambda_home,
+                    lambda_away_ft=corner_lambda_away,
+                    lines=live_corner_lines,
+                )
             inplay_dict["corners_projection"] = corners_proj
             inplay_dict["corner_line_probs"] = corners_proj.get("line_probs") or {}
             ht_report = None
         else:
             ht_report = None
+
+        if not inplay_dict.get("card_line_probs"):
+            card_lines = (
+                tuple(float(k) for k in snapshot.yellow_cards.keys())
+                if snapshot.yellow_cards
+                else (2.5, 3.5, 4.5, 5.5)
+            )
+            card_lambda = referee_card_lambda if referee_card_lambda is not None else 3.8
+            if snapshot.yellow_cards or referee_card_lambda is not None:
+                from models.wc_halftime_adjust import project_pregame_cards
+
+                if snapshot.inplay and minute > 0:
+                    from models.wc_halftime_adjust import _over_under_probs_from_total
+
+                    observed = int(snapshot.inplay.home_yellow_cards) + int(
+                        snapshot.inplay.away_yellow_cards
+                    )
+                    remaining_lam = max(0.5, card_lambda - observed * 0.5)
+                    ft_lam = observed + remaining_lam
+                    cards_proj = {
+                        "source": "live_poisson",
+                        "expected_ft_total": round(ft_lam, 3),
+                        "line_probs": _over_under_probs_from_total(ft_lam, observed, card_lines),
+                    }
+                else:
+                    cards_proj = project_pregame_cards(
+                        referee_card_lambda=card_lambda,
+                        lines=card_lines,
+                    )
+                inplay_dict["card_line_probs"] = cards_proj.get("line_probs") or {}
+                inplay_dict["cards_projection"] = cards_proj
     shadow = inplay_dict.get("ensemble_shadow") or {}
     tick_extra["ens_prob_final_home"] = shadow.get("prob_final_home")
     tick_extra["ens_prob_l1_delta"] = shadow.get("prob_l1_delta")

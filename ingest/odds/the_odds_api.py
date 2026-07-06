@@ -59,6 +59,107 @@ def _map_outcomes(outcomes: list[dict], home_team: str, away_team: str) -> dict[
     return mapped
 
 
+@dataclass
+class EventMultiBookmakerH2H:
+    """Odds 1X2 de todas as casas para um mesmo evento."""
+
+    home_team: str
+    away_team: str
+    commence_time: str | None
+    quotes: list[H2HOdds]
+
+    def to_quotes_dict(self) -> list[dict[str, object]]:
+        return [
+            {
+                "bookmaker": q.bookmaker,
+                "odds": {"1": q.odds_1, "X": q.odds_x, "2": q.odds_2},
+            }
+            for q in self.quotes
+        ]
+
+
+def extract_all_h2h(event: dict) -> EventMultiBookmakerH2H | None:
+    """Extrai 1X2 de TODAS as casas retornadas pela Odds API."""
+    home = str(event.get("home_team", "")).strip()
+    away = str(event.get("away_team", "")).strip()
+    if not home or not away:
+        return None
+
+    quotes: list[H2HOdds] = []
+    for bookmaker in event.get("bookmakers") or []:
+        if not isinstance(bookmaker, dict):
+            continue
+        markets = bookmaker.get("markets") or []
+        for market in markets:
+            if market.get("key") != "h2h":
+                continue
+            outcomes = market.get("outcomes") or []
+            mapped = _map_outcomes(outcomes, home, away)
+            if not {"1", "X", "2"}.issubset(mapped):
+                continue
+            quotes.append(
+                H2HOdds(
+                    home_team=normalize_national_team(home),
+                    away_team=normalize_national_team(away),
+                    odds_1=mapped["1"],
+                    odds_x=mapped["X"],
+                    odds_2=mapped["2"],
+                    bookmaker=str(bookmaker.get("key", "unknown")),
+                    commence_time=event.get("commence_time"),
+                )
+            )
+            break
+
+    if not quotes:
+        return None
+
+    return EventMultiBookmakerH2H(
+        home_team=normalize_national_team(home),
+        away_team=normalize_national_team(away),
+        commence_time=event.get("commence_time"),
+        quotes=quotes,
+    )
+
+
+def fetch_multi_bookmaker_h2h(
+    *,
+    sport_key: str | None = None,
+    regions: str | None = None,
+    markets: str | None = None,
+    odds_format: str | None = None,
+) -> list[EventMultiBookmakerH2H]:
+    """Busca odds 1X2 de múltiplas casas por evento (base para surebet)."""
+    api_key = settings.odds_api_key
+    if not api_key:
+        raise ValueError("ODDS_API_KEY não configurada no .env")
+
+    sport = sport_key or settings.odds_default_sport
+    params = {
+        "apiKey": api_key,
+        "regions": regions or settings.odds_default_regions,
+        "markets": markets or settings.odds_default_markets,
+        "oddsFormat": odds_format or settings.odds_default_odds_format,
+    }
+    url = f"{ODDS_API_BASE}/sports/{sport}/odds"
+
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        response = client.get(url, params=params)
+        response.raise_for_status()
+        payload = response.json()
+
+    if not isinstance(payload, list):
+        raise ValueError("Resposta inesperada da Odds API")
+
+    events: list[EventMultiBookmakerH2H] = []
+    for event in payload:
+        if not isinstance(event, dict):
+            continue
+        parsed = extract_all_h2h(event)
+        if parsed and len(parsed.quotes) >= 2:
+            events.append(parsed)
+    return events
+
+
 def _extract_h2h(event: dict, preferred_bookmaker: str | None = None) -> H2HOdds | None:
     home = str(event.get("home_team", "")).strip()
     away = str(event.get("away_team", "")).strip()

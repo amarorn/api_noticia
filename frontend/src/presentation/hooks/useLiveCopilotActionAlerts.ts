@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { LiveCopilot } from "@/domain/entities";
-import { useToast } from "@/presentation/components/ui/toast/ToastContext";
+import { useNotifications } from "@/presentation/components/ui/notifications";
 import { showCopilotAlert } from "@/presentation/utils/browserNotifications";
 
 interface UseLiveCopilotActionAlertsOptions {
@@ -18,7 +18,7 @@ export function useLiveCopilotActionAlerts(
   copilot: LiveCopilot | undefined,
   options: UseLiveCopilotActionAlertsOptions,
 ) {
-  const { addToast } = useToast();
+  const { addNotification } = useNotifications();
   const prevRef = useRef<{ acao: LiveCopilot["acaoAgora"]; picks: string } | null>(null);
   const { eventId, homeTeam, awayTeam, enabled = true } = options;
 
@@ -46,21 +46,31 @@ export function useLiveCopilotActionAlerts(
         const pickText = top ? `${top.label}${oddText}` : copilot.momento;
 
         if (becameCashout) {
-          const message = `Copiloto — cash-out: ${matchLabel}. ${copilot.momento || pickText}`;
-          addToast(message, "info");
+          const body = pickText || copilot.momento;
+          addNotification({
+            title: `Copiloto — cash-out · ${matchLabel}`,
+            body,
+            type: "info",
+            source: "copilot",
+          });
           showCopilotAlert({
             eventId,
             title: "Copiloto: considerar cash-out",
-            body: pickText || copilot.momento,
+            body,
             acao: "cashout",
           });
         } else {
-          const message = `Momento ideal — ${matchLabel}: ${pickText}`;
-          addToast(message, "success");
+          const body = pickText || copilot.momento;
+          addNotification({
+            title: `Momento ideal · ${matchLabel}`,
+            body,
+            type: "success",
+            source: "copilot",
+          });
           showCopilotAlert({
             eventId,
             title: "Momento ideal para apostar",
-            body: pickText || copilot.momento,
+            body,
             acao: "apostar",
           });
         }
@@ -68,5 +78,5 @@ export function useLiveCopilotActionAlerts(
     }
 
     prevRef.current = { acao: copilot.acaoAgora, picks };
-  }, [copilot, enabled, eventId, homeTeam, awayTeam, addToast]);
+  }, [copilot, enabled, eventId, homeTeam, awayTeam, addNotification]);
 }

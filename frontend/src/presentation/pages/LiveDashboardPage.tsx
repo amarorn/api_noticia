@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
@@ -45,8 +46,10 @@ import { LiveTrendSignals } from "@/presentation/components/live-dashboard/LiveT
 import { LivePredictionEvolutionChart } from "@/presentation/components/live-dashboard/LivePredictionEvolutionChart";
 
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
+import { getUserOpenBetsUseCase, refreshOpenBetsCashoutsUseCase } from "@/application/container";
 import { useLiveCopilotQuery } from "@/presentation/hooks/useLiveCopilotQuery";
 import { useLiveCopilotActionAlerts } from "@/presentation/hooks/useLiveCopilotActionAlerts";
+import { useCashoutRiskAlerts } from "@/presentation/hooks/useCashoutRiskAlerts";
 import { useLiveCopilotAgentSession } from "@/presentation/hooks/useLiveCopilotAgentSession";
 import { useCopilotAlertsPreference } from "@/presentation/hooks/useCopilotAlertsPreference";
 import { useLivePossessionHistory } from "@/presentation/hooks/useLivePossessionHistory";
@@ -1154,6 +1157,70 @@ export function LiveDashboardPage() {
     isFetching, refetch, timelineReactive, pollMs,
   } = useLiveAdviceQueries(eventId, 1000, null, advicePhase);
 
+  const openBetsQuery = useQuery({
+    queryKey: ["user-open-bets", "live-dashboard", eventId],
+    queryFn: () => getUserOpenBetsUseCase.execute(),
+    refetchInterval: 30_000,
+    enabled: eventId > 0,
+  });
+
+  useEffect(() => {
+    if (eventId <= 0 || !data?.isLive || data?.isFinished) return;
+    let cancelled = false;
+    const syncCashouts = async () => {
+      try {
+        await refreshOpenBetsCashoutsUseCase.execute(eventId);
+        if (!cancelled) await openBetsQuery.refetch();
+      } catch {
+        /* Superbet offline */
+      }
+    };
+    void syncCashouts();
+    const timer = window.setInterval(syncCashouts, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [eventId, data?.isLive, data?.isFinished, openBetsQuery.refetch]);
+
+  const dashboardOpenBets = useMemo(() => {
+    if (!openBetsQuery.data?.bets || !data) return [];
+    return openBetsQuery.data.bets
+      .filter(
+        (b) =>
+          b.status === "open" &&
+          (b.superbetEventId === eventId ||
+            (b.homeTeam === data.homeTeam && b.awayTeam === data.awayTeam)),
+      )
+      .map((b) => ({
+        id: b.id,
+        stake: b.stake,
+        oddsPlaced: b.oddsPlaced,
+        potentialReturn: b.potentialReturn,
+        cashoutValue: b.cashoutValue,
+        ticketCode: b.ticketCode,
+        picks: b.picks.map((p) => ({
+          market: p.market,
+          outcome: p.outcome,
+          label: p.targetValue ? `${p.market} ${p.outcome} ${p.targetValue}` : `${p.market} ${p.outcome}`,
+          targetValue: p.targetValue,
+        })),
+      }));
+  }, [openBetsQuery.data, eventId, data]);
+
+  useCashoutRiskAlerts({
+    bets: dashboardOpenBets,
+    currentScore: data?.currentScore ?? null,
+    minute: data?.minute ?? 0,
+    periodLabel: data?.periodLabel,
+    htHome: data?.halftimeReport?.frozenStats?.htHomeScore,
+    htAway: data?.halftimeReport?.frozenStats?.htAwayScore,
+    liveStats: data?.liveStats,
+    enabled: Boolean(data?.isLive && !data?.isFinished && dashboardOpenBets.length > 0),
+    eventLabel:
+      data?.homeTeam && data?.awayTeam ? `${data.homeTeam} x ${data.awayTeam}` : undefined,
+  });
+
   const copilotEnabled = Boolean(data?.isLive && !data?.isFinished && eventId > 0);
   const { alertsActive: copilotAlertsActive } = useCopilotAlertsPreference();
   const copilotQuery = useLiveCopilotQuery({
@@ -1851,6 +1918,12 @@ export function LiveDashboardPage() {
                       eventId={eventId}
                       homeTeam={data?.homeTeam}
                       awayTeam={data?.awayTeam}
+                      currentScore={data?.currentScore}
+                      minute={data?.minute}
+                      periodLabel={data?.periodLabel}
+                      htHome={data?.halftimeReport?.frozenStats?.htHomeScore}
+                      htAway={data?.halftimeReport?.frozenStats?.htAwayScore}
+                      liveStats={data?.liveStats}
                     />
                     {data && <LiveOptimizedTicketsPanel data={data} />}
                     <TicketSimulator ticket={ticket} suggestions={liveSuggestions} />

@@ -43,7 +43,7 @@ async function ensureContentScript(tabId) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ["event_id.js", "content_script.js"],
+      files: ["event_id.js", "cashout_executor.js", "content_script.js"],
     });
     await new Promise((r) => setTimeout(r, 350));
     return { ok: true, injected: true };
@@ -52,8 +52,16 @@ async function ensureContentScript(tabId) {
   }
 }
 
-const LIVE_PANEL_FILES = ["event_id.js", "content_script.js", "live_market_panel.js"];
-const TICKET_BUILDER_FILES = ["event_id.js", "content_script.js", "ticket_builder.js"];
+const LIVE_PANEL_FILES = ["event_id.js", "cashout_executor.js", "content_script.js", "live_market_panel.js"];
+const TICKET_BUILDER_FILES = ["event_id.js", "cashout_executor.js", "content_script.js", "ticket_builder.js"];
+const CASHOUT_SCRIPT_FILES = ["event_id.js", "cashout_executor.js", "content_script.js"];
+
+const SUPERBET_BETS_URLS = [
+  "https://superbet.bet.br/apostas*",
+  "https://www.superbet.bet.br/apostas*",
+  "https://superbet.com/br/apostas*",
+  "https://www.superbet.com/br/apostas*",
+];
 
 const SUPERBET_EVENT_URLS = (eventId) => [
   `https://superbet.bet.br/evento/${eventId}`,
@@ -108,6 +116,67 @@ async function openSuperbetEventTab(eventId) {
   }
   const url = SUPERBET_EVENT_URLS(eventId)[0];
   return chrome.tabs.create({ url, active: true });
+}
+
+async function findSuperbetBetsTab() {
+  const tabs = await chrome.tabs.query({ url: SUPERBET_BETS_URLS });
+  return tabs[0] || null;
+}
+
+async function waitForTabComplete(tabId, timeoutMs = 15000) {
+  const start = Date.now();
+  while Date.now() - start < timeoutMs) {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.status === "complete") return tab;
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  return chrome.tabs.get(tabId);
+}
+
+async function ensureCashoutScripts(tabId) {
+  try {
+    const ping = await chrome.tabs.sendMessage(tabId, { type: "PING" });
+    if (ping?.ok) return { ok: true };
+  } catch {
+    /* injetar */
+  }
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: CASHOUT_SCRIPT_FILES,
+    });
+    await new Promise((r) => setTimeout(r, 450));
+    return { ok: true, injected: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+/** Executa cash-out na aba Minhas Apostas (API autenticada → clique no botão). */
+async function executeCashoutOnSuperbet(payload) {
+  let tab = await findSuperbetBetsTab();
+  if (!tab?.id) {
+    tab = await chrome.tabs.create({
+      url: "https://superbet.bet.br/apostas",
+      active: false,
+    });
+    await waitForTabComplete(tab.id);
+  }
+
+  const ready = await ensureCashoutScripts(tab.id);
+  if (!ready.ok) {
+    return { ok: false, error: ready.error || "scripts_not_ready" };
+  }
+
+  try {
+    const result = await chrome.tabs.sendMessage(tab.id, {
+      type: "EXECUTE_CASHOUT",
+      payload,
+    });
+    return result || { ok: false, error: "no_response" };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
 }
 
 async function queueSuperbetTicket(payload) {
@@ -606,6 +675,19 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true;
   }
 
+  if (request.type === "EXECUTE_CASHOUT") {
+    executeCashoutOnSuperbet(request.payload || {}).then((result) => {
+      if (result?.ok) {
+        showNotification(
+          "Bolão AI — cash-out executado",
+          `Ticket ${request.payload?.ticketCode || ""} · R$ ${Number(result.value || request.payload?.minValue || 0).toFixed(2)}`,
+        );
+      }
+      sendResponse(result);
+    });
+    return true;
+  }
+
   if (request.type === "CASHOUT_ALERT") {
     const p = request.payload || {};
     showNotification(p.title || "Bolão AI — cash-out", p.body || "Meta de cash-out atingida.");
@@ -622,6 +704,88 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       );
     }
     sendResponse({ ok: true });
+    return true;
+  }
+
+  if (request.type === "BACBO_WS_BATCH") {
+    (async () => {
+      const { messages, tableId, wsUrl } = request;
+      if (!Array.isArray(messages) || !messages.length) {
+        sendResponse({ ok: true, inserted: 0 });
+        return;
+      }
+      const items = await chrome.storage.local.get(["bolao_api_key"]);
+      const apiKey = items.bolao_api_key || "";
+      const resp = await apiFetch("/casino/bacbo/ingest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "X-API-Key": apiKey } : {}),
+        },
+        body: JSON.stringify({
+          messages,
+          table_id: tableId || null,
+          ws_url: wsUrl || null,
+        }),
+      });
+      if (resp.ok && resp.data?.inserted > 0) {
+        await chrome.storage.local.set({
+          bolao_bacbo_last_ingest: {
+            at: new Date().toISOString(),
+            inserted: resp.data.inserted,
+            tableId: resp.data.table_id,
+          },
+        });
+      }
+      sendResponse({ ok: resp.ok, ...resp.data, error: resp.error });
+    })();
+    return true;
+  }
+
+  if (request.type === "CHECK_BACBO_STATUS") {
+    (async () => {
+      const tabId = request.tabId;
+      if (!tabId) {
+        sendResponse({ ok: false, error: "Aba não informada." });
+        return;
+      }
+      let frames = [];
+      try {
+        frames = await chrome.webNavigation.getAllFrames({ tabId });
+      } catch (err) {
+        sendResponse({ ok: false, error: String(err) });
+        return;
+      }
+      const hits = [];
+      for (const frame of frames) {
+        try {
+          const resp = await chrome.tabs.sendMessage(
+            tabId,
+            { type: "PING_BACBO" },
+            { frameId: frame.frameId },
+          );
+          if (resp?.ok) {
+            hits.push({
+              frameId: frame.frameId,
+              url: frame.url || "",
+              ...resp,
+            });
+          }
+        } catch {
+          /* frame sem content script */
+        }
+      }
+      const evo = hits.filter((h) => /evo-games\.com/i.test(h.url || h.hostname || ""));
+      const active = evo.find((h) => h.tableId) || evo[0] || hits[0];
+      sendResponse({
+        ok: true,
+        framesChecked: frames.length,
+        hooks: hits.length,
+        evoFrames: evo.length,
+        active,
+        hits,
+      });
+    })();
     return true;
   }
 

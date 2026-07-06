@@ -33,6 +33,33 @@
 
 5. **Pronto!** A extensão aparece no canto do navegador.
 
+## v1.9 — Monitor Bac Bo (casino Evolution)
+
+- Com **Bac Bo** aberto na Superbet (`/jogo/bac-bo-superbet/379099`), a extensão intercepta o WebSocket Evolution (`*.evo-games.com`).
+- Rodadas resolvidas (Player / Banker / Tie + placar) são enviadas para `POST /casino/bacbo/ingest`.
+- Visualize o histórico em **Bolão AI → Casino → Monitor Bac Bo** (`/casino`).
+- **Somente leitura** — não aposta automaticamente no casino.
+- Recarregue a extensão após atualizar (`chrome://extensions` → Recarregar).
+
+### Console cheio de avisos?
+
+Na página **superbet.bet.br** é normal ver:
+
+- `[LaunchDarkly] waitForInitialization…` — feature flags da Superbet (ignore).
+- `MetaMask extension not found` — outra extensão/wallet, não é o Bolão AI.
+- `SdsTabs: background value 'default' is deprecated` — UI interna Superbet.
+
+O hook Bac Bo roda **dentro do iframe** `superbetbr.evo-games.com`, não no console da aba pai.
+
+**Como verificar:**
+
+1. Abra Bac Bo na Superbet e aguarde o jogo carregar.
+2. DevTools → menu do seletor de contexto (topo) → iframe `evo-games.com`.
+3. No console desse iframe deve aparecer:
+   - `[Bolão AI] Bac Bo WS monitor: SuperbetBacBo001`
+   - `[Bolão AI] Bac Bo bridge em superbetbr.evo-games.com`
+4. v1.9.1+ usa `world: MAIN` (CSP da Evolution bloqueava injeção inline).
+
 ## v1.3 — Captura em background + notificação
 
 - A captura roda no **service worker** — continua mesmo se você fechar o popup.

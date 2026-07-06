@@ -8,7 +8,7 @@ import numpy as np
 
 from config import settings
 from ingest.superbet.halftime_snapshot import HalftimeFrozenStats
-from models.poisson_corners import DEFAULT_LINES, _poisson_prob, predict_corners
+from models.poisson_corners import DEFAULT_LINES, CornersPrediction, _poisson_prob, predict_corners
 
 
 @dataclass
@@ -161,6 +161,53 @@ def project_live_corners(
         "prob_draw_corners": round(pred.prob_draw_corners, 4),
         "prob_away_more_corners": round(pred.prob_away_more, 4),
         "most_likely_corners": pred.most_likely_score,
+        "line_probs": line_probs,
+    }
+
+
+def _normalize_corner_line_probs(pred: CornersPrediction, lines: tuple[float, ...]) -> dict[str, float]:
+    """Converte line_probs do predict_corners (over_7.5) para over_7_5."""
+    probs: dict[str, float] = {}
+    for line in lines:
+        raw_over = float((pred.line_probs or {}).get(f"over_{line}", 0.0))
+        key_over = f"over_{str(line).replace('.', '_')}"
+        key_under = f"under_{str(line).replace('.', '_')}"
+        probs[key_over] = round(raw_over, 4)
+        probs[key_under] = round(1.0 - raw_over, 4)
+    return probs
+
+
+def project_pregame_corners(
+    *,
+    lambda_home_ft: float,
+    lambda_away_ft: float,
+    lines: tuple[float, ...] = DEFAULT_LINES,
+) -> dict[str, Any]:
+    """Projeta escanteios FT antes do apito ou sem stats ao vivo."""
+    pred = predict_corners(lambda_home_ft, lambda_away_ft, lines=lines)
+    line_probs = _normalize_corner_line_probs(pred, lines)
+    return {
+        "source": "pregame_poisson",
+        "expected_ft_home": round(lambda_home_ft, 3),
+        "expected_ft_away": round(lambda_away_ft, 3),
+        "expected_ft_total": round(lambda_home_ft + lambda_away_ft, 3),
+        "prob_home_more_corners": round(pred.prob_home_more, 4),
+        "prob_away_more_corners": round(pred.prob_away_more, 4),
+        "most_likely_corners": pred.most_likely_score,
+        "line_probs": line_probs,
+    }
+
+
+def project_pregame_cards(
+    *,
+    referee_card_lambda: float = 3.8,
+    lines: tuple[float, ...] = (2.5, 3.5, 4.5, 5.5),
+) -> dict[str, Any]:
+    """Projeta cartões amarelos FT com prior de árbitro ou média genérica."""
+    line_probs = _over_under_probs_from_total(referee_card_lambda, 0, lines)
+    return {
+        "source": "pregame_poisson",
+        "expected_ft_total": round(referee_card_lambda, 3),
         "line_probs": line_probs,
     }
 

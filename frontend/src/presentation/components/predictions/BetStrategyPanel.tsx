@@ -18,6 +18,55 @@ const TIER_STYLES: Record<string, string> = {
   leve: "text-slate-300",
 };
 
+const CATEGORY_STYLES: Record<string, string> = {
+  h2h: "border-sky-400/25 bg-sky-400/10 text-sky-200",
+  goals: "border-neon-green/25 bg-neon-green/10 text-neon-green",
+  corners: "border-amber-400/25 bg-amber-400/10 text-amber-200",
+  cards: "border-orange-400/25 bg-orange-400/10 text-orange-200",
+  handicap: "border-violet-400/25 bg-violet-400/10 text-violet-200",
+  half: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200",
+  team_goals: "border-emerald-400/25 bg-emerald-400/10 text-emerald-200",
+  combo: "border-pink-400/25 bg-pink-400/10 text-pink-200",
+  other: "border-white/15 bg-white/5 text-slate-300",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  h2h: "1X2",
+  goals: "Gols",
+  corners: "Escanteios",
+  cards: "Cartões",
+  handicap: "Handicap",
+  half: "Tempo",
+  team_goals: "Gols time",
+  combo: "Combo",
+  other: "Outros",
+};
+
+function inferMarketCategory(market: string): string {
+  if (market === "h2h") return "h2h";
+  if (market.startsWith("corners_")) return "corners";
+  if (market.startsWith("cards_")) return "cards";
+  if (market.startsWith("combo_")) return "combo";
+  if (market.includes("_ah_") || market.includes("_hcap_")) return "handicap";
+  if (market.startsWith("1h_") || market.startsWith("2h_")) return "half";
+  if (market.startsWith("home_over_") || market.startsWith("away_over_")) return "team_goals";
+  if (market.startsWith("over_") || market === "btts" || market === "next_goal") return "goals";
+  return "other";
+}
+
+function CategoryBadge({ market }: { market: string }) {
+  const cat = inferMarketCategory(market);
+  return (
+    <span
+      className={`ml-1.5 inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+        CATEGORY_STYLES[cat] ?? CATEGORY_STYLES.other
+      }`}
+    >
+      {CATEGORY_LABELS[cat] ?? cat}
+    </span>
+  );
+}
+
 const SHIELD_STYLES: Record<string, string> = {
   alta: "border-red-500/35 bg-red-500/10",
   media: "border-amber-500/30 bg-amber-500/10",
@@ -111,6 +160,7 @@ export function BetStrategyPanel({ strategy }: BetStrategyPanelProps) {
                   <td className="py-2 pr-3 font-mono text-slate-400">{op.rank}</td>
                   <td className="py-2 pr-3">
                     <span className="text-white">{op.label}</span>
+                    <CategoryBadge market={op.market} />
                     <span className="ml-1 text-slate-500">@{op.marketOdd.toFixed(2)}</span>
                   </td>
                   <td className="py-2 pr-3 font-mono text-neon-green">
@@ -132,6 +182,8 @@ export function BetStrategyPanel({ strategy }: BetStrategyPanelProps) {
           Nenhuma oportunidade com edge suficiente — aguardar protege a banca.
         </p>
       )}
+
+      <MarketScanHighlights scan={strategy.marketScan} />
 
       <HedgePairStrategiesSection hedgePairs={strategy.hedgePairStrategies} />
 
@@ -183,7 +235,10 @@ function HedgePairStrategiesSection({
             className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-3"
           >
             <div className="mb-2 flex items-start justify-between gap-2">
-              <h3 className="text-sm font-semibold text-white">{pair.titulo}</h3>
+              <h3 className="text-sm font-semibold text-white">
+                {pair.titulo}
+                <CategoryBadge market={pair.legA.market} />
+              </h3>
               <span className="shrink-0 rounded-md border border-neon-green/20 bg-neon-green/10 px-2 py-0.5 text-[10px] font-bold text-neon-green">
                 {(pair.coverage.probAtLeastOne * 100).toFixed(0)}% cobertura
               </span>
@@ -249,9 +304,59 @@ function HedgePairStrategiesSection({
         ))}
       </div>
       <p className="text-[10px] leading-relaxed text-slate-600">
-        Pares complementares — se uma perna falhar, a outra tende a compensar. Odds e probabilidades
-        vêm do motor in-play; narrativa enriquecida por GPT quando ativo.
+        Pares complementares — se uma perna falhar, a outra tende a compensar. Inclui gols, 1X2,
+        escanteios e cartões quando disponíveis na Superbet. Narrativa enriquecida por GPT quando ativo.
       </p>
+    </div>
+  );
+}
+
+function MarketScanHighlights({
+  scan,
+}: {
+  scan: NonNullable<SuperbetLiveAdvice["strategy"]>["marketScan"];
+}) {
+  const altMarkets = scan.filter(
+    (m) =>
+      m.market.startsWith("corners_") ||
+      m.market.startsWith("cards_") ||
+      m.market.startsWith("2h_") ||
+      m.market.startsWith("1h_"),
+  );
+  const topAlt = altMarkets
+    .slice()
+    .sort((a, b) => b.edgePp - a.edgePp)
+    .slice(0, 4);
+
+  if (topAlt.length === 0) return null;
+
+  return (
+    <div className="mb-4 rounded-xl border border-white/8 bg-white/[0.02] px-3 py-3">
+      <p className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">
+        Outros mercados analisados
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {topAlt.map((m) => (
+          <div
+            key={`${m.market}-${m.outcome}`}
+            className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2"
+          >
+            <p className="text-xs font-medium text-white">
+              {m.label}
+              <CategoryBadge market={m.market} />
+            </p>
+            <p className="mt-1 text-[10px] text-slate-500">
+              @{m.marketOdd.toFixed(2)} · edge {m.edgePp >= 0 ? "+" : ""}
+              {m.edgePp.toFixed(1)} pp
+              {m.meetsThreshold ? (
+                <span className="ml-1 text-neon-green">· elegível</span>
+              ) : (
+                <span className="ml-1 text-slate-600">· monitorar</span>
+              )}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

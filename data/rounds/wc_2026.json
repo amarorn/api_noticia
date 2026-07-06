@@ -1390,10 +1390,10 @@
       "group": null,
       "round": 4,
       "phase": "round_of_32",
-      "kickoff": "2026-07-03T18:00:00Z",
-      "venue": "Dallas Stadium",
-      "city": "Dallas",
-      "fifa_stage": "Round of 32",
+      "kickoff": "2026-07-03T18:00:00+00:00",
+      "venue": null,
+      "city": null,
+      "fifa_stage": "Segundas de final",
       "fifa_id_match": "400021515"
     },
     {
@@ -1403,10 +1403,10 @@
       "group": null,
       "round": 4,
       "phase": "round_of_32",
-      "kickoff": "2026-07-04T01:30:00Z",
-      "venue": "Kansas City Stadium",
-      "city": "Kansas City",
-      "fifa_stage": "Round of 32",
+      "kickoff": "2026-07-04T01:30:00+00:00",
+      "venue": null,
+      "city": null,
+      "fifa_stage": "Segundas de final",
       "fifa_id_match": "400021517"
     },
     {
@@ -1416,10 +1416,10 @@
       "group": null,
       "round": 4,
       "phase": "round_of_32",
-      "kickoff": "2026-07-03T22:00:00Z",
-      "venue": "Miami Stadium",
-      "city": "Miami",
-      "fifa_stage": "Round of 32",
+      "kickoff": "2026-07-03T22:00:00+00:00",
+      "venue": null,
+      "city": null,
+      "fifa_stage": "Segundas de final",
       "fifa_id_match": "400021521"
     },
     {
@@ -1429,12 +1429,25 @@
       "group": null,
       "round": 4,
       "phase": "round_of_32",
-      "kickoff": "2026-07-03T03:00:00Z",
-      "venue": "BC Place Vancouver",
-      "city": "Vancouver",
-      "fifa_stage": "Round of 32",
+      "kickoff": "2026-07-03T03:00:00+00:00",
+      "venue": null,
+      "city": null,
+      "fifa_stage": "Segundas de final",
       "fifa_id_match": "400021527"
+    },
+    {
+      "id": "round_of_16-canada-marrocos",
+      "home_team": "Canadá",
+      "away_team": "Marrocos",
+      "group": null,
+      "round": 5,
+      "phase": "round_of_16",
+      "kickoff": "2026-07-04T17:00:00+00:00",
+      "venue": null,
+      "city": null,
+      "fifa_stage": "Oitavas de final",
+      "fifa_id_match": "400021530"
     }
   ],
-  "results_synced_at": "2026-07-03T02:38:57.722213+00:00"
+  "results_synced_at": "2026-07-04T19:45:22.321840+00:00"
 }

@@ -15,13 +15,20 @@
   const statusDiv = document.getElementById("status");
   const betsList = document.getElementById("betsList");
   const lastRunDiv = document.getElementById("lastRun");
+  const bacboStatusEl = document.getElementById("bacboStatus");
+  const bacboCheckBtn = document.getElementById("bacboCheckBtn");
+  const bacboOpenBtn = document.getElementById("bacboOpenBtn");
+  const bacboCaptureEnabled = document.getElementById("bacboCaptureEnabled");
 
   const KIND_LABEL = { open: "abertas", settled: "finalizadas", wallet: "extrato" };
 
-  chrome.storage.local.get(["bolao_api_key", "bolao_user_id", "bolao_live_panel_enabled"], (items) => {
+  chrome.storage.local.get(["bolao_api_key", "bolao_user_id", "bolao_live_panel_enabled", "bolao_bacbo_capture_enabled"], (items) => {
     if (items.bolao_api_key) apiKeyInput.value = items.bolao_api_key;
     if (items.bolao_user_id) userIdInput.value = items.bolao_user_id;
     if (livePanelAuto) livePanelAuto.checked = Boolean(items.bolao_live_panel_enabled);
+    if (bacboCaptureEnabled) {
+      bacboCaptureEnabled.checked = items.bolao_bacbo_capture_enabled !== false;
+    }
   });
 
   apiKeyInput.addEventListener("change", () => {
@@ -140,16 +147,30 @@
     setButtonsDisabled(true);
   }
 
-  chrome.storage.local.get(["bolao_last_capture", "bolao_capture_in_progress"], (items) => {
+  chrome.storage.local.get(["bolao_last_capture", "bolao_capture_in_progress", "bolao_bacbo_last_ingest"], (items) => {
     if (items.bolao_capture_in_progress) {
       showProgress(items.bolao_capture_in_progress);
     } else if (items.bolao_last_capture) {
       renderLastCapture(items.bolao_last_capture);
     }
+    renderBacboStatus(items.bolao_bacbo_last_ingest);
   });
+
+  function renderBacboStatus(lastIngest) {
+    if (!bacboStatusEl) return;
+    if (!lastIngest?.at) {
+      bacboStatusEl.innerHTML =
+        'Monitor automático no iframe Evolution. Clique <strong>Verificar</strong> com Bac Bo aberto. Com jogo <strong>pausado</strong>, rodadas não chegam.';
+      return;
+    }
+    bacboStatusEl.innerHTML = `Última rodada salva: <strong>${formatWhen(lastIngest.at)}</strong> · mesa <strong>${lastIngest.tableId || "—"}</strong> · +${lastIngest.inserted || 0} rodada(s). Veja em <strong>/casino</strong>.`;
+  }
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
+    if (changes.bolao_bacbo_last_ingest?.newValue) {
+      renderBacboStatus(changes.bolao_bacbo_last_ingest.newValue);
+    }
     if (changes.bolao_capture_in_progress) {
       const p = changes.bolao_capture_in_progress.newValue;
       if (p) showProgress(p);
@@ -267,6 +288,10 @@
     });
   }
 
+  bacboCaptureEnabled?.addEventListener("change", () => {
+    chrome.storage.local.set({ bolao_bacbo_capture_enabled: bacboCaptureEnabled.checked });
+  });
+
   livePanelBtn?.addEventListener("click", async () => {
     const { tab, error } = await getSuperbetTab();
     if (error) {
@@ -307,5 +332,49 @@
         setStatus(msg, "ok");
       }
     );
+  });
+
+  bacboCheckBtn?.addEventListener("click", async () => {
+    const { tab, error } = await getSuperbetTab();
+    if (error) {
+      if (bacboStatusEl) bacboStatusEl.textContent = error;
+      return;
+    }
+    const isCasino = /\/jogo\//i.test(tab.url || "");
+    if (bacboStatusEl) {
+      bacboStatusEl.textContent = isCasino
+        ? "Verificando iframes Evolution…"
+        : "Verificando… (ideal: página /jogo/bac-bo-superbet/379099)";
+    }
+    chrome.runtime.sendMessage({ type: "CHECK_BACBO_STATUS", tabId: tab.id }, (resp) => {
+      if (chrome.runtime.lastError || !resp?.ok) {
+        if (bacboStatusEl) {
+          bacboStatusEl.textContent =
+            resp?.error ||
+            chrome.runtime.lastError?.message ||
+            "Falha ao verificar. Recarregue a extensão (v1.9.2+) e a página do jogo (F5).";
+        }
+        return;
+      }
+      const active = resp.active;
+      if (!resp.evoFrames) {
+        if (bacboStatusEl) {
+          bacboStatusEl.innerHTML =
+            `Hook não encontrado (${resp.framesChecked} iframe(s)). Recarregue extensão + F5 no Bac Bo.`;
+        }
+        return;
+      }
+      const table = active?.tableId ? ` · mesa <strong>${active.tableId}</strong>` : "";
+      const msgs = active?.msgCount ? ` · ${active.msgCount} msg(s) WS` : "";
+      if (bacboStatusEl) {
+        bacboStatusEl.innerHTML = resp.active?.tableId
+          ? `Monitor <strong>ativo</strong>${table}${msgs}. Aguarde rodadas ao vivo (não pausado).`
+          : `Bridge Evolution OK (${resp.evoFrames} iframe), aguardando WebSocket Bac Bo…${msgs}`;
+      }
+    });
+  });
+
+  bacboOpenBtn?.addEventListener("click", () => {
+    chrome.tabs.create({ url: "http://localhost:5173/casino" });
   });
 })();

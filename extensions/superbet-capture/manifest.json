@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Bolão AI — Captura Superbet",
-  "version": "1.7.0",
-  "description": "Superbet → Bolão AI: captura, alerta contra modelo, painel ao vivo e montagem de bilhete.",
-  "permissions": ["activeTab", "storage", "notifications", "scripting", "tabs"],
+  "version": "1.9.3",
+  "description": "Superbet → Bolão AI: captura, alerta, cash-out, casino Bac Bo e painel ao vivo.",
+  "permissions": ["activeTab", "storage", "notifications", "scripting", "tabs", "webNavigation"],
   "host_permissions": [
     "https://superbet.com/*",
     "https://*.superbet.com/*",
@@ -11,6 +11,7 @@
     "https://*.superbet.com.br/*",
     "https://superbet.bet.br/*",
     "https://*.superbet.bet.br/*",
+    "https://*.evo-games.com/*",
     "http://127.0.0.1:8000/*",
     "http://localhost:8000/*",
     "http://127.0.0.1:5173/*",
@@ -48,8 +49,21 @@
         "https://superbet.bet.br/*",
         "https://*.superbet.bet.br/*"
       ],
-      "js": ["event_id.js", "content_script.js", "live_market_panel.js", "ticket_builder.js"],
+      "js": ["event_id.js", "cashout_executor.js", "content_script.js", "live_market_panel.js", "ticket_builder.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.evo-games.com/*"],
+      "js": ["bacbo_page_hook.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://*.evo-games.com/*"],
+      "js": ["bacbo_ws_bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "background": {

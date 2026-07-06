@@ -14,7 +14,7 @@ import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { LiveMatchSkeleton } from "@/presentation/components/ui/Skeleton";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { IconArrowLeft, IconBell, IconChevronRight } from "@/presentation/components/ui/Icons";
-import { useToast } from "@/presentation/components/ui/toast/ToastContext";
+import { useNotifications } from "@/presentation/components/ui/notifications";
 import { CashoutAlertSetup } from "@/presentation/components/predictions/CashoutAlertSetup";
 import { BetStrategyPanel } from "@/presentation/components/predictions/BetStrategyPanel";
 import { ComboTicketPanel } from "@/presentation/components/predictions/ComboTicketPanel";
@@ -54,6 +54,7 @@ import { LiveRecalibrationBanner } from "@/presentation/components/predictions/L
 import { useLiveAdviceQueries } from "@/presentation/hooks/useLiveAdviceQueries";
 import { useLiveRecalibration } from "@/presentation/hooks/useLiveRecalibration";
 import { useCashoutTargetAlerts } from "@/presentation/hooks/useCashoutTargetAlerts";
+import { useCashoutRiskAlerts } from "@/presentation/hooks/useCashoutRiskAlerts";
 import { LiveContextUpload } from "@/presentation/components/predictions/LiveContextUpload";
 import {
   ensureNotificationPermission,
@@ -168,7 +169,7 @@ export function LiveInPlayPage() {
   const advicePhase = resolveLiveAdvicePhase(searchParams);
   const eventId = Number.parseInt(eventIdParam ?? "", 10);
   const pulse = useDataPulse();
-  const { addToast } = useToast();
+  const { addNotification } = useNotifications();
 
   const [bankrollDraft, setBankrollDraft] = useState(1000);
   const [appliedBankroll, setAppliedBankroll] = useState(1000);
@@ -222,6 +223,12 @@ export function LiveInPlayPage() {
         cashoutValue: b.cashoutValue,
         autoMonitor: true,
         offeredCashout: b.cashoutValue,
+        picks: b.picks.map((p) => ({
+          market: p.market,
+          outcome: p.outcome,
+          label: `${p.market} ${p.outcome}`,
+          targetValue: p.targetValue,
+        })),
       }));
   }, [openBetsQuery.data, eventId, data?.homeTeam, data?.awayTeam]);
 
@@ -252,9 +259,40 @@ export function LiveInPlayPage() {
     awayTeam: data?.awayTeam ?? "",
     enabled: trackBet && Boolean(data?.homeTeam) && !data?.isFinished,
     configVersion: alertConfigVersion,
-    onAlert: ({ body, kind }) => {
-      addToast(body, kind === "reach" ? "success" : "info");
+    onAlert: ({ title, body, kind }) => {
+      addNotification({
+        title,
+        body,
+        type: kind === "reach" ? "success" : "info",
+        source: "cashout",
+      });
     },
+  });
+
+  useCashoutRiskAlerts({
+    bets: displayBets.map((b) => ({
+      id: b.id,
+      stake: b.stake,
+      oddsPlaced: b.oddsPlaced,
+      potentialReturn: b.potentialReturn ?? b.stake * b.oddsPlaced,
+      cashoutValue: b.offeredCashout ?? b.cashoutValue,
+      ticketCode: b.ticketCode,
+      picks:
+        b.picks?.map((p) => ({
+          market: p.market,
+          outcome: p.outcome,
+          label: p.label,
+        })) ?? [{ market: b.market, outcome: b.outcome }],
+    })),
+    currentScore: data?.currentScore ?? null,
+    minute: data?.minute ?? 0,
+    periodLabel: data?.periodLabel,
+    htHome: data?.halftimeReport?.frozenStats?.htHomeScore,
+    htAway: data?.halftimeReport?.frozenStats?.htAwayScore,
+    liveStats: data?.liveStats,
+    enabled: trackBet && Boolean(data?.homeTeam) && !data?.isFinished,
+    eventLabel:
+      data?.homeTeam && data?.awayTeam ? `${data.homeTeam} x ${data.awayTeam}` : undefined,
   });
 
   const activeAlertCount = useMemo(

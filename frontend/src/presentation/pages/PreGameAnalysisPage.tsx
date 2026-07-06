@@ -4,9 +4,20 @@ import { apiFetch } from "@/infrastructure/api/client";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
 import { HeroPageHeader } from "@/presentation/components/layout/PageHeader";
 import { LiveDashboardTabs } from "@/presentation/components/live-dashboard/LiveDashboardTabs";
+import { LiveCopilotPanel } from "@/presentation/components/live-dashboard/LiveCopilotPanel";
 import { Skeleton } from "@/presentation/components/ui/Skeleton";
 import { ErrorState } from "@/presentation/components/ui/EmptyState";
 import { teamColor } from "@/data/teamColors";
+import {
+  usePregameResearchQuery,
+  usePregameSummaryQuery,
+  type PregameResearchResponse,
+  type PregameSummaryResponse,
+} from "@/presentation/hooks/usePregameLlmQueries";
+import {
+  usePregameCopilotAgentSession,
+  usePregameCopilotQuery,
+} from "@/presentation/hooks/usePregameCopilotSession";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,30 +101,6 @@ interface ResearchSynthesis {
   picks_recomendados: ResearchPick[];
   placar_provavel: string;
   nota_final: string;
-}
-
-interface PregameContext {
-  home_team?: string;
-  away_team?: string;
-  referee_name?: string;
-  referee_card_lambda?: number;
-  referee_penalty_rate?: number;
-  home_pregame_xg?: number;
-  away_pregame_xg?: number;
-  source?: string;
-}
-
-interface ResearchResponse {
-  home_team: string;
-  away_team: string;
-  model_data: Record<string, unknown>;
-  web_research: { text: string; citations: string[] };
-  synthesis: ResearchSynthesis | null;
-  provider?: string;
-  errors: Record<string, string>;
-  from_cache: boolean;
-  cached_at?: number;
-  pregame_context?: PregameContext | null;
 }
 
 interface AnalysisResponse {
@@ -201,64 +188,88 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "contexto", label: "🔍 Contexto" },
 ];
 
-// ── Deep Research Panel ───────────────────────────────────────────────────────
-
-function DeepResearchPanel({ home, away, phase }: { home: string; away: string; phase: string }) {
-  const [triggered, setTriggered] = useState(false);
-  const [forceRefresh, setForceRefresh] = useState(false);
-
-  const { data, isFetching, error, refetch } = useQuery<ResearchResponse>({
-    queryKey: ["pregame-research", home, away, phase, forceRefresh],
-    queryFn: () =>
-      apiFetch(
-        `/worldcup/pregame/research?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}&phase=${phase}${forceRefresh ? "&force_refresh=true" : ""}`,
-        { timeoutMs: 120_000 },
-      ),
-    enabled: triggered,
-    staleTime: Infinity,
-    retry: 0,
-  });
-
-  const confColor = (c?: string) =>
-    c === "Alta"
-      ? "text-emerald-400 bg-emerald-900/30 border-emerald-700/40"
-      : c === "Média"
+function confBadgeClass(c?: string) {
+  return c === "Alta"
+    ? "text-emerald-400 bg-emerald-900/30 border-emerald-700/40"
+    : c === "Média"
       ? "text-blue-400 bg-blue-900/30 border-blue-700/40"
       : "text-slate-400 bg-white/5 border-white/8";
+}
 
-  if (!triggered) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-        <div className="text-4xl">🔬</div>
-        <div className="text-base font-semibold text-slate-200">Deep Research com IA</div>
-        <div className="text-sm text-slate-400 max-w-xs">
-          Pesquisa em tempo real via <span className="text-blue-400 font-semibold">Google Search</span> +
-          síntese com <span className="text-purple-400 font-semibold">Gemini</span>.
-          <br />Pode levar até 30s.
-        </div>
-        <button
-          onClick={() => { setTriggered(true); setForceRefresh(false); }}
-          className="mt-2 px-6 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors"
-        >
-          Iniciar pesquisa
-        </button>
-      </div>
-    );
+function PregameSummaryCard({
+  summary,
+  isLoading,
+  researchLoading,
+}: {
+  summary: PregameSummaryResponse | undefined;
+  isLoading: boolean;
+  researchLoading: boolean;
+}) {
+  if (isLoading) {
+    return <Skeleton className="h-24 w-full rounded-xl" />;
   }
+  if (!summary?.narrative) return null;
 
-  if (isFetching) {
+  return (
+    <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-blue-900/10 p-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-purple-300">
+          Resumo IA
+        </span>
+        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${confBadgeClass(summary.confianca)}`}>
+          {summary.confianca}
+        </span>
+        {summary.from_cache && (
+          <span className="text-xs text-slate-500">+ research em cache</span>
+        )}
+        {researchLoading && (
+          <span className="text-xs text-slate-500 animate-pulse">Atualizando pesquisa…</span>
+        )}
+      </div>
+      <p className="text-sm leading-relaxed text-slate-200">{summary.narrative}</p>
+      {summary.modelo_vs_noticias && (
+        <p className="mt-2 text-xs text-amber-300">{summary.modelo_vs_noticias}</p>
+      )}
+      {summary.alertas.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {summary.alertas.map((a, i) => (
+            <li key={i} className="text-xs text-amber-200/90">⚠ {a}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ── Deep Research Panel ───────────────────────────────────────────────────────
+
+function DeepResearchPanel({
+  research,
+  isFetching,
+  error,
+  onRefresh,
+}: {
+  home: string;
+  away: string;
+  phase: string;
+  research: PregameResearchResponse | undefined;
+  isFetching: boolean;
+  error: Error | null;
+  onRefresh: () => void;
+}) {
+  if (isFetching && !research) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3">
         <div className="animate-spin text-3xl">🔬</div>
         <div className="text-sm text-slate-400 text-center">
-          Pesquisando no Google e sintetizando com IA...
-          <br /><span className="text-xs text-slate-600">Gemini + Google Search Grounding</span>
+          Pesquisando e sintetizando com IA…
+          <br /><span className="text-xs text-slate-600">Gemini + Perplexity</span>
         </div>
       </div>
     );
   }
 
-  if (error || !data) {
+  if (error && !research) {
     const msg = error instanceof Error ? error.message : "Falha na pesquisa com IA.";
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-4 text-center px-4">
@@ -266,7 +277,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
         <div className="text-sm text-red-400 font-semibold">Falha na pesquisa</div>
         <div className="text-xs text-slate-500 max-w-sm">{msg}</div>
         <button
-          onClick={() => { setTriggered(false); setTimeout(() => setTriggered(true), 50); }}
+          onClick={onRefresh}
           className="mt-2 px-5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors"
         >
           Tentar novamente
@@ -275,7 +286,18 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
     );
   }
 
-  const s = data.synthesis;
+  const data = research;
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <div className="animate-spin text-3xl">🔬</div>
+        <div className="text-sm text-slate-400">Aguardando Deep Research…</div>
+      </div>
+    );
+  }
+
+  const confColor = confBadgeClass;
+  const s = data.synthesis as ResearchSynthesis | null;
   const isLocalSynthesis = data.provider?.startsWith("local:");
   const cacheInfo = data.from_cache && data.cached_at
     ? `Cache de ${Math.round((Date.now() / 1000 - data.cached_at) / 60)}min atrás`
@@ -301,7 +323,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
           )}
         </div>
         <button
-          onClick={() => { setForceRefresh(true); void refetch(); }}
+          onClick={onRefresh}
           className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
         >
           ↻ Atualizar
@@ -371,15 +393,19 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
             ].map(({ team, esc }) => (
               <div key={team} className="rounded-lg bg-white/5 p-3">
                 <div className="text-xs font-bold text-slate-300 mb-1">{team}</div>
-                <div className={`text-xs mb-1 ${esc.status === "Completo" ? "text-emerald-400" : "text-amber-400"}`}>
-                  {esc.status}
-                </div>
-                {esc.lesoes_suspensoes?.length > 0 && (
+                {esc?.status ? (
+                  <div className={`text-xs mb-1 ${esc.status === "Completo" ? "text-emerald-400" : "text-amber-400"}`}>
+                    {esc.status}
+                  </div>
+                ) : (
+                  <div className="text-xs mb-1 text-slate-500">Escalação não disponível</div>
+                )}
+                {esc?.lesoes_suspensoes?.length > 0 && (
                   <ul className="text-xs text-red-400 space-y-0.5">
                     {esc.lesoes_suspensoes.map((l, i) => <li key={i}>• {l}</li>)}
                   </ul>
                 )}
-                {esc.destaque && (
+                {esc?.destaque && (
                   <div className="text-xs text-slate-400 mt-1">⭐ {esc.destaque}</div>
                 )}
               </div>
@@ -387,11 +413,13 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
           </div>
 
           {/* Árbitro + Projeção de Cartões */}
-          {s.arbitro?.nome !== "Não divulgado" && (
+          {s.arbitro?.nome && s.arbitro.nome !== "Não divulgado" && (
             <div className="rounded-lg bg-white/5 p-3 space-y-2">
               <div className="text-xs font-bold text-slate-400 mb-1">⚖️ Árbitro</div>
               <div className="text-sm text-white">{s.arbitro.nome}</div>
-              <div className="text-xs text-slate-400">{s.arbitro.perfil}</div>
+              {s.arbitro.perfil && (
+                <div className="text-xs text-slate-400">{s.arbitro.perfil}</div>
+              )}
               {/* Dados numéricos para projeção de cartões */}
               {(data.pregame_context?.referee_card_lambda != null || s.arbitro?.card_lambda != null) && (() => {
                 const lambda = data.pregame_context?.referee_card_lambda ?? s.arbitro?.card_lambda;
@@ -468,11 +496,11 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
           )}
 
           {/* Fontes */}
-          {data.web_research.citations.length > 0 && (
+          {data.web_research?.citations?.length > 0 && (
             <div>
               <div className="text-xs font-semibold text-slate-600 mb-1">Fontes consultadas</div>
               <div className="space-y-0.5">
-                {data.web_research.citations.slice(0, 5).map((c, i) => (
+                {data.web_research.citations.slice(0, 5).map((c: string, i: number) => (
                   <div key={i} className="text-xs text-slate-600 truncate">{i + 1}. {c}</div>
                 ))}
               </div>
@@ -495,7 +523,7 @@ function DeepResearchPanel({ home, away, phase }: { home: string; away: string; 
               Picks, probabilidades e placares estão disponíveis nas abas ao lado.
             </div>
             <button
-              onClick={() => { setForceRefresh(true); void refetch(); }}
+              onClick={onRefresh}
               className="mt-3 px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs text-slate-300 transition-colors"
             >
               ↻ Tentar novamente com IA
@@ -526,6 +554,41 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
       apiFetch(`/worldcup/pregame/analysis?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}&phase=${phase}`),
     staleTime: 5 * 60 * 1000,
   });
+
+  const analysisReady = Boolean(data && !isLoading);
+  const researchQuery = usePregameResearchQuery({ home, away, phase, enabled: analysisReady });
+  const summaryQuery = usePregameSummaryQuery({ home, away, phase, enabled: analysisReady });
+  const copilotQuery = usePregameCopilotQuery({ home, away, phase, enabled: analysisReady });
+
+  const handleSwitchTab = (t: string) => {
+    const allowed: Tab[] = ["bilhete", "resumo", "placar", "picks", "research", "h2h", "contexto"];
+    if (allowed.includes(t as Tab)) setTab(t as Tab);
+  };
+
+  const { displayCopilot, agentChat } = usePregameCopilotAgentSession({
+    home,
+    away,
+    phase,
+    enabled: analysisReady,
+    baseCopilot: copilotQuery.data,
+    onSwitchTab: handleSwitchTab,
+  });
+
+  const refreshResearch = () => {
+    void apiFetch<PregameResearchResponse>(
+      `/worldcup/pregame/research?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}&phase=${phase}&force_refresh=true`,
+      { timeoutMs: 120_000 },
+    ).then(() => {
+      void researchQuery.refetch();
+      void summaryQuery.refetch();
+    });
+  };
+
+  useEffect(() => {
+    if (researchQuery.data?.synthesis && !researchQuery.isFetching) {
+      void summaryQuery.refetch();
+    }
+  }, [researchQuery.data?.synthesis, researchQuery.isFetching, summaryQuery]);
 
   if (isLoading) {
     return (
@@ -609,6 +672,12 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
         {/* ── BILHETE ── */}
         {tab === "bilhete" && (
           <div className="space-y-4">
+            <PregameSummaryCard
+              summary={summaryQuery.data}
+              isLoading={summaryQuery.isLoading}
+              researchLoading={researchQuery.isFetching}
+            />
+
             {/* Combo recomendado */}
             {data.ticket.combo && (
               <div className="rounded-xl border border-emerald-500/50 bg-gradient-to-br from-emerald-900/30 to-emerald-800/10 p-4">
@@ -810,7 +879,15 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
         )}
 
         {tab === "research" && (
-          <DeepResearchPanel home={home} away={away} phase={phase} />
+          <DeepResearchPanel
+            home={home}
+            away={away}
+            phase={phase}
+            research={researchQuery.data}
+            isFetching={researchQuery.isFetching}
+            error={researchQuery.error as Error | null}
+            onRefresh={refreshResearch}
+          />
         )}
 
         {tab === "h2h" && (
@@ -860,6 +937,15 @@ function AnalysisPanel({ home, away, phase }: { home: string; away: string; phas
             )}
           </div>
         )}
+      </div>
+
+      <div className="border-t border-white/8 p-4 mx-2 sm:mx-4 mb-4">
+        <LiveCopilotPanel
+          copilot={displayCopilot}
+          isLoading={copilotQuery.isLoading}
+          isFetching={copilotQuery.isFetching}
+          agentChat={agentChat}
+        />
       </div>
     </div>
   );

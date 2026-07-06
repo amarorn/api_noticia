@@ -41,6 +41,12 @@ from api.schemas import (
     WcValidateResponse,
     WcValueRequest,
     WcValueResponse,
+    SurebetOpportunityResponse,
+    SurebetScanResponse,
+    LiveCopilotAgentResponse,
+    LiveCopilotResponse,
+    PregameCopilotAgentRequest,
+    PregameSummaryResponse,
 )
 from pipelines.wc_group_pressure import lookup_2026_group
 from pipelines.wc_group_standings import (
@@ -857,6 +863,102 @@ def worldcup_live_value(req: WcValueRequest):
     )
 
 
+@router.get("/surebet/scan", response_model=SurebetScanResponse)
+async def worldcup_surebet_scan(
+    home: str | None = Query(None, description="Filtrar por mandante"),
+    away: str | None = Query(None, description="Filtrar por visitante"),
+    sport_key: str | None = Query(None),
+    regions: str | None = Query(None, description="Regiões Odds API: eu, us, uk, au (separar por vírgula)"),
+    bankroll: float = Query(1000, gt=0),
+    min_margin_pct: float | None = Query(None, ge=0, le=20),
+    superbet_event_id: int | None = Query(
+        None,
+        description="Inclui odds Superbet BR no scan (event_id ao vivo)",
+    ),
+):
+    """Varre múltiplas casas (The Odds API) em busca de surebet 1X2."""
+    from config import settings
+    from ingest.odds.the_odds_api import fetch_multi_bookmaker_h2h
+    from models.surebet import scan_h2h_surebets
+    from schemas.national_teams import normalize_national_team
+
+    margin = min_margin_pct if min_margin_pct is not None else settings.surebet_min_margin_pct
+
+    try:
+        events = await asyncio.to_thread(
+            fetch_multi_bookmaker_h2h,
+            sport_key=sport_key,
+            regions=regions,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Erro ao consultar Odds API: {exc}") from exc
+
+    superbet_quote: dict[str, object] | None = None
+    if superbet_event_id is not None:
+        from ingest.superbet.client import SuperbetClient, SuperbetClientError
+
+        try:
+            snap = await asyncio.to_thread(SuperbetClient().fetch_event, superbet_event_id)
+            if snap.h2h_odds:
+                superbet_quote = {
+                    "bookmaker": "superbet",
+                    "odds": dict(snap.h2h_odds),
+                }
+        except SuperbetClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    payload_events: list[dict[str, object]] = []
+    bookmakers_seen: set[str] = set()
+
+    home_n = normalize_national_team(home) if home else None
+    away_n = normalize_national_team(away) if away else None
+
+    for event in events:
+        if home_n and event.home_team != home_n:
+            continue
+        if away_n and event.away_team != away_n:
+            continue
+
+        quotes = event.to_quotes_dict()
+        for q in quotes:
+            bookmakers_seen.add(str(q["bookmaker"]))
+
+        if superbet_quote and (
+            (not home_n or event.home_team == home_n)
+            and (not away_n or event.away_team == away_n)
+        ):
+            quotes = [*quotes, superbet_quote]
+            bookmakers_seen.add("superbet")
+
+        payload_events.append({
+            "home_team": event.home_team,
+            "away_team": event.away_team,
+            "commence_time": event.commence_time,
+            "quotes": quotes,
+        })
+
+    opportunities = scan_h2h_surebets(
+        payload_events,
+        bankroll=bankroll,
+        min_margin_pct=margin,
+    )
+
+    return SurebetScanResponse(
+        source="the-odds-api+superbet" if superbet_quote else "the-odds-api",
+        regions=regions or settings.odds_default_regions,
+        bookmakers_seen=len(bookmakers_seen),
+        events_scanned=len(payload_events),
+        opportunities=[SurebetOpportunityResponse(**opp.to_dict()) for opp in opportunities],
+        note=(
+            "Surebet = soma(1/odd) < 1 entre casas diferentes. "
+            "Oportunidades reais são raras e expiram em minutos. "
+            "Configure ODDS_API_KEY e use regions=eu,us,uk para mais casas."
+        ),
+    )
+
+
 @router.get("/combo-ticket")
 async def worldcup_combo_ticket(
     home_team: str = Query(...),
@@ -1311,3 +1413,67 @@ async def pregame_research(
         save_cached(home_n, away_n, payload)
 
     return payload
+
+
+def _pregame_synthesis_cached(home_n: str, away_n: str) -> dict[str, Any] | None:
+    from ingest.research.research_cache import load_cached
+
+    cached = load_cached(home_n, away_n)
+    if not cached:
+        return None
+    syn = cached.get("synthesis")
+    return syn if isinstance(syn, dict) else None
+
+
+@router.get("/pregame/summary", response_model=PregameSummaryResponse)
+def pregame_summary(
+    home: str = Query(...),
+    away: str = Query(...),
+    phase: str = Query("group"),
+):
+    """Resumo IA curto para aba Bilhete (modelo + research em cache se existir)."""
+    from models.pregame_llm import generate_pregame_summary
+
+    analysis = pregame_analysis(home=home, away=away, phase=phase)
+    synthesis = _pregame_synthesis_cached(analysis["home_team"], analysis["away_team"])
+    result = generate_pregame_summary(analysis, synthesis)
+    result["from_cache"] = synthesis is not None
+    return PregameSummaryResponse(**result)
+
+
+@router.get("/pregame/copilot", response_model=LiveCopilotResponse)
+def pregame_copilot(
+    home: str = Query(...),
+    away: str = Query(...),
+    phase: str = Query("group"),
+):
+    """Narrativa copiloto pré-jogo (requer OPENAI + LIVE_COPILOT_ENABLED)."""
+    from models.pregame_llm import run_pregame_copilot
+
+    analysis = pregame_analysis(home=home, away=away, phase=phase)
+    synthesis = _pregame_synthesis_cached(analysis["home_team"], analysis["away_team"])
+    payload = run_pregame_copilot(analysis, synthesis)
+    return LiveCopilotResponse(**payload)
+
+
+@router.post("/pregame/copilot/agent", response_model=LiveCopilotAgentResponse)
+async def pregame_copilot_agent(req: PregameCopilotAgentRequest):
+    """Chat agente pré-jogo — consulta modelo e Deep Research."""
+    from models.pregame_llm import run_pregame_copilot_agent
+
+    analysis = await asyncio.to_thread(
+        pregame_analysis,
+        home=req.home,
+        away=req.away,
+        phase=req.phase,
+    )
+    synthesis = _pregame_synthesis_cached(analysis["home_team"], analysis["away_team"])
+    history = [{"role": m.role, "content": m.content} for m in req.history]
+    payload = await asyncio.to_thread(
+        run_pregame_copilot_agent,
+        analysis,
+        synthesis,
+        req.message,
+        history,
+    )
+    return LiveCopilotAgentResponse(**payload)

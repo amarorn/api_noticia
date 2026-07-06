@@ -6,6 +6,7 @@ import { BrandMark } from "./BrandMark";
 import { getUserOpenBetsUseCase } from "@/application/container";
 import { LIVE_TOPBAR_HEIGHT_PX } from "./liveDashboardChromeContext";
 import type { HealthStatus } from "@/domain/entities";
+import { NotificationBell } from "@/presentation/components/ui/notifications";
 
 interface AppSidebarProps {
   health: HealthStatus | undefined;
@@ -47,21 +48,26 @@ export function AppSidebar({
         <div className="relative">
           <div className="absolute right-0 top-0 h-4 w-4 rounded-tr-md border-r border-t border-neon-green/20" />
 
-          <NavLink
-            to="/"
-            className="flex items-center gap-3 px-5 py-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40"
+          <div
+            className="flex items-center gap-2 px-5 py-5"
             style={{ borderBottom: "1px solid rgba(0, 245, 160, 0.08)" }}
           >
-            <BrandMark />
-            <div>
-              <p className="font-display text-base font-bold leading-tight gradient-text-cli">
-                Bolão AI
-              </p>
-              <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: "#475569" }}>
-                Previsões esportivas
-              </p>
-            </div>
-          </NavLink>
+            <NavLink
+              to="/"
+              className="flex min-w-0 flex-1 items-center gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-green/40 rounded-lg"
+            >
+              <BrandMark />
+              <div className="min-w-0">
+                <p className="font-display text-base font-bold leading-tight gradient-text-cli">
+                  Bolão AI
+                </p>
+                <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: "#475569" }}>
+                  Previsões esportivas
+                </p>
+              </div>
+            </NavLink>
+            <NotificationBell />
+          </div>
         </div>
         )}
 

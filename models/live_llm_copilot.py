@@ -68,6 +68,7 @@ Schema exato:
   }
 }
 Máximo 2 picks isolados. Bilhete: 1-4 pernas só de mercados_scan; evite pernas redundantes.
+NUNCA recomende next_goal (próximo gol / Nº gol) — variância extrema, fora do escopo do copiloto.
 Se bilhetes_otimizados_modelo existir, use como referência mas pode ajustar narrativa.
 Se nada combinar, bilhete.tipo=nenhum e pernas=[]."""
 
@@ -90,6 +91,8 @@ def _football_candidates(advice: dict[str, Any]) -> list[dict[str, Any]]:
                 continue
             key = _pick_key(str(row.get("market", "")), str(row.get("outcome", "")))
             if not key or key in seen:
+                continue
+            if str(row.get("market") or "") == "next_goal":
                 continue
             if source is strategy.get("watch_list") and not row.get("meets_threshold", True):
                 continue

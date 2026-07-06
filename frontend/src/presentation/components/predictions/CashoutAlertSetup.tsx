@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { IconBell, IconCheck } from "@/presentation/components/ui/Icons";
+import { useCashoutRiskAlertsPreference } from "@/presentation/hooks/useCashoutRiskAlertsPreference";
+import { useCashoutAutoExecutePreference } from "@/presentation/hooks/useCashoutAutoExecutePreference";
 import { CASHOUT_APPROACH_RATIO } from "@/presentation/utils/cashoutAlertStorage";
 
 export { CASHOUT_APPROACH_RATIO };
@@ -77,6 +79,8 @@ export function CashoutAlertSetup({
   onDraftChange,
   onRequestNotificationPermission,
 }: CashoutAlertSetupProps) {
+  const { riskAlertsEnabled, setRiskAlertsEnabled } = useCashoutRiskAlertsPreference();
+  const { config: autoExec, updateConfig: setAutoExec } = useCashoutAutoExecutePreference();
   const potential = draft.stake * draft.oddsPlaced;
   const presets = buildPresets(draft.stake, draft.oddsPlaced);
   const target = draft.cashoutAlertTarget;
@@ -122,6 +126,98 @@ export function CashoutAlertSetup({
               }`}
             />
           </button>
+        </div>
+      </div>
+
+      <div className="border-b border-white/5 px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/[0.04] px-3 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-white">Alertas automáticos de risco</p>
+            <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400">
+              Avisa quando uma perna está a um gol de perder (ex.: under 2.5 com 2 gols) e a casa
+              ainda oferece cash-out — para você não perder tudo.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={riskAlertsEnabled}
+            aria-label="Ativar alertas automáticos de risco de cash-out"
+            onClick={() => setRiskAlertsEnabled(!riskAlertsEnabled)}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+              riskAlertsEnabled ? "bg-red-400/70" : "bg-white/15"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                riskAlertsEnabled ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      <div className="border-b border-white/5 px-4 py-3 sm:px-5">
+        <div className="rounded-xl border border-orange-500/25 bg-orange-500/[0.05] px-3 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-orange-100">Cash-out automático (extensão)</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400">
+                Tenta executar na Superbet via API (sessão logada) ou clique no botão. Requer extensão
+                Bolão AI + aba Minhas Apostas. <strong className="text-orange-200">Desligado por padrão.</strong>
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoExec.enabled}
+              aria-label="Ativar cash-out automático"
+              onClick={() => setAutoExec({ enabled: !autoExec.enabled })}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+                autoExec.enabled ? "bg-orange-400/80" : "bg-white/15"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  autoExec.enabled ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+          {autoExec.enabled && (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <label className="text-[10px] text-slate-400">
+                Disparar quando
+                <select
+                  value={autoExec.mode}
+                  onChange={(e) =>
+                    setAutoExec({
+                      mode: e.target.value as typeof autoExec.mode,
+                    })
+                  }
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-white"
+                >
+                  <option value="critical_only">Só risco crítico / proteger stake</option>
+                  <option value="protect_and_critical">Incluir “avaliar saída”</option>
+                </select>
+              </label>
+              <label className="text-[10px] text-slate-400">
+                Mínimo (% da aposta)
+                <select
+                  value={String(autoExec.minPctOfStake)}
+                  onChange={(e) =>
+                    setAutoExec({ minPctOfStake: parseFloat(e.target.value) })
+                  }
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-white"
+                >
+                  <option value="0.3">30%</option>
+                  <option value="0.5">50%</option>
+                  <option value="0.8">80%</option>
+                  <option value="1">100% (sem prejuízo)</option>
+                </select>
+              </label>
+            </div>
+          )}
         </div>
       </div>
 

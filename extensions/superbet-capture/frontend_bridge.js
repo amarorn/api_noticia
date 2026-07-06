@@ -36,6 +36,29 @@
       return;
     }
 
+    if (data.type === "BOLAO_EXECUTE_CASHOUT") {
+      chrome.runtime.sendMessage(
+        {
+          type: "EXECUTE_CASHOUT",
+          payload: data.payload,
+        },
+        (response) => {
+          window.postMessage(
+            {
+              source: "bolao-ai-extension",
+              type: "BOLAO_EXECUTE_CASHOUT_RESULT",
+              requestId: data.requestId,
+              ok: Boolean(response?.ok),
+              error: response?.error || chrome.runtime.lastError?.message || null,
+              result: response || null,
+            },
+            window.location.origin,
+          );
+        },
+      );
+      return;
+    }
+
     if (data.type === "BOLAO_CASHOUT_ALERT") {
       chrome.runtime.sendMessage({ type: "CASHOUT_ALERT", payload: data.payload });
     }

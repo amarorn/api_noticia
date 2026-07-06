@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { HexBrandMark } from "./HexBrandMark";
 import { LIVE_TOPBAR_HEIGHT_PX } from "@/presentation/components/layout/liveDashboardChromeContext";
+import { NotificationBell } from "@/presentation/components/ui/notifications";
 
 interface LiveDashboardTopBarProps {
   isLive: boolean;
@@ -79,6 +80,8 @@ export function LiveDashboardTopBar({
         </div>
 
         <TopBarDivider />
+
+        <NotificationBell />
 
         <button
           type="button"

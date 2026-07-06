@@ -55,6 +55,8 @@ def football_bilhete_candidates(advice: dict[str, Any]) -> list[dict[str, Any]]:
                 continue
             market = str(row.get("market") or "")
             outcome = str(row.get("outcome") or "")
+            if market == "next_goal":
+                continue
             if not market or not outcome:
                 continue
             if not is_superbet_bet_builder_market(market):

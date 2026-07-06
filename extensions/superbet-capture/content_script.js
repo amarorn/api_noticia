@@ -154,6 +154,16 @@
       };
     }
 
+    if (/Cart[aã]o/i.test(combined)) {
+      const isOver = /Mais|Over|Acima|\+/i.test(pickRaw);
+      const lineVal = parseLineValue(pickRaw) ?? parseLineValue(marketRaw);
+      return {
+        market: "cards_total",
+        outcome: isOver ? "over" : "under",
+        target_value: lineVal != null ? String(lineVal) : undefined,
+      };
+    }
+
     if (/Par.*Ímpar|Odd.*Even|Par\/Ímpar/i.test(combined)) {
       return {
         market: /Escanteio|Corner/i.test(combined) ? "odd_even_corners" : "odd_even_goals",
@@ -1355,6 +1365,22 @@
         sendResponse({ bets, result });
       })();
       return true; // async response
+    }
+    if (request.type === "EXECUTE_CASHOUT") {
+      (async () => {
+        const exec = window.__bolaoCashoutExecutor;
+        if (!exec?.executeCashout) {
+          sendResponse({ ok: false, error: "executor_not_loaded" });
+          return;
+        }
+        try {
+          const result = await exec.executeCashout(request.payload || {});
+          sendResponse(result || { ok: false, error: "empty_result" });
+        } catch (err) {
+          sendResponse({ ok: false, error: String(err) });
+        }
+      })();
+      return true;
     }
     if (request.type === "PING") {
       sendResponse({ ok: true, url: location.href });

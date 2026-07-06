@@ -6,6 +6,7 @@ import { BrandMark } from "./BrandMark";
 import { IconMenu, IconX } from "@/presentation/components/ui/Icons";
 import { springSoft } from "@/presentation/theme/motion";
 import type { HealthStatus } from "@/domain/entities";
+import { NotificationBell } from "@/presentation/components/ui/notifications";
 
 interface AppMobileHeaderProps {
   mobileOpen: boolean;
@@ -49,6 +50,8 @@ export function AppMobileHeader({
           isError={healthError}
           compact
         />
+
+        <NotificationBell buttonClassName="btn-icon relative shrink-0" />
 
         <button
           type="button"

@@ -29,12 +29,17 @@ class Settings(BaseSettings):
     odds_default_regions: str = "eu"
     odds_default_markets: str = "h2h"
     odds_default_odds_format: str = "decimal"
+    surebet_min_margin_pct: float = 0.3
+    surebet_default_bankroll: float = 1000.0
     api_football_key: str | None = None
     api_football_base_url: str = "https://v3.football.api-sports.io"
     sofascore_base_url: str = "https://api.sofascore.com/api/v1"
     sofascore_impersonate: str = "chrome124"
     sofascore_timeout_sec: float = 25.0
     superbet_base_url: str = "https://production-superbet-offer-br.freetls.fastly.net"
+    superbet_gaming_api_url: str = "https://api-gaming.content-prod.superbet.bet.br"
+    superbet_content_cdn_url: str = "https://superbet-content.freetls.fastly.net"
+    superbet_site_url: str = "https://superbet.bet.br"
     superbet_locale: str = "pt-BR"
     superbet_timeout_sec: float = 45.0
     superbet_fetch_retries: int = 2

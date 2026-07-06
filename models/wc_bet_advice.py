@@ -939,9 +939,9 @@ def _aporte_candidates(
             if under_prob is not None:
                 specs.append((f"1h_over_{line_num}", "no", f"1º Tempo: menos de {line_key} gols", lambda p=under_prob: p))
 
-    # --- Escanteios FT (pós-intervalo, modelo HT-adjust) ---
+    # --- Escanteios FT (modelo Poisson — disponível pré-jogo e ao vivo) ---
     corner_lp = inplay.get("corner_line_probs") or {}
-    if snapshot and minute > 45:
+    if snapshot and corner_lp:
         for line_key in snapshot.corners:
             line_num = line_key.replace(".", "_")
             over_prob = corner_lp.get(f"over_{line_num}")
@@ -961,9 +961,9 @@ def _aporte_candidates(
                     lambda p=under_prob: p,
                 ))
 
-    # --- Cartões amarelos FT (pós-intervalo) ---
+    # --- Cartões amarelos FT (modelo Poisson + árbitro) ---
     card_lp = inplay.get("card_line_probs") or {}
-    if snapshot and minute > 45:
+    if snapshot and card_lp:
         for line_key in snapshot.yellow_cards:
             line_num = line_key.replace(".", "_")
             over_prob = card_lp.get(f"over_{line_num}")
@@ -1013,11 +1013,21 @@ def _aporte_candidates(
             continue  # time visitante perdendo por 2+ → não apostar nele
         if market == "next_goal" and outcome == "home" and score_gap <= -2:
             continue  # time mandante perdendo por 2+ → não apostar nele
+        # ── Gate: 3º gol em diante = loteria (modelo fraco neste mercado) ──
+        total_goals = home_score + away_score
+        if market == "next_goal" and total_goals >= 2:
+            continue
+        # ── Gate: fim de jogo + próximo gol = variância extrema ──
+        if market == "next_goal" and minute >= 65:
+            continue
         # ── Gate: se generosity da Superbet < 5% para o outcome, bloquear ──
         if snapshot and _generosity_blocks(snapshot, market, outcome):
             continue
         odd = _market_odd(snapshot, market, outcome)
         if odd is None or odd <= 1.0:
+            continue
+        # ── Gate: odd alta em próximo gol = loteria ──
+        if market == "next_goal" and odd > 2.35:
             continue
         # ── Guarda: odd mínima (não recomendar odds muito baixas) ──
         if odd < settings.live_min_market_odd:
@@ -1072,6 +1082,63 @@ def _aporte_candidates(
             label = format_handicap_label_with_score(label, assessment)
         candidates.append((market, outcome, label, float(prob), float(odd), score_context))
     return candidates
+
+
+def market_category(market: str) -> str:
+    """Família do mercado para diversificação de recomendações."""
+    if market == "h2h":
+        return "h2h"
+    if market.startswith("corners_"):
+        return "corners"
+    if market.startswith("cards_"):
+        return "cards"
+    if market.startswith("combo_"):
+        return "combo"
+    if parse_any_handicap_market(market) or parse_period_handicap_market(market):
+        return "handicap"
+    if market.startswith(("1h_", "2h_")):
+        return "half"
+    if market.startswith(("home_over_", "away_over_")):
+        return "team_goals"
+    if market.startswith("over_") or market in {"btts", "next_goal"}:
+        return "goals"
+    return "other"
+
+
+def _diversify_by_category(
+    items: list[Any],
+    max_n: int,
+    *,
+    key_fn: Callable[[Any], str] | None = None,
+) -> list[Any]:
+    """Round-robin entre categorias para não repetir só gols/1X2."""
+    if len(items) <= max_n:
+        return items
+
+    order = ("h2h", "goals", "corners", "cards", "handicap", "half", "team_goals", "combo", "other")
+    buckets: dict[str, list[Any]] = {c: [] for c in order}
+    for item in items:
+        market = key_fn(item) if key_fn else getattr(item, "market", "")
+        cat = market_category(str(market))
+        buckets.setdefault(cat, []).append(item)
+
+    picked: list[Any] = []
+    seen: set[int] = set()
+    while len(picked) < max_n:
+        added = False
+        for cat in order:
+            while buckets.get(cat) and len(picked) < max_n:
+                candidate = buckets[cat].pop(0)
+                cid = id(candidate)
+                if cid in seen:
+                    continue
+                seen.add(cid)
+                picked.append(candidate)
+                added = True
+                break
+        if not added:
+            break
+    return picked
 
 
 def scan_all_market_edges(
@@ -1275,7 +1342,7 @@ def advise_aportes(
         )
 
     out.sort(key=lambda x: (x.edge_pp, x.model_prob), reverse=True)
-    return out[:max_recommendations]
+    return _diversify_by_category(out, max_recommendations)
 
 
 def build_bet_advice_report(

@@ -9,6 +9,7 @@ from models.ev_value import evaluate_outcome
 from models.wc_handicap_score import assess_handicap_vs_live_score, parse_any_handicap_market
 from models.wc_bet_advice import (
     UserBetInput,
+    _diversify_by_category,
     _ht_scores_from_inplay,
     _market_odd,
     _prob_from_inplay,
@@ -16,6 +17,7 @@ from models.wc_bet_advice import (
     advise_aportes,
     advise_cashout,
     is_aggressive_leading_handicap,
+    market_category,
     parse_period_handicap_market,
     scan_all_market_edges,
 )
@@ -363,6 +365,7 @@ def build_bet_strategy_report(
                 "market": a.market,
                 "outcome": a.outcome,
                 "label": a.label,
+                "category": market_category(a.market),
                 "tier": tier,
                 "model_prob": a.model_prob,
                 "market_odd": a.market_odd,
@@ -544,7 +547,7 @@ def build_bet_strategy_report(
             "reason": cashout["reason"],
         })
 
-    watch_list = all_edges[:3]
+    watch_list = _diversify_by_category(all_edges, 5, key_fn=lambda x: x.get("market", ""))
     wait_reason = _wait_reason(all_edges, threshold, minute)
 
     rules = [
@@ -637,7 +640,8 @@ def _wait_reason(all_edges: list[dict[str, Any]], threshold: float, minute: int)
         )
     if not all_edges:
         return (
-            "A Superbet ainda não trouxe odds nos mercados que analisamos (1X2, totais, BTTS). "
+            "A Superbet ainda não trouxe odds nos mercados que analisamos "
+            "(1X2, totais, BTTS, escanteios, cartões). "
             "Aguarde o próximo refresh (~25s)."
         )
     best = all_edges[0]

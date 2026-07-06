@@ -1,10 +1,16 @@
 /**
  * Painel compacto de apostas abertas da Superbet (aba Meu Bilhete).
- * Busca de /user/open-bets e filtra pelo evento atual.
  */
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { UserOpenBet } from "@/domain/entities";
 import { getUserOpenBetsUseCase } from "@/application/container";
+import { CashoutRiskBanner } from "@/presentation/components/predictions/CashoutRiskBanner";
+import { useCashoutRiskAlertsPreference } from "@/presentation/hooks/useCashoutRiskAlertsPreference";
+import {
+  assessCashoutRisk,
+  buildCashoutLiveContext,
+} from "@/presentation/utils/cashoutRiskAssessment";
 
 const MARKET_LABELS: Record<string, string> = {
   h2h: "1X2",
@@ -68,9 +74,33 @@ interface Props {
   eventId: number;
   homeTeam?: string;
   awayTeam?: string;
+  currentScore?: string | null;
+  minute?: number;
+  periodLabel?: string | null;
+  htHome?: number | null;
+  htAway?: number | null;
+  liveStats?: {
+    homeCorners?: number | null;
+    awayCorners?: number | null;
+    homeYellowCards?: number | null;
+    awayYellowCards?: number | null;
+    homeRedCards?: number | null;
+    awayRedCards?: number | null;
+  } | null;
 }
 
-export function LiveOpenBetsPanel({ eventId, homeTeam, awayTeam }: Props) {
+export function LiveOpenBetsPanel({
+  eventId,
+  homeTeam,
+  awayTeam,
+  currentScore,
+  minute = 0,
+  periodLabel,
+  htHome,
+  htAway,
+  liveStats,
+}: Props) {
+  const { riskAlertsEnabled, setRiskAlertsEnabled } = useCashoutRiskAlertsPreference();
   const { data, isLoading } = useQuery({
     queryKey: ["user-open-bets"],
     queryFn: () => getUserOpenBetsUseCase.execute(),
@@ -84,6 +114,18 @@ export function LiveOpenBetsPanel({ eventId, homeTeam, awayTeam }: Props) {
       (homeTeam && awayTeam && b.homeTeam === homeTeam && b.awayTeam === awayTeam),
   );
 
+  const liveCtx = useMemo(() => {
+    if (!currentScore) return null;
+    return buildCashoutLiveContext({
+      currentScore,
+      minute,
+      htHome,
+      htAway,
+      periodLabel,
+      liveStats,
+    });
+  }, [currentScore, minute, htHome, htAway, periodLabel, liveStats]);
+
   if (isLoading) {
     return (
       <div className="rounded-xl border border-white/8 bg-white/[0.02] p-4 text-center text-[11px] text-slate-500">
@@ -95,8 +137,8 @@ export function LiveOpenBetsPanel({ eventId, homeTeam, awayTeam }: Props) {
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-white/6 px-4 py-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="text-base">🎟️</span>
           <span className="text-sm font-bold text-white">Minhas Apostas</span>
           {bets.length > 0 && (
@@ -104,8 +146,30 @@ export function LiveOpenBetsPanel({ eventId, homeTeam, awayTeam }: Props) {
               {bets.length}
             </span>
           )}
+          <span className="text-[10px] text-slate-600">· neste jogo</span>
         </div>
-        <span className="text-[10px] text-slate-600">neste jogo</span>
+        <label className="flex shrink-0 items-center gap-2">
+          <span className="whitespace-nowrap text-[10px] font-medium text-slate-500">
+            Alertas risco
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={riskAlertsEnabled}
+            aria-label="Alertas de risco de cash-out"
+            title="Alertas automáticos quando perna crítica + cash-out disponível"
+            onClick={() => setRiskAlertsEnabled(!riskAlertsEnabled)}
+            className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+              riskAlertsEnabled ? "bg-red-400/70" : "bg-white/15"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                riskAlertsEnabled ? "translate-x-4" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </label>
       </div>
 
       {bets.length === 0 ? (
@@ -123,9 +187,30 @@ export function LiveOpenBetsPanel({ eventId, homeTeam, awayTeam }: Props) {
             const isMulti = bet.picks.length > 1;
             const profit = bet.potentialReturn - bet.stake;
             const hasCashout = bet.cashoutValue != null && bet.cashoutValue > 0;
+            const risk =
+              liveCtx && hasCashout
+                ? assessCashoutRisk(
+                    {
+                      id: bet.id,
+                      stake: bet.stake,
+                      oddsPlaced: bet.oddsPlaced,
+                      potentialReturn: bet.potentialReturn,
+                      cashoutValue: bet.cashoutValue,
+                      picks: bet.picks.map((p) => ({
+                        market: p.market,
+                        outcome: p.outcome,
+                        label: p.targetValue
+                          ? `${p.market} ${p.outcome} ${p.targetValue}`
+                          : `${p.market} ${p.outcome}`,
+                        targetValue: p.targetValue,
+                      })),
+                    },
+                    liveCtx,
+                  )
+                : null;
 
             return (
-              <div key={bet.id} className="px-4 py-3 space-y-2">
+              <div key={bet.id} className="space-y-2 px-4 py-3">
                 {/* Linha principal */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -201,6 +286,15 @@ export function LiveOpenBetsPanel({ eventId, homeTeam, awayTeam }: Props) {
                 {/* Ticket code */}
                 {bet.ticketCode && (
                   <p className="text-[9px] font-mono text-slate-700">#{bet.ticketCode}</p>
+                )}
+
+                {risk?.alert && (
+                  <CashoutRiskBanner
+                    assessment={risk}
+                    compact
+                    ticketCode={bet.ticketCode}
+                    betId={bet.id}
+                  />
                 )}
               </div>
             );

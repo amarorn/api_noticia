@@ -7,6 +7,7 @@ from models.wc_bet_advice import (
     build_bet_advice_report,
     _prob_from_inplay,
     _market_odd,
+    _aporte_candidates,
 )
 from models.wc_inplay import simulate_inplay
 from ingest.superbet.parser import parse_superbet_event
@@ -293,3 +294,73 @@ def test_cashout_trend_disabled(monkeypatch):
     merged = apply_trend_to_cashout(base, _trend_exit_report("critical", 0.95))
     assert merged.action == "manter"
     assert merged.trend_influenced is False
+
+
+def test_next_goal_blocked_third_goal_and_high_odd():
+    """3º gol+ e odds altas não entram nas recomendações."""
+    from ingest.superbet.parser import SuperbetEventSnapshot, SuperbetInPlayState
+
+    snap = SuperbetEventSnapshot(
+        event_id=99,
+        home_team="New Mexico United",
+        away_team="Oakland Roots",
+        event_name="New Mexico - Oakland",
+        utc_date=None,
+        betradar_id=None,
+        is_live=True,
+        inplay=SuperbetInPlayState(
+            home_score=2,
+            away_score=1,
+            minute=72,
+            stoppage_time=None,
+            home_corners=0,
+            away_corners=0,
+            home_yellow_cards=0,
+            away_yellow_cards=0,
+            ht_home_score=1,
+            ht_away_score=0,
+            period_label="2H",
+            status="live",
+        ),
+        h2h_odds={"1": 1.4, "X": 4.5, "2": 7.0},
+        h2h_implied={},
+        totals={},
+        totals_implied={},
+        corners={},
+        corners_implied={},
+        combo_markets={},
+        btts_odds={},
+        next_goal_odds={"home": 2.65, "away": 3.0},
+        generosity_probs={},
+        team_totals={},
+        first_half_totals={},
+        second_half_totals={},
+        yellow_cards={},
+        first_half_yellow_cards={},
+        team_shots={},
+        team_shots_on_target={},
+        half_markets={},
+        handicap_odds={},
+        handicap_implied={},
+        raw_market_count=1,
+        captured_at="2026-07-05T00:00:00Z",
+    )
+    inplay = {
+        "current_score": "2x1",
+        "prob_next_goal_home": 0.55,
+        "prob_next_goal_away": 0.35,
+        "prob_no_more_goals": 0.10,
+        "btts_final": 0.9,
+        "final_line_probs": {"over_3_5": 0.4, "under_3_5": 0.6},
+        "combo_markets": {},
+    }
+    candidates = _aporte_candidates(
+        inplay,
+        snap,
+        home_team="New Mexico United",
+        away_team="Oakland Roots",
+        home_score=2,
+        away_score=1,
+        minute=72,
+    )
+    assert all(c[0] != "next_goal" for c in candidates)

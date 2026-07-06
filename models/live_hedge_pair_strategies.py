@@ -83,14 +83,15 @@ _PAIR_TEMPLATES: list[dict[str, Any]] = [
 
 _LLM_SYSTEM = """\
 Você elabora estratégias pareadas de blindagem in-play em português do Brasil.
-Recebe candidatos quantitativos com duas pernas complementares.
+Recebe candidatos quantitativos com duas pernas complementares (gols, 1X2, escanteios, cartões).
 
 Regras:
 1. Escolha EXATAMENTE 2 estratégias da lista "candidatos" (copie os ids).
-2. Não invente mercados, odds ou probabilidades.
-3. Explique quando uma perna compensa a outra (cenários de vitória).
-4. Indique stakes relativas (ex.: 60/40) quando fizer sentido.
-5. Responda APENAS JSON válido:
+2. Prefira diversidade: se possível, uma estratégia de gols/1X2 e outra de escanteios ou cartões.
+3. Não invente mercados, odds ou probabilidades.
+4. Explique quando uma perna compensa a outra (cenários de vitória).
+5. Indique stakes relativas (ex.: 60/40) quando fizer sentido.
+6. Responda APENAS JSON válido:
 {
   "estrategias": [
     {
@@ -102,6 +103,65 @@ Regras:
     }
   ]
 }"""
+
+
+def _pair_category(pair_id: str) -> str:
+    if pair_id.startswith("corners_") or pair_id.startswith("zona_escanteios"):
+        return "corners"
+    if pair_id.startswith("cards_") or pair_id.startswith("zona_cartoes"):
+        return "cards"
+    if pair_id in {"mandante_nao_perde", "visitante_nao_perde", "dupla_chance_inversa"}:
+        return "h2h"
+    if pair_id in {"jogo_fechado"}:
+        return "goals"
+    if pair_id.startswith("zona_") or pair_id.startswith("faixa_"):
+        return "goals"
+    return "other"
+
+
+def _build_dynamic_band_pairs(
+    idx: dict[tuple[str, str], dict[str, Any]],
+    *,
+    prefix: str,
+    category: str,
+    name_prefix: str,
+    min_band: float = 1.0,
+) -> list[dict[str, Any]]:
+    """Gera pares over/under complementares para escanteios ou cartões."""
+    over_lines: list[tuple[float, str]] = []
+    for (market, outcome), _row in idx.items():
+        if not market.startswith(f"{prefix}_over_") or outcome != "yes":
+            continue
+        line_str = market.replace(f"{prefix}_over_", "").replace("_", ".")
+        try:
+            over_lines.append((float(line_str), market))
+        except ValueError:
+            continue
+    over_lines.sort()
+
+    templates: list[dict[str, Any]] = []
+    for i, (low_val, low_market) in enumerate(over_lines):
+        for high_val, high_market in over_lines[i + 1 :]:
+            if high_val - low_val < min_band:
+                continue
+            low_label = str(low_val).replace(".", ",")
+            high_label = str(high_val).replace(".", ",")
+            band_mid = (low_val + high_val) / 2
+            tpl_id = f"{prefix}_zona_{str(low_val).replace('.', '_')}_{str(high_val).replace('.', '_')}"
+            templates.append({
+                "id": tpl_id,
+                "name": f"{name_prefix} {low_label}–{high_label}",
+                "leg_a": (low_market, "yes"),
+                "leg_b": (high_market, "no"),
+                "coverage_type": "total_band",
+                "lose_both_pct": 0.0,
+                "scenario_a": f"Abaixo de {low_label}: só a 2ª perna paga",
+                "scenario_b": f"Acima de {high_label}: só a 1ª perna paga",
+                "scenario_both": f"Entre {low_label} e {high_label}: as duas pernas ganham",
+                "_category": category,
+                "_band_mid": band_mid,
+            })
+    return templates
 
 
 def _index_scan(market_scan: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
@@ -215,7 +275,15 @@ def build_hedge_pair_candidates(
     idx = _index_scan(market_scan)
     candidates: list[dict[str, Any]] = []
 
-    for tpl in _PAIR_TEMPLATES:
+    all_templates = list(_PAIR_TEMPLATES)
+    all_templates.extend(_build_dynamic_band_pairs(
+        idx, prefix="corners", category="corners", name_prefix="Zona escanteios",
+    ))
+    all_templates.extend(_build_dynamic_band_pairs(
+        idx, prefix="cards", category="cards", name_prefix="Zona cartões", min_band=0.5,
+    ))
+
+    for tpl in all_templates:
         am, ao = tpl["leg_a"]
         bm, bo = tpl["leg_b"]
         leg_a = _resolve_leg(idx, am, ao)
@@ -240,6 +308,7 @@ def build_hedge_pair_candidates(
         candidates.append({
             "id": tpl["id"],
             "name": name,
+            "category": tpl.get("_category") or _pair_category(tpl["id"]),
             "leg_a": leg_a,
             "leg_b": leg_b,
             "coverage": coverage,
@@ -253,7 +322,39 @@ def build_hedge_pair_candidates(
         })
 
     candidates.sort(key=lambda x: x["score"], reverse=True)
-    return candidates[:6]
+    return candidates[:8]
+
+
+def _select_diverse_pairs(candidates: list[dict[str, Any]], n: int = 2) -> list[dict[str, Any]]:
+    """Escolhe pares de categorias diferentes quando possível."""
+    if len(candidates) <= n:
+        return candidates
+
+    selected: list[dict[str, Any]] = [candidates[0]]
+    used_ids = {selected[0]["id"]}
+    used_cats = {selected[0].get("category") or _pair_category(selected[0]["id"])}
+
+    for cat_priority in ("corners", "cards", "goals", "h2h", "other"):
+        if len(selected) >= n:
+            break
+        for c in candidates:
+            if c["id"] in used_ids:
+                continue
+            cat = c.get("category") or _pair_category(c["id"])
+            if cat == cat_priority and cat not in used_cats:
+                selected.append(c)
+                used_ids.add(c["id"])
+                used_cats.add(cat)
+                break
+
+    for c in candidates:
+        if len(selected) >= n:
+            break
+        if c["id"] not in used_ids:
+            selected.append(c)
+            used_ids.add(c["id"])
+
+    return selected[:n]
 
 
 def _parse_json(content: str) -> dict[str, Any]:
@@ -339,7 +440,7 @@ def _llm_narrate_pairs(
 
 def _deterministic_top2(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    for c in candidates[:2]:
+    for c in _select_diverse_pairs(candidates, n=2):
         item = dict(c)
         item["titulo"] = c["name"]
         item["resumo"] = (
@@ -400,6 +501,24 @@ def build_hedge_pair_strategies(
         strategies = _deterministic_top2(candidates)
         if not use_llm:
             error = "Modo rápido — narrativa LLM omitida."
+
+    # Garante diversidade mesmo após LLM
+    if len(strategies) >= 2:
+        ids = [s["id"] for s in strategies]
+        cats = {_pair_category(s["id"]) for s in strategies}
+        if len(cats) == 1:
+            for alt in candidates:
+                if alt["id"] not in ids and _pair_category(alt["id"]) != next(iter(cats)):
+                    strategies[1] = dict(alt)
+                    strategies[1]["titulo"] = alt["name"]
+                    strategies[1]["resumo"] = (
+                        f"Cobertura estimada {alt['coverage']['prob_at_least_one'] * 100:.0f}% — "
+                        f"{alt['scenario_a']}. {alt['scenario_b']}."
+                    )
+                    strategies[1]["stake_split"] = "50% / 50% da stake planejada"
+                    strategies[1]["cenario_chave"] = alt.get("scenario_both") or alt.get("scenario_a", "")
+                    strategies[1]["llm_enriched"] = strategies[1].get("llm_enriched", False)
+                    break
 
     return {
         "enabled": bool(settings.live_copilot_enabled and settings.openai_api_key),

@@ -1,7 +1,12 @@
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import { formatPercent } from "@/presentation/theme";
 import { CashoutAlertProgress } from "@/presentation/components/predictions/CashoutAlertProgress";
+import { CashoutRiskBanner } from "@/presentation/components/predictions/CashoutRiskBanner";
 import { getCashoutAlertConfig } from "@/presentation/utils/cashoutAlertStorage";
+import {
+  assessCashoutRisk,
+  buildCashoutLiveContext,
+} from "@/presentation/utils/cashoutRiskAssessment";
 
 export interface RegisteredBet {
   market: string;
@@ -151,6 +156,29 @@ export function LiveOpenBetMonitor({
   const liveOdd = isMulti ? null : liveOddForBet(data, bet);
   const placedImplied = 1 / Math.max(bet.oddsPlaced, 1.01);
   const house = houseFavorite(data);
+  const riskAssessment = assessCashoutRisk(
+    {
+      id: bet.id,
+      stake: bet.stake,
+      oddsPlaced: bet.oddsPlaced,
+      potentialReturn: displayReturn,
+      cashoutValue: currentCashout,
+      picks:
+        bet.picks?.map((p) => ({
+          market: p.market,
+          outcome: p.outcome,
+          label: p.label,
+        })) ?? [{ market: bet.market, outcome: bet.outcome }],
+    },
+    buildCashoutLiveContext({
+      currentScore: data.currentScore,
+      minute: data.minute,
+      htHome: data.halftimeReport?.frozenStats?.htHomeScore,
+      htAway: data.halftimeReport?.frozenStats?.htAwayScore,
+      periodLabel: data.periodLabel,
+      liveStats: data.liveStats,
+    }),
+  );
 
   return (
     <div className="space-y-4">
@@ -230,6 +258,14 @@ export function LiveOpenBetMonitor({
       </div>
 
       <CashoutAlertProgress config={alertConfig} currentCashout={currentCashout} />
+
+        {riskAssessment.alert && (
+          <CashoutRiskBanner
+            assessment={riskAssessment}
+            ticketCode={bet.ticketCode}
+            betId={bet.id}
+          />
+        )}
 
       <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.05] p-4">
         <p className="text-[10px] font-bold uppercase tracking-widest text-violet-300/80">
