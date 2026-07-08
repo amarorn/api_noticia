@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from config import settings
 from ingest.superbet.parser import (
@@ -67,9 +70,10 @@ class SuperbetClient:
         }
         try:
             with httpx.Client(timeout=self.timeout_sec, follow_redirects=True) as client:
-                response = client.get(url, params=params, headers=headers)
-                response.raise_for_status()
-                payload = _parse_sse_payload(response.text)
+                with client.stream("GET", url, params=params, headers=headers) as response:
+                    response.raise_for_status()
+                    text = _read_first_sse_data(response)
+                payload = _parse_sse_payload(text)
         except httpx.HTTPError as exc:
             if isinstance(exc, _TRANSIENT_HTTP_ERRORS):
                 raise
@@ -212,7 +216,11 @@ def _parse_sse_payload(text: str) -> list[dict]:
             match = re.search(r"(\[{.*}\])", raw, re.DOTALL)
             if not match:
                 continue
-            data = json.loads(match.group(1))
+            try:
+                data = json.loads(match.group(1))
+            except json.JSONDecodeError:
+                logger.warning("Superbet SSE chunk nao eh JSON valido; ignorando: %s", raw[:200])
+                continue
         if isinstance(data, list) and data:
             if isinstance(data[0], dict):
                 chunks.append(data[0])

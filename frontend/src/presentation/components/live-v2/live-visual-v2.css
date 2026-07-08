@@ -1,0 +1,431 @@
+/* Visual fiel às imagens de referência da tela Ao Vivo v2. */
+
+:root {
+  --v2-bg: #020712;
+  --v2-surface: rgba(6, 15, 30, 0.82);
+  --v2-surface-2: rgba(9, 22, 40, 0.72);
+  --v2-surface-3: rgba(13, 31, 52, 0.62);
+  --v2-border: rgba(45, 212, 191, 0.18);
+  --v2-border-soft: rgba(148, 163, 184, 0.12);
+  --v2-border-strong: rgba(45, 212, 191, 0.32);
+  --v2-text: rgba(248, 250, 252, 0.96);
+  --v2-muted: rgba(148, 163, 184, 0.82);
+  --v2-faint: rgba(100, 116, 139, 0.72);
+  --v2-cyan: #22d3ee;
+  --v2-emerald: #10b981;
+  --v2-green: #00f5a0;
+  --v2-yellow: #facc15;
+  --v2-amber: #fbbf24;
+  --v2-red: #fb7185;
+  --v2-orange: #fb923c;
+  --v2-blue: #3b82f6;
+  --v2-radius-lg: 24px;
+  --v2-radius-md: 18px;
+  --v2-radius-sm: 12px;
+}
+
+.live-v2-shell {
+  color: var(--v2-text);
+  padding: 20px 24px 32px;
+}
+
+/* Page title centralizado com linhas */
+.v2-page-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  color: var(--v2-green);
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.v2-page-title::before,
+.v2-page-title::after {
+  content: "";
+  width: min(8vw, 100px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 245, 160, 0.55), transparent);
+}
+
+.v2-page-subtitle {
+  text-align: center;
+  color: var(--v2-muted);
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* Painéis principais */
+.panel-v2 {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(45, 212, 191, 0.16);
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.06), transparent 36%),
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.1), transparent 34%),
+    linear-gradient(135deg, rgba(8, 16, 30, 0.95), rgba(2, 6, 23, 0.98));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 18px 60px rgba(0, 0, 0, 0.35);
+}
+
+.panel-v2::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.14), transparent 18%, transparent 82%, rgba(0, 245, 160, 0.1)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 28%);
+  opacity: 0.6;
+}
+
+.panel-v2 > * {
+  position: relative;
+  z-index: 1;
+}
+
+.panel-soft-v2 {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 13, 26, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Pills e chips */
+.pill-v2 {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.chip-v2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 10px;
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.6);
+  color: rgba(226, 232, 240, 0.85);
+  white-space: nowrap;
+}
+
+/* Topbar interna da v2 */
+.cockpit-topbar-v2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.status-dot-v2 {
+  height: 8px;
+  width: 8px;
+  border-radius: 999px;
+  background: var(--v2-green);
+  box-shadow: 0 0 14px rgba(0, 245, 160, 0.9);
+}
+
+/* Tabs segmentadas */
+.tabs-v2 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.72);
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.tab-button-v2 {
+  height: 40px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(148, 163, 184, 0.9);
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.tab-button-v2:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-button-v2[data-active="true"] {
+  color: #052e16;
+  background: var(--v2-green);
+  border: 1px solid rgba(0, 245, 160, 0.5);
+  box-shadow: 0 0 24px rgba(0, 245, 160, 0.3);
+}
+
+/* Medidor radial */
+.gauge-v2 {
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+}
+
+.gauge-v2-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ecfeff;
+  line-height: 1;
+}
+
+.gauge-v2-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--v2-muted);
+  margin-top: 2px;
+}
+
+/* Score shield */
+.score-shield-v2 {
+  width: 96px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(251, 191, 36, 0.25), transparent 55%),
+    linear-gradient(180deg, rgba(251, 191, 36, 0.12), rgba(251, 191, 36, 0.02));
+  border: 1.5px solid rgba(251, 191, 36, 0.45);
+  border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+  box-shadow:
+    inset 0 0 20px rgba(251, 191, 36, 0.15),
+    0 0 30px rgba(251, 191, 36, 0.12);
+}
+
+.score-shield-v2--green {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.25), transparent 55%),
+    linear-gradient(180deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.02));
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow:
+    inset 0 0 20px rgba(16, 185, 129, 0.15),
+    0 0 30px rgba(16, 185, 129, 0.12);
+}
+
+.score-shield-v2--red {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(248, 113, 113, 0.25), transparent 55%),
+    linear-gradient(180deg, rgba(248, 113, 113, 0.12), rgba(248, 113, 113, 0.02));
+  border-color: rgba(248, 113, 113, 0.45);
+  box-shadow:
+    inset 0 0 20px rgba(248, 113, 113, 0.15),
+    0 0 30px rgba(248, 113, 113, 0.12);
+}
+
+/* Barras de progresso */
+.bar-track-v2 {
+  height: 6px;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  overflow: hidden;
+}
+
+.bar-fill-v2 {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(20, 184, 166, 0.9), rgba(45, 212, 191, 0.65));
+  transition: width 400ms ease;
+}
+
+/* Timeline do jogo */
+.timeline-track-v2 {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  overflow: hidden;
+}
+
+.timeline-fill-v2 {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.9), rgba(45, 212, 191, 0.85), rgba(56, 189, 248, 0.75));
+  transition: width 500ms ease;
+}
+
+/* Tabela de mercados */
+.markets-table-wrapper-v2 {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(45, 212, 191, 0.14);
+}
+
+.markets-table-v2 {
+  min-width: 1000px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.markets-table-v2 th {
+  padding: 12px 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(148, 163, 184, 0.7);
+  background: rgba(255, 255, 255, 0.025);
+  white-space: nowrap;
+}
+
+.markets-table-v2 td {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  white-space: nowrap;
+}
+
+/* Scroll customizado */
+.scroll-v2::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.scroll-v2::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.scroll-v2::-webkit-scrollbar-thumb {
+  background: rgba(45, 212, 191, 0.22);
+  border-radius: 999px;
+}
+
+.scroll-v2::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 212, 191, 0.36);
+}
+
+/* Gráfico de pressão */
+.pressure-chart-v2 {
+  height: 200px;
+  border-radius: 16px;
+  border: 1px solid rgba(45, 212, 191, 0.12);
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+    rgba(2, 6, 23, 0.45);
+  background-size: 100% 25%, 16.66% 100%, auto;
+}
+
+/* Cards de oportunidade */
+.signal-card-v2 {
+  border-radius: 18px;
+  border: 1px solid rgba(45, 212, 191, 0.14);
+  background:
+    linear-gradient(135deg, rgba(0, 245, 160, 0.05), transparent 42%),
+    rgba(2, 6, 23, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.signal-card-v2:hover {
+  border-color: rgba(45, 212, 191, 0.26);
+  background:
+    linear-gradient(135deg, rgba(0, 245, 160, 0.08), transparent 42%),
+    rgba(2, 6, 23, 0.62);
+}
+
+/* Estado vazio */
+.empty-v2 {
+  border-radius: 18px;
+  border: 1px dashed rgba(45, 212, 191, 0.22);
+  background:
+    radial-gradient(circle at 30% 0%, rgba(34, 211, 238, 0.06), transparent 40%),
+    rgba(2, 6, 23, 0.42);
+  padding: 18px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+/* Campos de formulário */
+.field-v2 {
+  color-scheme: dark;
+  min-width: 0;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(45, 212, 191, 0.16);
+  background: rgba(2, 6, 23, 0.55);
+  color: #e2e8f0;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 160ms ease;
+}
+
+.field-v2:focus {
+  border-color: rgba(45, 212, 191, 0.45);
+}
+
+.field-v2 option {
+  background-color: #020617;
+  color: #e2e8f0;
+}
+
+/* Footer de atualização */
+.v2-update-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(45, 212, 191, 0.12);
+  color: var(--v2-green);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.v2-update-footer.pulse::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--v2-green);
+  animation: v2-pulse 1.2s infinite;
+}
+
+@keyframes v2-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}

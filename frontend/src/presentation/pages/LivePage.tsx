@@ -58,6 +58,11 @@ function buildInPlayLinkForEvent(event: SuperbetLiveEvent): string {
   return buildInPlayLink(event.eventId, event.utcDate);
 }
 
+function buildV2LinkForEvent(event: SuperbetLiveEvent): string {
+  const qs = event.utcDate ? `?kickoff=${encodeURIComponent(event.utcDate)}` : "";
+  return `/aovivo-v2/${event.eventId}${qs}`;
+}
+
 function buildBasketInPlayLink(event: BasketSuperbetLiveEvent): string {
   return `/ao-vivo/basquete/${event.eventId}`;
 }
@@ -319,6 +324,14 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
             className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 hover:border-amber-400/40"
           >
             Abrir painel
+            <IconChevronRight className="h-3 w-3" />
+          </Link>
+          <Link
+            to={buildV2LinkForEvent(event)}
+            className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-300 hover:border-emerald-400/40"
+            title="Nova tela ao vivo v2"
+          >
+            V2
             <IconChevronRight className="h-3 w-3" />
           </Link>
         </div>
