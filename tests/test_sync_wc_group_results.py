@@ -128,3 +128,51 @@ def test_apply_updates_idempotent(round_data):
     data, _ = apply_updates(round_data, upd)
     _, unchanged = apply_updates(data, upd)
     assert unchanged == 1
+
+
+def test_schedule_index_includes_knockout():
+    data = {
+        "matches": [
+            {
+                "id": "semi",
+                "home_team": "França",
+                "away_team": "Espanha",
+                "phase": "semifinal",
+            },
+            {
+                "id": "rep",
+                "home_team": "A",
+                "away_team": "B",
+                "phase": "repescagem",
+            },
+        ]
+    }
+    idx = _schedule_index(data)
+    assert ("França", "Espanha") in idx
+    assert ("A", "B") not in idx
+
+
+def test_apply_updates_knockout_score():
+    data = {
+        "matches": [
+            {
+                "id": "semifinal-franca-espanha",
+                "home_team": "França",
+                "away_team": "Espanha",
+                "phase": "semifinal",
+            }
+        ]
+    }
+    updates = [
+        ResultUpdate(
+            home_team="França",
+            away_team="Espanha",
+            home_score=0,
+            away_score=2,
+            source="fifa",
+        )
+    ]
+    out, unchanged = apply_updates(data, updates)
+    assert unchanged == 0
+    assert out["matches"][0]["home_score"] == 0
+    assert out["matches"][0]["away_score"] == 2

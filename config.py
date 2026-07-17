@@ -129,6 +129,19 @@ class Settings(BaseSettings):
     basket_sigma_ppm: float = 0.35  # desvio padrão de pontos por minuto (calibrável)
     basket_spread_lines: tuple[float, ...] = (-12.5, -9.5, -7.5, -5.5, -4.5, -3.5, -2.5, -1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 7.5, 9.5, 12.5)
     basket_total_lines: tuple[float, ...] = (205.5, 210.5, 215.5, 220.5, 225.5, 230.5)
+    # ── Beisebol In-Play ──
+    baseball_sport_id: int = 20  # Beisebol na Superbet BR (KBO/MLB/NPB)
+    baseball_match_innings: int = 9
+    baseball_mc_simulations: int = 5000
+    baseball_fast_mc_simulations: int = 1500
+    baseball_prior_weight: float = 6.0  # entradas-equivalente de confiança no prior (~2/3 de jogo)
+    baseball_default_total: float = 8.5  # total de corridas padrão quando mercado não oferece linha
+    baseball_late_inning: int = 7
+    baseball_late_boost_enabled: bool = True
+    baseball_lead_admin_factor: float = 0.94
+    baseball_trailing_push_factor: float = 1.08
+    baseball_spread_lines: tuple[float, ...] = (-2.5, -1.5, 1.5, 2.5, 3.5, 4.5, 5.5)
+    baseball_total_lines: tuple[float, ...] = (6.5, 7.5, 8.5, 9.5, 10.5, 11.5)
     # Fase 1 in-play (docs/specs/spec-fase-1-quickwins-inplay.md)
     inplay_use_nhpp: bool = True
     inplay_use_market_shrinkage: bool = True

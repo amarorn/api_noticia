@@ -1758,6 +1758,62 @@ export interface BasketSuperbetLiveAdvice {
   confidence: BasketConfidence | null;
 }
 
+/** Feed ao vivo de beisebol — mesmo shape da lista de basquete. */
+export type BaseballSuperbetLiveEvent = BasketSuperbetLiveEvent;
+export type BaseballSuperbetLiveFeed = BasketSuperbetLiveFeed;
+
+export interface BaseballInPlaySummary {
+  probHomeWin: number | null;
+  probAwayWin: number | null;
+  expectedFinalHome: number | null;
+  expectedFinalAway: number | null;
+  expectedTotal: number | null;
+  remainingInnings: number | null;
+  moneylineProbs: Record<string, number>;
+  spreadProbs: Record<string, number>;
+  totalProbs: Record<string, number>;
+  rpiHome: number | null;
+  rpiAway: number | null;
+  rpiHomePrior: number | null;
+  rpiAwayPrior: number | null;
+  matchInnings: number | null;
+  nSimulations: number | null;
+  marketTotalLine: number | null;
+  marketSpreadLine: number | null;
+}
+
+export interface BaseballInningScore {
+  num: number;
+  home: number;
+  away: number;
+}
+
+export interface BaseballSuperbetLiveAdvice {
+  homeTeam: string;
+  awayTeam: string;
+  inning: number;
+  minute: number;
+  currentScore: string | null;
+  periodLabel: string | null;
+  status: string | null;
+  baseballInnings: BaseballInningScore[];
+  isFinished: boolean;
+  isLive: boolean;
+  superbetStale: boolean;
+  superbetEventId: number;
+  sportId: number | null;
+  capturedAt: string | null;
+  h2hOdds: Record<string, number>;
+  h2hImplied: Record<string, number>;
+  spreadOdds: Record<string, Record<string, number>>;
+  spreadImplied: Record<string, Record<string, number>>;
+  totalRunsOdds: Record<string, Record<string, number>>;
+  totalRunsImplied: Record<string, Record<string, number>>;
+  inplaySummary: BaseballInPlaySummary;
+  aportes: BasketAporteAdvice[];
+  confidence: BasketConfidence | null;
+}
+
 export interface LiveCopilotPick {
   rank: number;
   market: string;

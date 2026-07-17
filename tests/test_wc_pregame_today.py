@@ -105,3 +105,41 @@ def test_pregame_window_with_days_back_includes_yesterday():
     )
     window, _ = build_pregame_window(schedule, now=now, days_ahead=2, days_back=1)
     assert len(window) == 1
+
+
+def test_find_next_upcoming_match_skips_played_and_past():
+    from pipelines.wc_pregame_today import find_next_upcoming_match, serialize_next_match
+
+    now = datetime(2026, 7, 15, 12, 0, tzinfo=UTC)
+    schedule = _sched(
+        {
+            "id": "semi-done",
+            "home_team": "França",
+            "away_team": "Espanha",
+            "kickoff": "2026-07-14T19:00:00+00:00",
+            "phase": "semifinal",
+            "home_score": 0,
+            "away_score": 2,
+        },
+        {
+            "id": "semi-next",
+            "home_team": "Argentina",
+            "away_team": "Brasil",
+            "kickoff": "2026-07-15T19:00:00+00:00",
+            "phase": "semifinal",
+        },
+        {
+            "id": "final-later",
+            "home_team": "TBD",
+            "away_team": "TBD2",
+            "kickoff": "2026-07-19T19:00:00+00:00",
+            "phase": "final",
+        },
+    )
+    nxt = find_next_upcoming_match(schedule, now=now)
+    assert nxt is not None
+    assert nxt[1]["id"] == "semi-next"
+    payload = serialize_next_match(nxt[0], nxt[1], now=now)
+    assert payload["home_team"] == "Argentina"
+    assert "eta_label" in payload
+    assert payload["kickoff_br"]

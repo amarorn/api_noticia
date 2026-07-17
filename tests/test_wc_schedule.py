@@ -45,6 +45,20 @@ def test_schedule_includes_scores_when_present() -> None:
     assert first["played"] is True
 
 
+def test_schedule_schema_preserves_results_and_model_projection() -> None:
+    """O response_model da API não pode descartar placar e probabilidades."""
+    from api.schemas import WcScheduleResponse
+
+    data = load_wc_schedule(WC_JSON)
+    out = build_schedule_response(data)
+    serialized = WcScheduleResponse(**out).model_dump()
+    scored = next(m for m in serialized["matches"] if m["played"])
+    assert scored["home_score"] is not None
+    assert scored["away_score"] is not None
+    assert "prediction" in scored
+    assert "prob_home" in scored
+
+
 def test_official_match_exists_respects_home_away() -> None:
     assert official_match_exists("Brasil", "Marrocos", phase="group", path=WC_JSON)
     assert not official_match_exists("Marrocos", "Brasil", phase="group", path=WC_JSON)

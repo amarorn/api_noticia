@@ -39,6 +39,13 @@ interface TodayResponse {
   end_date: string;
   total: number;
   matches: TodayMatch[];
+  next_match?: {
+    home_team: string;
+    away_team: string;
+    kickoff_br?: string | null;
+    eta_label?: string | null;
+    phase?: string | null;
+  } | null;
 }
 
 interface Pick {
@@ -1010,8 +1017,26 @@ export function CopaCentralPage() {
               {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-48 rounded-2xl" />)}
             </div>
           ) : matches.length === 0 ? (
-            <div className="rounded-xl border border-white/8 p-8 text-center text-slate-500 text-sm">
-              Nenhum jogo encontrado.
+            <div className="rounded-xl border border-white/8 p-8 text-center text-slate-500 text-sm space-y-2">
+              <p>Nenhum jogo da Copa hoje.</p>
+              {todayData?.next_match ? (
+                <p className="text-slate-300">
+                  Próximo:{" "}
+                  <span className="font-semibold text-white">
+                    {todayData.next_match.home_team} × {todayData.next_match.away_team}
+                  </span>
+                  {todayData.next_match.kickoff_br
+                    ? ` · ${todayData.next_match.kickoff_br}`
+                    : ""}
+                  {todayData.next_match.eta_label
+                    ? ` (${todayData.next_match.eta_label})`
+                    : ""}
+                </p>
+              ) : (
+                <p className="text-xs text-slate-600">
+                  Sem próximo confronto no calendário ainda.
+                </p>
+              )}
             </div>
           ) : (
             <>

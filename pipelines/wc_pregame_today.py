@@ -179,3 +179,74 @@ def match_status(ko: datetime, match: dict[str, Any], *, now: datetime | None = 
     if _kickoff_finished(ko, now):
         return "finished"
     return "upcoming"
+
+
+def format_kickoff_br(ko: datetime) -> str:
+    """Kickoff em horário de Brasília (ex.: qua 15/07 16:00)."""
+    local = ko.astimezone(ZoneInfo(DEFAULT_PREGAME_TZ))
+    weekdays = ("seg", "ter", "qua", "qui", "sex", "sáb", "dom")
+    wd = weekdays[local.weekday()]
+    return f"{wd} {local.strftime('%d/%m %H:%M')}"
+
+
+def find_next_upcoming_match(
+    schedule: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> tuple[datetime, dict[str, Any]] | None:
+    """Próximo jogo ainda sem placar com kickoff no futuro (grupos ou mata-mata)."""
+    now = now or datetime.now(UTC)
+    candidates: list[tuple[datetime, dict[str, Any]]] = []
+    for match in schedule.get("matches", []):
+        if _is_played(match):
+            continue
+        phase = str(match.get("phase") or "").lower()
+        if phase in {"repescagem", "playoff", "play-off", "play-offs"}:
+            continue
+        home = str(match.get("home_team") or "").strip()
+        away = str(match.get("away_team") or "").strip()
+        if not home or not away:
+            continue
+        ko_raw = match.get("kickoff")
+        if not ko_raw:
+            continue
+        ko = _parse_kickoff(str(ko_raw))
+        if ko is None or ko < now:
+            continue
+        candidates.append((ko, match))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: item[0])
+    return candidates[0]
+
+
+def serialize_next_match(
+    ko: datetime,
+    match: dict[str, Any],
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Payload compacto do próximo confronto para a tela de pré-jogo."""
+    now = now or datetime.now(UTC)
+    delta = ko - now
+    hours = max(0, int(delta.total_seconds() // 3600))
+    days = hours // 24
+    rem_h = hours % 24
+    if days >= 1:
+        eta = f"em {days}d {rem_h}h" if rem_h else f"em {days}d"
+    elif hours >= 1:
+        eta = f"em {hours}h"
+    else:
+        mins = max(1, int(delta.total_seconds() // 60))
+        eta = f"em {mins} min"
+    return {
+        "id": match.get("id"),
+        "home_team": match["home_team"],
+        "away_team": match["away_team"],
+        "phase": match.get("phase"),
+        "kickoff": match.get("kickoff"),
+        "kickoff_br": format_kickoff_br(ko),
+        "eta_label": eta,
+        "venue": match.get("venue"),
+        "city": match.get("city"),
+    }

@@ -1612,7 +1612,7 @@
       "fifa_id_match": "400021541",
       "home_score": 0,
       "away_score": 2,
-      "result_source": "fifa",
+      "result_source": "superbet",
       "result_synced_at": "2026-07-15T16:27:31.866744+00:00"
     },
     {
@@ -1627,26 +1627,7 @@
       "city": null,
       "fifa_stage": "Oitavas de final",
       "fifa_id_match": "400021529"
-    },
-    {
-      "id": "semifinal-inglaterra-argentina",
-      "home_team": "Inglaterra",
-      "away_team": "Argentina",
-      "group": null,
-      "round": 7,
-      "phase": "semifinal",
-      "kickoff": "2026-07-15T19:00:00+00:00",
-      "venue": null,
-      "city": null,
-      "fifa_stage": "Semifinals",
-      "fifa_id_match": "400021540",
-      "sofascore_event_id": 12812996,
-      "schedule_source": "sofascore",
-      "home_score": 1,
-      "away_score": 2,
-      "result_source": "superbet",
-      "result_synced_at": "2026-07-15T21:05:21.734964+00:00"
     }
   ],
-  "results_synced_at": "2026-07-15T21:05:21.734964+00:00"
+  "results_synced_at": "2026-07-15T16:27:31.866744+00:00"
 }

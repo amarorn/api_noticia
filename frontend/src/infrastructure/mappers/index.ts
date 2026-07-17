@@ -2518,6 +2518,124 @@ export function mapBasketSuperbetLiveAdvice(
   };
 }
 
+export const mapBaseballSuperbetLiveFeed = mapBasketSuperbetLiveFeed;
+
+interface ApiBaseballSuperbetLiveAdvice {
+  home_team: string;
+  away_team: string;
+  inning: number;
+  minute: number;
+  current_score: string | null;
+  period_label: string | null;
+  status: string | null;
+  baseball_innings?: Array<{ num: number; home: number; away: number }>;
+  is_finished: boolean;
+  is_live: boolean;
+  superbet_stale: boolean;
+  superbet_event_id: number;
+  sport_id: number | null;
+  captured_at: string;
+  h2h_odds: Record<string, number>;
+  h2h_implied: Record<string, number>;
+  spread_odds: Record<string, Record<string, number>>;
+  spread_implied: Record<string, Record<string, number>>;
+  total_runs_odds: Record<string, Record<string, number>>;
+  total_runs_implied: Record<string, Record<string, number>>;
+  inplay_summary: {
+    prob_home_win?: number | null;
+    prob_away_win?: number | null;
+    expected_final_home?: number | null;
+    expected_final_away?: number | null;
+    expected_total?: number | null;
+    remaining_innings?: number | null;
+    moneyline_probs?: Record<string, number>;
+    spread_probs?: Record<string, number>;
+    total_probs?: Record<string, number>;
+    rpi_home?: number | null;
+    rpi_away?: number | null;
+    rpi_home_prior?: number | null;
+    rpi_away_prior?: number | null;
+    match_innings?: number | null;
+    n_simulations?: number | null;
+    market_total_line?: number | null;
+    market_spread_line?: number | null;
+  };
+  aportes: ApiBasketSuperbetLiveAdvice["aportes"];
+  confidence: { score: number; label: string; max_edge_pp: number } | null;
+}
+
+export function mapBaseballSuperbetLiveAdvice(
+  raw: ApiBaseballSuperbetLiveAdvice,
+): import("@/domain/entities").BaseballSuperbetLiveAdvice {
+  const summary = raw.inplay_summary ?? {};
+  return {
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    inning: raw.inning,
+    minute: raw.minute,
+    currentScore: raw.current_score,
+    periodLabel: raw.period_label,
+    status: raw.status,
+    baseballInnings: (raw.baseball_innings ?? []).map((p) => ({
+      num: p.num,
+      home: p.home,
+      away: p.away,
+    })),
+    isFinished: raw.is_finished,
+    isLive: raw.is_live,
+    superbetStale: raw.superbet_stale,
+    superbetEventId: raw.superbet_event_id,
+    sportId: raw.sport_id ?? null,
+    capturedAt: raw.captured_at ?? null,
+    h2hOdds: raw.h2h_odds ?? {},
+    h2hImplied: raw.h2h_implied ?? {},
+    spreadOdds: raw.spread_odds ?? {},
+    spreadImplied: raw.spread_implied ?? {},
+    totalRunsOdds: raw.total_runs_odds ?? {},
+    totalRunsImplied: raw.total_runs_implied ?? {},
+    inplaySummary: {
+      probHomeWin: summary.prob_home_win ?? null,
+      probAwayWin: summary.prob_away_win ?? null,
+      expectedFinalHome: summary.expected_final_home ?? null,
+      expectedFinalAway: summary.expected_final_away ?? null,
+      expectedTotal: summary.expected_total ?? null,
+      remainingInnings: summary.remaining_innings ?? null,
+      moneylineProbs: summary.moneyline_probs ?? {},
+      spreadProbs: summary.spread_probs ?? {},
+      totalProbs: summary.total_probs ?? {},
+      rpiHome: summary.rpi_home ?? null,
+      rpiAway: summary.rpi_away ?? null,
+      rpiHomePrior: summary.rpi_home_prior ?? null,
+      rpiAwayPrior: summary.rpi_away_prior ?? null,
+      matchInnings: summary.match_innings ?? null,
+      nSimulations: summary.n_simulations ?? null,
+      marketTotalLine: summary.market_total_line ?? null,
+      marketSpreadLine: summary.market_spread_line ?? null,
+    },
+    aportes: (raw.aportes ?? []).map((a) => ({
+      market: a.market,
+      outcome: a.outcome,
+      label: a.label,
+      modelProb: a.model_prob,
+      marketOdd: a.market_odd,
+      impliedProb: a.implied_prob,
+      expectedValue: a.expected_value,
+      edgePp: a.edge_pp,
+      kellyQuarter: a.kelly_quarter,
+      suggestedStakePct: a.suggested_stake_pct,
+      suggestedStakeValue: a.suggested_stake_value ?? null,
+      action: a.action,
+    })),
+    confidence: raw.confidence
+      ? {
+          score: raw.confidence.score,
+          label: raw.confidence.label,
+          maxEdgePp: raw.confidence.max_edge_pp,
+        }
+      : null,
+  };
+}
+
 type ApiLiveCopilot = {
   enabled: boolean;
   available: boolean;

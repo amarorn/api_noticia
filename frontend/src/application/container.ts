@@ -38,6 +38,8 @@ import {
   SimulateWcMatchUseCase,
   GetBasketSuperbetLiveUseCase,
   GetBasketSuperbetLiveAdviceUseCase,
+  GetBaseballSuperbetLiveUseCase,
+  GetBaseballSuperbetLiveAdviceUseCase,
   GetLiveCopilotUseCase,
   PostLiveCopilotAgentUseCase,
 } from "@/application/use-cases/wcUseCases";
@@ -73,6 +75,10 @@ export const registerComboProposalUseCase = new RegisterComboProposalUseCase(wcR
 export const calculateSuperMultiplaUseCase = new CalculateSuperMultiplaUseCase(wcRepository);
 export const getBasketSuperbetLiveUseCase = new GetBasketSuperbetLiveUseCase(wcRepository);
 export const getBasketSuperbetLiveAdviceUseCase = new GetBasketSuperbetLiveAdviceUseCase(
+  wcRepository,
+);
+export const getBaseballSuperbetLiveUseCase = new GetBaseballSuperbetLiveUseCase(wcRepository);
+export const getBaseballSuperbetLiveAdviceUseCase = new GetBaseballSuperbetLiveAdviceUseCase(
   wcRepository,
 );
 export const getLiveCopilotUseCase = new GetLiveCopilotUseCase(wcRepository);

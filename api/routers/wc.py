@@ -997,7 +997,12 @@ def pregame_today(
     import structlog
     from zoneinfo import ZoneInfo
 
-    from pipelines.wc_pregame_today import build_pregame_window, match_status
+    from pipelines.wc_pregame_today import (
+        build_pregame_window,
+        find_next_upcoming_match,
+        match_status,
+        serialize_next_match,
+    )
 
     logger = structlog.get_logger()
 
@@ -1016,6 +1021,12 @@ def pregame_today(
         days_back=days_back,
         today_only=today_only,
     )
+
+    next_match_payload = None
+    if not window_matches:
+        nxt = find_next_upcoming_match(schedule, now=now)
+        if nxt is not None:
+            next_match_payload = serialize_next_match(nxt[0], nxt[1], now=now)
 
     results = []
     for ko, m in window_matches:
@@ -1074,6 +1085,7 @@ def pregame_today(
         **meta,
         "total": len(results),
         "matches": results,
+        "next_match": next_match_payload,
     }
 
 

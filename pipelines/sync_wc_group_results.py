@@ -96,10 +96,16 @@ def save_round_file(path: Path, data: dict[str, Any], *, backup: bool = True) ->
 
 
 def _schedule_index(round_data: dict[str, Any]) -> dict[tuple[str, str], dict]:
-    """Mapa (mandante, visitante) normalizado → objeto match do JSON."""
+    """Mapa (mandante, visitante) normalizado → objeto match do JSON.
+
+    Inclui fase de grupos e mata-mata (oitavas, quartas, semis, final).
+    Exclui apenas repescagem / play-offs de classificação.
+    """
     index: dict[tuple[str, str], dict] = {}
+    skip_phases = {"repescagem", "playoff", "play-off", "play-offs"}
     for match in round_data.get("matches", []):
-        if match.get("phase", round_data.get("phase", "group")) != "group":
+        phase = str(match.get("phase") or round_data.get("phase") or "group").lower()
+        if phase in skip_phases:
             continue
         home = normalize_national_team(match["home_team"])
         away = normalize_national_team(match["away_team"])
@@ -412,7 +418,7 @@ def sync_single_wc_result(
     *,
     round_file: Path = DEFAULT_ROUND_FILE,
 ) -> dict[str, Any]:
-    """Atualiza placar de um jogo da fase de grupos em ``wc_2026.json``."""
+    """Atualiza placar de um jogo (grupos ou mata-mata) em ``wc_2026.json``."""
     if not round_file.exists():
         return {"updated": False, "reason": "round_file_missing"}
 

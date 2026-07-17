@@ -25,6 +25,7 @@ class SuperbetInPlayState:
     period_label: str | None
     status: str | None
     basket_periods: list[dict[str, int]] = field(default_factory=list)
+    baseball_innings: list[dict[str, int]] = field(default_factory=list)
 
 
 @dataclass
@@ -113,6 +114,8 @@ class SuperbetEventSnapshot:
     spread_implied: dict[str, dict[str, float]] = field(default_factory=dict)
     total_points_odds: dict[str, dict[str, float]] = field(default_factory=dict)
     total_points_implied: dict[str, dict[str, float]] = field(default_factory=dict)
+    sport_id: int | None = None
+    inferred_total_runs: float | None = None  # prior quando não há total de jogo
     raw_market_count: int = 0
     captured_at: str = ""
 
@@ -125,6 +128,8 @@ class SuperbetEventSnapshot:
             "utc_date": self.utc_date,
             "betradar_id": self.betradar_id,
             "is_live": self.is_live,
+            "sport_id": self.sport_id,
+            "inferred_total_runs": self.inferred_total_runs,
             "inplay": None if self.inplay is None else {
                 "home_score": self.inplay.home_score,
                 "away_score": self.inplay.away_score,
@@ -139,6 +144,7 @@ class SuperbetEventSnapshot:
                 "period_label": self.inplay.period_label,
                 "status": self.inplay.status,
                 "basket_periods": self.inplay.basket_periods,
+                "baseball_innings": self.inplay.baseball_innings,
             },
             "h2h_odds": self.h2h_odds,
             "h2h_implied": self.h2h_implied,
@@ -373,7 +379,32 @@ def _extract_combo_yes_no(market: dict, key: str) -> dict[str, float] | None:
 
 
 _BASKET_SPORT_IDS = {4}  # Superbet BR: sport_id 4 = Basquete (virtual/simulado, quartos de 10min)
+_BASEBALL_SPORT_IDS = {20}  # Superbet BR: sport_id 20 = Beisebol (KBO/MLB/NPB)
 _BASKET_QUARTER_MINUTES = 10
+_BASEBALL_INNING_LABEL_RE = re.compile(r"^(\d+)\s*I$", re.I)
+
+
+def _parse_baseball_inning(stats: dict, meta: dict) -> tuple[int, list[dict[str, int]]]:
+    """Extrai entrada atual e placar por entrada a partir do feed Superbet."""
+    periods = stats.get("periods") or []
+    innings = [
+        {
+            "num": _safe_int(period.get("num")),
+            "home": _safe_int(period.get("home_team_score")),
+            "away": _safe_int(period.get("away_team_score")),
+        }
+        for period in periods
+        if period.get("num") is not None
+    ]
+    label = str(meta.get("event_status_label") or meta.get("period_status") or "").strip()
+    match = _BASEBALL_INNING_LABEL_RE.match(label)
+    if match:
+        inning = max(1, int(match.group(1)))
+    elif innings:
+        inning = max(1, max(row["num"] for row in innings))
+    else:
+        inning = 1
+    return inning, innings
 
 
 def _parse_basket_elapsed_minute(stats: dict, meta: dict) -> int:
@@ -411,6 +442,7 @@ def _parse_inplay(ev: dict) -> SuperbetInPlayState | None:
             ht_away = _safe_int(period.get("away_team_score"))
     status = str(meta.get("status") or "")
     basket_periods: list[dict[str, int]] = []
+    baseball_innings: list[dict[str, int]] = []
     if sport_id in _BASKET_SPORT_IDS:
         minute = _parse_basket_elapsed_minute(stats, meta)
         basket_periods = [
@@ -422,6 +454,9 @@ def _parse_inplay(ev: dict) -> SuperbetInPlayState | None:
             for period in periods
             if period.get("num") is not None
         ]
+    elif sport_id in _BASEBALL_SPORT_IDS:
+        # minute = entrada atual (ex.: 5I → 5) para reutilizar o campo no advice/UI
+        minute, baseball_innings = _parse_baseball_inning(stats, meta)
     else:
         minute = _parse_minute(stats.get("minutes"), stats.get("stoppage_time"))
         if minute <= 0 and status in {"FINISHED", "ENDED", "CLOSED"}:
@@ -437,6 +472,7 @@ def _parse_inplay(ev: dict) -> SuperbetInPlayState | None:
         home_yellow_cards=_safe_int(stats.get("home_team_yellow_cards")),
         away_yellow_cards=_safe_int(stats.get("away_team_yellow_cards")),
         basket_periods=basket_periods,
+        baseball_innings=baseball_innings,
         ht_home_score=ht_home,
         ht_away_score=ht_away,
         period_label=meta.get("event_status_label"),
@@ -823,6 +859,8 @@ _BASKET_SPREAD_NAMES = (
 _BASKET_TOTAL_NAMES = (
     "Total de Pontos",
     "Total Points",
+    "Total de Corridas",
+    "Total Runs",
 )
 
 
@@ -848,7 +886,15 @@ def _is_basket_spread_market(name: str) -> bool:
 
 
 def _is_basket_total_market(name: str) -> bool:
-    return _is_basket_full_match_market(name, _BASKET_TOTAL_NAMES)
+    if not _is_basket_full_match_market(name, _BASKET_TOTAL_NAMES):
+        return False
+    # Evita totais por entrada/time ("Entrada X - Total…", "Time - Total…")
+    low = name.strip().lower()
+    if low.startswith("entrada"):
+        return False
+    if " - total" in low and not low.startswith("total"):
+        return False
+    return True
 
 
 def _extract_basket_moneyline(
@@ -943,6 +989,78 @@ def _extract_basket_total_points(markets: list[dict]) -> dict[str, dict[str, flo
     return out
 
 
+def _balanced_total_line(sides: dict[str, float]) -> float | None:
+    """Escolhe a linha com over/under mais equilibrados (implied)."""
+    over = sides.get("over")
+    under = sides.get("under")
+    if over is None or under is None or over <= 1 or under <= 1:
+        return None
+    return abs((1.0 / over) - (1.0 / under))
+
+
+def _infer_game_total_line_from_team_runs(
+    markets: list[dict],
+    home_team: str,
+    away_team: str,
+) -> float | None:
+    """Infere total de jogo a partir de 'Time - Total de Corridas' (soma das linhas)."""
+    home_l = home_team.lower()
+    away_l = away_team.lower()
+    best_home: tuple[float, float] | None = None  # (balance, line)
+    best_away: tuple[float, float] | None = None
+
+    for market in markets:
+        name = str(market.get("name") or "")
+        low = name.lower()
+        if "total de corridas" not in low and "total runs" not in low:
+            continue
+        if low.startswith("total de corridas") or low.startswith("total runs"):
+            continue
+        if low.startswith("entrada"):
+            continue
+
+        is_home = bool(home_l and home_l in low)
+        is_away = bool(away_l and away_l in low)
+        if not is_home and not is_away:
+            continue
+
+        by_line: dict[str, dict[str, float]] = {}
+        for odd in market.get("odds") or []:
+            if not isinstance(odd, dict) or not _is_active_odd(odd):
+                continue
+            md = odd.get("metadata") or {}
+            line = _parse_handicap_line_value(
+                str(md.get("special_bet_value") or md.get("info") or md.get("name") or "")
+            )
+            if line is None:
+                continue
+            label = str(md.get("name") or "").lower()
+            code = str(md.get("code") or "").strip()
+            outcome: str | None = None
+            if code == "+" or label.startswith(("over", "mais", "acima")):
+                outcome = "over"
+            elif code == "-" or label.startswith(("under", "menos", "abaixo")):
+                outcome = "under"
+            if outcome is None:
+                continue
+            by_line.setdefault(f"{line:g}", {})[outcome] = float(odd["price"])
+
+        for line_str, sides in by_line.items():
+            bal = _balanced_total_line(sides)
+            if bal is None:
+                continue
+            line_val = float(line_str)
+            candidate = (bal, line_val)
+            if is_home and (best_home is None or candidate[0] < best_home[0]):
+                best_home = candidate
+            if is_away and (best_away is None or candidate[0] < best_away[0]):
+                best_away = candidate
+
+    if best_home is None or best_away is None:
+        return None
+    return round(best_home[1] + best_away[1], 1)
+
+
 def parse_live_event_summary(ev: dict) -> SuperbetLiveEventSummary | None:
     fixture = ev.get("fixture") or {}
     sport_id = _safe_int(fixture.get("sport_id"), 0)
@@ -953,6 +1071,13 @@ def parse_live_event_summary(ev: dict) -> SuperbetLiveEventSummary | None:
     inplay = _parse_inplay(ev)
     meta = ev.get("inplay_stats_metadata") or {}
     markets = ev.get("markets") or []
+
+    h2h_odds = _extract_h2h_odds(markets)
+    # Basquete/beisebol usam moneyline (sem empate) — preenche h2h para a lista ao vivo
+    if not h2h_odds:
+        ml = _extract_basket_moneyline(markets, home_team, away_team)
+        if ml:
+            h2h_odds = ml
 
     return SuperbetLiveEventSummary(
         event_id=int(ev.get("event_id") or fixture.get("event_id") or 0),
@@ -969,7 +1094,7 @@ def parse_live_event_summary(ev: dict) -> SuperbetLiveEventSummary | None:
         period_label=inplay.period_label if inplay else meta.get("event_status_label"),
         status=inplay.status if inplay else meta.get("status"),
         market_count=_safe_int(meta.get("market_count"), len(markets)),
-        h2h_odds=_extract_h2h_odds(markets),
+        h2h_odds=h2h_odds,
         captured_at=datetime.now(timezone.utc).isoformat(),
     )
 
@@ -1118,10 +1243,16 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
     handicap_odds = _extract_handicap_odds(markets, home_team, away_team)
     handicap_implied = _implied_from_prices(handicap_odds) if handicap_odds else {}
 
-    # Basquete
+    # Basquete / beisebol
     moneyline_odds = _extract_basket_moneyline(markets, home_team, away_team)
     spread_odds = _extract_basket_spread(markets, home_team, away_team)
     total_points_odds = _extract_basket_total_points(markets)
+    sport_id = _safe_int(fixture.get("sport_id"), 0) or None
+    inferred_total_runs: float | None = None
+    if not total_points_odds and sport_id in _BASEBALL_SPORT_IDS:
+        inferred_total_runs = _infer_game_total_line_from_team_runs(
+            markets, home_team, away_team
+        )
     moneyline_implied = _implied_from_prices(moneyline_odds) if moneyline_odds else {}
     spread_implied = {
         line: _implied_from_prices(prices)
@@ -1167,6 +1298,8 @@ def parse_superbet_event(ev: dict) -> SuperbetEventSnapshot:
         spread_implied=spread_implied,
         total_points_odds=total_points_odds,
         total_points_implied=total_points_implied,
+        sport_id=sport_id,
+        inferred_total_runs=inferred_total_runs,
         raw_market_count=len(markets),
         captured_at=datetime.now(timezone.utc).isoformat(),
     )

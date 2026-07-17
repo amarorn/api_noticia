@@ -6,14 +6,15 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-_WINNER_KEYS = ("winner", "result", "winSpot", "winspot", "outcome", "winningSpot")
+_WINNER_KEYS = ("winner", "result", "winSpot", "winspot", "outcome", "winningSpot", "winningSpots")
 _SCORE_KEYS = (
     ("playerScore", "bankerScore"),
     ("player_score", "banker_score"),
     ("playerTotal", "bankerTotal"),
 )
+_DICE_KEYS = (("playerDice", "bankerDice"), ("player_dice", "banker_dice"))
 _ROUND_ID_KEYS = ("gameId", "game_id", "id", "roundId", "round_id", "gameNumber")
-_HISTORY_KEYS = ("history", "results", "pastResults", "recentResults", "items")
+_HISTORY_KEYS = ("history", "results", "pastResults", "recentResults", "items", "entries")
 
 
 @dataclass(frozen=True)
@@ -49,9 +50,64 @@ def normalize_bacbo_winner(value: Any) -> str | None:
     return None
 
 
-def extract_table_id_from_ws_url(url: str) -> str | None:
-    match = re.search(r"/game/([^/?]+)/socket", url or "", re.I)
+def extract_instance_from_ws_url(url: str) -> str | None:
+    match = re.search(r"[?&]instance=([^&]+)", url or "", re.I)
     return match.group(1) if match else None
+
+
+def extract_ws_message_types(raw_messages: list[str]) -> dict[str, int]:
+    """Conta tipos de mensagem WS (diagnóstico quando parse não extrai rodadas)."""
+    counts: dict[str, int] = {}
+    for raw in raw_messages:
+        text = (raw or "").strip()
+        if not text or text[0] not in "{[":
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            counts["<invalid_json>"] = counts.get("<invalid_json>", 0) + 1
+            continue
+        items = payload if isinstance(payload, list) else [payload]
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            msg_type = str(item.get("type") or item.get("event") or "<sem_tipo>")
+            counts[msg_type] = counts.get(msg_type, 0) + 1
+    return counts
+
+
+def _sum_dice(values: Any) -> int | None:
+    if not isinstance(values, list) or not values:
+        return None
+    total = 0
+    for item in values:
+        if isinstance(item, dict):
+            val = _as_int(item.get("value") or item.get("face") or item.get("dice"))
+        else:
+            val = _as_int(item)
+        if val is None:
+            return None
+        total += val
+    return total
+
+
+def _winner_from_node(node: dict[str, Any]) -> str | None:
+    for key in _WINNER_KEYS:
+        raw = node.get(key)
+        if raw is None:
+            continue
+        if key == "winningSpots" and isinstance(raw, list) and raw:
+            winner = normalize_bacbo_winner(raw[0])
+            if winner:
+                return winner
+        if key == "result" and isinstance(raw, dict):
+            nested = _winner_from_node(raw)
+            if nested:
+                return nested
+        winner = normalize_bacbo_winner(raw)
+        if winner:
+            return winner
+    return None
 
 
 def _as_int(value: Any) -> int | None:
@@ -69,6 +125,11 @@ def _scores_from_node(node: dict[str, Any]) -> tuple[int | None, int | None]:
         bs = _as_int(node.get(bk))
         if ps is not None or bs is not None:
             return ps, bs
+    for pk, bk in _DICE_KEYS:
+        ps = _sum_dice(node.get(pk))
+        bs = _sum_dice(node.get(bk))
+        if ps is not None or bs is not None:
+            return ps, bs
     dice = node.get("dice") or node.get("dices")
     if isinstance(dice, dict):
         ps = _as_int(dice.get("player") or dice.get("playerTotal"))
@@ -78,15 +139,18 @@ def _scores_from_node(node: dict[str, Any]) -> tuple[int | None, int | None]:
     return None, None
 
 
+def extract_table_id_from_ws_url(url: str) -> str | None:
+    match = re.search(r"/game/([^/?]+)/socket", url or "", re.I)
+    return match.group(1) if match else None
+
+
 def _round_id_from_node(node: dict[str, Any], fallback: str) -> str:
     for key in _ROUND_ID_KEYS:
         val = node.get(key)
         if val is not None and str(val).strip():
             return str(val)
     ps, bs = _scores_from_node(node)
-    winner = normalize_bacbo_winner(
-        next((node.get(k) for k in _WINNER_KEYS if node.get(k) is not None), None)
-    )
+    winner = _winner_from_node(node)
     parts = [fallback, winner or "?", str(ps), str(bs)]
     return "|".join(parts)
 
@@ -98,15 +162,10 @@ def _round_from_node(
     msg_type: str | None,
     fallback_idx: int,
 ) -> BacboRoundRecord | None:
-    winner_raw = None
-    for key in _WINNER_KEYS:
-        if node.get(key) is not None:
-            winner_raw = node.get(key)
-            break
-    winner = normalize_bacbo_winner(winner_raw)
+    ps, bs = _scores_from_node(node)
+    winner = _winner_from_node(node)
     if winner is None:
         return None
-    ps, bs = _scores_from_node(node)
     round_id = _round_id_from_node(node, f"{table_id}-{fallback_idx}")
     return BacboRoundRecord(
         round_id=round_id,
@@ -143,7 +202,7 @@ def _walk_for_rounds(
     if not isinstance(node, dict):
         return
 
-    winner_present = any(node.get(k) is not None for k in _WINNER_KEYS)
+    winner_present = _winner_from_node(node) is not None
     if winner_present:
         rec = _round_from_node(node, table_id=table_id, msg_type=msg_type, fallback_idx=len(out))
         if rec and rec.round_id not in seen:

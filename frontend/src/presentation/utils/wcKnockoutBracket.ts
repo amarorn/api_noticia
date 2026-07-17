@@ -18,6 +18,13 @@ export interface BracketMatchNode {
   kickoff: string | null;
   placeholder: boolean;
   sourceMatchIds: string[];
+  prediction: "1" | "X" | "2" | null;
+  confidence: number | null;
+  probHome: number | null;
+  probDraw: number | null;
+  probAway: number | null;
+  projectedWinner: string | null;
+  analysisContext: string | null;
 }
 
 const PHASE_ORDER: { phase: string; label: string; slots: number }[] = [
@@ -118,6 +125,54 @@ function buildPlaceholderNode(
     kickoff: null,
     placeholder: true,
     sourceMatchIds,
+    prediction: null,
+    confidence: null,
+    probHome: null,
+    probDraw: null,
+    probAway: null,
+    projectedWinner: null,
+    analysisContext: null,
+  };
+}
+
+function projectionForMatch(
+  match: WcScheduleMatch,
+  predictionLookup: Map<string, WcPrediction>,
+): Pick<
+  BracketMatchNode,
+  | "prediction"
+  | "confidence"
+  | "probHome"
+  | "probDraw"
+  | "probAway"
+  | "projectedWinner"
+  | "analysisContext"
+> {
+  const key = `${match.homeTeam}::${match.awayTeam}`;
+  const detailed = predictionLookup.get(key);
+  const prediction = detailed?.prediction ?? match.prediction ?? null;
+  const probHome = detailed?.probHome ?? match.probHome ?? null;
+  const probDraw = detailed?.probDraw ?? match.probDraw ?? null;
+  const probAway = detailed?.probAway ?? match.probAway ?? null;
+  const confidence = detailed?.confidence ?? match.confidence ?? null;
+
+  let projectedWinner: string | null = null;
+  if (prediction === "1") projectedWinner = match.homeTeam;
+  if (prediction === "2") projectedWinner = match.awayTeam;
+  if (prediction === "X") {
+    // No mata-mata o empate em 90 minutos não classifica ninguém. Para a chave,
+    // usa-se a maior chance de vitória entre as duas seleções e o card mantém P(X).
+    projectedWinner = (probHome ?? 0) >= (probAway ?? 0) ? match.homeTeam : match.awayTeam;
+  }
+
+  return {
+    prediction,
+    confidence,
+    probHome,
+    probDraw,
+    probAway,
+    projectedWinner,
+    analysisContext: detailed?.context ?? null,
   };
 }
 
@@ -129,6 +184,16 @@ export function advanceFromMatch(
   if (!node?.played || !node.winner) return TBD;
   if (eliminated.has(node.winner)) return TBD;
   return node.winner;
+}
+
+/** Avança resultado oficial quando existe; caso contrário, usa projeção identificada. */
+export function projectFromMatch(
+  node: BracketMatchNode | undefined,
+  eliminated: ReadonlySet<string>,
+): string {
+  const team = node?.winner ?? node?.projectedWinner;
+  if (!team || eliminated.has(team)) return TBD;
+  return team;
 }
 
 function collectEliminated(nodes: BracketMatchNode[], eliminated: Set<string>): void {
@@ -190,6 +255,7 @@ export function buildKnockoutBracket(
     const scheduled = knockoutRaw.filter((m) => m.phase === phaseDef.phase).sort(sortByKickoff);
     const nodes: BracketMatchNode[] = scheduled.map((m) => {
       const result = resolveMatchResult(m, predictionLookup);
+      const projection = projectionForMatch(m, predictionLookup);
       return {
         id: m.matchId,
         homeTeam: m.homeTeam,
@@ -202,6 +268,8 @@ export function buildKnockoutBracket(
         kickoff: m.kickoff,
         placeholder: false,
         sourceMatchIds: [],
+        ...projection,
+        projectedWinner: result.winner ?? projection.projectedWinner,
       };
     });
 
@@ -214,17 +282,17 @@ export function buildKnockoutBracket(
       for (let i = nodes.length; i < expected; i++) {
         const left = prev[i * 2];
         const right = prev[i * 2 + 1];
-        const homeLabel = advanceFromMatch(left, eliminated);
-        const awayLabel = advanceFromMatch(right, eliminated);
+        const homeLabel = projectFromMatch(left, eliminated);
+        const awayLabel = projectFromMatch(right, eliminated);
         const sources = [left?.id, right?.id].filter(Boolean) as string[];
-        nodes.push(
-          buildPlaceholderNode(
+        const placeholder = buildPlaceholderNode(
             `placeholder-${phaseDef.phase}-${i}`,
             homeLabel,
             awayLabel,
             sources,
-          ),
-        );
+          );
+        placeholder.projectedWinner = null;
+        nodes.push(placeholder);
       }
     }
 

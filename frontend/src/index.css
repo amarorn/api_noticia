@@ -1099,6 +1099,10 @@
     @apply opacity-55;
   }
 
+  .wc-bracket-row.projected {
+    background: linear-gradient(90deg, rgba(0, 224, 255, 0.2) 0%, rgba(0, 224, 255, 0.04) 100%);
+  }
+
   .wc-bracket-row-tbd {
     @apply block h-5 w-5 shrink-0 rounded-sm border border-dashed border-white/25 bg-white/[0.05];
   }
@@ -1115,6 +1119,10 @@
   .wc-bracket-row-badge {
     @apply flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-neon-green text-[8px] font-bold text-black;
     box-shadow: 0 0 10px rgba(0, 245, 160, 0.85);
+  }
+
+  .wc-bracket-row-projection {
+    @apply flex h-4 shrink-0 items-center justify-center rounded border border-neon-blue/50 bg-neon-blue/15 px-1 font-mono text-[7px] font-black text-neon-blue;
   }
 
   .wc-bracket-center {
@@ -1180,6 +1188,87 @@
   .wc-bracket-legend {
     @apply relative z-[2] border-t border-white/[0.06] px-4 py-3 text-center text-[10px] text-slate-500;
     background: rgba(0, 0, 0, 0.25);
+  }
+
+  .wc-bracket-analysis {
+    @apply relative z-[2] border-t border-white/[0.08] px-4 py-5 sm:px-6;
+    background: rgba(2, 8, 14, 0.9);
+  }
+
+  .wc-bracket-analysis-title {
+    @apply mb-4 flex flex-wrap items-end justify-between gap-2;
+  }
+
+  .wc-bracket-analysis-title span {
+    @apply text-[10px] font-black uppercase tracking-[0.18em] text-neon-blue;
+  }
+
+  .wc-bracket-analysis-title h2 {
+    @apply mt-1 font-display text-lg font-black text-white sm:text-xl;
+  }
+
+  .wc-bracket-analysis-title small {
+    @apply font-mono text-[10px] text-slate-500;
+  }
+
+  .wc-bracket-analysis-grid {
+    @apply grid gap-3 md:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .wc-bracket-analysis-card {
+    @apply rounded-xl border border-white/10 bg-white/[0.035] p-4;
+  }
+
+  .wc-bracket-analysis-head {
+    @apply flex items-center justify-between gap-2 text-[9px] font-black uppercase tracking-wider text-slate-500;
+  }
+
+  .wc-bracket-analysis-head strong {
+    @apply text-neon-green;
+  }
+
+  .wc-bracket-analysis-card h3 {
+    @apply mt-3 text-sm font-black text-white;
+  }
+
+  .wc-bracket-analysis-card h3 span {
+    @apply mx-1 text-slate-600;
+  }
+
+  .wc-bracket-analysis-pick {
+    @apply mt-2 text-xs text-slate-300;
+  }
+
+  .wc-bracket-analysis-pick strong {
+    @apply text-neon-green;
+  }
+
+  .wc-bracket-analysis-pick.is-muted {
+    @apply text-slate-600;
+  }
+
+  .wc-bracket-probabilities {
+    @apply mt-3 grid grid-cols-3 gap-1;
+  }
+
+  .wc-bracket-probabilities span {
+    @apply min-w-0 rounded-lg bg-black/30 px-2 py-1.5 text-center;
+  }
+
+  .wc-bracket-probabilities small {
+    @apply block truncate text-[8px] uppercase text-slate-500;
+  }
+
+  .wc-bracket-probabilities b {
+    @apply mt-0.5 block font-mono text-[11px] text-white;
+  }
+
+  .wc-bracket-analysis-context {
+    @apply mt-3 line-clamp-3 text-[10px] leading-relaxed text-slate-500;
+  }
+
+  .wc-bracket-analysis-link {
+    @apply mt-3 inline-flex text-[10px] font-bold text-neon-blue transition-colors hover:text-white;
   }
 
   .live-kpi-icon {

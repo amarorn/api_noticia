@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   getValueBetsUseCase,
   getWcRoundUseCase,
   getWcScheduleUseCase,
+  predictWcMatchUseCase,
 } from "@/application/container";
 import type { WcPrediction } from "@/domain/entities";
 import { ApiError } from "@/infrastructure/api/client";
@@ -84,6 +85,42 @@ export function DashboardPage() {
     }
     return merged;
   }, [round1Query.data, round2Query.data, round3Query.data]);
+
+  const knockoutPredictionTargets = useMemo(() => {
+    const phases = new Set(["quarterfinal", "semifinal", "final"]);
+    return (scheduleQuery.data?.matches ?? []).filter(
+      (match) =>
+        phases.has(match.phase) &&
+        match.played !== true &&
+        match.homeTeam !== "A definir" &&
+        match.awayTeam !== "A definir",
+    );
+  }, [scheduleQuery.data]);
+
+  const knockoutPredictionQueries = useQueries({
+    queries: knockoutPredictionTargets.map((match) => ({
+      queryKey: ["wc-knockout-prediction", match.matchId, match.homeTeam, match.awayTeam],
+      queryFn: () =>
+        predictWcMatchUseCase.execute({
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
+          phase: match.phase,
+        }),
+      enabled: dashboardView === "bracket",
+      staleTime: 30 * 60_000,
+      retry: 1,
+    })),
+  });
+
+  const knockoutPredictions = useMemo(
+    () => knockoutPredictionQueries.flatMap((query) => (query.data ? [query.data] : [])),
+    [knockoutPredictionQueries],
+  );
+
+  const bracketPredictions = useMemo(
+    () => [...allPredictions, ...knockoutPredictions],
+    [allPredictions, knockoutPredictions],
+  );
 
   const currentPredictions = useMemo(() => {
     if (activeRound === "all") return allPredictions;
@@ -226,8 +263,9 @@ export function DashboardPage() {
         ) : (
           <WcKnockoutBracket
             matches={scheduleQuery.data?.matches ?? []}
-            predictions={allPredictions}
+            predictions={bracketPredictions}
             resultsSyncedAt={scheduleQuery.data?.resultsSyncedAt}
+            analysisLoading={knockoutPredictionQueries.some((query) => query.isPending)}
           />
         )
       ) : (

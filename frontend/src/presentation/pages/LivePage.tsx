@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getBasketSuperbetLiveUseCase, getSuperbetLiveUseCase } from "@/application/container";
-import type { BasketSuperbetLiveEvent, SuperbetLiveEvent } from "@/domain/entities";
+import { getBasketSuperbetLiveUseCase, getBaseballSuperbetLiveUseCase, getSuperbetLiveUseCase } from "@/application/container";
+import type { BaseballSuperbetLiveEvent, BasketSuperbetLiveEvent, SuperbetLiveEvent } from "@/domain/entities";
 import { useDataPulse } from "@/infrastructure/api/dataPulseStore";
 import { useAdaptivePollClock } from "@/presentation/hooks/useAdaptivePollClock";
 import { PageTransition } from "@/presentation/components/layout/PageTransition";
@@ -18,7 +18,7 @@ import { resolveAdaptiveLivePollMs } from "@/presentation/utils/adaptiveLivePoll
 import { buildInPlayLink } from "@/presentation/utils/matchSuperbetEvent";
 import { formatScheduleDate, formatScheduleTime } from "@/presentation/utils/sofascore";
 
-type SportFilter = "football" | "esport_fifa" | "basketball" | "all";
+type SportFilter = "football" | "esport_fifa" | "basketball" | "baseball" | "all";
 type TierFilter = "all" | "bettable" | "top" | "good" | "watch";
 
 function matchesTierFilter(tier: SuperbetLiveEvent["betTier"], filter: TierFilter): boolean {
@@ -67,6 +67,10 @@ function buildBasketInPlayLink(event: BasketSuperbetLiveEvent): string {
   return `/ao-vivo/basquete/${event.eventId}`;
 }
 
+function buildBaseballInPlayLink(event: BaseballSuperbetLiveEvent): string {
+  return `/ao-vivo/beisebol/${event.eventId}`;
+}
+
 function formatBasketOdds(odds: Record<string, number>): string | null {
   const parts: string[] = [];
   if (odds["1"]) parts.push(`Casa ${odds["1"].toFixed(2)}`);
@@ -79,6 +83,11 @@ function basketMinuteLabel(event: BasketSuperbetLiveEvent): string {
     return `${event.minute}' · ${event.periodLabel}`;
   }
   return event.minute > 0 ? `${event.minute}'` : "Ao vivo";
+}
+
+function baseballInningLabel(event: BaseballSuperbetLiveEvent): string {
+  if (event.periodLabel) return event.periodLabel;
+  return event.minute > 0 ? `${event.minute}I` : "Ao vivo";
 }
 
 function BasketEventRow({ event }: { event: BasketSuperbetLiveEvent }) {
@@ -123,6 +132,57 @@ function BasketEventRow({ event }: { event: BasketSuperbetLiveEvent }) {
         <Link
           to={buildBasketInPlayLink(event)}
           className="inline-flex items-center gap-1 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-300 hover:border-amber-400/40"
+        >
+          Abrir painel
+          <IconChevronRight className="h-3 w-3" />
+        </Link>
+      </td>
+    </tr>
+  );
+}
+
+function BaseballEventRow({ event }: { event: BaseballSuperbetLiveEvent }) {
+  const odds = formatBasketOdds(event.h2hOdds);
+  const schedule = formatEventSchedule(event.utcDate);
+
+  return (
+    <tr
+      key={event.eventId}
+      className="group border-b border-white/5 transition-colors hover:bg-white/[0.03]"
+    >
+      <td className="px-4 py-3.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <TeamFlag team={event.homeTeam} size={28} />
+          <span className="truncate font-medium text-white">{event.homeTeam}</span>
+          <span className="text-[11px] font-black text-slate-500">×</span>
+          <TeamFlag team={event.awayTeam} size={28} />
+          <span className="truncate font-medium text-white">{event.awayTeam}</span>
+        </div>
+        <span className="mt-1 block text-[11px] text-slate-500">
+          ID {event.eventId}
+          {event.betradarId ? ` · Betradar ${event.betradarId}` : ""}
+        </span>
+      </td>
+      <td className="hidden px-3 py-3.5 text-xs text-slate-400 whitespace-nowrap md:table-cell">
+        <span className="block">{schedule.date}</span>
+        <span className="block font-semibold text-slate-300">{schedule.time}</span>
+      </td>
+      <td className="px-4 py-3.5 font-mono text-sm text-white">
+        {event.homeScore} × {event.awayScore}
+      </td>
+      <td className="hidden px-4 py-3.5 sm:table-cell">
+        <span className="inline-flex rounded-md bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-emerald-300">
+          {baseballInningLabel(event)}
+        </span>
+      </td>
+      <td className="hidden px-4 py-3.5 text-xs text-slate-400 md:table-cell">{odds ?? "—"}</td>
+      <td className="hidden px-4 py-3.5 text-xs text-slate-400 lg:table-cell">
+        {event.marketCount > 0 ? event.marketCount : "—"}
+      </td>
+      <td className="px-4 py-3.5 text-right">
+        <Link
+          to={buildBaseballInPlayLink(event)}
+          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-300 hover:border-emerald-400/40"
         >
           Abrir painel
           <IconChevronRight className="h-3 w-3" />
@@ -352,6 +412,8 @@ export function LivePage() {
   }, [pollClock, pulse]);
 
   const isBasketball = sportFilter === "basketball";
+  const isBaseball = sportFilter === "baseball";
+  const isSpecialSport = isBasketball || isBaseball;
 
   const liveQuery = useQuery({
     queryKey: ["superbet-live", sportFilter],
@@ -361,7 +423,7 @@ export function LivePage() {
         allSports: sportFilter === "all",
         rank: true,
       }),
-    enabled: !isBasketball,
+    enabled: !isSpecialSport,
     staleTime: 15_000,
     refetchInterval: listPollMs,
   });
@@ -370,6 +432,14 @@ export function LivePage() {
     queryKey: ["basket-superbet-live"],
     queryFn: () => getBasketSuperbetLiveUseCase.execute({ allSports: false }),
     enabled: isBasketball,
+    staleTime: 15_000,
+    refetchInterval: listPollMs,
+  });
+
+  const baseballLiveQuery = useQuery({
+    queryKey: ["baseball-superbet-live"],
+    queryFn: () => getBaseballSuperbetLiveUseCase.execute({ allSports: false }),
+    enabled: isBaseball,
     staleTime: 15_000,
     refetchInterval: listPollMs,
   });
@@ -444,7 +514,12 @@ export function LivePage() {
           <FilterChip
             active={sportFilter === "basketball"}
             onClick={() => setSportFilter("basketball")}
-            label="🏀 Basquete"
+            label="Basquete"
+          />
+          <FilterChip
+            active={sportFilter === "baseball"}
+            onClick={() => setSportFilter("baseball")}
+            label="Beisebol"
           />
           <FilterChip
             active={sportFilter === "all"}
@@ -458,7 +533,7 @@ export function LivePage() {
           />
         </FilterBar>
 
-        {!isBasketball ? (
+        {!isSpecialSport ? (
           <FilterBar label="Palpite">
             <FilterChip
               active={tierFilter === "all"}
@@ -540,6 +615,57 @@ export function LivePage() {
               <tbody>
                 {(basketLiveQuery.data?.events ?? []).map((event) => (
                   <BasketEventRow key={event.eventId} event={event} />
+                ))}
+              </tbody>
+            </table>
+          </AppTableShell>
+        )
+      ) : isBaseball ? (
+        baseballLiveQuery.isLoading ? (
+          <DashboardSkeleton />
+        ) : baseballLiveQuery.isError ? (
+          <ErrorState
+            message={
+              baseballLiveQuery.error instanceof Error
+                ? baseballLiveQuery.error.message
+                : "Falha ao carregar jogos de beisebol ao vivo"
+            }
+            onRetry={() => baseballLiveQuery.refetch()}
+          />
+        ) : (baseballLiveQuery.data?.events.length ?? 0) === 0 ? (
+          <div className="app-empty-state">
+            Nenhum jogo de beisebol ao vivo no momento na Superbet.
+          </div>
+        ) : (
+          <AppTableShell
+            footer={
+              <>
+                {baseballLiveQuery.data?.events.length ?? 0} jogo(s) exibido(s) · fonte Superbet
+                {baseballLiveQuery.data?.capturedAt
+                  ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    }).format(new Date(baseballLiveQuery.data.capturedAt))}`
+                  : ""}
+              </>
+            }
+          >
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3">Confronto</th>
+                  <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
+                  <th className="px-4 py-3">Placar</th>
+                  <th className="hidden px-4 py-3 sm:table-cell">Entrada</th>
+                  <th className="hidden px-4 py-3 md:table-cell">Odds vencedor</th>
+                  <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
+                  <th className="px-4 py-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(baseballLiveQuery.data?.events ?? []).map((event) => (
+                  <BaseballEventRow key={event.eventId} event={event} />
                 ))}
               </tbody>
             </table>

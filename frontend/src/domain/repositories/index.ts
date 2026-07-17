@@ -154,6 +154,15 @@ export interface IWcRepository {
     bankroll?: number;
     fast?: boolean;
   }): Promise<import("@/domain/entities").BasketSuperbetLiveAdvice>;
+  getBaseballSuperbetLive(request?: {
+    sportId?: number;
+    allSports?: boolean;
+  }): Promise<import("@/domain/entities").BaseballSuperbetLiveFeed>;
+  getBaseballSuperbetLiveAdvice(request: {
+    eventId: number;
+    bankroll?: number;
+    fast?: boolean;
+  }): Promise<import("@/domain/entities").BaseballSuperbetLiveAdvice>;
   getLiveCopilot(request: {
     eventId: number;
     sport: "football" | "basketball";

@@ -71,12 +71,20 @@ async def casino_bacbo_ingest(body: BacboIngestRequest):
         table_id = "unknown"
 
     records = parse_bacbo_ws_batch(body.messages, table_id=table_id, ws_url=body.ws_url or "")
-    result = await asyncio.to_thread(append_bacbo_rounds, records)
+    result = await asyncio.to_thread(
+        append_bacbo_rounds,
+        records,
+        raw_messages=body.messages,
+        ws_url=body.ws_url,
+    )
+    debug = result.get("debug") or {}
+    msg_types = debug.get("message_types") or {}
     return BacboIngestResponse(
         inserted=result["inserted"],
         parsed=len(records),
         table_id=table_id,
         updated_at=result["store"].get("updated_at"),
+        message_types_seen=dict(list(msg_types.items())[-8:]) if msg_types else None,
     )
 
 

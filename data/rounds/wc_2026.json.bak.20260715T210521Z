@@ -1641,12 +1641,8 @@
       "fifa_stage": "Semifinals",
       "fifa_id_match": "400021540",
       "sofascore_event_id": 12812996,
-      "schedule_source": "sofascore",
-      "home_score": 1,
-      "away_score": 2,
-      "result_source": "superbet",
-      "result_synced_at": "2026-07-15T21:05:21.734964+00:00"
+      "schedule_source": "sofascore"
     }
   ],
-  "results_synced_at": "2026-07-15T21:05:21.734964+00:00"
+  "results_synced_at": "2026-07-15T16:38:43.739545+00:00"
 }

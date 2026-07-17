@@ -27,6 +27,8 @@ import {
   mapUserOpenBets,
   mapBasketSuperbetLiveFeed,
   mapBasketSuperbetLiveAdvice,
+  mapBaseballSuperbetLiveFeed,
+  mapBaseballSuperbetLiveAdvice,
   mapLiveCopilot,
   mapLiveCopilotAgent,
 } from "../mappers";
@@ -377,6 +379,34 @@ export class WcApiRepository implements IWcRepository {
       { timeoutMs: dto.fast ? 60_000 : API_SYNC_TIMEOUT_MS },
     );
     return mapBasketSuperbetLiveAdvice(raw);
+  }
+
+  async getBaseballSuperbetLive(dto?: { sportId?: number; allSports?: boolean }) {
+    const params = new URLSearchParams();
+    if (dto?.sportId != null) {
+      params.set("sport_id", String(dto.sportId));
+    }
+    if (dto?.allSports) {
+      params.set("all_sports", "true");
+    }
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapBaseballSuperbetLiveFeed>[0]>(
+      `/baseball/superbet/live${qs}`,
+      { timeoutMs: API_SYNC_TIMEOUT_MS },
+    );
+    return mapBaseballSuperbetLiveFeed(raw);
+  }
+
+  async getBaseballSuperbetLiveAdvice(dto: { eventId: number; bankroll?: number; fast?: boolean }) {
+    const params = new URLSearchParams();
+    if (dto.bankroll != null) params.set("bankroll", String(dto.bankroll));
+    if (dto.fast) params.set("fast", "true");
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapBaseballSuperbetLiveAdvice>[0]>(
+      `/baseball/superbet/live/${dto.eventId}/advice${qs}`,
+      { timeoutMs: dto.fast ? 60_000 : API_SYNC_TIMEOUT_MS },
+    );
+    return mapBaseballSuperbetLiveAdvice(raw);
   }
 
   async getLiveCopilot(dto: {

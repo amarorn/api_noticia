@@ -251,6 +251,22 @@ export class GetBasketSuperbetLiveAdviceUseCase {
   }
 }
 
+export class GetBaseballSuperbetLiveUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto?: { sportId?: number; allSports?: boolean }) {
+    return this.repository.getBaseballSuperbetLive(dto);
+  }
+}
+
+export class GetBaseballSuperbetLiveAdviceUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: { eventId: number; bankroll?: number; fast?: boolean }) {
+    return this.repository.getBaseballSuperbetLiveAdvice(dto);
+  }
+}
+
 export class GetLiveCopilotUseCase {
   constructor(private readonly repository: IWcRepository) {}
 

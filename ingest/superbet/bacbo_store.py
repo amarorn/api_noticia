@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from config import settings
-from ingest.superbet.bacbo_parser import BacboRoundRecord
+from ingest.superbet.bacbo_parser import BacboRoundRecord, extract_ws_message_types
 
 MAX_ROUNDS_PER_TABLE = 300
 
@@ -51,13 +51,26 @@ def _stats_from_rounds(rounds: list[dict[str, Any]]) -> dict[str, int]:
     return stats
 
 
-def append_bacbo_rounds(records: list[BacboRoundRecord]) -> dict[str, Any]:
+def append_bacbo_rounds(
+    records: list[BacboRoundRecord],
+    *,
+    raw_messages: list[str] | None = None,
+    ws_url: str | None = None,
+) -> dict[str, Any]:
     """Anexa rodadas deduplicadas por round_id + table_id."""
-    if not records:
-        store = load_bacbo_store()
-        return {"inserted": 0, "store": store}
-
     store = load_bacbo_store()
+    debug = store.setdefault("debug", {"message_types": {}, "last_ws_url": None})
+
+    if raw_messages:
+        for msg_type, count in extract_ws_message_types(raw_messages).items():
+            debug["message_types"][msg_type] = int(debug["message_types"].get(msg_type, 0)) + count
+        if ws_url:
+            debug["last_ws_url"] = ws_url
+
+    if not records:
+        save_bacbo_store(store)
+        return {"inserted": 0, "store": store, "debug": debug}
+
     tables: dict[str, Any] = store.setdefault("tables", {})
     inserted = 0
 
@@ -76,7 +89,7 @@ def append_bacbo_rounds(records: list[BacboRoundRecord]) -> dict[str, Any]:
         table["stats"] = _stats_from_rounds(table["rounds"])
 
     save_bacbo_store(store)
-    return {"inserted": inserted, "store": store}
+    return {"inserted": inserted, "store": store, "debug": debug}
 
 
 def list_bacbo_rounds(
@@ -95,6 +108,7 @@ def list_bacbo_rounds(
             "stats": table.get("stats") or _stats_from_rounds(table.get("rounds") or []),
             "rounds": rounds,
             "updated_at": store.get("updated_at"),
+            "debug": store.get("debug"),
         }
 
     summary = []

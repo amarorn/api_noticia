@@ -45,11 +45,24 @@ interface TodayMatch {
   expected_goals: string;
 }
 
+interface NextMatchHint {
+  id?: string | null;
+  home_team: string;
+  away_team: string;
+  phase?: string | null;
+  kickoff?: string | null;
+  kickoff_br?: string | null;
+  eta_label?: string | null;
+  venue?: string | null;
+  city?: string | null;
+}
+
 interface TodayResponse {
   date: string;
   end_date: string;
   total: number;
   matches: TodayMatch[];
+  next_match?: NextMatchHint | null;
 }
 
 interface Scoreline {
@@ -999,13 +1012,38 @@ export function PreGameAnalysisPage() {
             {error && <ErrorState message="Não foi possível carregar os jogos." />}
 
             {data && todayMatches.length === 0 && (
-              <div className="text-sm text-slate-400 text-center py-8 px-2">
-                Nenhum jogo da Copa hoje ({new Date(data.date + "T12:00:00").toLocaleDateString("pt-BR")}).
-                <span className="mt-2 block text-xs text-slate-500">
-                  A FIFA ainda não publicou confrontos neste dia — rode{" "}
-                  <code className="text-slate-300">sync-wc-knockout-schedule</code> quando a próxima
-                  fase sair.
-                </span>
+              <div className="text-sm text-slate-400 text-center py-8 px-2 space-y-3">
+                <p>
+                  Nenhum jogo da Copa hoje (
+                  {new Date(data.date + "T12:00:00").toLocaleDateString("pt-BR")}).
+                </p>
+                {data.next_match ? (
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-left space-y-1">
+                    <div className="text-[10px] uppercase tracking-wider text-emerald-500/90 font-semibold">
+                      Próximo
+                    </div>
+                    <div className="text-sm font-semibold text-white">
+                      {data.next_match.home_team}{" "}
+                      <span className="text-slate-500 font-normal">×</span>{" "}
+                      {data.next_match.away_team}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {data.next_match.kickoff_br ?? "data a definir"}
+                      {data.next_match.eta_label ? ` · ${data.next_match.eta_label}` : ""}
+                    </div>
+                    {data.next_match.phase && (
+                      <div className="text-[10px] text-slate-500 capitalize">
+                        {String(data.next_match.phase).replaceAll("_", " ")}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Sem próximo confronto no calendário — rode{" "}
+                    <code className="text-slate-300">sync-wc-knockout-schedule</code> quando a FIFA
+                    publicar a próxima fase.
+                  </p>
+                )}
               </div>
             )}
 

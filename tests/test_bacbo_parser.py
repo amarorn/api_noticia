@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ingest.superbet.bacbo_parser import (
+    extract_instance_from_ws_url,
     extract_table_id_from_ws_url,
     normalize_bacbo_winner,
     parse_bacbo_ws_batch,
@@ -68,11 +69,38 @@ def test_parse_bacbo_ws_batch_dedupes():
     assert len(rounds) == 1
 
 
+def test_winning_spots_and_dice():
+    raw = """
+    {
+      "type": "bacbo.gameResolved",
+      "args": {
+        "gameId": "g2",
+        "winningSpots": ["Banker"],
+        "playerDice": [3, 4],
+        "bankerDice": [5, 5]
+      }
+    }
+    """
+    rounds = parse_bacbo_ws_payload(raw, table_id="SuperbetBacBo001")
+    assert len(rounds) == 1
+    assert rounds[0].winner == "banker"
+    assert rounds[0].player_score == 7
+    assert rounds[0].banker_score == 10
+
+
+def test_extract_instance_from_ws_url():
+    url = (
+        "wss://superbetbr.evo-games.com/public/bacbo/player/game/SuperbetBacBo001/socket"
+        "?instance=09n1b2-t4z4rkx3vuctbja6-SuperbetBacBo001"
+    )
+    assert extract_instance_from_ws_url(url) == "09n1b2-t4z4rkx3vuctbja6-SuperbetBacBo001"
+
+
 def test_bacbo_store_append_and_list(tmp_path, monkeypatch):
     monkeypatch.setattr("config.settings.lake_root", tmp_path)
     raw = '{"type":"bacbo.gameResolved","args":{"gameId":"s1","winner":"Banker","playerScore":2,"bankerScore":9}}'
     records = parse_bacbo_ws_payload(raw, table_id="SuperbetBacBo001")
-    result = append_bacbo_rounds(records)
+    result = append_bacbo_rounds(records, raw_messages=[raw], ws_url="wss://test/socket")
     assert result["inserted"] == 1
 
     listed = list_bacbo_rounds(table_id="SuperbetBacBo001", limit=10)

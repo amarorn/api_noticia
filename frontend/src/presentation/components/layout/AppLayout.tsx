@@ -28,10 +28,13 @@ function AppLayoutInner() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const isBasketLiveDashboard = /^\/ao-vivo\/basquete\/[^/]+$/.test(location.pathname);
+  const isBaseballLiveDashboard = /^\/ao-vivo\/beisebol\/[^/]+$/.test(location.pathname);
   const isFootballLiveDashboard =
     /^\/ao-vivo\/[^/]+$/.test(location.pathname) &&
-    !location.pathname.includes("/basquete/");
-  const isLiveDashboard = isFootballLiveDashboard || isBasketLiveDashboard;
+    !location.pathname.includes("/basquete/") &&
+    !location.pathname.includes("/beisebol/");
+  const isLiveDashboard =
+    isFootballLiveDashboard || isBasketLiveDashboard || isBaseballLiveDashboard;
 
   const {
     data: health,

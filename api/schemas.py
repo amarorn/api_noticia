@@ -390,6 +390,15 @@ class WcScheduleMatchItem(BaseModel):
     kickoff: str | None = None
     venue: str | None = None
     city: str | None = None
+    fifa_stage: str | None = None
+    home_score: int | None = None
+    away_score: int | None = None
+    played: bool = False
+    prediction: str | None = None
+    confidence: float | None = None
+    prob_home: float | None = None
+    prob_draw: float | None = None
+    prob_away: float | None = None
 
 
 class WcScheduleResponse(BaseModel):
@@ -400,6 +409,8 @@ class WcScheduleResponse(BaseModel):
     matchdays: list[int]
     matches: list[WcScheduleMatchItem]
     total_matches: int
+    results_synced_at: str | None = None
+    predictions_summary: dict | None = None
 
 
 class WcSquadPlayerItem(BaseModel):
@@ -1016,6 +1027,130 @@ class BasketSuperbetLiveAdviceResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Beisebol In-Play
+# ---------------------------------------------------------------------------
+
+
+class BaseballAporteAdvice(BaseModel):
+    market: str
+    outcome: str
+    label: str
+    model_prob: float
+    market_odd: float
+    implied_prob: float
+    expected_value: float
+    edge_pp: float
+    kelly_quarter: float
+    suggested_stake_pct: float
+    suggested_stake_value: float | None = None
+    action: str
+
+
+class BaseballConfidence(BaseModel):
+    score: float
+    label: str
+    max_edge_pp: float
+
+
+class BaseballInPlaySummary(BaseModel):
+    prob_home_win: float | None = None
+    prob_away_win: float | None = None
+    expected_final_home: float | None = None
+    expected_final_away: float | None = None
+    expected_total: float | None = None
+    remaining_innings: float | None = None
+    moneyline_probs: dict[str, float] = Field(default_factory=dict)
+    spread_probs: dict[str, float] = Field(default_factory=dict)
+    total_probs: dict[str, float] = Field(default_factory=dict)
+    rpi_home: float | None = None
+    rpi_away: float | None = None
+    rpi_home_prior: float | None = None
+    rpi_away_prior: float | None = None
+    match_innings: int | None = None
+    n_simulations: int | None = None
+    market_total_line: float | None = None
+    market_spread_line: float | None = None
+
+
+class BaseballInningScore(BaseModel):
+    num: int
+    home: int
+    away: int
+
+
+class BaseballSuperbetLiveEventResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    event_name: str
+    sport_id: int
+    tournament_id: int | None = None
+    utc_date: str | None = None
+    betradar_id: str | None = None
+    minute: int
+    home_score: int
+    away_score: int
+    period_label: str | None = None
+    status: str | None = None
+    market_count: int
+    h2h_odds: dict[str, float] = Field(default_factory=dict)
+    captured_at: str
+
+
+class BaseballSuperbetLiveResponse(BaseModel):
+    count: int
+    sport_id: int | None
+    events: list[BaseballSuperbetLiveEventResponse]
+    captured_at: str
+
+
+class BaseballSuperbetEventResponse(BaseModel):
+    event_id: int
+    home_team: str
+    away_team: str
+    event_name: str
+    utc_date: str | None = None
+    betradar_id: str | None = None
+    is_live: bool
+    inplay: dict[str, Any] | None = None
+    moneyline_odds: dict[str, float] = Field(default_factory=dict)
+    moneyline_implied: dict[str, float] = Field(default_factory=dict)
+    spread_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    spread_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_points_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_points_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    raw_market_count: int = 0
+    captured_at: str
+    superbet_stale: bool = False
+
+
+class BaseballSuperbetLiveAdviceResponse(BaseModel):
+    home_team: str
+    away_team: str
+    inning: int
+    minute: int
+    current_score: str | None = None
+    period_label: str | None = None
+    status: str | None = None
+    baseball_innings: list[BaseballInningScore] = Field(default_factory=list)
+    is_finished: bool
+    is_live: bool
+    superbet_stale: bool
+    superbet_event_id: int
+    sport_id: int | None = None
+    captured_at: str
+    h2h_odds: dict[str, float] = Field(default_factory=dict)
+    h2h_implied: dict[str, float] = Field(default_factory=dict)
+    spread_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    spread_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_runs_odds: dict[str, dict[str, float]] = Field(default_factory=dict)
+    total_runs_implied: dict[str, dict[str, float]] = Field(default_factory=dict)
+    inplay_summary: BaseballInPlaySummary = Field(default_factory=BaseballInPlaySummary)
+    aportes: list[BaseballAporteAdvice] = Field(default_factory=list)
+    confidence: BaseballConfidence | None = None
+
+
+# ---------------------------------------------------------------------------
 # News
 # ---------------------------------------------------------------------------
 
@@ -1126,6 +1261,7 @@ class BacboIngestResponse(BaseModel):
     parsed: int
     table_id: str
     updated_at: str | None = None
+    message_types_seen: dict[str, int] | None = None
 
 
 class BacboRoundsResponse(BaseModel):

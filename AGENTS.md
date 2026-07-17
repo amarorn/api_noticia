@@ -525,8 +525,31 @@ Modelo dedicado separado do futebol (`models/basket_inplay.py`). Usa prior de me
 **Config:** `BASKET_SPORT_ID`, `BASKET_MATCH_MINUTES`, `BASKET_PRIOR_WEIGHT`, etc. (ver `.env.example`).
 
 **Limitações conhecidas:**
-- MVP cobre apenas NBA (48 min); mercados por quarto e Euroleague ficam para versões futuras.
-- `BASKET_SPORT_ID` precisa ser confirmado para a Superbet BR (default `7`).
+- MVP cobre feed virtual/simulado (40 min / quartos de 10); mercados por quarto ficam para versões futuras.
+- `BASKET_SPORT_ID` padrão `4` (Superbet BR).
+
+### Beisebol In-Play (MVP — KBO/MLB/NPB)
+Modelo dedicado (`models/baseball_inplay.py`), espelhando o basquete. Prior de mercado (moneyline + run line + total de corridas) e Monte Carlo de corridas por entrada (Poisson), com extras se empatar.
+
+| Camada | Responsabilidade |
+|--------|------------------|
+| `models/baseball_inplay.py` | `simulate_baseball_inplay()` — MC por entradas, ML / run line / total |
+| `models/baseball_bet_advice.py` | EV/Kelly para beisebol |
+| `ingest/superbet/baseball_advice.py` | `run_baseball_live_advice()` |
+| `ingest/superbet/parser.py` | Entrada (`5I`), `baseball_innings`, totais de corridas (jogo ou soma por time) |
+| `api/routers/baseball.py` | Endpoints `/baseball/superbet/*` |
+| Frontend | `/ao-vivo` filtro Beisebol → `/ao-vivo/beisebol/:eventId` |
+
+**Endpoints API:**
+- `GET /baseball/superbet/live` — lista ao vivo (`BASEBALL_SPORT_ID=20`)
+- `GET /baseball/superbet/live/{event_id}/advice` — inplay_summary + aportes
+- `GET /baseball/superbet/events/{event_id}` — snapshot bruto
+
+**Config:** `BASEBALL_SPORT_ID`, `BASEBALL_MATCH_INNINGS`, `BASEBALL_PRIOR_WEIGHT`, etc. (ver `.env.example`).
+
+**Limitações conhecidas:**
+- Sem outs/bases/arremessador no estado (feed Superbet só dá entrada + placar).
+- Total do jogo às vezes ausente — prior cai na soma dos totais por time ou `BASEBALL_DEFAULT_TOTAL`.
 
 ### Amistosos internacionais (Sofascore + FIFA)
 Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no frontend).

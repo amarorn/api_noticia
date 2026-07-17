@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import type { WcPrediction, WcScheduleMatch } from "@/domain/entities";
 import { TeamFlag } from "@/presentation/components/ui/TeamFlag";
 import { getTeamIso } from "@/presentation/utils/teamFlags";
@@ -15,6 +16,7 @@ interface WcKnockoutBracketProps {
   matches: WcScheduleMatch[];
   predictions?: WcPrediction[];
   resultsSyncedAt?: string | null;
+  analysisLoading?: boolean;
 }
 
 const ROWS = 8;
@@ -27,10 +29,15 @@ function teamStatus(
   match: BracketMatchNode,
   team: string,
   eliminatedBeforePhase: Set<string>,
-): "winner" | "loser" | "pending" | "tbd" | "eliminated" {
+): "winner" | "loser" | "pending" | "projected" | "tbd" | "eliminated" {
   if (team === "A definir") return "tbd";
   if (eliminatedBeforePhase.has(team) && !match.played) return "eliminated";
-  if (!match.played) return match.placeholder ? "tbd" : "pending";
+  if (!match.played) {
+    if (match.projectedWinner === team || (match.placeholder && team !== "A definir")) {
+      return "projected";
+    }
+    return match.placeholder ? "tbd" : "pending";
+  }
   if (match.winner === team) return "winner";
   if (match.loser === team) return "loser";
   return "pending";
@@ -89,7 +96,61 @@ function BracketTeamRow({
           ✓
         </span>
       )}
+      {status === "projected" && (
+        <span className="wc-bracket-row-projection" aria-label="Projeção do modelo">
+          IA
+        </span>
+      )}
     </div>
+  );
+}
+
+function MatchAnalysisCard({ match, phase }: { match: BracketMatchNode; phase: string }) {
+  const hasProjection = Boolean(match.projectedWinner && !match.played);
+  const probabilities = [
+    { label: match.homeTeam, value: match.probHome },
+    { label: "Empate", value: match.probDraw },
+    { label: match.awayTeam, value: match.probAway },
+  ];
+
+  return (
+    <article className="wc-bracket-analysis-card">
+      <div className="wc-bracket-analysis-head">
+        <span>{match.played ? "Resultado oficial" : "Projeção do confronto"}</span>
+        {match.confidence != null && <strong>{Math.round(match.confidence * 100)}% confiança</strong>}
+      </div>
+      <h3>{match.homeTeam} <span>×</span> {match.awayTeam}</h3>
+      {match.played ? (
+        <p className="wc-bracket-analysis-pick">
+          {match.homeScore} × {match.awayScore} · classificado <strong>{match.winner ?? "a confirmar"}</strong>
+        </p>
+      ) : hasProjection ? (
+        <p className="wc-bracket-analysis-pick">
+          Favorito para avançar: <strong>{match.projectedWinner}</strong>
+        </p>
+      ) : (
+        <p className="wc-bracket-analysis-pick is-muted">Modelo ainda calculando este confronto.</p>
+      )}
+      {probabilities.some((item) => item.value != null) && (
+        <div className="wc-bracket-probabilities">
+          {probabilities.map((item) => (
+            <span key={item.label}>
+              <small>{item.label}</small>
+              <b>{item.value == null ? "—" : `${Math.round(item.value * 100)}%`}</b>
+            </span>
+          ))}
+        </div>
+      )}
+      {match.analysisContext && <p className="wc-bracket-analysis-context">{match.analysisContext}</p>}
+      {!match.placeholder && (
+        <Link
+          className="wc-bracket-analysis-link"
+          to={`/palpite-avulso?home=${encodeURIComponent(match.homeTeam)}&away=${encodeURIComponent(match.awayTeam)}&phase=${phase}`}
+        >
+          Ver estudo aprofundado →
+        </Link>
+      )}
+    </article>
   );
 }
 
@@ -386,7 +447,12 @@ function BracketFinal({
   );
 }
 
-export function WcKnockoutBracket({ matches, predictions = [], resultsSyncedAt }: WcKnockoutBracketProps) {
+export function WcKnockoutBracket({
+  matches,
+  predictions = [],
+  resultsSyncedAt,
+  analysisLoading = false,
+}: WcKnockoutBracketProps) {
   const columns = useMemo(
     () => buildKnockoutBracket(matches, predictions),
     [matches, predictions],
@@ -394,6 +460,12 @@ export function WcKnockoutBracket({ matches, predictions = [], resultsSyncedAt }
   const tree = useMemo(() => buildBracketTree(columns), [columns]);
   const stats = useMemo(() => bracketStats(columns), [columns]);
   const eliminatedByPhase = useMemo(() => buildEliminatedByPhase(columns), [columns]);
+  const focusColumn = useMemo(() => {
+    const priority = ["final", "semifinal", "quarterfinal", "round_16", "round_of_32"];
+    return priority
+      .map((phase) => columns.find((column) => column.phase === phase))
+      .find((column) => column?.matches.some((match) => !match.placeholder && !match.played));
+  }, [columns]);
 
   if (!tree) {
     return (
@@ -455,8 +527,25 @@ export function WcKnockoutBracket({ matches, predictions = [], resultsSyncedAt }
         </div>
       </div>
 
+      {focusColumn && (
+        <section className="wc-bracket-analysis">
+          <div className="wc-bracket-analysis-title">
+            <div>
+              <span>Estudo da fase</span>
+              <h2>{focusColumn.label}: quem avança?</h2>
+            </div>
+            {analysisLoading && <small>Atualizando o modelo…</small>}
+          </div>
+          <div className="wc-bracket-analysis-grid">
+            {focusColumn.matches.map((match) => (
+              <MatchAnalysisCard key={match.id} match={match} phase={focusColumn.phase} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <p className="wc-bracket-legend">
-        Eliminados saem da chave · verde = avança · tracejado = aguardando classificados
+        ✓ resultado confirmado · IA = projeção do modelo · tracejado = aguardando definição
       </p>
     </section>
   );
