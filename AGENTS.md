@@ -207,14 +207,15 @@ ruff format .         # formatação
 
 ### Rodar API localmente
 ```bash
-./scripts/dev-full.sh           # API + frontend + poll Superbet (--wc-copa --auto)
+./scripts/dev-full.sh           # API + frontend + poll Superbet (WC + beisebol)
 ./scripts/dev-full.sh stop      # para serviços iniciados pelo script
 ./scripts/dev-api.sh            # reload apenas em api/ (evita reinício ao gravar parquet)
 ./scripts/dev-api-stable.sh     # reload em api/, models/, ingest/, pipelines/ (amistosos/simulate)
 # ou manualmente:
 uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
-- `dev-full.sh` honra `SKIP_POLL=1`, `POLL_EVENT_IDS`, `SUPERBET_POLL_INTERVAL_SEC` (ver cabeçalho do script).
+- `dev-full.sh` honra `SKIP_POLL=1`, `SKIP_POLL_BASEBALL=1`, `SKIP_POLL_FOOTBALL=1`, `POLL_EVENT_IDS`, `POLL_BASEBALL_EVENT_IDS`, `SUPERBET_POLL_INTERVAL_SEC` (ver cabeçalho do script).
+- Poll beisebol: `poll-superbet-live --baseball` (ou `./scripts/poll-baseball-live.sh`).
 
 ### Rodar frontend localmente
 ```bash
@@ -533,24 +534,41 @@ Modelo dedicado (`models/baseball_inplay.py`), espelhando o basquete. Prior de m
 
 | Camada | Responsabilidade |
 |--------|------------------|
-| `models/baseball_inplay.py` | `simulate_baseball_inplay()` — MC por entradas, ML / run line / total |
-| `models/baseball_bet_advice.py` | EV/Kelly para beisebol |
-| `ingest/superbet/baseball_advice.py` | `run_baseball_live_advice()` |
-| `ingest/superbet/parser.py` | Entrada (`5I`), `baseball_innings`, totais de corridas (jogo ou soma por time) |
+| `models/baseball_inplay.py` | `simulate_baseball_inplay()` — MC por entradas, ML / run line / total / F5 / team total |
+| `models/baseball_bet_advice.py` | EV/Kelly (ML, run line, total, F5, por entrada, corrida N) |
+| `models/baseball_bet_strategy.py` | Posture, shields, watch list |
+| `models/baseball_bet_guardrails.py` | Bloqueio FT/F5 por fase do jogo |
+| `models/baseball_dead_market.py` | Mercados mortos (over batido, F5 após 5ª) |
+| `models/baseball_game_phase.py` | `f5_open` / `mid` / `late` / `extras` / `finished` |
+| `models/baseball_cashout.py` | Advice de cash-out vs bilhete do usuário |
+| `models/baseball_benchmark.py` | Edge modelo × mercado (ML / total / run line) |
+| `ingest/superbet/baseball_advice.py` | `run_baseball_live_advice()` + cache stale |
+| `ingest/superbet/baseball_period_markets.py` | Parser F5 / entrada N / maior pontuação / corrida N |
+| `ingest/superbet/parser.py` | Entrada (`5I`), `baseball_innings`, totais (jogo ou soma por time) |
 | `api/routers/baseball.py` | Endpoints `/baseball/superbet/*` |
+| `pipelines/baseball_inplay_benchmark.py` | Brier moneyline em `live_ticks` (`benchmark-baseball-inplay`) |
 | Frontend | `/ao-vivo` filtro Beisebol → `/ao-vivo/beisebol/:eventId` |
 
 **Endpoints API:**
 - `GET /baseball/superbet/live` — lista ao vivo (`BASEBALL_SPORT_ID=20`)
-- `GET /baseball/superbet/live/{event_id}/advice` — inplay_summary + aportes
+- `GET /baseball/superbet/live/{event_id}/advice` — inplay_summary + strategy + aportes (+ cashout se `market`/`outcome`/`stake`/`odds_placed`)
+- `GET /baseball/superbet/live/{event_id}/copilot` — narrativa GPT (fallback quant se sem OpenAI)
+- `POST /baseball/superbet/live/{event_id}/copilot/agent` — agente com tools
 - `GET /baseball/superbet/events/{event_id}` — snapshot bruto
 
 **Config:** `BASEBALL_SPORT_ID`, `BASEBALL_MATCH_INNINGS`, `BASEBALL_PRIOR_WEIGHT`, etc. (ver `.env.example`).
 
+**Poll:** `poll-superbet-live --baseball` (ou `./scripts/poll-baseball-live.sh`); `dev-full.sh` sobe futebol + beisebol.
+
+**Calibração:**
+```bash
+benchmark-baseball-inplay --verbose
+```
+
 **Limitações conhecidas:**
 - Sem outs/bases/arremessador no estado (feed Superbet só dá entrada + placar).
 - Total do jogo às vezes ausente — prior cai na soma dos totais por time ou `BASEBALL_DEFAULT_TOTAL`.
-
+- Markov de bases fica para quando o feed expuser outs/corredores.
 ### Amistosos internacionais (Sofascore + FIFA)
 Fluxo fora da tabela oficial da Copa (`phase=round_16`, `source=friendly` no frontend).
 

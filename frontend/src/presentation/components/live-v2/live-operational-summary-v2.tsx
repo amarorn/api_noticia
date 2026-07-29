@@ -5,23 +5,18 @@ import type {
 import type { SuperbetLiveAdvice } from "@/domain/entities";
 import type { DataQualityReport } from "@/presentation/components/live-operational/dataQuality";
 import type { OperationalDecision } from "@/presentation/components/live-operational/liveOperationalUtils";
-import {
-  formatOdd,
-  formatPercent,
-} from "@/presentation/components/live-operational/liveOperationalUtils";
+import { formatOdd } from "@/presentation/components/live-operational/liveOperationalUtils";
 import {
   IconActivity,
   IconBell,
   IconClock,
   IconDatabase,
-  IconFire,
   IconShieldCheck,
   IconTrendingUp,
 } from "@/presentation/components/ui/Icons";
 import { LiveDecisionCardV2 } from "./live-decision-card-v2";
 import { LiveMarketMiniChartV2 } from "./live-market-mini-chart-v2";
 import { LiveMarketsOverviewV2 } from "./live-markets-overview-v2";
-import { RadialGaugeV2 } from "./live-ui-v2";
 import { usePreviousOnChange } from "./usePreviousOnChange";
 
 function deltaMeta(
@@ -227,47 +222,136 @@ function LivePressureOverviewV2({ data }: { data: SuperbetLiveAdvice }) {
   );
 }
 
+function formatEvDisplay(ev: number): string {
+  const pct = (ev * 100).toFixed(1);
+  return ev > 0 ? `+${pct}%` : `${pct}%`;
+}
+
+function marketSubtitle(row: MarketOperationalRow): string {
+  if (row.type === "Resultado") return "Resultado Final";
+  if (row.market === "btts" || row.label.toLowerCase().includes("ambos")) return "Ambos Marcam";
+  if (row.period !== "Jogo") return `${row.period} · ${row.type}`;
+  return row.type;
+}
+
+function confidenceTone(score: number): { color: string } {
+  const pct = Math.round(score * 100);
+  if (pct >= 60) return { color: "#00ff88" };
+  if (pct >= 40) return { color: "#fbbf24" };
+  return { color: "#64748b" };
+}
+
 function OpportunityCardV2({ row, rank }: { row: MarketOperationalRow; rank: number }) {
+  const displayRank = rank + 1;
   const isTop = rank === 0;
+  const isHot = row.expectedValue > 0.3;
   const confidencePct = Math.round(row.confidenceScore * 100);
+  const { color: confColor } = confidenceTone(row.confidenceScore);
+  const circumference = 2 * Math.PI * 16;
+  const dashOffset = circumference * (1 - row.confidenceScore);
+  const showStake = row.action === "apostar" && row.suggestedStakeValue > 0;
 
   return (
-    <article className="signal-card-v2 relative w-64 shrink-0 p-3 pt-4">
+    <article
+      className={`signal-card-v2 relative flex h-full min-h-[176px] min-w-[210px] flex-col gap-2.5 overflow-hidden p-3.5 sm:min-w-[220px] sm:p-4 ${
+        isTop ? "signal-card-v2--top live-opp-card-top" : ""
+      }`}
+    >
       {isTop && (
-        <span className="absolute -top-2 left-3 rounded-full bg-amber-300 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-slate-950 shadow">
-          TOP
-        </span>
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-12 w-12 overflow-hidden">
+          <div className="absolute -left-7 top-2 w-24 rotate-[-45deg] bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 py-0.5 text-center text-[8px] font-black uppercase tracking-wider text-black shadow-lg">
+            TOP
+          </div>
+        </div>
       )}
-      <div className="flex items-center gap-1.5 pr-2">
-        <p className="truncate text-sm font-bold text-white" title={row.label}>
+
+      <div
+        className={`relative z-20 flex min-h-[20px] items-center ${
+          isTop ? "justify-end gap-1 pt-1" : "gap-1.5"
+        }`}
+      >
+        {!isTop &&
+          (isHot ? (
+            <span className="text-sm leading-none" aria-hidden>
+              🔥
+            </span>
+          ) : (
+            <span className="h-3.5 w-3.5 shrink-0" />
+          ))}
+        {isTop && isHot && (
+          <span className="text-sm leading-none" aria-hidden>
+            🔥
+          </span>
+        )}
+        <span className={`font-mono text-[11px] font-bold text-neon-blue ${isTop ? "" : "ml-auto"}`}>
+          #{displayRank}
+        </span>
+      </div>
+
+      <div className="min-h-[52px] min-w-0 flex-1 pr-1">
+        <p className="line-clamp-2 text-sm font-bold leading-tight text-white" title={row.label}>
           {row.label}
         </p>
-        {isTop && <IconFire className="h-3.5 w-3.5 text-orange-400" />}
+        <p className="mt-0.5 truncate text-[11px] text-slate-500">{marketSubtitle(row)}</p>
+        {showStake ? (
+          <span className="mt-1.5 inline-flex rounded-md border border-emerald-400/20 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
+            Stake R$ {row.suggestedStakeValue.toFixed(2)}
+          </span>
+        ) : null}
       </div>
-      <p className="mt-0.5 truncate text-xs text-slate-500">
-        {row.type} · {row.period}
-      </p>
 
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="space-y-2">
+      <div className="mt-auto flex items-end justify-between gap-2">
+        <div className="space-y-1">
           <div>
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">EV</p>
-            <p className={`font-mono text-sm font-black ${row.expectedValue > 0 ? "text-neon-green" : "text-slate-300"}`}>
-              {formatPercent(row.expectedValue)}
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">EV</p>
+            <p
+              className={`font-mono text-lg font-bold leading-none sm:text-xl ${
+                row.expectedValue > 0.1
+                  ? "text-neon-green neon-text"
+                  : row.expectedValue > 0
+                    ? "text-sky-400"
+                    : "text-slate-400"
+              }`}
+            >
+              {formatEvDisplay(row.expectedValue)}
             </p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">Odd</p>
-            <p className="font-mono text-sm font-black text-white">{formatOdd(row.marketOdd)}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Odd</p>
+            <p className="font-mono text-sm font-semibold text-white">{formatOdd(row.marketOdd)}</p>
           </div>
         </div>
-        <div className="text-center">
-          <RadialGaugeV2
-            pct={confidencePct}
-            label={`${confidencePct}%`}
-            sublabel="Confiança"
-            tone={row.confidenceScore >= 0.6 ? "green" : "amber"}
-          />
+
+        <div className="flex shrink-0 flex-col items-center">
+          <div className="relative h-12 w-12">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 48 48"
+              className="absolute inset-0 -rotate-90"
+              style={{ filter: `drop-shadow(0 0 6px ${confColor}88)` }}
+              aria-hidden
+            >
+              <circle cx="24" cy="24" r="16" strokeWidth="3" className="fill-none stroke-white/10" />
+              <circle
+                cx="24"
+                cy="24"
+                r="16"
+                strokeWidth="3"
+                className="fill-none"
+                stroke={confColor}
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 grid place-items-center">
+              <span className="font-mono text-[10px] font-bold tabular-nums leading-none text-white">
+                {confidencePct}%
+              </span>
+            </div>
+          </div>
+          <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-600">Conf.</span>
         </div>
       </div>
     </article>
@@ -279,9 +363,11 @@ function TopOpportunitiesV2({ rows }: { rows: MarketOperationalRow[] }) {
 
   return (
     <section className="panel-v2 p-4 sm:p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-xs font-black uppercase tracking-[0.12em] text-slate-400">Oportunidades em Destaque</h2>
-        <span className="chip-v2">{top.length} sinais</span>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-xs font-black uppercase tracking-widest text-white">Oportunidades em Destaque</h2>
+        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-neon-green/15 px-2 text-[10px] font-bold text-neon-green">
+          {top.length}
+        </span>
       </div>
 
       {top.length === 0 ? (
@@ -290,7 +376,7 @@ function TopOpportunitiesV2({ rows }: { rows: MarketOperationalRow[] }) {
           <p className="mt-1 text-xs text-slate-500">Aguardando mercado com odd, probabilidade do modelo e EV calculado.</p>
         </div>
       ) : (
-        <div className="scroll-v2 flex gap-3 overflow-x-auto pb-2">
+        <div className="opportunities-rail-v2 -mx-1 px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {top.map((row, i) => (
             <OpportunityCardV2 key={row.key} row={row} rank={i} />
           ))}
@@ -328,13 +414,12 @@ export function LiveOperationalSummaryV2({
         <LiveKpiGridV2 data={data} rows={rows} quality={quality} isAdvicePending={isAdvicePending} />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-        <TopOpportunitiesV2 rows={rows} />
-        <LiveMarketMiniChartV2
-          label={decision.pick?.label ?? rows[0]?.label ?? "Mercado recomendado"}
-          points={bestKey ? history[bestKey] ?? [] : []}
-        />
-      </div>
+      <TopOpportunitiesV2 rows={rows} />
+
+      <LiveMarketMiniChartV2
+        label={decision.pick?.label ?? rows[0]?.label ?? "Mercado recomendado"}
+        points={bestKey ? history[bestKey] ?? [] : []}
+      />
 
       <LiveMarketsOverviewV2 rows={rows} />
     </div>

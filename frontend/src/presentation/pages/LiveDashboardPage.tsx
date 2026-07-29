@@ -275,16 +275,29 @@ function OpportunityCard({
       } ${onAdd ? "cursor-pointer" : ""}`}
     >
       {isTop && (
-        <div className="pointer-events-none absolute left-0 top-0 z-10 h-14 w-14 overflow-hidden">
-          <div className="absolute -left-7 top-2.5 w-24 rotate-[-45deg] bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 py-0.5 text-center text-[8px] font-black uppercase tracking-wider text-black shadow-lg">
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-12 w-12 overflow-hidden">
+          <div className="absolute -left-7 top-2 w-24 rotate-[-45deg] bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 py-0.5 text-center text-[8px] font-black uppercase tracking-wider text-black shadow-lg">
             TOP
           </div>
         </div>
       )}
 
-      <div className="flex items-center gap-1.5">
-        {isHot && <span className="text-sm" aria-hidden>🔥</span>}
-        <span className="ml-auto text-[11px] font-bold text-neon-blue">#{rank}</span>
+      <div
+        className={`relative z-20 flex min-h-[20px] items-center ${
+          isTop ? "justify-end gap-1 pt-1" : "gap-1.5"
+        }`}
+      >
+        {!isTop && isHot && (
+          <span className="text-sm leading-none" aria-hidden>
+            🔥
+          </span>
+        )}
+        {isTop && isHot && (
+          <span className="text-sm leading-none" aria-hidden>
+            🔥
+          </span>
+        )}
+        <span className={`text-[11px] font-bold text-neon-blue ${isTop ? "" : "ml-auto"}`}>#{rank}</span>
       </div>
 
       <div>
@@ -309,28 +322,34 @@ function OpportunityCard({
           </div>
         </div>
 
-        <div className="relative flex flex-col items-center">
-          <svg
-            width="48"
-            height="48"
-            className="-rotate-90"
-            style={{ filter: `drop-shadow(0 0 6px ${confColor}88)` }}
-          >
-            <circle cx="24" cy="24" r="17" strokeWidth="3" className="fill-none stroke-white/10" />
-            <circle
-              cx="24"
-              cy="24"
-              r="17"
-              strokeWidth="3"
-              className="fill-none"
-              stroke={confColor}
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[11px] font-bold text-white">{confPct}%</span>
+        <div className="flex shrink-0 flex-col items-center">
+          <div className="relative h-12 w-12">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 48 48"
+              className="absolute inset-0 -rotate-90"
+              style={{ filter: `drop-shadow(0 0 6px ${confColor}88)` }}
+              aria-hidden
+            >
+              <circle cx="24" cy="24" r="16" strokeWidth="3" className="fill-none stroke-white/10" />
+              <circle
+                cx="24"
+                cy="24"
+                r="16"
+                strokeWidth="3"
+                className="fill-none"
+                stroke={confColor}
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 grid place-items-center">
+              <span className="font-mono text-[10px] font-bold tabular-nums leading-none text-white">
+                {confPct}%
+              </span>
+            </div>
           </div>
           <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-600">
             Conf.

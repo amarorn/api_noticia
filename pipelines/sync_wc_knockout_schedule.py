@@ -399,23 +399,28 @@ def fetch_knockout_matches(
     client: FifaClient | None = None,
     *,
     use_sofascore: bool = True,
+    force_fifa_refresh: bool = False,
 ) -> list[dict[str, Any]]:
     """Busca jogos do mata-mata da Copa 2026 (FIFA + IDs + Sofascore opcional).
 
     Se a API FIFA falhar (offline/DNS), usa o cache local ``window_matches.json``.
+    Com ``force_fifa_refresh=True``, ignora cache e busca janela online (atualiza cache).
     """
     fifa_client = client or FifaClient()
     raw_matches: list[dict[str, Any]] = []
     source = "api"
     try:
-        data = fifa_client.match_window_matches(locale="pt")
-        raw_matches = _iter_window_matches(data)
+        if force_fifa_refresh:
+            raw_matches = load_fifa_window_matches(force_refresh=True, client=fifa_client)
+        else:
+            data = fifa_client.match_window_matches(locale="pt")
+            raw_matches = _iter_window_matches(data)
     except (FifaClientError, Exception) as exc:
         logger.warning(
             "wc_knockout_api_failed_using_cache_fallback",
             error=str(exc),
         )
-        cached = load_fifa_window_matches(force_refresh=False)
+        cached = load_fifa_window_matches(force_refresh=False, client=fifa_client)
         raw_matches = cached
         source = "cache"
 
@@ -504,6 +509,11 @@ def main() -> int:
         action="store_true",
         help="Não consulta Sofascore (somente FIFA + IDs)",
     )
+    parser.add_argument(
+        "--force-fifa-refresh",
+        action="store_true",
+        help="Ignora cache FIFA e busca janela online",
+    )
     args = parser.parse_args()
 
     round_path = Path(args.round_file)
@@ -514,7 +524,10 @@ def main() -> int:
         return 1
 
     try:
-        knockout_matches = fetch_knockout_matches(use_sofascore=not args.skip_sofascore)
+        knockout_matches = fetch_knockout_matches(
+            use_sofascore=not args.skip_sofascore,
+            force_fifa_refresh=args.force_fifa_refresh,
+        )
     except FifaClientError as exc:
         print(f"Erro ao consultar API FIFA: {exc}")
         return 1

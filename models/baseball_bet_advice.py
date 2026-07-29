@@ -6,7 +6,13 @@ from typing import Any
 
 from config import settings
 from ingest.superbet.parser import SuperbetEventSnapshot
-from models.baseball_inplay import BaseballInPlayResult
+from models.baseball_inplay import BaseballInPlayResult, _parse_spread_line_key
+from models.baseball_market_labels import (
+    format_baseball_selection_label,
+    resolve_baseball_market_display,
+)
+from models.baseball_aporte_sanity import filter_sane_baseball_aportes, annotate_baseball_line_tiers
+from models.baseball_dead_market import is_dead_baseball_market
 from models.economics import live_effective_min_edge
 from models.ev_value import evaluate_outcome
 
@@ -16,6 +22,7 @@ class BaseballAporteAdvice:
     market: str
     outcome: str
     label: str
+    market_display: str
     model_prob: float
     market_odd: float
     implied_prob: float
@@ -40,6 +47,7 @@ def _aporte_from_eval(
     market: str,
     outcome: str,
     label: str,
+    market_display: str,
     model_prob: float,
     odd: float,
     bankroll: float,
@@ -51,7 +59,7 @@ def _aporte_from_eval(
     if ev.expected_value < min_edge:
         return None
     edge_pp = (ev.model_prob - ev.implied_prob) * 100.0
-    if edge_pp < settings.live_min_edge_pp:
+    if edge_pp < settings.baseball_live_min_edge_pp:
         return None
     suggested_pct = max(0.0, ev.kelly_quarter)
     action = "apostar" if suggested_pct > 0 else "monitorar"
@@ -59,6 +67,7 @@ def _aporte_from_eval(
         market=market,
         outcome=outcome,
         label=label,
+        market_display=market_display,
         model_prob=ev.model_prob,
         market_odd=ev.odd,
         implied_prob=ev.implied_prob,
@@ -70,6 +79,10 @@ def _aporte_from_eval(
     )
 
 
+def _market_names(snapshot: SuperbetEventSnapshot) -> dict[str, str]:
+    return getattr(snapshot, "baseball_market_names", None) or {}
+
+
 def _moneyline_aportes(
     inplay: BaseballInPlayResult,
     snapshot: SuperbetEventSnapshot,
@@ -79,12 +92,15 @@ def _moneyline_aportes(
     ml = snapshot.moneyline_odds or snapshot.h2h_odds
     if not ml:
         return out
+    names = _market_names(snapshot)
+    market_display = resolve_baseball_market_display("moneyline", market_names=names)
     for key, prob in inplay.moneyline_probs.items():
         odd = ml.get(key)
         if odd is None:
             continue
-        label = f"{inplay.home_team} vence" if key == "1" else f"{inplay.away_team} vence"
-        opp = _aporte_from_eval("moneyline", key, label, prob, odd, bankroll)
+        team = inplay.home_team if key == "1" else inplay.away_team
+        label = format_baseball_selection_label("moneyline", team=team)
+        opp = _aporte_from_eval("moneyline", key, label, market_display, prob, odd, bankroll)
         if opp:
             out.append(_format_stake_line(opp, bankroll))
     return out
@@ -99,26 +115,77 @@ def _spread_aportes(
     spread = snapshot.spread_odds
     if not spread:
         return out
+    names = _market_names(snapshot)
+    market_display = resolve_baseball_market_display("run_line", market_names=names)
     for line_key, sides in spread.items():
+        line_val = None
         try:
             line_val = float(line_key.replace("p", "").replace("m", "-").replace("_", "."))
         except ValueError:
-            continue
+            pass
         for side, odd in sides.items():
             prob_key = f"{side}_{line_key}"
             prob = inplay.spread_probs.get(prob_key)
             if prob is None:
-                # tenta chave normalizada
-                lk = f"{line_val:g}".replace(".", "_").replace("-", "m")
-                prob = inplay.spread_probs.get(f"{side}_{lk}")
-            if prob is None:
                 continue
             team = inplay.home_team if side == "home" else inplay.away_team
-            sign = "+" if line_val > 0 else ""
-            label = f"{team} {sign}{line_val:g} (run line)"
-            opp = _aporte_from_eval("run_line", prob_key, label, prob, odd, bankroll)
+            if line_val is None:
+                label = f"{team} handicap ({line_key})"
+            else:
+                label = format_baseball_selection_label("run_line", team=team, line=line_val)
+            opp = _aporte_from_eval("run_line", prob_key, label, market_display, prob, odd, bankroll)
             if opp:
                 out.append(_format_stake_line(opp, bankroll))
+    return out
+
+
+def _team_total_aportes(
+    inplay: BaseballInPlayResult,
+    snapshot: SuperbetEventSnapshot,
+    bankroll: float,
+) -> list[BaseballAporteAdvice]:
+    """Aportes em totais por time (mercado comum na Superbet BR para beisebol)."""
+    out: list[BaseballAporteAdvice] = []
+    team_totals = snapshot.team_totals or {}
+    names = _market_names(snapshot)
+    for side, lines in team_totals.items():
+        if not lines:
+            continue
+        team = inplay.home_team if side == "home" else inplay.away_team
+        market_display = resolve_baseball_market_display(
+            "team_total_runs",
+            team=team,
+            side=side,
+            market_names=names,
+        )
+        for line_str, sides in lines.items():
+            try:
+                line_val = float(str(line_str).replace(",", "."))
+            except ValueError:
+                continue
+            line_key = f"{line_val:g}".replace(".", "_")
+            for outcome, odd in sides.items():
+                prob_key = f"{side}_{outcome}_{line_key}"
+                prob = inplay.team_total_probs.get(prob_key)
+                if prob is None:
+                    continue
+                label = format_baseball_selection_label(
+                    "team_total_runs",
+                    team=team,
+                    outcome=outcome,
+                    line=line_val,
+                )
+                opp = _aporte_from_eval(
+                    "team_total_runs",
+                    prob_key,
+                    label,
+                    market_display,
+                    prob,
+                    odd,
+                    bankroll,
+                )
+                if opp:
+                    out.append(_format_stake_line(opp, bankroll))
     return out
 
 
@@ -131,6 +198,8 @@ def _total_aportes(
     totals = snapshot.total_points_odds
     if not totals:
         return out
+    names = _market_names(snapshot)
+    market_display = resolve_baseball_market_display("total_runs", market_names=names)
     for line, sides in totals.items():
         try:
             line_val = float(str(line).replace(",", "."))
@@ -142,10 +211,180 @@ def _total_aportes(
             prob = inplay.total_probs.get(prob_key)
             if prob is None:
                 continue
-            label = f"{'Over' if outcome == 'over' else 'Under'} {line_val:g} corridas"
-            opp = _aporte_from_eval("total_runs", prob_key, label, prob, odd, bankroll)
+            label = format_baseball_selection_label("total_runs", outcome=outcome, line=line_val)
+            opp = _aporte_from_eval("total_runs", prob_key, label, market_display, prob, odd, bankroll)
             if opp:
                 out.append(_format_stake_line(opp, bankroll))
+    return out
+
+
+def _period_aportes(
+    inplay: BaseballInPlayResult,
+    snapshot: SuperbetEventSnapshot,
+    bankroll: float,
+) -> list[BaseballAporteAdvice]:
+    """Aportes em mercados F5, por entrada, maior pontuação e corrida N."""
+    out: list[BaseballAporteAdvice] = []
+    period_markets = getattr(snapshot, "baseball_period_markets", None) or {}
+    if not period_markets or not inplay.period_probs:
+        return out
+
+    names = _market_names(snapshot)
+    probs = inplay.period_probs
+    current_inning = inplay.inning
+    f5 = period_markets.get("f5") or {}
+
+    if current_inning <= 5:
+        market_display = resolve_baseball_market_display("f5_total", market_names=names)
+        for line_str, sides in (f5.get("total") or {}).items():
+            try:
+                line_val = float(str(line_str).replace(",", "."))
+            except ValueError:
+                continue
+            lk = f"{line_val:g}".replace(".", "_")
+            for outcome, odd in sides.items():
+                prob_key = f"f5_{outcome}_{lk}"
+                prob = probs.get(prob_key)
+                if prob is None:
+                    continue
+                label = format_baseball_selection_label("f5_total", outcome=outcome, line=line_val)
+                opp = _aporte_from_eval(
+                    "f5_total", prob_key, label, market_display, prob, odd, bankroll
+                )
+                if opp:
+                    out.append(_format_stake_line(opp, bankroll))
+
+        market_display = resolve_baseball_market_display("f5_moneyline", market_names=names)
+        for key, odd in (f5.get("moneyline") or {}).items():
+            prob_key = f"f5_ml_{key}"
+            prob = probs.get(prob_key)
+            if prob is None:
+                continue
+            if key == "X":
+                label = format_baseball_selection_label("f5_moneyline", outcome="X")
+            else:
+                team = inplay.home_team if key == "1" else inplay.away_team
+                label = format_baseball_selection_label("f5_moneyline", team=team, outcome=key)
+            opp = _aporte_from_eval(
+                "f5_moneyline", prob_key, label, market_display, prob, odd, bankroll
+            )
+            if opp:
+                out.append(_format_stake_line(opp, bankroll))
+
+        market_display = resolve_baseball_market_display("f5_spread", market_names=names)
+        for line_key, sides in (f5.get("spread") or {}).items():
+            line_val = _parse_spread_line_key(line_key)
+            for side, odd in sides.items():
+                prob_key = f"f5_{side}_{line_key}"
+                prob = probs.get(prob_key)
+                if prob is None:
+                    continue
+                team = inplay.home_team if side == "home" else inplay.away_team
+                label = format_baseball_selection_label(
+                    "f5_spread",
+                    team=team,
+                    line=line_val if line_val is not None else 0.0,
+                )
+                opp = _aporte_from_eval(
+                    "f5_spread", prob_key, label, market_display, prob, odd, bankroll
+                )
+                if opp:
+                    out.append(_format_stake_line(opp, bankroll))
+
+    for inn_str, bucket in (period_markets.get("innings") or {}).items():
+        try:
+            inn = int(inn_str)
+        except ValueError:
+            continue
+        if current_inning > inn:
+            continue
+
+        market_display = resolve_baseball_market_display(
+            "inning_total", inning=inn, market_names=names
+        )
+        for line_str, sides in (bucket.get("total") or {}).items():
+            try:
+                line_val = float(str(line_str).replace(",", "."))
+            except ValueError:
+                continue
+            lk = f"{line_val:g}".replace(".", "_")
+            for outcome, odd in sides.items():
+                prob_key = f"inning_{inn}_{outcome}_{lk}"
+                prob = probs.get(prob_key)
+                if prob is None:
+                    continue
+                label = format_baseball_selection_label(
+                    "inning_total", outcome=outcome, line=line_val, inning=inn
+                )
+                opp = _aporte_from_eval(
+                    "inning_total", prob_key, label, market_display, prob, odd, bankroll
+                )
+                if opp:
+                    out.append(_format_stake_line(opp, bankroll))
+
+        market_display = resolve_baseball_market_display(
+            "inning_1x2", inning=inn, market_names=names
+        )
+        for key, odd in (bucket.get("1x2") or {}).items():
+            prob_key = f"inning_{inn}_1x2_{key}"
+            prob = probs.get(prob_key)
+            if prob is None:
+                continue
+            if key == "1":
+                team = inplay.home_team
+            elif key == "2":
+                team = inplay.away_team
+            else:
+                team = None
+            label = format_baseball_selection_label(
+                "inning_1x2", team=team, outcome=key, inning=inn
+            )
+            opp = _aporte_from_eval(
+                "inning_1x2", prob_key, label, market_display, prob, odd, bankroll
+            )
+            if opp:
+                out.append(_format_stake_line(opp, bankroll))
+
+    if period_markets.get("highest_inning"):
+        market_display = resolve_baseball_market_display("highest_inning", market_names=names)
+        for inn_str, odd in period_markets["highest_inning"].items():
+            try:
+                inn = int(inn_str)
+            except ValueError:
+                continue
+            prob_key = f"highest_inning_{inn}"
+            prob = probs.get(prob_key)
+            if prob is None:
+                continue
+            label = format_baseball_selection_label("highest_inning", inning=inn)
+            opp = _aporte_from_eval(
+                "highest_inning", prob_key, label, market_display, prob, odd, bankroll
+            )
+            if opp:
+                out.append(_format_stake_line(opp, bankroll))
+
+    for run_str, sides in (period_markets.get("run_n") or {}).items():
+        try:
+            run_num = int(run_str)
+        except ValueError:
+            continue
+        market_display = resolve_baseball_market_display(
+            "run_n", run_number=run_num, market_names=names
+        )
+        for outcome, odd in sides.items():
+            prob_key = f"run_{run_num}_{outcome}"
+            prob = probs.get(prob_key)
+            if prob is None:
+                continue
+            label = format_baseball_selection_label(
+                "run_n", outcome=outcome, run_number=run_num
+            )
+            opp = _aporte_from_eval(
+                "run_n", prob_key, label, market_display, prob, odd, bankroll
+            )
+            if opp:
+                out.append(_format_stake_line(opp, bankroll))
+
     return out
 
 
@@ -164,31 +403,86 @@ def build_baseball_bet_advice_report(
     inplay: BaseballInPlayResult,
     snapshot: SuperbetEventSnapshot,
     bankroll: float = 1000.0,
+    baseball_innings: list[dict[str, int]] | None = None,
 ) -> dict[str, Any]:
     """Constrói relatório de aportes para beisebol in-play."""
     aportes: list[BaseballAporteAdvice] = []
     aportes.extend(_moneyline_aportes(inplay, snapshot, bankroll))
     aportes.extend(_spread_aportes(inplay, snapshot, bankroll))
     aportes.extend(_total_aportes(inplay, snapshot, bankroll))
+    aportes.extend(_team_total_aportes(inplay, snapshot, bankroll))
+    aportes.extend(_period_aportes(inplay, snapshot, bankroll))
     aportes.sort(key=lambda a: a.expected_value, reverse=True)
-    confidence = _confidence_score(inplay, aportes)
+    raw_aportes = [
+        {
+            "market": a.market,
+            "outcome": a.outcome,
+            "label": a.label,
+            "market_display": a.market_display,
+            "model_prob": round(a.model_prob, 4),
+            "market_odd": round(a.market_odd, 2),
+            "implied_prob": round(a.implied_prob, 4),
+            "expected_value": round(a.expected_value, 4),
+            "edge_pp": round(a.edge_pp, 2),
+            "kelly_quarter": round(a.kelly_quarter, 4),
+            "suggested_stake_pct": round(a.suggested_stake_pct, 4),
+            "suggested_stake_value": a.suggested_stake_brl,
+            "action": a.action,
+        }
+        for a in aportes
+    ]
+    filtered = filter_live_baseball_aportes(
+        raw_aportes,
+        home_score=inplay.home_score,
+        away_score=inplay.away_score,
+        inning=inplay.inning,
+        baseball_innings=baseball_innings,
+    )
+    filtered, sanity_warnings = filter_sane_baseball_aportes(filtered, inplay=inplay)
+    filtered = annotate_baseball_line_tiers(filtered, inplay=inplay)
+    confidence = _confidence_score(inplay, [
+        BaseballAporteAdvice(
+            market=a["market"],
+            outcome=a["outcome"],
+            label=a["label"],
+            market_display=a.get("market_display") or a["label"],
+            model_prob=a["model_prob"],
+            market_odd=a["market_odd"],
+            implied_prob=a["implied_prob"],
+            expected_value=a["expected_value"],
+            edge_pp=a["edge_pp"],
+            kelly_quarter=a["kelly_quarter"],
+            suggested_stake_pct=a["suggested_stake_pct"],
+            action=a["action"],
+        )
+        for a in filtered
+    ])
     return {
-        "aportes": [
-            {
-                "market": a.market,
-                "outcome": a.outcome,
-                "label": a.label,
-                "model_prob": round(a.model_prob, 4),
-                "market_odd": round(a.market_odd, 2),
-                "implied_prob": round(a.implied_prob, 4),
-                "expected_value": round(a.expected_value, 4),
-                "edge_pp": round(a.edge_pp, 2),
-                "kelly_quarter": round(a.kelly_quarter, 4),
-                "suggested_stake_pct": round(a.suggested_stake_pct, 4),
-                "suggested_stake_value": a.suggested_stake_brl,
-                "action": a.action,
-            }
-            for a in aportes
-        ],
+        "aportes": filtered,
         "confidence": confidence,
+        "sanity_warnings": sanity_warnings,
     }
+
+
+def filter_live_baseball_aportes(
+    aportes: list[dict[str, Any]],
+    *,
+    home_score: int,
+    away_score: int,
+    inning: int,
+    baseball_innings: list[dict[str, int]] | None = None,
+) -> list[dict[str, Any]]:
+    """Remove aportes em mercados mortos ou período encerrado."""
+    kept: list[dict[str, Any]] = []
+    for a in aportes:
+        dead, _ = is_dead_baseball_market(
+            a.get("market", ""),
+            a.get("outcome", ""),
+            home_score=home_score,
+            away_score=away_score,
+            inning=inning,
+            baseball_innings=baseball_innings,
+        )
+        if not dead:
+            kept.append(a)
+    return kept

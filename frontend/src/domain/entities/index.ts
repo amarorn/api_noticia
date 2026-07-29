@@ -1716,6 +1716,7 @@ export interface BasketAporteAdvice {
   market: string;
   outcome: string;
   label: string;
+  marketDisplay?: string;
   modelProb: number;
   marketOdd: number;
   impliedProb: number;
@@ -1725,6 +1726,7 @@ export interface BasketAporteAdvice {
   suggestedStakePct: number;
   suggestedStakeValue: number | null;
   action: string;
+  lineTier?: string | null;
 }
 
 export interface BasketConfidence {
@@ -1758,6 +1760,60 @@ export interface BasketSuperbetLiveAdvice {
   confidence: BasketConfidence | null;
 }
 
+export interface BasketMultiGameLeg {
+  superbetEventId: number;
+  eventName: string;
+  homeTeam: string;
+  awayTeam: string;
+  minute: number;
+  isLive: boolean;
+  market: string;
+  outcome: string;
+  label: string;
+  marketDisplay: string;
+  modelProb: number;
+  marketOdd: number;
+  expectedValue: number;
+  edgePp: number;
+  action: string;
+}
+
+export interface BasketMultiGameTicket {
+  ticketId: string;
+  legs: BasketMultiGameLeg[];
+  combinedOdd: number;
+  productOdds: number | null;
+  pricingMode: string;
+  combinedProb: number | null;
+  combinedEv: number | null;
+  stakeBrl: number;
+  stakePct: number;
+  potentialPayout: number;
+  finalPayout: number;
+  bonusEligible: boolean;
+  bonusPercentage: number;
+  score: number;
+  warnings: string[];
+}
+
+export interface BasketMultiGameTicketsResult {
+  eventIds: number[];
+  gamesEvaluated: number;
+  gamesWithPick: number;
+  skippedEvents: Array<{
+    eventId: number;
+    reason: string;
+    homeTeam: string | null;
+    awayTeam: string | null;
+  }>;
+  perGameBest: BasketMultiGameLeg[];
+  suggestedTickets: BasketMultiGameTicket[];
+  bankroll: number;
+  stake: number;
+  minLegs: number;
+  maxLegs: number;
+}
+
 /** Feed ao vivo de beisebol — mesmo shape da lista de basquete. */
 export type BaseballSuperbetLiveEvent = BasketSuperbetLiveEvent;
 export type BaseballSuperbetLiveFeed = BasketSuperbetLiveFeed;
@@ -1772,6 +1828,8 @@ export interface BaseballInPlaySummary {
   moneylineProbs: Record<string, number>;
   spreadProbs: Record<string, number>;
   totalProbs: Record<string, number>;
+  teamTotalProbs: Record<string, number>;
+  periodProbs: Record<string, number>;
   rpiHome: number | null;
   rpiAway: number | null;
   rpiHomePrior: number | null;
@@ -1780,12 +1838,95 @@ export interface BaseballInPlaySummary {
   nSimulations: number | null;
   marketTotalLine: number | null;
   marketSpreadLine: number | null;
+  scoreAdapted?: boolean;
+  obsElapsedInnings?: number | null;
+}
+
+export interface BaseballMarketBenchmark {
+  source: string;
+  eventId: number;
+  moneyline: Record<
+    string,
+    { market: number; model: number; edge: number; odds?: number | null }
+  >;
+  totals: Record<
+    string,
+    { marketOver: number; modelOver: number; edgeOver: number }
+  >;
+  spread: Record<
+    string,
+    { marketHomeCover: number; modelHomeCover: number; edgeHome: number }
+  >;
 }
 
 export interface BaseballInningScore {
   num: number;
   home: number;
   away: number;
+}
+
+export interface BaseballGamePhase {
+  phase: string;
+  label: string;
+  extrasPossible: boolean;
+  blockF5: boolean;
+  blockFtTotals: boolean;
+  blockNewFtAportes: boolean;
+  runGap: number;
+  leadSide: string | null;
+}
+
+export interface BaseballBetGuardrails {
+  blockNewBets: boolean;
+  blockReason: string | null;
+  deadMarkets: string[];
+  allowF5: boolean;
+  allowFtTotals: boolean;
+  extrasWarning: boolean;
+}
+
+export interface BaseballBetStrategy {
+  posture: string;
+  waitReason: string | null;
+  opportunities: Array<{
+    market: string;
+    outcome: string;
+    label: string;
+    tier: string;
+    action: string;
+    timing?: string;
+    edgePp: number;
+    expectedValue: number;
+    marketOdd: number;
+    modelProb: number;
+  }>;
+  shields: Array<{
+    action: string;
+    priority: string;
+    title: string;
+    reason: string;
+  }>;
+  watchList: Array<Record<string, unknown>>;
+  marketScan: Array<{
+    category: string;
+    line: string;
+    edgePp: number;
+    model?: number;
+    market?: number;
+  }>;
+  rules: string[];
+  cashout?: {
+    action: string;
+    confidence: number;
+    reason: string;
+    currentModelProb: number;
+    placedImpliedProb: number;
+    remainingEv: number;
+    estimatedFairCashout: number;
+    potentialReturn: number;
+    trendInfluenced?: boolean;
+    trendUrgency?: string | null;
+  } | null;
 }
 
 export interface BaseballSuperbetLiveAdvice {
@@ -1812,6 +1953,29 @@ export interface BaseballSuperbetLiveAdvice {
   inplaySummary: BaseballInPlaySummary;
   aportes: BasketAporteAdvice[];
   confidence: BasketConfidence | null;
+  gamePhase: BaseballGamePhase | null;
+  strategy: BaseballBetStrategy | null;
+  betGuardrails: BaseballBetGuardrails | null;
+  marketBenchmark: BaseballMarketBenchmark | null;
+  cashout: {
+    action: string;
+    confidence: number;
+    reason: string;
+    currentModelProb: number;
+    placedImpliedProb: number;
+    remainingEv: number;
+    estimatedFairCashout: number;
+    potentialReturn: number;
+    trendInfluenced?: boolean;
+    trendUrgency?: string | null;
+  } | null;
+  trendReport?: Record<string, unknown> | null;
+  scoreStale?: {
+    scoreStale: boolean;
+    warnings: string[];
+    snapshotRuns?: number | null;
+    tickRuns?: number | null;
+  } | null;
 }
 
 export interface LiveCopilotPick {

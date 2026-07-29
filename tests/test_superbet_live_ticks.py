@@ -12,6 +12,7 @@ def test_append_live_tick_creates_parquet(tmp_path, monkeypatch):
         "home_team": "Brasil",
         "away_team": "Egito",
         "betradar_id": "69548860",
+        "sport_id": 5,
         "h2h_odds": {"1": 1.85, "X": 3.5, "2": 4.2},
         "h2h_implied": {"1": 0.52, "X": 0.28, "2": 0.20},
         "raw_market_count": 96,
@@ -47,6 +48,7 @@ def test_append_live_tick_creates_parquet(tmp_path, monkeypatch):
     assert len(df) == 1
     assert df.iloc[0]["event_id"] == 13247229
     assert df.iloc[0]["minute"] == 17
+    assert int(df.iloc[0]["sport_id"]) == 5
     assert df.iloc[0]["cashout_action"] == "manter"
     assert df.iloc[0]["top_aporte_ev"] == 0.06
 

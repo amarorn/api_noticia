@@ -27,6 +27,9 @@ const CATEGORY_STYLES: Record<string, string> = {
   half: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200",
   team_goals: "border-emerald-400/25 bg-emerald-400/10 text-emerald-200",
   combo: "border-pink-400/25 bg-pink-400/10 text-pink-200",
+  double_chance: "border-indigo-400/25 bg-indigo-400/10 text-indigo-200",
+  draw_no_bet: "border-teal-400/25 bg-teal-400/10 text-teal-200",
+  fouls: "border-rose-400/25 bg-rose-400/10 text-rose-200",
   other: "border-white/15 bg-white/5 text-slate-300",
 };
 
@@ -35,19 +38,26 @@ const CATEGORY_LABELS: Record<string, string> = {
   goals: "Gols",
   corners: "Escanteios",
   cards: "Cartões",
+  fouls: "Faltas",
   handicap: "Handicap",
   half: "Tempo",
   team_goals: "Gols time",
   combo: "Combo",
+  double_chance: "Dupla",
+  draw_no_bet: "DNB",
   other: "Outros",
 };
 
 function inferMarketCategory(market: string): string {
   if (market === "h2h") return "h2h";
-  if (market.startsWith("corners_")) return "corners";
+  if (market === "corners_h2h") return "corners";
+  if (market.startsWith("corners_") || market.includes("_corners_over_")) return "corners";
   if (market.startsWith("cards_")) return "cards";
+  if (market.startsWith("fouls_")) return "fouls";
   if (market.startsWith("combo_")) return "combo";
-  if (market.includes("_ah_") || market.includes("_hcap_")) return "handicap";
+  if (/^(?:1h_|2h_)?dc_/.test(market)) return "double_chance";
+  if (/^(?:1h_|2h_)?dnb_/.test(market)) return "draw_no_bet";
+  if (market.includes("hcap3_") || market.includes("_ah_") || market.includes("_hcap_")) return "handicap";
   if (market.startsWith("1h_") || market.startsWith("2h_")) return "half";
   if (market.startsWith("home_over_") || market.startsWith("away_over_")) return "team_goals";
   if (market.startsWith("over_") || market === "btts" || market === "next_goal") return "goals";
@@ -319,7 +329,13 @@ function MarketScanHighlights({
   const altMarkets = scan.filter(
     (m) =>
       m.market.startsWith("corners_") ||
+      m.market.includes("_corners_over_") ||
+      m.market === "corners_h2h" ||
       m.market.startsWith("cards_") ||
+      m.market.startsWith("fouls_") ||
+      /^(?:1h_|2h_)?dc_/.test(m.market) ||
+      /^(?:1h_|2h_)?dnb_/.test(m.market) ||
+      m.market.includes("hcap3_") ||
       m.market.startsWith("2h_") ||
       m.market.startsWith("1h_"),
   );

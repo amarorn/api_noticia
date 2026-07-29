@@ -90,6 +90,11 @@ def basket_bilhete_candidates(advice: dict[str, Any]) -> list[dict[str, Any]]:
     return rows[:12]
 
 
+def baseball_bilhete_candidates(advice: dict[str, Any]) -> list[dict[str, Any]]:
+    """Mesmo shape do basquete (aportes EV/Kelly); inclui F5/entrada."""
+    return basket_bilhete_candidates(advice)
+
+
 def bilhete_context_football(advice: dict[str, Any]) -> dict[str, Any]:
     strategy = advice.get("strategy") or {}
     candidates = football_bilhete_candidates(advice)
@@ -162,6 +167,18 @@ def bilhete_context_basket(advice: dict[str, Any]) -> dict[str, Any]:
         "regras_bilhete": [
             "Use somente mercados do scan (moneyline, spread, total).",
             "Prefira 1-2 pernas; combo só se complementares.",
+        ],
+    }
+
+
+def bilhete_context_baseball(advice: dict[str, Any]) -> dict[str, Any]:
+    candidates = baseball_bilhete_candidates(advice)
+    return {
+        "mercados_scan": [_compact_scan_row(r) for r in candidates[:12]],
+        "regras_bilhete": [
+            "Use somente mercados do scan (ML, run line, total, F5, entrada, team total).",
+            "Não recomende F5 após a 5ª entrada.",
+            "Prefira 1-2 pernas; evite corrida N em jogo decidido.",
         ],
     }
 
@@ -318,8 +335,12 @@ def validate_copilot_bilhete(
 
 
 def fallback_bilhete_from_optimizer(advice: dict[str, Any], *, sport: str) -> dict[str, Any] | None:
-    if sport == "basketball":
-        candidates = basket_bilhete_candidates(advice)
+    if sport in {"basketball", "baseball"}:
+        candidates = (
+            basket_bilhete_candidates(advice)
+            if sport == "basketball"
+            else baseball_bilhete_candidates(advice)
+        )
         strong = [c for c in candidates if float(c.get("expected_value") or 0) >= 0.04]
         if not strong:
             return None

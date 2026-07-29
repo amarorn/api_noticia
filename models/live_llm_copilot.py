@@ -11,6 +11,8 @@ import httpx
 from config import settings
 from models.live_copilot_bilhete import (
     basket_bilhete_candidates,
+    baseball_bilhete_candidates,
+    bilhete_context_baseball,
     bilhete_context_basket,
     bilhete_context_football,
     fallback_bilhete_from_optimizer,
@@ -72,6 +74,16 @@ NUNCA recomende next_goal (próximo gol / Nº gol) — variância extrema, fora 
 Se bilhetes_otimizados_modelo existir, use como referência mas pode ajustar narrativa.
 Se nada combinar, bilhete.tipo=nenhum e pernas=[]."""
 
+_BASEBALL_SYSTEM_SUFFIX = """
+
+Contexto beisebol (MLB/KBO/NPB):
+- "entrada" = inning (1–9+); após 5ª entrada mercados F5 estão mortos.
+- Runs = "corridas", não gols. Use linguagem de beisebol.
+- Respeite bet_guardrails (block_new_bets) e mercados mortos.
+- Se cashout.action for cashout/cashout_parcial com trend_influenced, priorize alerta de saída.
+- Não recomende highest_inning ou run_n com odd > 15 sem edge explícito no scan.
+- Bilhete: ML, run line, total FT, F5 (só até 5I), total por entrada/time."""
+
 
 class LiveCopilotError(Exception):
     pass
@@ -112,6 +124,55 @@ def _basket_candidates(advice: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         out.append(row)
     return out[:8]
+
+
+def _baseball_candidates(advice: dict[str, Any]) -> list[dict[str, Any]]:
+    strategy = advice.get("strategy") or {}
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for source in (
+        strategy.get("opportunities") or [],
+        strategy.get("watch_list") or [],
+        advice.get("aportes") or [],
+    ):
+        for row in source:
+            if not isinstance(row, dict):
+                continue
+            market = str(row.get("market") or "")
+            outcome = str(row.get("outcome") or "")
+            if not market or not outcome:
+                continue
+            key = _pick_key(market, outcome)
+            if key in seen:
+                continue
+            if source is advice.get("aportes") and row.get("action") not in (
+                "apostar",
+                "aporte",
+                "monitorar",
+            ):
+                continue
+            if source is strategy.get("opportunities") and row.get("tier") == "abaixo_limiar":
+                continue
+            seen.add(key)
+            out.append(row)
+    out.sort(key=lambda r: float(r.get("expected_value") or 0), reverse=True)
+    return out[:10]
+
+
+def _aport_sport_candidates(advice: dict[str, Any], *, sport: str) -> list[dict[str, Any]]:
+    if sport == "basketball":
+        return _basket_candidates(advice)
+    if sport == "baseball":
+        return _baseball_candidates(advice)
+    return _football_candidates(advice)
+
+
+def _aport_sport_bilhete_candidates(advice: dict[str, Any], *, sport: str) -> list[dict[str, Any]]:
+    if sport == "basketball":
+        return basket_bilhete_candidates(advice)
+    if sport == "baseball":
+        return baseball_bilhete_candidates(advice)
+    return football_bilhete_candidates(advice)
 
 
 def _allowed_keys(candidates: list[dict[str, Any]]) -> set[str]:
@@ -204,24 +265,101 @@ def _build_basket_context(advice: dict[str, Any]) -> dict[str, Any]:
     return ctx
 
 
+def _build_baseball_context(advice: dict[str, Any]) -> dict[str, Any]:
+    candidates = _baseball_candidates(advice)
+    compact = []
+    for row in candidates[:8]:
+        compact.append({
+            "market": row.get("market"),
+            "outcome": row.get("outcome"),
+            "label": row.get("label"),
+            "tier": row.get("tier"),
+            "model_prob": row.get("model_prob"),
+            "market_odd": row.get("market_odd"),
+            "expected_value": row.get("expected_value"),
+            "edge_pp": row.get("edge_pp"),
+            "suggested_stake_pct": row.get("suggested_stake_pct"),
+            "action": row.get("action"),
+        })
+    strategy = advice.get("strategy") or {}
+    phase = advice.get("game_phase") or {}
+    summary = advice.get("inplay_summary") or {}
+    guardrails = advice.get("bet_guardrails") or {}
+    trend = advice.get("trend_report") or {}
+    benchmark = advice.get("market_benchmark") or {}
+    shields = [
+        {"title": s.get("title"), "reason": s.get("reason"), "action": s.get("action")}
+        for s in (strategy.get("shields") or [])[:4]
+        if isinstance(s, dict)
+    ]
+    innings = advice.get("baseball_innings") or []
+    ctx = {
+        "sport": "baseball",
+        "partida": f"{advice.get('home_team')} x {advice.get('away_team')}",
+        "placar": advice.get("current_score"),
+        "entrada": advice.get("inning") or advice.get("minute"),
+        "periodo": advice.get("period_label"),
+        "fase": phase.get("label") or phase.get("phase"),
+        "postura": strategy.get("posture"),
+        "wait_reason": strategy.get("wait_reason"),
+        "cashout": strategy.get("cashout") or advice.get("cashout"),
+        "trend_report": {
+            "dominant_trend": trend.get("dominant_trend"),
+            "position_advice": trend.get("position_advice"),
+        }
+        if trend
+        else None,
+        "bet_guardrails": {
+            "block_new_bets": guardrails.get("block_new_bets"),
+            "block_reason": guardrails.get("block_reason"),
+            "dead_markets": guardrails.get("dead_markets"),
+        },
+        "confianca_modelo": advice.get("confidence"),
+        "projecao_total": summary.get("expected_total"),
+        "rpi_home": summary.get("rpi_home"),
+        "rpi_away": summary.get("rpi_away"),
+        "score_adapted": summary.get("score_adapted"),
+        "spread_mercado": summary.get("market_spread_line"),
+        "total_mercado": summary.get("market_total_line"),
+        "benchmark_ml": benchmark.get("moneyline"),
+        "benchmark_total": benchmark.get("total"),
+        "linha_por_entrada": innings[-6:],
+        "oportunidades_aprovadas": compact,
+        "watch_list": compact[:3],
+        "blindagens": shields,
+    }
+    ctx.update(bilhete_context_baseball(advice))
+    return ctx
+
+
 def _build_context(advice: dict[str, Any], *, sport: str) -> dict[str, Any]:
     if sport == "basketball":
         return _build_basket_context(advice)
+    if sport == "baseball":
+        return _build_baseball_context(advice)
     return _build_football_context(advice)
 
 
 def _copilot_cache_key(advice: dict[str, Any], *, sport: str) -> tuple[Any, ...]:
-    if sport == "basketball":
-        top = (_basket_candidates(advice) or [{}])[0]
-        return (
+    if sport in {"basketball", "baseball"}:
+        top = (_aport_sport_candidates(advice, sport=sport) or [{}])[0]
+        key_fields: tuple[Any, ...] = (
             sport,
             advice.get("superbet_event_id"),
             advice.get("current_score"),
-            advice.get("minute"),
+            advice.get("minute") or advice.get("inning"),
             top.get("market"),
             top.get("outcome"),
             round(float(top.get("expected_value") or 0), 3),
         )
+        if sport == "baseball":
+            strategy = advice.get("strategy") or {}
+            key_fields = (
+                *key_fields,
+                strategy.get("posture"),
+                (advice.get("cashout") or {}).get("action"),
+            )
+        return key_fields
     strategy = advice.get("strategy") or {}
     top = (_football_candidates(advice) or [{}])[0]
     return (
@@ -247,9 +385,13 @@ def _parse_json(raw: str) -> dict[str, Any]:
         raise LiveCopilotError("Resposta GPT não é JSON válido.") from None
 
 
-def _call_openai(context: dict[str, Any]) -> dict[str, Any]:
+def _call_openai(context: dict[str, Any], *, sport: str = "football") -> dict[str, Any]:
     if not settings.openai_api_key:
         raise LiveCopilotError("OPENAI_API_KEY não configurada.")
+
+    system_prompt = _SYSTEM_PROMPT
+    if sport == "baseball":
+        system_prompt = f"{_SYSTEM_PROMPT}\n{_BASEBALL_SYSTEM_SUFFIX}"
 
     headers = {
         "Authorization": f"Bearer {settings.openai_api_key}",
@@ -258,7 +400,7 @@ def _call_openai(context: dict[str, Any]) -> dict[str, Any]:
     payload = {
         "model": settings.openai_model,
         "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": (
@@ -374,6 +516,11 @@ def _fallback_from_quant(advice: dict[str, Any], *, sport: str) -> dict[str, Any
         candidates = _basket_candidates(advice)
         wait_reason = None
         posture = None
+    elif sport == "baseball":
+        strategy = advice.get("strategy") or {}
+        candidates = _baseball_candidates(advice)
+        wait_reason = strategy.get("wait_reason")
+        posture = strategy.get("posture")
     else:
         strategy = advice.get("strategy") or {}
         candidates = _football_candidates(advice)
@@ -399,17 +546,29 @@ def _fallback_from_quant(advice: dict[str, Any], *, sport: str) -> dict[str, Any
 
     if picks:
         acao = "apostar"
-        momento = f"{advice.get('minute')}' — {len(picks)} oportunidade(s) com EV positivo."
+        if sport == "baseball":
+            inn = advice.get("inning") or advice.get("minute")
+            momento = f"{inn}I — {len(picks)} oportunidade(s) com EV positivo."
+        else:
+            momento = f"{advice.get('minute')}' — {len(picks)} oportunidade(s) com EV positivo."
     elif wait_reason:
         acao = "aguardar"
         momento = str(wait_reason)
     else:
         acao = "aguardar"
-        momento = f"{advice.get('minute')}' — aguardar melhor janela de entrada."
+        if sport == "baseball":
+            inn = advice.get("inning") or advice.get("minute")
+            momento = f"{inn}I — aguardar melhor janela de entrada."
+        else:
+            momento = f"{advice.get('minute')}' — aguardar melhor janela de entrada."
 
     alertas = []
     if posture:
         alertas.append(f"Postura do plano: {posture}")
+    cashout = (advice.get("strategy") or {}).get("cashout") or advice.get("cashout")
+    if sport == "baseball" and isinstance(cashout, dict):
+        if cashout.get("action") in {"cashout", "cashout_parcial"}:
+            alertas.append(f"Cash-out: {cashout.get('reason', '')[:120]}")
 
     bilhete = fallback_bilhete_from_optimizer(advice, sport=sport)
 
@@ -461,15 +620,13 @@ def run_live_copilot(advice: dict[str, Any], *, sport: str = "football") -> dict
         return cached
 
     context = _build_context(advice, sport=sport)
-    candidates = _football_candidates(advice) if sport != "basketball" else _basket_candidates(advice)
-    bilhete_candidates = (
-        football_bilhete_candidates(advice) if sport != "basketball" else basket_bilhete_candidates(advice)
-    )
+    candidates = _aport_sport_candidates(advice, sport=sport)
+    bilhete_candidates = _aport_sport_bilhete_candidates(advice, sport=sport)
     allowed = _allowed_keys(candidates)
     base["wait_reason"] = context.get("wait_reason")
 
     try:
-        llm_raw = _call_openai(context)
+        llm_raw = _call_openai(context, sport=sport)
         validated = _validate_llm_payload(
             llm_raw,
             allowed=allowed,

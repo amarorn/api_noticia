@@ -38,7 +38,9 @@ import {
   SimulateWcMatchUseCase,
   GetBasketSuperbetLiveUseCase,
   GetBasketSuperbetLiveAdviceUseCase,
+  BuildBasketMultiGameTicketsUseCase,
   GetBaseballSuperbetLiveUseCase,
+  GetBaseballSuperbetEventUseCase,
   GetBaseballSuperbetLiveAdviceUseCase,
   GetLiveCopilotUseCase,
   PostLiveCopilotAgentUseCase,
@@ -77,7 +79,11 @@ export const getBasketSuperbetLiveUseCase = new GetBasketSuperbetLiveUseCase(wcR
 export const getBasketSuperbetLiveAdviceUseCase = new GetBasketSuperbetLiveAdviceUseCase(
   wcRepository,
 );
+export const buildBasketMultiGameTicketsUseCase = new BuildBasketMultiGameTicketsUseCase(
+  wcRepository,
+);
 export const getBaseballSuperbetLiveUseCase = new GetBaseballSuperbetLiveUseCase(wcRepository);
+export const getBaseballSuperbetEventUseCase = new GetBaseballSuperbetEventUseCase(wcRepository);
 export const getBaseballSuperbetLiveAdviceUseCase = new GetBaseballSuperbetLiveAdviceUseCase(
   wcRepository,
 );

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getBasketSuperbetLiveUseCase, getBaseballSuperbetLiveUseCase, getSuperbetLiveUseCase } from "@/application/container";
 import type { BaseballSuperbetLiveEvent, BasketSuperbetLiveEvent, SuperbetLiveEvent } from "@/domain/entities";
@@ -17,6 +17,8 @@ import { IconChevronRight } from "@/presentation/components/ui/Icons";
 import { resolveAdaptiveLivePollMs } from "@/presentation/utils/adaptiveLivePoll";
 import { buildInPlayLink } from "@/presentation/utils/matchSuperbetEvent";
 import { formatScheduleDate, formatScheduleTime } from "@/presentation/utils/sofascore";
+import { BasketMultiGameTicketPanel } from "@/presentation/components/predictions/BasketMultiGameTicketPanel";
+import { buildBasketMultiLiveLink } from "@/presentation/pages/BasketMultiLiveInPlayPage";
 
 type SportFilter = "football" | "esport_fifa" | "basketball" | "baseball" | "all";
 type TierFilter = "all" | "bettable" | "top" | "good" | "watch";
@@ -90,7 +92,15 @@ function baseballInningLabel(event: BaseballSuperbetLiveEvent): string {
   return event.minute > 0 ? `${event.minute}I` : "Ao vivo";
 }
 
-function BasketEventRow({ event }: { event: BasketSuperbetLiveEvent }) {
+function BasketEventRow({
+  event,
+  selected,
+  onToggle,
+}: {
+  event: BasketSuperbetLiveEvent;
+  selected: boolean;
+  onToggle: (eventId: number) => void;
+}) {
   const odds = formatBasketOdds(event.h2hOdds);
   const schedule = formatEventSchedule(event.utcDate);
 
@@ -99,6 +109,15 @@ function BasketEventRow({ event }: { event: BasketSuperbetLiveEvent }) {
       key={event.eventId}
       className="group border-b border-white/5 transition-colors hover:bg-white/[0.03]"
     >
+      <td className="px-3 py-3.5">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={() => onToggle(event.eventId)}
+          aria-label={`Selecionar ${event.homeTeam} × ${event.awayTeam}`}
+          className="h-4 w-4 rounded border-white/20 bg-black/30 accent-amber-400"
+        />
+      </td>
       <td className="px-4 py-3.5">
         <div className="flex min-w-0 items-center gap-2">
           <TeamFlag team={event.homeTeam} size={28} />
@@ -401,9 +420,26 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
 }
 
 export function LivePage() {
+  const [searchParams] = useSearchParams();
   const [sportFilter, setSportFilter] = useState<SportFilter>("esport_fifa");
   const [nationalOnly, setNationalOnly] = useState(false);
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [selectedBasketEventIds, setSelectedBasketEventIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    const sport = searchParams.get("sport");
+    if (sport === "basketball" || sport === "baseball" || sport === "football" || sport === "all") {
+      setSportFilter(sport === "football" ? "football" : sport);
+    } else if (sport === "esport_fifa") {
+      setSportFilter("esport_fifa");
+    }
+  }, [searchParams]);
+
+  const toggleBasketEventSelection = (eventId: number) => {
+    setSelectedBasketEventIds((prev) =>
+      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId],
+    );
+  };
   const pulse = useDataPulse();
   const pollClock = useAdaptivePollClock(true);
   const listPollMs = useMemo(() => {
@@ -586,39 +622,65 @@ export function LivePage() {
             Nenhum jogo de basquete ao vivo no momento na Superbet.
           </div>
         ) : (
-          <AppTableShell
-            footer={
-              <>
-                {basketLiveQuery.data?.events.length ?? 0} jogo(s) exibido(s) · fonte Superbet
-                {basketLiveQuery.data?.capturedAt
-                  ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    }).format(new Date(basketLiveQuery.data.capturedAt))}`
-                  : ""}
-              </>
-            }
-          >
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr>
-                  <th className="px-4 py-3">Confronto</th>
-                  <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
-                  <th className="px-4 py-3">Placar</th>
-                  <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
-                  <th className="hidden px-4 py-3 md:table-cell">Odds vencedor</th>
-                  <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
-                  <th className="px-4 py-3 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(basketLiveQuery.data?.events ?? []).map((event) => (
-                  <BasketEventRow key={event.eventId} event={event} />
-                ))}
-              </tbody>
-            </table>
-          </AppTableShell>
+          <>
+            {selectedBasketEventIds.length >= 2 ? (
+              <div className="mb-4 flex flex-wrap items-center justify-end gap-2 px-1">
+                <Link
+                  to={buildBasketMultiLiveLink(selectedBasketEventIds)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-amber-500/35 bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-100 hover:border-amber-400/50"
+                >
+                  Abrir painel ao vivo multi ({selectedBasketEventIds.length} jogos)
+                </Link>
+              </div>
+            ) : null}
+            <BasketMultiGameTicketPanel
+              events={basketLiveQuery.data?.events ?? []}
+              selectedEventIds={selectedBasketEventIds}
+              onClearSelection={() => setSelectedBasketEventIds([])}
+            />
+            <AppTableShell
+              footer={
+                <>
+                  {basketLiveQuery.data?.events.length ?? 0} jogo(s) exibido(s) · fonte Superbet
+                  {selectedBasketEventIds.length > 0
+                    ? ` · ${selectedBasketEventIds.length} selecionado(s)`
+                    : ""}
+                  {basketLiveQuery.data?.capturedAt
+                    ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      }).format(new Date(basketLiveQuery.data.capturedAt))}`
+                    : ""}
+                </>
+              }
+            >
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-3" aria-label="Selecionar jogos" />
+                    <th className="px-4 py-3">Confronto</th>
+                    <th className="hidden px-3 py-3 md:table-cell">Data / hora</th>
+                    <th className="px-4 py-3">Placar</th>
+                    <th className="hidden px-4 py-3 sm:table-cell">Tempo</th>
+                    <th className="hidden px-4 py-3 md:table-cell">Odds vencedor</th>
+                    <th className="hidden px-4 py-3 lg:table-cell">Mercados</th>
+                    <th className="px-4 py-3 text-right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(basketLiveQuery.data?.events ?? []).map((event) => (
+                    <BasketEventRow
+                      key={event.eventId}
+                      event={event}
+                      selected={selectedBasketEventIds.includes(event.eventId)}
+                      onToggle={toggleBasketEventSelection}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </AppTableShell>
+          </>
         )
       ) : isBaseball ? (
         baseballLiveQuery.isLoading ? (

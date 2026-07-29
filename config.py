@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     superbet_timeout_sec: float = 45.0
     superbet_fetch_retries: int = 2
     superbet_stale_max_age_sec: int = 600
+    superbet_min_event_id: int = 1_000_000  # IDs reais Superbet BR têm 7–8 dígitos
     scorealarm_base_url: str = "https://scorealarm-stats.freetls.fastly.net"
     scorealarm_brand: str = "brsuperbetsport"
     scorealarm_locale: str = "pt-BR"
@@ -135,6 +136,8 @@ class Settings(BaseSettings):
     baseball_mc_simulations: int = 5000
     baseball_fast_mc_simulations: int = 1500
     baseball_prior_weight: float = 6.0  # entradas-equivalente de confiança no prior (~2/3 de jogo)
+    baseball_box_score_adapt: bool = True  # usa placar por entrada quando disponível no feed
+    baseball_box_score_weight_boost: float = 1.35  # peso extra nas runs observadas vs prior de mercado
     baseball_default_total: float = 8.5  # total de corridas padrão quando mercado não oferece linha
     baseball_late_inning: int = 7
     baseball_late_boost_enabled: bool = True
@@ -142,6 +145,7 @@ class Settings(BaseSettings):
     baseball_trailing_push_factor: float = 1.08
     baseball_spread_lines: tuple[float, ...] = (-2.5, -1.5, 1.5, 2.5, 3.5, 4.5, 5.5)
     baseball_total_lines: tuple[float, ...] = (6.5, 7.5, 8.5, 9.5, 10.5, 11.5)
+    baseball_live_min_edge_pp: float = 5.0  # edge mínimo beisebol (global LIVE_MIN_EDGE_PP costuma ser mais alto)
     # Fase 1 in-play (docs/specs/spec-fase-1-quickwins-inplay.md)
     inplay_use_nhpp: bool = True
     inplay_use_market_shrinkage: bool = True
@@ -205,6 +209,8 @@ class Settings(BaseSettings):
     superbet_poll_wc_phase: str = "group"
     superbet_poll_watchlist_enabled: bool = True
     superbet_poll_watchlist_max: int = 24
+    superbet_watchlist_stale_hours: float = 12.0  # remove da watchlist bronze antigo sem ao vivo
+    superbet_watchlist_sweep_enabled: bool = True
     # Widget Sportradar LMT Plus (mesmo feed Betradar da Superbet — requer licença)
     sportradar_client_id: str | None = None
     sportradar_language: str = "pt_br"

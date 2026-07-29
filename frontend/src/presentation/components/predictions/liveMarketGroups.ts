@@ -51,6 +51,21 @@ export const CORE_MARKET_GROUPS: MarketGroup[] = [
     matchMarket: (m) => m.startsWith("combo_"),
     note: "Mercados combinados: BTTS+Gols, Time+BTTS",
   },
+  {
+    id: "double_chance",
+    superbetName: "Dupla Chance",
+    matchMarket: (m) => m.startsWith("dc_") || m.startsWith("1h_dc_") || m.startsWith("2h_dc_"),
+  },
+  {
+    id: "draw_no_bet",
+    superbetName: "Empate Anula Aposta",
+    matchMarket: (m) => m.startsWith("dnb_") || m.startsWith("1h_dnb_") || m.startsWith("2h_dnb_"),
+  },
+  {
+    id: "hcap3",
+    superbetName: "Handicap 3-way",
+    matchMarket: (m) => m.includes("hcap3_"),
+  },
 ];
 
 function halfGroups(period: "1h" | "2h", label: string): MarketGroup[] {
@@ -78,7 +93,22 @@ function halfGroups(period: "1h" | "2h", label: string): MarketGroup[] {
     {
       id: `${period}_hcap`,
       superbetName: `${label} — Handicap`,
-      matchMarket: (m) => m.startsWith(`${period}_hcap_`),
+      matchMarket: (m) => m.startsWith(`${period}_hcap_`) && !m.includes("hcap3_"),
+    },
+    {
+      id: `${period}_dc`,
+      superbetName: `${label} — Dupla Chance`,
+      matchMarket: (m) => m.startsWith(`${period}_dc_`),
+    },
+    {
+      id: `${period}_dnb`,
+      superbetName: `${label} — Empate Anula`,
+      matchMarket: (m) => m.startsWith(`${period}_dnb_`),
+    },
+    {
+      id: `${period}_hcap3`,
+      superbetName: `${label} — Handicap 3-way`,
+      matchMarket: (m) => m.startsWith(`${period}_hcap3_`),
     },
   ];
 }
@@ -100,6 +130,21 @@ export const MARKET_SECTIONS: MarketSection[] = [
         id: "cards",
         superbetName: "Cartões amarelos",
         matchMarket: (m) => m.startsWith("cards_over_"),
+      },
+      {
+        id: "fouls",
+        superbetName: "Total de Faltas",
+        matchMarket: (m) => m.startsWith("fouls_over_"),
+      },
+      {
+        id: "corners_h2h",
+        superbetName: "Quem tem mais escanteios",
+        matchMarket: (m) => m === "corners_h2h",
+      },
+      {
+        id: "team_corners",
+        superbetName: "Escanteios por time",
+        matchMarket: (m) => m.startsWith("home_corners_over_") || m.startsWith("away_corners_over_"),
       },
     ],
   },

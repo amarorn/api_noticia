@@ -350,20 +350,73 @@
 }
 
 /* Cards de oportunidade */
+.opportunities-rail-v2 {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(210px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 2px;
+}
+
+@media (min-width: 1280px) {
+  .opportunities-rail-v2 {
+    grid-auto-flow: unset;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow-x: visible;
+  }
+}
+
+@media (min-width: 1536px) {
+  .opportunities-rail-v2 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
 .signal-card-v2 {
+  position: relative;
+  overflow: hidden;
   border-radius: 18px;
-  border: 1px solid rgba(45, 212, 191, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.14);
   background:
-    linear-gradient(135deg, rgba(0, 245, 160, 0.05), transparent 42%),
-    rgba(2, 6, 23, 0.5);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.025) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.96));
+  background-size: 100% 8px, 8px 100%, auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 10px 30px rgba(0, 0, 0, 0.28);
+  scroll-snap-align: start;
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.signal-card-v2--top {
+  border-color: rgba(0, 245, 160, 0.38);
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.025) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(0, 245, 160, 0.12), rgba(0, 245, 160, 0.03) 38%, rgba(2, 6, 23, 0.96));
+  background-size: 100% 8px, 8px 100%, auto;
 }
 
 .signal-card-v2:hover {
-  border-color: rgba(45, 212, 191, 0.26);
-  background:
-    linear-gradient(135deg, rgba(0, 245, 160, 0.08), transparent 42%),
-    rgba(2, 6, 23, 0.62);
+  transform: translateY(-2px);
+  border-color: rgba(45, 212, 191, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 16px 36px rgba(0, 0, 0, 0.34);
+}
+
+.signal-card-v2--top:hover {
+  border-color: rgba(0, 245, 160, 0.5);
+  box-shadow:
+    0 0 28px rgba(0, 245, 160, 0.14),
+    inset 0 1px 0 rgba(0, 245, 160, 0.18),
+    0 16px 36px rgba(0, 0, 0, 0.34);
 }
 
 /* Estado vazio */

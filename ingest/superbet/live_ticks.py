@@ -20,6 +20,7 @@ _WRITE_LOCK = threading.Lock()
 
 _TICK_COLUMNS: dict[str, str] = {
     "event_id": "Int64",
+    "sport_id": "Int64",
     "home_team": "string",
     "away_team": "string",
     "betradar_id": "string",
@@ -124,6 +125,7 @@ def append_live_tick(
 
     row = {
         "event_id": event_id,
+        "sport_id": snapshot.get("sport_id"),
         "home_team": snapshot.get("home_team"),
         "away_team": snapshot.get("away_team"),
         "betradar_id": snapshot.get("betradar_id"),

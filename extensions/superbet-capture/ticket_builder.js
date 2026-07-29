@@ -9,13 +9,17 @@
 
   const PANEL_ID = "bolao-ai-ticket-builder";
 
+  function normalizeLeg(leg) {
+    const marketOdd = Number(leg?.marketOdd ?? leg?.market_odd ?? 0);
+    return {
+      ...leg,
+      marketOdd,
+      label: leg?.label || leg?.selection_label || "",
+    };
+  }
+
   function legDirection(leg) {
-    const blob = [
-      leg.superbetPick,
-      leg.outcome,
-      leg.label,
-      leg.market,
-    ]
+    const blob = [leg.superbetPick, leg.outcome, leg.label, leg.market]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -36,6 +40,8 @@
     push(leg.superbetPick);
     push(leg.outcome);
     push(leg.market);
+    push(leg.homeTeam);
+    push(leg.awayTeam);
 
     const label = String(leg.label || "").toLowerCase();
     for (const n of label.match(/\d+[.,]\d+|\d+/g) || []) {
@@ -44,6 +50,15 @@
     }
     if (/menos|under/i.test(label)) terms.push("menos", "under");
     if (/mais|over/i.test(label)) terms.push("mais", "over");
+    if (/vence|moneyline/i.test(label) || leg.market === "moneyline") {
+      terms.push("vence", "vencedor", "moneyline", "vencedor do jogo");
+    }
+    if (/spread|handicap/i.test(String(leg.market || ""))) {
+      terms.push("handicap", "spread");
+    }
+    if (/total|pontos|points/i.test(String(leg.market || label))) {
+      terms.push("total", "pontos", "total de pontos");
+    }
     if (/1º tempo|1o tempo|primeiro tempo/i.test(label)) {
       terms.push("1º tempo", "1o tempo", "primeiro tempo");
     }
@@ -66,7 +81,10 @@
     return [...new Set(terms.filter(Boolean))];
   }
 
-  function tryClickLeg(leg) {
+  function tryClickLeg(rawLeg) {
+    const leg = normalizeLeg(rawLeg);
+    if (!leg.marketOdd || leg.marketOdd <= 1) return false;
+
     const oddVariants = [
       leg.marketOdd.toFixed(2),
       leg.marketOdd.toFixed(2).replace(".", ","),
@@ -117,7 +135,8 @@
       }
     }
 
-    if (best && bestScore >= 3) {
+    const minScore = terms.length <= 2 ? 2 : 3;
+    if (best && bestScore >= minScore) {
       best.click();
       return true;
     }
@@ -151,6 +170,10 @@
     }
 
     const okCount = results.filter((r) => r.ok).length;
+    const crossHint = ticket.crossGame
+      ? `<p style="margin:0 0 8px;color:#94a3b8;font-size:10px;">Múltipla cross-game · ${ticket.eventCount || "?"} jogos</p>`
+      : "";
+
     root.innerHTML = `
       <div style="padding:12px 14px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
@@ -160,8 +183,9 @@
         <button type="button" id="bolao-ticket-close" style="background:transparent;border:none;color:#94a3b8;font-size:18px;cursor:pointer;">×</button>
       </div>
       <div style="padding:10px 14px;">
+        ${crossHint}
         <div style="font-weight:700;color:#fbbf24;margin-bottom:8px;">
-          R$ ${Number(ticket.stake).toFixed(2)} → R$ ${Number(ticket.potentialReturn).toFixed(2)} @${Number(ticket.combinedOdd).toFixed(2)}
+          R$ ${Number(ticket.stake).toFixed(2)} → R$ ${Number(ticket.potentialReturn || ticket.potential_return || 0).toFixed(2)} @${Number(ticket.combinedOdd || ticket.combined_odd || 0).toFixed(2)}
         </div>
         <ul style="margin:0;padding:0;list-style:none;">
           ${results
@@ -169,7 +193,7 @@
               (r) => `
             <li style="margin-bottom:6px;padding:8px;border-radius:8px;background:${r.ok ? "rgba(0,255,136,.08)" : "rgba(248,113,113,.1)"};border-left:3px solid ${r.ok ? "#00ff88" : "#f87171"};">
               ${r.ok ? "✓" : "○"} ${r.leg.superbetMarket ? `${r.leg.superbetMarket} → ${r.leg.superbetPick || ""}` : r.leg.label}
-              <span style="color:#94a3b8;font-size:10px;display:block;">@${Number(r.leg.marketOdd).toFixed(2)}${r.ok ? " — clicado" : " — clique manualmente"}</span>
+              <span style="color:#94a3b8;font-size:10px;display:block;">@${Number(r.leg.marketOdd ?? r.leg.market_odd ?? 0).toFixed(2)}${r.ok ? " — clicado" : " — clique manualmente"}</span>
             </li>`,
             )
             .join("")}
@@ -182,33 +206,89 @@
     root.querySelector("#bolao-ticket-close")?.addEventListener("click", () => root.remove());
   }
 
-  async function applyTicket(ticket) {
+  async function applyLegs(payload) {
+    const legs = (payload?.legs || []).map(normalizeLeg);
     const results = [];
-    for (const leg of ticket.legs || []) {
+
+    for (const leg of legs) {
       await new Promise((r) => setTimeout(r, 450));
       const ok = tryClickLeg(leg);
       results.push({ leg, ok });
     }
-    await new Promise((r) => setTimeout(r, 300));
-    trySetStake(ticket.stake);
-    renderPanel(ticket, results);
+
+    if (payload?.stake != null) {
+      await new Promise((r) => setTimeout(r, 300));
+      trySetStake(payload.stake);
+    }
+
+    if (payload?.showSummary && payload?.summary?.ticket) {
+      const ticket = payload.summary.ticket;
+      const allResults = payload.summary.allResults || results;
+      renderPanel(
+        {
+          ...ticket,
+          crossGame: true,
+          eventCount: ticket.eventCount || new Set(allResults.map((r) => r.leg?.superbetEventId ?? r.leg?.superbet_event_id)).size,
+        },
+        allResults,
+      );
+    } else if (payload?.eventIndex && payload?.eventTotal) {
+      renderPanel(
+        {
+          title: `Cross-game · jogo ${payload.eventIndex}/${payload.eventTotal}`,
+          stake: payload.stake || 0,
+          combinedOdd: 0,
+          potentialReturn: 0,
+        },
+        results,
+      );
+    }
+
+    return {
+      ok: true,
+      okCount: results.filter((r) => r.ok).length,
+      total: results.length,
+      results,
+    };
+  }
+
+  async function applyTicket(ticket) {
+    const payload = await applyLegs({
+      legs: ticket.legs || [],
+      stake: ticket.stake,
+    });
+    renderPanel(ticket, payload.results);
 
     chrome.runtime.sendMessage({
       type: "TICKET_BUILDER_RESULT",
       payload: {
         ticketId: ticket.id,
-        okCount: results.filter((r) => r.ok).length,
-        total: results.length,
+        okCount: payload.okCount,
+        total: payload.total,
       },
     });
   }
 
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+    if (request.type === "APPLY_TICKET_LEGS") {
+      applyLegs(request.payload || {})
+        .then((result) => sendResponse(result))
+        .catch((err) => sendResponse({ ok: false, error: String(err?.message || err) }));
+      return true;
+    }
+
     if (request.type === "APPLY_PENDING_TICKET") {
       chrome.storage.local.get(["bolao_pending_ticket"], (items) => {
         const ticket = items.bolao_pending_ticket;
         if (!ticket) {
           sendResponse({ ok: false, error: "Nenhum bilhete pendente." });
+          return;
+        }
+        if (ticket.crossGame) {
+          sendResponse({
+            ok: false,
+            error: "Bilhete cross-game é montado pelo background (aguarde).",
+          });
           return;
         }
         applyTicket(ticket)
@@ -222,7 +302,7 @@
 
   chrome.storage.local.get(["bolao_pending_ticket"], (items) => {
     const ticket = items.bolao_pending_ticket;
-    if (!ticket?.superbetEventId) return;
+    if (!ticket?.superbetEventId || ticket.crossGame) return;
     const pageId =
       typeof window.bolaoExtractSuperbetEventId === "function"
         ? window.bolaoExtractSuperbetEventId()

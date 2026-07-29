@@ -33,6 +33,13 @@
 
 5. **Pronto!** A extensão aparece no canto do navegador.
 
+## v2.0 — Múltipla cross-game (basquete)
+
+- Bilhetes com **pernas em jogos diferentes** (`crossGame: true` + `superbetEventId` por perna).
+- A extensão abre **cada evento** na Superbet, clica a odd correspondente e preenche a stake no cupom.
+- Origem: painel **Ao Vivo → Basquete → Bilhete multi-jogo → Enviar à extensão**.
+- Recarregue a extensão em `chrome://extensions/` após atualizar o código.
+
 ## v1.9 — Monitor Bac Bo (casino Evolution)
 
 - Com **Bac Bo** aberto na Superbet (`/jogo/bac-bo-superbet/379099`), a extensão intercepta o WebSocket Evolution (`*.evo-games.com`).

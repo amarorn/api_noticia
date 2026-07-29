@@ -4,7 +4,11 @@ export interface SuperbetExtensionTicketLeg {
   outcome: string;
   label: string;
   marketOdd: number;
+  superbetMarket?: string;
   modelProb?: number;
+  superbetEventId?: number;
+  homeTeam?: string;
+  awayTeam?: string;
 }
 
 export interface SuperbetExtensionTicket {
@@ -18,8 +22,15 @@ export interface SuperbetExtensionTicket {
   potentialReturn: number;
   combinedProb?: number;
   bonusEligible?: boolean;
+  /** Múltipla com pernas em event_ids diferentes (basquete cross-game). */
+  crossGame?: boolean;
   legs: SuperbetExtensionTicketLeg[];
-  source: "longshot" | "inplay_combo" | "bolao_proposal" | "super_multipla";
+  source:
+    | "longshot"
+    | "inplay_combo"
+    | "bolao_proposal"
+    | "super_multipla"
+    | "basket_multi_game";
 }
 
 export interface SendSuperbetTicketResult {

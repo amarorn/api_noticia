@@ -75,6 +75,8 @@ def run_basket_live_advice(
         period_label = None
         basket_periods = []
 
+    team_totals_ft = (snapshot.basket_period_markets or {}).get("team_totals_ft")
+
     inplay_result = simulate_basket_inplay(
         home_team=home_team,
         away_team=away_team,
@@ -85,6 +87,9 @@ def run_basket_live_advice(
         moneyline_odds=snapshot.moneyline_odds,
         spread_odds=snapshot.spread_odds,
         total_points_odds=snapshot.total_points_odds,
+        team_totals=team_totals_ft,
+        period_markets=snapshot.basket_period_markets,
+        basket_periods=basket_periods,
         n_simulations=settings.basket_fast_mc_simulations if fast else None,
     )
     inplay_dict = inplay_result.to_dict()
@@ -121,6 +126,10 @@ def run_basket_live_advice(
         "spread_implied": snapshot.spread_implied,
         "total_points_odds": snapshot.total_points_odds,
         "total_points_implied": snapshot.total_points_implied,
+        "regulation_ml_odds": snapshot.regulation_ml_odds,
+        "regulation_ml_implied": snapshot.regulation_ml_implied,
+        "odd_even_odds": snapshot.odd_even_odds,
+        "basket_period_markets": snapshot.basket_period_markets,
         "inplay_summary": {
             "prob_home_win": inplay_dict.get("prob_home_win"),
             "prob_away_win": inplay_dict.get("prob_away_win"),
@@ -142,6 +151,10 @@ def run_basket_live_advice(
             "next_quarter_number": inplay_dict.get("next_quarter_number"),
             "next_quarter_projection_home": inplay_dict.get("next_quarter_projection_home"),
             "next_quarter_projection_away": inplay_dict.get("next_quarter_projection_away"),
+            "team_total_probs": inplay_dict.get("team_total_probs"),
+            "regulation_ml_probs": inplay_dict.get("regulation_ml_probs"),
+            "odd_even_probs": inplay_dict.get("odd_even_probs"),
+            "period_probs": inplay_dict.get("period_probs"),
         },
         "aportes": report.get("aportes", []),
         "confidence": report.get("confidence"),

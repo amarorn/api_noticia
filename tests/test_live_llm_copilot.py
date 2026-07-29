@@ -149,6 +149,75 @@ def test_copilot_basket_from_aportes(monkeypatch):
     assert result["picks"][0]["label"] == "Over 224.5"
 
 
+def test_baseball_fallback_without_openai(monkeypatch):
+    monkeypatch.setattr("models.live_llm_copilot.settings.live_copilot_enabled", True)
+    monkeypatch.setattr("models.live_llm_copilot.settings.openai_api_key", "")
+
+    advice = {
+        "superbet_event_id": 501,
+        "home_team": "Yankees",
+        "away_team": "Red Sox",
+        "inning": 6,
+        "minute": 6,
+        "current_score": "4x2",
+        "period_label": "6I",
+        "strategy": {"posture": "atacar", "wait_reason": None, "shields": []},
+        "game_phase": {"phase": "mid", "label": "meio do jogo"},
+        "inplay_summary": {"expected_total": 8.4, "market_total_line": 8.5},
+        "aportes": [
+            {
+                "market": "moneyline",
+                "outcome": "1",
+                "label": "Yankees",
+                "action": "apostar",
+                "model_prob": 0.71,
+                "market_odd": 1.65,
+                "expected_value": 0.17,
+                "edge_pp": 8.2,
+                "suggested_stake_pct": 1.1,
+            }
+        ],
+    }
+
+    result = run_live_copilot(advice, sport="baseball")
+    assert result["sport"] == "baseball"
+    assert result["acao_agora"] == "apostar"
+    assert result["picks"][0]["label"] == "Yankees"
+    assert "6I" in result["momento"]
+
+
+def test_baseball_candidates_merge_strategy_and_aportes():
+    from models.live_llm_copilot import _baseball_candidates
+
+    advice = {
+        "strategy": {
+            "opportunities": [
+                {
+                    "market": "total_runs",
+                    "outcome": "over_8_5",
+                    "label": "Over 8.5",
+                    "expected_value": 0.12,
+                    "edge_pp": 6.0,
+                }
+            ],
+            "watch_list": [],
+        },
+        "aportes": [
+            {
+                "market": "moneyline",
+                "outcome": "1",
+                "label": "Casa",
+                "action": "apostar",
+                "expected_value": 0.08,
+            }
+        ],
+    }
+    rows = _baseball_candidates(advice)
+    markets = {r["market"] for r in rows}
+    assert "total_runs" in markets
+    assert "moneyline" in markets
+
+
 def test_get_stale_copilot_for_event():
     from models.live_copilot_cache import get_stale_copilot_for_event, set_cached_copilot
 

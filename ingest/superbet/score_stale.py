@@ -45,6 +45,40 @@ def detect_score_stale(
     }
 
 
+def detect_baseball_score_stale(
+    *,
+    home_score: int,
+    away_score: int,
+    inning: int,
+    last_tick: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Sinaliza placar de beisebol defasado vs último tick em live_ticks."""
+    warnings: list[str] = []
+    snap_runs = int(home_score) + int(away_score)
+    tick_runs: int | None = None
+
+    if last_tick:
+        lt_h = int(last_tick.get("home_score") or 0)
+        lt_a = int(last_tick.get("away_score") or 0)
+        lt_inning = int(last_tick.get("minute") or 0)
+        tick_runs = lt_h + lt_a
+        if tick_runs > snap_runs and lt_inning <= inning:
+            warnings.append(
+                f"Tick anterior {lt_h}×{lt_a} ({lt_inning}I); snapshot {home_score}×{away_score} ({inning}I)."
+            )
+        if lt_inning > inning:
+            warnings.append(
+                f"Tick anterior na {lt_inning}I; snapshot ainda na {inning}I."
+            )
+
+    return {
+        "score_stale": bool(warnings),
+        "warnings": warnings,
+        "snapshot_runs": snap_runs,
+        "tick_runs": tick_runs,
+    }
+
+
 def load_last_live_tick(event_id: int) -> dict[str, Any] | None:
     """Última linha do evento em live_ticks.parquet (best effort)."""
     try:
@@ -69,4 +103,4 @@ def load_last_live_tick(event_id: int) -> dict[str, Any] | None:
         return None
 
 
-__all__ = ["detect_score_stale", "load_last_live_tick"]
+__all__ = ["detect_baseball_score_stale", "detect_score_stale", "load_last_live_tick"]

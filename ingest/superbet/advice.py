@@ -470,6 +470,9 @@ def _build_live_advice_payload(
         before_date=model_before_date,
     )
     inplay_dict = result.to_dict()
+    from models.wc_derived_markets import enrich_inplay_derived_probs
+
+    inplay_dict.update(enrich_inplay_derived_probs(inplay_dict))
     inplay_dict["ht_home_score"] = ht_h
     inplay_dict["ht_away_score"] = ht_a
     inplay_dict["model_before_date"] = model_before_date.isoformat()
@@ -580,6 +583,28 @@ def _build_live_advice_payload(
                 )
             inplay_dict["corners_projection"] = corners_proj
             inplay_dict["corner_line_probs"] = corners_proj.get("line_probs") or {}
+            from models.wc_derived_markets import corners_h2h_probs, team_corner_line_probs
+
+            ch2h = corners_h2h_probs(inplay_dict)
+            if ch2h:
+                inplay_dict["corners_h2h_probs"] = ch2h
+            home_corner_lines = tuple(
+                float(k) for k in (snapshot.team_corners or {}).get("home", {})
+            )
+            away_corner_lines = tuple(
+                float(k) for k in (snapshot.team_corners or {}).get("away", {})
+            )
+            if home_corner_lines or away_corner_lines:
+                obs_h = int(snapshot.inplay.home_corners) if snapshot.inplay else 0
+                obs_a = int(snapshot.inplay.away_corners) if snapshot.inplay else 0
+                inplay_dict["team_corner_line_probs"] = team_corner_line_probs(
+                    lambda_home_ft=float(corners_proj.get("expected_ft_home") or corner_lambda_home),
+                    lambda_away_ft=float(corners_proj.get("expected_ft_away") or corner_lambda_away),
+                    observed_home=obs_h,
+                    observed_away=obs_a,
+                    home_lines=home_corner_lines,
+                    away_lines=away_corner_lines,
+                )
             ht_report = None
         else:
             ht_report = None
@@ -614,6 +639,29 @@ def _build_live_advice_payload(
                     )
                 inplay_dict["card_line_probs"] = cards_proj.get("line_probs") or {}
                 inplay_dict["cards_projection"] = cards_proj
+
+        from models.wc_derived_markets import foul_line_probs, referee_foul_lambda_from_context
+
+        foul_lam = referee_foul_lambda_from_context(match_context)
+        if foul_lam is not None and (snapshot.fouls or match_context):
+            foul_lines = (
+                tuple(float(k) for k in snapshot.fouls.keys())
+                if snapshot.fouls
+                else (20.5, 25.5, 30.5)
+            )
+            inplay_dict["foul_line_probs"] = foul_line_probs(foul_lam, foul_lines)
+
+    if fast and not inplay_dict.get("foul_line_probs"):
+        from models.wc_derived_markets import foul_line_probs, referee_foul_lambda_from_context
+
+        foul_lam = referee_foul_lambda_from_context(match_context)
+        if foul_lam is not None and (snapshot.fouls or match_context):
+            foul_lines = (
+                tuple(float(k) for k in snapshot.fouls.keys())
+                if snapshot.fouls
+                else (20.5, 25.5, 30.5)
+            )
+            inplay_dict["foul_line_probs"] = foul_line_probs(foul_lam, foul_lines)
     shadow = inplay_dict.get("ensemble_shadow") or {}
     tick_extra["ens_prob_final_home"] = shadow.get("prob_final_home")
     tick_extra["ens_prob_l1_delta"] = shadow.get("prob_l1_delta")

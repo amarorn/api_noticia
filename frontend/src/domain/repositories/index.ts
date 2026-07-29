@@ -154,18 +154,36 @@ export interface IWcRepository {
     bankroll?: number;
     fast?: boolean;
   }): Promise<import("@/domain/entities").BasketSuperbetLiveAdvice>;
+  buildBasketMultiGameTickets(request: {
+    eventIds: number[];
+    bankroll?: number;
+    stake?: number;
+    minLegs?: number;
+    maxLegs?: number;
+    maxTickets?: number;
+    requireApostar?: boolean;
+    fast?: boolean;
+  }): Promise<import("@/domain/entities").BasketMultiGameTicketsResult>;
   getBaseballSuperbetLive(request?: {
     sportId?: number;
     allSports?: boolean;
   }): Promise<import("@/domain/entities").BaseballSuperbetLiveFeed>;
+  getBaseballSuperbetEvent(request: {
+    eventId: number;
+    saveBronze?: boolean;
+  }): Promise<import("@/domain/entities").SuperbetEventSnapshot>;
   getBaseballSuperbetLiveAdvice(request: {
     eventId: number;
     bankroll?: number;
     fast?: boolean;
+    market?: string;
+    outcome?: string;
+    stake?: number;
+    oddsPlaced?: number;
   }): Promise<import("@/domain/entities").BaseballSuperbetLiveAdvice>;
   getLiveCopilot(request: {
     eventId: number;
-    sport: "football" | "basketball";
+    sport: "football" | "basketball" | "baseball";
     phase?: string;
     bankroll?: number;
     fast?: boolean;
@@ -173,7 +191,7 @@ export interface IWcRepository {
   }): Promise<import("@/domain/entities").LiveCopilot>;
   postLiveCopilotAgent(request: {
     eventId: number;
-    sport: "football" | "basketball";
+    sport: "football" | "basketball" | "baseball";
     message: string;
     history: import("@/domain/entities").LiveCopilotChatMessage[];
     phase?: string;

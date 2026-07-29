@@ -1,6 +1,7 @@
 """Recomendações de cash-out e aporte com base no modelo in-play vs mercado."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -532,6 +533,167 @@ def _half_aporte_specs(
     return specs
 
 
+def _derived_aporte_specs(
+    inplay: dict[str, Any],
+    snapshot: SuperbetEventSnapshot | None,
+    *,
+    home_team: str,
+    away_team: str,
+    minute: int = 0,
+) -> list[tuple[str, str, str, Callable[[], float | None]]]:
+    """Dupla chance, DNB, faltas, escanteios por time, corners 1X2, handicap 3-way."""
+    if snapshot is None:
+        return []
+    from models.wc_derived_markets import corners_h2h_probs
+
+    specs: list[tuple[str, str, str, Callable[[], float | None]]] = []
+    period_labels = {"ft": "Jogo", "1h": "1º Tempo", "2h": "2º Tempo"}
+    dc_labels = {"1X": f"{home_team} ou Empate", "X2": "Empate ou " + away_team, "12": f"{home_team} ou {away_team}"}
+
+    for period, period_label in period_labels.items():
+        if period == "1h" and minute > 45:
+            continue
+        dc = inplay.get(f"{period}_double_chance") or {}
+        half_markets = getattr(snapshot, "half_markets", None) or {}
+        book_dc = (
+            snapshot.double_chance_odds
+            if period == "ft"
+            else (half_markets.get(period) or {}).get("double_chance", {})
+        )
+        for code, label in dc_labels.items():
+            if code not in book_dc:
+                continue
+            prob = dc.get(code)
+            if prob is None:
+                continue
+            prefix = f"{period}_" if period != "ft" else ""
+            market = f"{prefix}dc_{code.lower()}"
+            specs.append((market, "yes", f"{period_label} — Dupla {code} ({label})", lambda p=prob: p))
+
+        dnb = inplay.get(f"{period}_draw_no_bet") or {}
+        book_dnb = (
+            snapshot.draw_no_bet_odds
+            if period == "ft"
+            else (half_markets.get(period) or {}).get("draw_no_bet", {})
+        )
+        for side, team_name in (("home", home_team), ("away", away_team)):
+            if side not in book_dnb:
+                continue
+            prob = dnb.get(side)
+            if prob is None:
+                continue
+            prefix = f"{period}_" if period != "ft" else ""
+            specs.append((
+                f"{prefix}dnb_{side}",
+                "yes",
+                f"{period_label} — Empate anula ({team_name})",
+                lambda p=prob: p,
+            ))
+
+    corner_h2h = corners_h2h_probs(inplay)
+    if corner_h2h and snapshot.corners_h2h_odds:
+        h2h_labels = {"1": home_team, "X": "Empate", "2": away_team}
+        for code in snapshot.corners_h2h_odds:
+            prob = corner_h2h.get(code)
+            if prob is None:
+                continue
+            specs.append((
+                "corners_h2h",
+                code,
+                f"Escanteios 1X2 — {h2h_labels.get(code, code)}",
+                lambda p=prob: p,
+            ))
+
+    team_corner_lp = inplay.get("team_corner_line_probs") or {}
+    for side in ("home", "away"):
+        team_name = home_team if side == "home" else away_team
+        for line_key in (snapshot.team_corners or {}).get(side, {}):
+            line_num = line_key.replace(".", "_")
+            over_prob = team_corner_lp.get(f"{side}_over_{line_num}")
+            under_prob = team_corner_lp.get(f"{side}_under_{line_num}")
+            if over_prob is not None:
+                specs.append((
+                    f"{side}_corners_over_{line_num}",
+                    "yes",
+                    f"{team_name} — mais de {line_key} escanteios",
+                    lambda p=over_prob: p,
+                ))
+            if under_prob is not None:
+                specs.append((
+                    f"{side}_corners_over_{line_num}",
+                    "no",
+                    f"{team_name} — menos de {line_key} escanteios",
+                    lambda p=under_prob: p,
+                ))
+
+    foul_lp = inplay.get("foul_line_probs") or {}
+    if foul_lp and snapshot.fouls:
+        for line_key in snapshot.fouls:
+            line_num = line_key.replace(".", "_")
+            over_prob = foul_lp.get(f"over_{line_num}")
+            under_prob = foul_lp.get(f"under_{line_num}")
+            if over_prob is not None:
+                specs.append((
+                    f"fouls_over_{line_num}",
+                    "yes",
+                    f"Faltas — mais de {line_key}",
+                    lambda p=over_prob: p,
+                ))
+            if under_prob is not None:
+                specs.append((
+                    f"fouls_over_{line_num}",
+                    "no",
+                    f"Faltas — menos de {line_key}",
+                    lambda p=under_prob: p,
+                ))
+
+    hcap3_cfg = {
+        "ft": ("ft_handicap_3way_probs", snapshot.handicap_3way),
+        "1h": ("ht_handicap_3way_probs", (snapshot.half_handicap_3way or {}).get("1h", {})),
+        "2h": ("sh_handicap_3way_probs", (snapshot.half_handicap_3way or {}).get("2h", {})),
+    }
+    side_labels = {"home": home_team, "draw": "Empate", "away": away_team}
+    for period, (prob_key, book_lines) in hcap3_cfg.items():
+        if period == "1h" and minute > 45:
+            continue
+        probs = inplay.get(prob_key) or {}
+        if not book_lines:
+            continue
+        period_label = period_labels.get(period, period)
+        prefix = f"{period}_" if period != "ft" else "ft_"
+        for line_lk, sides in book_lines.items():
+            for side in ("home", "draw", "away"):
+                if side not in sides:
+                    continue
+                prob = probs.get(f"{side}_{line_lk}")
+                if prob is None:
+                    continue
+                line_display = line_lk.replace("m", "-").replace("p", "+").replace("_", ".")
+                specs.append((
+                    f"{prefix}hcap3_{side}_{line_lk}",
+                    "yes",
+                    f"{period_label} Hcap 3-way {side_labels[side]} ({line_display})",
+                    lambda p=prob: p,
+                ))
+
+    return specs
+
+
+def _prob_from_hcap3_market(inplay: dict[str, Any], market: str) -> float | None:
+    if market.startswith("ft_hcap3_"):
+        probs = inplay.get("ft_handicap_3way_probs") or {}
+        rest = market[len("ft_hcap3_") :]
+    elif market.startswith("1h_hcap3_"):
+        probs = inplay.get("ht_handicap_3way_probs") or {}
+        rest = market[len("1h_hcap3_") :]
+    elif market.startswith("2h_hcap3_"):
+        probs = inplay.get("sh_handicap_3way_probs") or {}
+        rest = market[len("2h_hcap3_") :]
+    else:
+        return None
+    return probs.get(rest)
+
+
 def _prob_from_inplay(inplay: dict[str, Any], market: str, outcome: str) -> float | None:
     key = f"{market}:{outcome}".lower()
     flp = inplay.get("final_line_probs", {})
@@ -582,6 +744,50 @@ def _prob_from_inplay(inplay: dict[str, Any], market: str, outcome: str) -> floa
     half_prob = _prob_from_half_market(inplay, market, outcome)
     if half_prob is not None:
         return float(half_prob)
+    if outcome.lower() in {"yes", "sim"}:
+        hcap3 = _prob_from_hcap3_market(inplay, market)
+        if hcap3 is not None:
+            return float(hcap3)
+        if market == "corners_h2h":
+            ch = (inplay.get("corners_h2h_probs") or {})
+            code = outcome.upper()
+            if code in ch:
+                return float(ch[code])
+        foul_lp = inplay.get("foul_line_probs") or {}
+        if market.startswith("fouls_over_"):
+            line_num = market.replace("fouls_over_", "")
+            if outcome.lower() in {"yes", "sim"}:
+                return foul_lp.get(f"over_{line_num}")
+            return foul_lp.get(f"under_{line_num}")
+        team_corner_lp = inplay.get("team_corner_line_probs") or {}
+        if market.startswith("home_corners_over_") or market.startswith("away_corners_over_"):
+            side = "home" if market.startswith("home_") else "away"
+            line_num = market.replace(f"{side}_corners_over_", "")
+            if outcome.lower() in {"yes", "sim"}:
+                return team_corner_lp.get(f"{side}_over_{line_num}")
+            return team_corner_lp.get(f"{side}_under_{line_num}")
+        dc_match = re.match(r"^(?:(1h|2h)_)?dc_(1x|x2|12)$", market.lower())
+        if dc_match:
+            period = dc_match.group(1) or "ft"
+            code = dc_match.group(2).upper()
+            if code == "1X":
+                key = "1X"
+            elif code == "X2":
+                key = "X2"
+            else:
+                key = "12"
+            dc = inplay.get(f"{period}_double_chance") or {}
+            val = dc.get(key)
+            if val is not None:
+                return float(val)
+        dnb_match = re.match(r"^(?:(1h|2h)_)?dnb_(home|away)$", market.lower())
+        if dnb_match:
+            period = dnb_match.group(1) or "ft"
+            side = dnb_match.group(2)
+            dnb = inplay.get(f"{period}_draw_no_bet") or {}
+            val = dnb.get(side)
+            if val is not None:
+                return float(val)
     return None
 
 
@@ -704,6 +910,56 @@ def _market_odd(snapshot: SuperbetEventSnapshot | None, market: str, outcome: st
                 return price
             if outcome in {"no", "não", "nao"} and "menos" in name.lower():
                 return price
+    if market.startswith("fouls_over_"):
+        line = market.replace("fouls_over_", "").replace("_", ".")
+        prices = (snapshot.fouls or {}).get(line) or {}
+        for name, price in prices.items():
+            if outcome in {"yes", "sim"} and "mais" in name.lower():
+                return price
+            if outcome in {"no", "não", "nao"} and "menos" in name.lower():
+                return price
+    if market.startswith("home_corners_over_") or market.startswith("away_corners_over_"):
+        side = "home" if market.startswith("home_") else "away"
+        line = market.replace(f"{side}_corners_over_", "").replace("_", ".")
+        prices = (snapshot.team_corners or {}).get(side, {}).get(line, {})
+        for name, price in prices.items():
+            if outcome in {"yes", "sim"} and "mais" in name.lower():
+                return price
+            if outcome in {"no", "não", "nao"} and "menos" in name.lower():
+                return price
+    if market == "corners_h2h":
+        return (snapshot.corners_h2h_odds or {}).get(outcome.upper())
+    dc_match = re.match(r"^(?:(1h|2h)_)?dc_(1x|x2|12)$", market.lower())
+    if dc_match:
+        period = dc_match.group(1)
+        code = dc_match.group(2).upper()
+        key = {"1X": "1X", "X2": "X2", "12": "12"}.get(code, code)
+        if period:
+            half = (snapshot.half_markets or {}).get(period, {})
+            return (half.get("double_chance") or {}).get(key)
+        return (snapshot.double_chance_odds or {}).get(key)
+    dnb_match = re.match(r"^(?:(1h|2h)_)?dnb_(home|away)$", market.lower())
+    if dnb_match:
+        period = dnb_match.group(1)
+        side = dnb_match.group(2)
+        if period:
+            half = (snapshot.half_markets or {}).get(period, {})
+            return (half.get("draw_no_bet") or {}).get(side)
+        return (snapshot.draw_no_bet_odds or {}).get(side)
+    hcap3_match = re.match(r"^(?:(?:ft|1h|2h)_)?hcap3_(home|draw|away)_(.+)$", market.lower())
+    if hcap3_match:
+        side = hcap3_match.group(1)
+        line_lk = hcap3_match.group(2)
+        period = "ft"
+        if market.startswith("1h_"):
+            period = "1h"
+        elif market.startswith("2h_"):
+            period = "2h"
+        if period == "ft":
+            book = snapshot.handicap_3way or {}
+        else:
+            book = (snapshot.half_handicap_3way or {}).get(period, {})
+        return (book.get(line_lk) or {}).get(side)
     return None
 
 
@@ -997,6 +1253,15 @@ def _aporte_candidates(
             specs.append((market, "yes", label, lambda p=prob: p))
 
     specs.extend(_half_aporte_specs(inplay, snapshot, home_team=home_team, away_team=away_team))
+    specs.extend(
+        _derived_aporte_specs(
+            inplay,
+            snapshot,
+            home_team=home_team,
+            away_team=away_team,
+            minute=minute,
+        )
+    )
 
     for market, outcome, label, prob_fn in specs:
         prob = prob_fn()
@@ -1092,6 +1357,18 @@ def market_category(market: str) -> str:
         return "corners"
     if market.startswith("cards_"):
         return "cards"
+    if market.startswith("fouls_"):
+        return "fouls"
+    if market.startswith(("dc_", "1h_dc_", "2h_dc_")):
+        return "double_chance"
+    if market.startswith(("dnb_", "1h_dnb_", "2h_dnb_")):
+        return "draw_no_bet"
+    if market == "corners_h2h":
+        return "corners"
+    if "hcap3_" in market:
+        return "handicap"
+    if market.startswith(("home_corners_", "away_corners_")):
+        return "corners"
     if market.startswith("combo_"):
         return "combo"
     if parse_any_handicap_market(market) or parse_period_handicap_market(market):
@@ -1115,7 +1392,7 @@ def _diversify_by_category(
     if len(items) <= max_n:
         return items
 
-    order = ("h2h", "goals", "corners", "cards", "handicap", "half", "team_goals", "combo", "other")
+    order = ("h2h", "goals", "double_chance", "draw_no_bet", "corners", "cards", "fouls", "handicap", "half", "team_goals", "combo", "other")
     buckets: dict[str, list[Any]] = {c: [] for c in order}
     for item in items:
         market = key_fn(item) if key_fn else getattr(item, "market", "")

@@ -32,6 +32,20 @@ def test_score_stale_scorealarm_more_goals():
     assert out["scorealarm_goals"] == 1
 
 
+def test_baseball_score_stale_tick_ahead_of_snapshot():
+    from ingest.superbet.score_stale import detect_baseball_score_stale
+
+    out = detect_baseball_score_stale(
+        home_score=2,
+        away_score=1,
+        inning=6,
+        last_tick={"home_score": 4, "away_score": 2, "minute": 6},
+    )
+    assert out["score_stale"] is True
+    assert out["tick_runs"] == 6
+    assert out["snapshot_runs"] == 3
+
+
 def test_favorite_cap_reduces_home_favorite():
     probs = _apply_favorite_prob_cap({"1": 0.85, "X": 0.10, "2": 0.05})
     assert probs["1"] <= 0.79

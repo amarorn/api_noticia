@@ -27,8 +27,10 @@ import {
   mapUserOpenBets,
   mapBasketSuperbetLiveFeed,
   mapBasketSuperbetLiveAdvice,
+  mapBasketMultiGameTickets,
   mapBaseballSuperbetLiveFeed,
   mapBaseballSuperbetLiveAdvice,
+  mapBaseballSuperbetEvent,
   mapLiveCopilot,
   mapLiveCopilotAgent,
 } from "../mappers";
@@ -381,6 +383,36 @@ export class WcApiRepository implements IWcRepository {
     return mapBasketSuperbetLiveAdvice(raw);
   }
 
+  async buildBasketMultiGameTickets(dto: {
+    eventIds: number[];
+    bankroll?: number;
+    stake?: number;
+    minLegs?: number;
+    maxLegs?: number;
+    maxTickets?: number;
+    requireApostar?: boolean;
+    fast?: boolean;
+  }) {
+    const raw = await apiFetch<Parameters<typeof mapBasketMultiGameTickets>[0]>(
+      "/basket/superbet/multi-game/tickets",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          event_ids: dto.eventIds,
+          bankroll: dto.bankroll,
+          stake: dto.stake,
+          min_legs: dto.minLegs,
+          max_legs: dto.maxLegs,
+          max_tickets: dto.maxTickets,
+          require_apostar: dto.requireApostar,
+          fast: dto.fast ?? true,
+        }),
+        timeoutMs: 120_000,
+      },
+    );
+    return mapBasketMultiGameTickets(raw);
+  }
+
   async getBaseballSuperbetLive(dto?: { sportId?: number; allSports?: boolean }) {
     const params = new URLSearchParams();
     if (dto?.sportId != null) {
@@ -397,10 +429,33 @@ export class WcApiRepository implements IWcRepository {
     return mapBaseballSuperbetLiveFeed(raw);
   }
 
-  async getBaseballSuperbetLiveAdvice(dto: { eventId: number; bankroll?: number; fast?: boolean }) {
+  async getBaseballSuperbetEvent(dto: { eventId: number; saveBronze?: boolean }) {
+    const params = new URLSearchParams();
+    if (dto.saveBronze === false) params.set("save_bronze", "false");
+    const qs = params.size > 0 ? `?${params}` : "";
+    const raw = await apiFetch<Parameters<typeof mapBaseballSuperbetEvent>[0]>(
+      `/baseball/superbet/events/${dto.eventId}${qs}`,
+      { timeoutMs: 30_000 },
+    );
+    return mapBaseballSuperbetEvent(raw);
+  }
+
+  async getBaseballSuperbetLiveAdvice(dto: {
+    eventId: number;
+    bankroll?: number;
+    fast?: boolean;
+    market?: string;
+    outcome?: string;
+    stake?: number;
+    oddsPlaced?: number;
+  }) {
     const params = new URLSearchParams();
     if (dto.bankroll != null) params.set("bankroll", String(dto.bankroll));
     if (dto.fast) params.set("fast", "true");
+    if (dto.market) params.set("market", dto.market);
+    if (dto.outcome) params.set("outcome", dto.outcome);
+    if (dto.stake != null) params.set("stake", String(dto.stake));
+    if (dto.oddsPlaced != null) params.set("odds_placed", String(dto.oddsPlaced));
     const qs = params.size > 0 ? `?${params}` : "";
     const raw = await apiFetch<Parameters<typeof mapBaseballSuperbetLiveAdvice>[0]>(
       `/baseball/superbet/live/${dto.eventId}/advice${qs}`,
@@ -411,7 +466,7 @@ export class WcApiRepository implements IWcRepository {
 
   async getLiveCopilot(dto: {
     eventId: number;
-    sport: "football" | "basketball";
+    sport: "football" | "basketball" | "baseball";
     phase?: string;
     bankroll?: number;
     fast?: boolean;
@@ -426,7 +481,9 @@ export class WcApiRepository implements IWcRepository {
     const base =
       dto.sport === "basketball"
         ? `/basket/superbet/live/${dto.eventId}/copilot`
-        : `/worldcup/superbet/live/${dto.eventId}/copilot`;
+        : dto.sport === "baseball"
+          ? `/baseball/superbet/live/${dto.eventId}/copilot`
+          : `/worldcup/superbet/live/${dto.eventId}/copilot`;
     const raw = await apiFetch<Parameters<typeof mapLiveCopilot>[0]>(`${base}${qs}`, {
       timeoutMs: 90_000,
     });
@@ -435,7 +492,7 @@ export class WcApiRepository implements IWcRepository {
 
   async postLiveCopilotAgent(dto: {
     eventId: number;
-    sport: "football" | "basketball";
+    sport: "football" | "basketball" | "baseball";
     message: string;
     history: import("@/domain/entities").LiveCopilotChatMessage[];
     phase?: string;
@@ -446,7 +503,9 @@ export class WcApiRepository implements IWcRepository {
     const base =
       dto.sport === "basketball"
         ? `/basket/superbet/live/${dto.eventId}/copilot/agent`
-        : `/worldcup/superbet/live/${dto.eventId}/copilot/agent`;
+        : dto.sport === "baseball"
+          ? `/baseball/superbet/live/${dto.eventId}/copilot/agent`
+          : `/worldcup/superbet/live/${dto.eventId}/copilot/agent`;
     const raw = await apiFetch<Record<string, unknown>>(base, {
       method: "POST",
       body: JSON.stringify({

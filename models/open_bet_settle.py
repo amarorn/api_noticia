@@ -39,6 +39,63 @@ def _parse_line(market: str, target_value: str | None) -> float | None:
     return None
 
 
+def _parse_baseball_total_outcome(outcome: str) -> tuple[str, float] | None:
+    """Extrai lado (over/under) e linha de outcomes como ``over_8_5`` ou ``f5_under_4_5``."""
+    raw = outcome.lower()
+    for side in ("over", "under"):
+        token = f"{side}_"
+        if token in raw:
+            suffix = raw[raw.rfind(token) + len(token) :]
+            try:
+                return side, float(suffix.replace("_", "."))
+            except ValueError:
+                return None
+    return None
+
+
+def _parse_spread_outcome(outcome: str) -> tuple[str, float] | None:
+    """Parse ``home_m1_5`` / ``away_p0_5`` (prefixo ``f5_`` opcional)."""
+    raw = outcome.lower()
+    if raw.startswith("f5_"):
+        raw = raw[3:]
+    if not (raw.startswith("home_") or raw.startswith("away_")):
+        return None
+    side, rest = raw.split("_", 1)
+    if rest.startswith("m"):
+        sign = -1
+        num = rest[1:]
+    elif rest.startswith("p"):
+        sign = 1
+        num = rest[1:]
+    else:
+        return None
+    try:
+        return side, sign * float(num.replace("_", "."))
+    except ValueError:
+        return None
+
+
+def _cumulative_inning_score(
+    baseball_innings: list[dict[str, Any]] | None,
+    through_inning: int,
+) -> tuple[int, int] | None:
+    if not baseball_innings:
+        return None
+    home = away = 0
+    for row in baseball_innings:
+        num = int(row.get("num") or 0)
+        if num <= through_inning:
+            home += int(row.get("home") or 0)
+            away += int(row.get("away") or 0)
+    return home, away
+
+
+def _spread_covers(side: str, line: float, home_score: int, away_score: int) -> bool:
+    if side == "home":
+        return home_score + line > away_score
+    return away_score + line > home_score
+
+
 def _normalize_pick(
     market: str,
     outcome: str,
@@ -47,6 +104,10 @@ def _normalize_pick(
     """Normaliza mercado legado ``other`` para forma avaliável."""
     market_l = (market or "").lower()
     if market_l != "other":
+        if market_l in {"moneyline", "ml"}:
+            return "h2h", (outcome or "").lower(), target_value
+        if market_l in {"spread", "run_line"}:
+            return "run_line", (outcome or "").lower(), target_value
         return market_l, (outcome or "").lower(), target_value
 
     inferred = infer_other_market(outcome, target_value)
@@ -64,6 +125,7 @@ def evaluate_pick(
     away_score: int,
     home_corners: int | None = None,
     away_corners: int | None = None,
+    baseball_innings: list[dict[str, Any]] | None = None,
 ) -> bool | None:
     """Avalia se um palpite ganhou. ``None`` = não avaliável (ex.: próximo gol)."""
     market, outcome, target_value = _normalize_pick(market, outcome, target_value)
@@ -130,6 +192,87 @@ def evaluate_pick(
     if market == "next_goal":
         return None
 
+    if market == "total_runs":
+        parsed = _parse_baseball_total_outcome(outcome)
+        if parsed is None:
+            line = _parse_line(market, target_value)
+            if line is None:
+                return None
+            if outcome == "over":
+                return total_goals > line
+            if outcome == "under":
+                return total_goals < line
+            return None
+        side, line = parsed
+        if side == "over":
+            return total_goals > line
+        if side == "under":
+            return total_goals < line
+        return None
+
+    if market == "team_total_runs":
+        raw = outcome.lower()
+        team_score = None
+        if raw.startswith("home_over_") or raw.startswith("home_under_"):
+            team_score = home_score
+            parsed = _parse_baseball_total_outcome(raw.replace("home_", "", 1))
+        elif raw.startswith("away_over_") or raw.startswith("away_under_"):
+            team_score = away_score
+            parsed = _parse_baseball_total_outcome(raw.replace("away_", "", 1))
+        else:
+            return None
+        if team_score is None or parsed is None:
+            return None
+        side, line = parsed
+        if side == "over":
+            return team_score > line
+        if side == "under":
+            return team_score < line
+        return None
+
+    if market in {"run_line", "f5_spread"}:
+        spread_outcome = outcome[3:] if market == "f5_spread" and outcome.startswith("f5_") else outcome
+        parsed = _parse_spread_outcome(spread_outcome)
+        if parsed is None:
+            return None
+        side, line = parsed
+        if market == "f5_spread":
+            f5 = _cumulative_inning_score(baseball_innings, 5)
+            if f5 is None:
+                return None
+            fh, fa = f5
+            return _spread_covers(side, line, fh, fa)
+        return _spread_covers(side, line, home_score, away_score)
+
+    if market == "f5_total":
+        parsed = _parse_baseball_total_outcome(outcome if outcome.startswith("f5_") else f"f5_{outcome}")
+        f5 = _cumulative_inning_score(baseball_innings, 5)
+        if parsed is None or f5 is None:
+            return None
+        side, line = parsed
+        total = f5[0] + f5[1]
+        if side == "over":
+            return total > line
+        if side == "under":
+            return total < line
+        return None
+
+    if market == "f5_moneyline":
+        f5 = _cumulative_inning_score(baseball_innings, 5)
+        if f5 is None:
+            return None
+        fh, fa = f5
+        key = outcome.lower()
+        if key.startswith("f5_ml_"):
+            key = key[6:]
+        if key in ("1", "home"):
+            return fh > fa
+        if key in ("2", "away"):
+            return fa > fh
+        if key in ("x", "draw"):
+            return fh == fa
+        return None
+
     return None
 
 
@@ -140,6 +283,7 @@ def evaluate_bet_picks(
     *,
     home_corners: int | None = None,
     away_corners: int | None = None,
+    baseball_innings: list[dict[str, Any]] | None = None,
 ) -> bool | None:
     """Combo: todos os palpites precisam ganhar. ``None`` se algum não for avaliável."""
     if not picks:
@@ -153,6 +297,7 @@ def evaluate_bet_picks(
             away_score=away_score,
             home_corners=home_corners,
             away_corners=away_corners,
+            baseball_innings=baseball_innings,
         )
         if won is None:
             return None
@@ -178,6 +323,7 @@ def settle_open_bets_for_event(
     final_score: str | None = None,
     home_corners: int | None = None,
     away_corners: int | None = None,
+    baseball_innings: list[dict[str, Any]] | None = None,
 ) -> SettleEventResult:
     """Move apostas abertas do evento para ``user_settled_bets.json``."""
     from api.user_bets_store import get_bets_for_event, move_open_to_settled
@@ -211,6 +357,7 @@ def settle_open_bets_for_event(
             away_score,
             home_corners=home_corners,
             away_corners=away_corners,
+            baseball_innings=baseball_innings,
         )
         if won is None:
             result.n_skipped += 1

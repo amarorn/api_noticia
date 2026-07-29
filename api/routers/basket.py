@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, HTTPException, Query
 
 from api.schemas import (
+    BasketMultiGameTicketsRequest,
+    BasketMultiGameTicketsResponse,
     BasketSuperbetEventResponse,
     BasketSuperbetLiveAdviceResponse,
     BasketSuperbetLiveEventResponse,
@@ -86,6 +88,50 @@ async def basket_superbet_live_advice(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return BasketSuperbetLiveAdviceResponse(**payload)
+
+
+@router.post("/superbet/multi-game/tickets", response_model=BasketMultiGameTicketsResponse)
+async def basket_superbet_multi_game_tickets(req: BasketMultiGameTicketsRequest):
+    """Monta bilhetes cross-game: 1 palpite por jogo, odds/EV combinados (produto)."""
+    from models.basket_multi_game_tickets import build_basket_multi_game_tickets
+
+    unique_ids = list(dict.fromkeys(req.event_ids))
+    if len(unique_ids) < 2:
+        raise HTTPException(status_code=422, detail="Informe pelo menos 2 event_ids distintos.")
+
+    advice_by_event: dict[int, dict] = {}
+    errors: list[str] = []
+
+    for event_id in unique_ids:
+        try:
+            advice = await asyncio.to_thread(
+                run_basket_live_advice,
+                event_id,
+                bankroll=req.bankroll,
+                save_bronze=False,
+                fast=req.fast,
+            )
+        except SuperbetClientError as exc:
+            errors.append(f"evento {event_id}: {exc}")
+            continue
+        advice_by_event[event_id] = advice
+
+    if len(advice_by_event) < 2:
+        detail = "Não foi possível obter advice de ao menos 2 jogos."
+        if errors:
+            detail += " " + "; ".join(errors)
+        raise HTTPException(status_code=502, detail=detail)
+
+    payload = build_basket_multi_game_tickets(
+        advice_by_event,
+        bankroll=req.bankroll,
+        stake=req.stake,
+        min_legs=req.min_legs,
+        max_legs=req.max_legs,
+        max_tickets=req.max_tickets,
+        require_apostar=req.require_apostar,
+    )
+    return BasketMultiGameTicketsResponse(**payload)
 
 
 @router.get("/superbet/live/{event_id}/copilot", response_model=LiveCopilotResponse)

@@ -11,7 +11,7 @@ import { useLiveCopilotAgentMutation } from "@/presentation/hooks/useLiveCopilot
 
 interface UseLiveCopilotAgentSessionOptions {
   eventId: number;
-  sport: "football" | "basketball";
+  sport: "football" | "basketball" | "baseball";
   phase?: string;
   bankroll?: number;
   kickoff?: string;

@@ -24,6 +24,31 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+def _trend_copy(sport: str) -> dict[str, str]:
+    """Vocabulário PT-BR por esporte."""
+    if sport == "baseball":
+        return {
+            "score_unit": "corrida(s)",
+            "time_remaining": "entrada(s)",
+            "more_scoring": "corridas",
+        }
+    return {
+        "score_unit": "gol(s)",
+        "time_remaining": "min",
+        "more_scoring": "gols",
+    }
+
+
+def _effective_inning(tick: GameTick, *, sport: str) -> int:
+    if sport != "baseball":
+        return max(0, tick.minute)
+    return max(1, tick.minute // 10)
+
+
+def _match_length(sport: str) -> int:
+    return 9 if sport == "baseball" else 90
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Estruturas
 # ──────────────────────────────────────────────────────────────────────────────
@@ -151,11 +176,13 @@ def load_event_ticks(event_dir: Path) -> list[GameTick]:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def detect_trends(ticks: list[GameTick]) -> list[TrendSignal]:
+def detect_trends(ticks: list[GameTick], *, sport: str = "football") -> list[TrendSignal]:
     """Analisa a sequência de ticks e detecta sinais de tendência."""
     if len(ticks) < 2:
         return []
 
+    copy = _trend_copy(sport)
+    unit = copy["score_unit"]
     signals: list[TrendSignal] = []
     latest = ticks[-1]
     first = ticks[0]
@@ -171,7 +198,7 @@ def detect_trends(ticks: list[GameTick]) -> list[TrendSignal]:
             strength=min(abs(score_diff) / 4, 1.0),
             description=(
                 f"Placar {latest.home_score}×{latest.away_score} — "
-                f"{team_label} domina por {abs(score_diff)} gol(s)."
+                f"{team_label} domina por {abs(score_diff)} {unit}."
             ),
             minute=latest.minute,
         ))
@@ -188,7 +215,7 @@ def detect_trends(ticks: list[GameTick]) -> list[TrendSignal]:
                 direction="over",
                 strength=min(goals_in_window / 3, 1.0),
                 description=(
-                    f"{goals_in_window} gol(s) nos últimos minutos — "
+                    f"{goals_in_window} {unit} no período monitorado — "
                     f"jogo aberto, tendência Over."
                 ),
                 minute=latest.minute,
@@ -206,7 +233,7 @@ def detect_trends(ticks: list[GameTick]) -> list[TrendSignal]:
                 strength=min(home_goals_2h / 3, 1.0),
                 description=(
                     f"Apenas mandante marcou no período monitorado "
-                    f"({home_goals_2h} gol(s)). Visitante não ameaça."
+                    f"({home_goals_2h} {unit}). Visitante não ameaça."
                 ),
                 minute=latest.minute,
             ))
@@ -217,7 +244,7 @@ def detect_trends(ticks: list[GameTick]) -> list[TrendSignal]:
                 strength=min(away_goals_2h / 3, 1.0),
                 description=(
                     f"Apenas visitante marcou no período monitorado "
-                    f"({away_goals_2h} gol(s)). Mandante não ameaça."
+                    f"({away_goals_2h} {unit}). Mandante não ameaça."
                 ),
                 minute=latest.minute,
             ))
@@ -262,14 +289,22 @@ def detect_trends(ticks: list[GameTick]) -> list[TrendSignal]:
             ))
 
     # ─── 6. Tempo + gap = irreversível ───
-    remaining = 90 - latest.minute
-    if remaining <= 20 and abs(score_diff) >= 2:
+    if sport == "baseball":
+        inning = _effective_inning(latest, sport=sport)
+        remaining = max(0, _match_length(sport) - inning)
+        time_label = f"~{remaining} {copy['time_remaining']}"
+    else:
+        remaining = 90 - latest.minute
+        time_label = f"~{remaining}{copy['time_remaining']}"
+    if (sport == "baseball" and remaining <= 3 or sport != "baseball" and remaining <= 20) and abs(
+        score_diff
+    ) >= 2:
         signals.append(TrendSignal(
             signal_type="time_running_out",
             direction="result_locked",
-            strength=min((abs(score_diff) * (90 - remaining)) / 200, 1.0),
+            strength=min((abs(score_diff) * max(remaining, 1)) / (30 if sport == "baseball" else 200), 1.0),
             description=(
-                f"Restam ~{remaining}min com {abs(score_diff)} gol(s) de diferença. "
+                f"Restam {time_label} com {abs(score_diff)} {unit} de diferença. "
                 f"Virada estatisticamente improvável (<5%)."
             ),
             minute=latest.minute,
@@ -288,7 +323,7 @@ def detect_trends(ticks: list[GameTick]) -> list[TrendSignal]:
                         strength=min(delta, 1.0),
                         description=(
                             f"Over {line} subiu de {first.over_implied[line]:.0%} → "
-                            f"{latest.over_implied[line]:.0%} — mercado espera mais gols."
+                            f"{latest.over_implied[line]:.0%} — mercado espera mais {copy['more_scoring']}."
                         ),
                         minute=latest.minute,
                     ))
@@ -396,9 +431,10 @@ def _is_conflicting(bet_direction: str, signals: list[TrendSignal]) -> tuple[boo
 
 
 def _find_best_opportunities(
-    latest: GameTick, signals: list[TrendSignal]
+    latest: GameTick, signals: list[TrendSignal], *, sport: str = "football"
 ) -> list[dict[str, Any]]:
     """Identifica as melhores oportunidades com base na tendência atual."""
+    copy = _trend_copy(sport)
     opps: list[dict[str, Any]] = []
 
     # Tendência Over com odd disponível?
@@ -414,7 +450,9 @@ def _find_best_opportunities(
                     "implied_prob": round(prob * 100, 1),
                     "fair_odd": round(fair_odd, 2),
                     "confidence": "alta" if prob > 0.70 else "média",
-                    "reasoning": f"Jogo aberto — {latest.total_goals} gols já, tendência de mais.",
+                    "reasoning": (
+                        f"Jogo aberto — {latest.total_goals} {copy['more_scoring']} já, tendência de mais."
+                    ),
                 })
                 break  # só a melhor linha
 
@@ -434,8 +472,13 @@ def _find_best_opportunities(
 
     # Under — se jogo não está produzindo gols (sem goal_rush)
     goal_rush = any(s.signal_type == "goal_rush" for s in signals)
-    if not goal_rush and latest.minute >= 60:
-        remaining_min = 90 - latest.minute
+    if not goal_rush and latest.minute >= (60 if sport != "baseball" else 50):
+        if sport == "baseball":
+            inning = _effective_inning(latest, sport=sport)
+            remaining_label = f"{max(0, _match_length(sport) - inning)} entrada(s)"
+        else:
+            remaining_min = 90 - latest.minute
+            remaining_label = f"{remaining_min}min"
         # Menor linha Under onde implied > 60%
         for line, over_prob in sorted(
             latest.over_implied.items(), key=lambda x: float(x[0])
@@ -449,7 +492,7 @@ def _find_best_opportunities(
                     "fair_odd": round(1 / under_prob, 2) if under_prob > 0 else None,
                     "confidence": "média",
                     "reasoning": (
-                        f"Restam {remaining_min}min, ritmo sugere que não virão muitos gols."
+                        f"Restam {remaining_label}, ritmo sugere que não virão muitas {copy['more_scoring']}."
                     ),
                 })
                 break
@@ -461,6 +504,8 @@ def analyze_position(
     user_bet: dict[str, Any],
     ticks: list[GameTick],
     event_snapshot: dict[str, Any] | None = None,
+    *,
+    sport: str = "football",
 ) -> GameTrendReport:
     """Analisa a posição do usuário contra a tendência do jogo.
 
@@ -476,7 +521,7 @@ def analyze_position(
         return GameTrendReport()
 
     latest = ticks[-1]
-    signals = detect_trends(ticks)
+    signals = detect_trends(ticks, sport=sport)
 
     # Direção da aposta do usuário
     picks = user_bet.get("picks") or []
@@ -491,7 +536,7 @@ def analyze_position(
     )
 
     # Oportunidades alternativas
-    opportunities = _find_best_opportunities(latest, signals)
+    opportunities = _find_best_opportunities(latest, signals, sport=sport)
 
     # ─── Decisão final ───
     if is_conflict and conflict_strength >= 0.8:

@@ -8,7 +8,12 @@ import pytest
 
 from ingest.superbet.client import SuperbetClientError
 from ingest.superbet.parser import SuperbetEventSnapshot, SuperbetInPlayState
-from ingest.superbet.store import fetch_event_with_stale_fallback, load_latest_snapshot, save_event_snapshot
+from ingest.superbet.store import (
+    fetch_event_with_stale_fallback,
+    is_valid_superbet_event_id,
+    load_latest_snapshot,
+    save_event_snapshot,
+)
 
 
 def _sample_snapshot(event_id: int = 12516174) -> SuperbetEventSnapshot:
@@ -81,6 +86,21 @@ def test_fetch_event_with_stale_fallback_raises_without_bronze():
 
     with pytest.raises(SuperbetClientError):
         fetch_event_with_stale_fallback(client, 999999)
+
+
+def test_fetch_event_with_stale_fallback_rejects_invalid_event_id():
+    client = MagicMock()
+    with pytest.raises(SuperbetClientError, match="inválido"):
+        fetch_event_with_stale_fallback(client, 123)
+    client.fetch_event.assert_not_called()
+
+
+def test_is_valid_superbet_event_id_respects_minimum(monkeypatch):
+    monkeypatch.setattr("ingest.superbet.store.settings.superbet_min_event_id", 1_000_000)
+    assert is_valid_superbet_event_id(1_000_000) is True
+    assert is_valid_superbet_event_id(12_512_380) is True
+    assert is_valid_superbet_event_id(123) is False
+    assert is_valid_superbet_event_id(777) is False
 
 
 def test_load_latest_snapshot_roundtrip(tmp_path, monkeypatch):

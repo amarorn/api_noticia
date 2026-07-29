@@ -1638,7 +1638,7 @@
       "kickoff": "2026-07-15T19:00:00+00:00",
       "venue": null,
       "city": null,
-      "fifa_stage": "Semifinals",
+      "fifa_stage": "Semifinal",
       "fifa_id_match": "400021540",
       "sofascore_event_id": 12812996,
       "schedule_source": "sofascore",
@@ -1646,7 +1646,45 @@
       "away_score": 2,
       "result_source": "superbet",
       "result_synced_at": "2026-07-15T21:05:21.734964+00:00"
+    },
+    {
+      "id": "final-espanha-argentina",
+      "home_team": "Espanha",
+      "away_team": "Argentina",
+      "group": null,
+      "round": 9,
+      "phase": "final",
+      "kickoff": "2026-07-19T19:00:00+00:00",
+      "venue": null,
+      "city": null,
+      "fifa_stage": "Final",
+      "fifa_id_match": null,
+      "sofascore_event_id": 12813005,
+      "schedule_source": "sofascore",
+      "home_score": 0,
+      "away_score": 0,
+      "result_source": "superbet",
+      "result_synced_at": "2026-07-19T21:38:18.842199+00:00"
+    },
+    {
+      "id": "third_place-franca-inglaterra",
+      "home_team": "França",
+      "away_team": "Inglaterra",
+      "group": null,
+      "round": 8,
+      "phase": "third_place",
+      "kickoff": "2026-07-18T21:00:00+00:00",
+      "venue": null,
+      "city": null,
+      "fifa_stage": "Match for 3rd place",
+      "fifa_id_match": null,
+      "sofascore_event_id": 12813003,
+      "schedule_source": "sofascore",
+      "home_score": 4,
+      "away_score": 6,
+      "result_source": "superbet",
+      "result_synced_at": "2026-07-18T23:03:00.468163+00:00"
     }
   ],
-  "results_synced_at": "2026-07-15T21:05:21.734964+00:00"
+  "results_synced_at": "2026-07-19T21:38:18.842199+00:00"
 }

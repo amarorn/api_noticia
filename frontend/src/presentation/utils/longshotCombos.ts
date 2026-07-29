@@ -56,18 +56,24 @@ function totalsBucket(market: string): { period: string; family: string } | null
 
   if (body.startsWith("home_over_")) return { period, family: "home" };
   if (body.startsWith("away_over_")) return { period, family: "away" };
-  if (body.startsWith("corners_over_")) return { period, family: "corners" };
+  if (body.startsWith("home_corners_over_")) return { period, family: "corners" };
+  if (body.startsWith("away_corners_over_")) return { period, family: "corners" };
+  if (body.startsWith("corners_over_") || market === "corners_h2h") return { period, family: "corners" };
   if (body.startsWith("cards_over_")) return { period, family: "cards" };
+  if (body.startsWith("fouls_over_")) return { period, family: "fouls" };
   if (body.startsWith("over_")) return { period, family: "goals" };
   return null;
 }
 
 function legFamily(market: string): string {
-  if (market.endsWith("_h2h") || market === "h2h") return "h2h";
+  if (market.endsWith("_h2h") || market === "h2h" || market === "corners_h2h") return "h2h";
+  if (/^(?:1h_|2h_)?dc_/.test(market)) return "double_chance";
+  if (/^(?:1h_|2h_)?dnb_/.test(market)) return "draw_no_bet";
   if (market.includes("cs_") || market.includes("exact") || market.includes("over_")) {
     return "goals";
   }
-  if (market.includes("hcap") || market.includes("_ah_")) return "handicap";
+  if (market.includes("hcap3") || market.includes("hcap") || market.includes("_ah_")) return "handicap";
+  if (market.startsWith("fouls_")) return "fouls";
   return "other";
 }
 

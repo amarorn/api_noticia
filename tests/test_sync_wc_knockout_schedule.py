@@ -5,6 +5,7 @@ from pipelines.sync_wc_knockout_schedule import (
     _is_placeholder_team,
     _parse_sofascore_knockout_event,
     _supplement_knockout_by_known_ids,
+    fetch_knockout_matches,
     merge_knockout_matches,
 )
 
@@ -117,3 +118,34 @@ def test_supplement_known_ids_adds_missing(monkeypatch):
     assert out[0]["home_team"] == "Inglaterra"
     assert out[0]["away_team"] == "Argentina"
     assert out[0]["fifa_id_match"] == "400021540"
+
+
+def test_fetch_knockout_matches_force_fifa_refresh(monkeypatch):
+    calls: list[bool] = []
+
+    def fake_load(*, force_refresh: bool = False, client=None):
+        calls.append(force_refresh)
+        return [
+            {
+                "IdMatch": "400021512",
+                "Date": "2026-06-29T17:00:00+00:00",
+                "SeasonName": [{"Description": "FIFA World Cup 2026™"}],
+                "StageName": [{"Description": "Round of 32", "Locale": "en"}],
+                "Home": {"TeamName": [{"Description": "Brazil", "Locale": "en"}]},
+                "Away": {"TeamName": [{"Description": "France", "Locale": "en"}]},
+            }
+        ]
+
+    monkeypatch.setattr(
+        "pipelines.sync_wc_knockout_schedule.load_fifa_window_matches",
+        fake_load,
+    )
+    monkeypatch.setattr(
+        "pipelines.sync_wc_knockout_schedule._supplement_knockout_by_known_ids",
+        lambda *a, **k: 0,
+    )
+
+    matches = fetch_knockout_matches(use_sofascore=False, force_fifa_refresh=True)
+    assert calls == [True]
+    assert len(matches) == 1
+    assert matches[0]["home_team"] == "Brasil"

@@ -10,17 +10,13 @@ import httpx
 
 from config import settings
 from models.inplay_bet_builder_guard import validate_bet_builder
-from models.live_copilot_bilhete import (
-    basket_bilhete_candidates,
-    football_bilhete_candidates,
-)
 from models.live_llm_copilot import (
     LiveCopilotError,
     _allowed_keys,
-    _basket_candidates,
+    _aport_sport_bilhete_candidates,
+    _aport_sport_candidates,
     _build_context,
     _fallback_from_quant,
-    _football_candidates,
     _parse_json,
     _pick_key,
     _validate_llm_payload,
@@ -166,7 +162,7 @@ def _parse_score(current_score: str | None) -> tuple[int, int]:
 
 
 def _tool_get_opportunities(advice: dict[str, Any], *, sport: str) -> dict[str, Any]:
-    rows = _football_candidates(advice) if sport != "basketball" else _basket_candidates(advice)
+    rows = _aport_sport_candidates(advice, sport=sport)
     compact = []
     for row in rows[:8]:
         compact.append({
@@ -197,15 +193,19 @@ def _tool_get_strategy_snapshot(advice: dict[str, Any], *, sport: str) -> dict[s
         "is_live": advice.get("is_live"),
         "is_finished": advice.get("is_finished"),
     }
-    if sport == "basketball":
+    if sport in {"basketball", "baseball"}:
         summary = advice.get("inplay_summary") or {}
         out["projecao_total"] = summary.get("expected_total")
+    if sport == "baseball":
+        out["entrada"] = advice.get("inning") or advice.get("minute")
+        phase = advice.get("game_phase") or {}
+        out["fase"] = phase.get("label") or phase.get("phase")
     return out
 
 
 def _tool_validate_combo(advice: dict[str, Any], *, sport: str, legs: list[dict[str, Any]]) -> dict[str, Any]:
-    if sport == "basketball":
-        return {"valid": False, "warnings": ["validate_combo disponível só para futebol nesta versão."]}
+    if sport in {"basketball", "baseball"}:
+        return {"valid": False, "warnings": [f"validate_combo disponível só para futebol nesta versão ({sport})."]}
     hs, as_ = _parse_score(advice.get("current_score"))
     minute = int(advice.get("minute") or 0)
     ht_h = advice.get("ht_home_score")
@@ -393,10 +393,8 @@ def run_live_copilot_agent(
         return base
 
     context = _build_context(advice, sport=sport)
-    candidates = _football_candidates(advice) if sport != "basketball" else _basket_candidates(advice)
-    bilhete_candidates = (
-        football_bilhete_candidates(advice) if sport != "basketball" else basket_bilhete_candidates(advice)
-    )
+    candidates = _aport_sport_candidates(advice, sport=sport)
+    bilhete_candidates = _aport_sport_bilhete_candidates(advice, sport=sport)
     allowed = _allowed_keys(candidates)
     base["wait_reason"] = context.get("wait_reason")
 

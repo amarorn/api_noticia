@@ -61,8 +61,12 @@ def _basket_event_payload(
         "inplay_stats": {
             "home_team_score": 50,
             "away_team_score": 45,
-            "minutes": 24,
-            "periods": [{"num": 1, "home_team_score": 28, "away_team_score": 25}],
+            "minutes": 6,
+            "periods": [
+                {"num": 1, "home_team_score": 28, "away_team_score": 25},
+                {"num": 2, "home_team_score": 22, "away_team_score": 20},
+                {"num": 3, "home_team_score": 0, "away_team_score": 0},
+            ],
         },
         "markets": markets,
     }

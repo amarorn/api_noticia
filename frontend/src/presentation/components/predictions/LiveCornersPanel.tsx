@@ -81,7 +81,13 @@ function resolveProjection(data: SuperbetLiveAdvice): {
 }
 
 function cornerMarketRows(data: SuperbetLiveAdvice) {
-  return (data.strategy?.marketScan ?? []).filter((r) => r.market.startsWith("corners_over_"));
+  return (data.strategy?.marketScan ?? []).filter(
+    (r) =>
+      r.market.startsWith("corners_over_") ||
+      r.market === "corners_h2h" ||
+      r.market.startsWith("home_corners_over_") ||
+      r.market.startsWith("away_corners_over_"),
+  );
 }
 
 /** Projeção Poisson de escanteios ao vivo + linhas vs Superbet. */

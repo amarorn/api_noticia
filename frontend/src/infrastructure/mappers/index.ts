@@ -2431,6 +2431,7 @@ interface ApiBasketSuperbetLiveAdvice {
     market: string;
     outcome: string;
     label: string;
+    market_display?: string;
     model_prob: number;
     market_odd: number;
     implied_prob: number;
@@ -2518,6 +2519,116 @@ export function mapBasketSuperbetLiveAdvice(
   };
 }
 
+interface ApiBasketMultiGameLeg {
+  superbet_event_id: number;
+  event_name: string;
+  home_team: string;
+  away_team: string;
+  minute: number;
+  is_live: boolean;
+  market: string;
+  outcome: string;
+  label: string;
+  market_display?: string;
+  model_prob: number;
+  market_odd: number;
+  expected_value: number;
+  edge_pp: number;
+  action: string;
+}
+
+interface ApiBasketMultiGameTickets {
+  event_ids: number[];
+  games_evaluated: number;
+  games_with_pick: number;
+  skipped_events: Array<{
+    event_id: number;
+    reason: string;
+    home_team?: string | null;
+    away_team?: string | null;
+  }>;
+  per_game_best: ApiBasketMultiGameLeg[];
+  suggested_tickets: Array<{
+    ticket_id: string;
+    legs: ApiBasketMultiGameLeg[];
+    combined_odd: number;
+    product_odds?: number | null;
+    pricing_mode?: string;
+    combined_prob?: number | null;
+    combined_ev?: number | null;
+    stake_brl: number;
+    stake_pct: number;
+    potential_payout: number;
+    final_payout: number;
+    bonus_eligible: boolean;
+    bonus_percentage: number;
+    score: number;
+    warnings?: string[];
+  }>;
+  bankroll: number;
+  stake: number;
+  min_legs: number;
+  max_legs: number;
+}
+
+function mapBasketMultiGameLeg(raw: ApiBasketMultiGameLeg): import("@/domain/entities").BasketMultiGameLeg {
+  return {
+    superbetEventId: raw.superbet_event_id,
+    eventName: raw.event_name,
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    minute: raw.minute,
+    isLive: raw.is_live,
+    market: raw.market,
+    outcome: raw.outcome,
+    label: raw.label,
+    marketDisplay: raw.market_display ?? raw.label,
+    modelProb: raw.model_prob,
+    marketOdd: raw.market_odd,
+    expectedValue: raw.expected_value,
+    edgePp: raw.edge_pp,
+    action: raw.action,
+  };
+}
+
+export function mapBasketMultiGameTickets(
+  raw: ApiBasketMultiGameTickets,
+): import("@/domain/entities").BasketMultiGameTicketsResult {
+  return {
+    eventIds: raw.event_ids ?? [],
+    gamesEvaluated: raw.games_evaluated ?? 0,
+    gamesWithPick: raw.games_with_pick ?? 0,
+    skippedEvents: (raw.skipped_events ?? []).map((s) => ({
+      eventId: s.event_id,
+      reason: s.reason,
+      homeTeam: s.home_team ?? null,
+      awayTeam: s.away_team ?? null,
+    })),
+    perGameBest: (raw.per_game_best ?? []).map(mapBasketMultiGameLeg),
+    suggestedTickets: (raw.suggested_tickets ?? []).map((ticket) => ({
+      ticketId: ticket.ticket_id,
+      legs: (ticket.legs ?? []).map(mapBasketMultiGameLeg),
+      combinedOdd: ticket.combined_odd,
+      productOdds: ticket.product_odds ?? null,
+      pricingMode: ticket.pricing_mode ?? "product",
+      combinedProb: ticket.combined_prob ?? null,
+      combinedEv: ticket.combined_ev ?? null,
+      stakeBrl: ticket.stake_brl,
+      stakePct: ticket.stake_pct,
+      potentialPayout: ticket.potential_payout,
+      finalPayout: ticket.final_payout,
+      bonusEligible: ticket.bonus_eligible,
+      bonusPercentage: ticket.bonus_percentage,
+      score: ticket.score,
+      warnings: ticket.warnings ?? [],
+    })),
+    bankroll: raw.bankroll,
+    stake: raw.stake,
+    minLegs: raw.min_legs,
+    maxLegs: raw.max_legs,
+  };
+}
+
 export const mapBaseballSuperbetLiveFeed = mapBasketSuperbetLiveFeed;
 
 interface ApiBaseballSuperbetLiveAdvice {
@@ -2551,6 +2662,8 @@ interface ApiBaseballSuperbetLiveAdvice {
     moneyline_probs?: Record<string, number>;
     spread_probs?: Record<string, number>;
     total_probs?: Record<string, number>;
+    team_total_probs?: Record<string, number>;
+    period_probs?: Record<string, number>;
     rpi_home?: number | null;
     rpi_away?: number | null;
     rpi_home_prior?: number | null;
@@ -2559,9 +2672,71 @@ interface ApiBaseballSuperbetLiveAdvice {
     n_simulations?: number | null;
     market_total_line?: number | null;
     market_spread_line?: number | null;
+    score_adapted?: boolean;
+    obs_elapsed_innings?: number | null;
   };
-  aportes: ApiBasketSuperbetLiveAdvice["aportes"];
+  aportes: Array<
+    ApiBasketSuperbetLiveAdvice["aportes"][number] & { line_tier?: string | null }
+  >;
   confidence: { score: number; label: string; max_edge_pp: number } | null;
+  market_benchmark?: {
+    source?: string;
+    event_id?: number;
+    moneyline?: Record<
+      string,
+      { market?: number; model?: number; edge?: number; odds?: number | null }
+    >;
+    totals?: Record<
+      string,
+      { market_over?: number; model_over?: number; edge_over?: number }
+    >;
+    spread?: Record<
+      string,
+      {
+        market_home_cover?: number;
+        model_home_cover?: number;
+        edge_home?: number;
+      }
+    >;
+  } | null;
+  game_phase?: {
+    phase: string;
+    label: string;
+    extras_possible: boolean;
+    block_f5: boolean;
+    block_ft_totals: boolean;
+    block_new_ft_aportes: boolean;
+    run_gap: number;
+    lead_side?: string | null;
+  } | null;
+  strategy?: Record<string, unknown> | null;
+  bet_guardrails?: {
+    block_new_bets: boolean;
+    block_reason?: string | null;
+    dead_markets?: string[];
+    allow_f5?: boolean;
+    allow_ft_totals?: boolean;
+    extras_warning?: boolean;
+  } | null;
+  cashout?: {
+    action: string;
+    confidence: number;
+    reason: string;
+    current_model_prob: number;
+    placed_implied_prob: number;
+    remaining_ev: number;
+    estimated_fair_cashout: number;
+    potential_return: number;
+    trend_influenced?: boolean;
+    trend_urgency?: string | null;
+  } | null;
+  trend_report?: Record<string, unknown> | null;
+  score_stale?: {
+    score_stale?: boolean;
+    warnings?: string[];
+    snapshot_runs?: number | null;
+    tick_runs?: number | null;
+  } | null;
 }
 
 export function mapBaseballSuperbetLiveAdvice(
@@ -2603,6 +2778,8 @@ export function mapBaseballSuperbetLiveAdvice(
       moneylineProbs: summary.moneyline_probs ?? {},
       spreadProbs: summary.spread_probs ?? {},
       totalProbs: summary.total_probs ?? {},
+      teamTotalProbs: summary.team_total_probs ?? {},
+      periodProbs: summary.period_probs ?? {},
       rpiHome: summary.rpi_home ?? null,
       rpiAway: summary.rpi_away ?? null,
       rpiHomePrior: summary.rpi_home_prior ?? null,
@@ -2611,11 +2788,14 @@ export function mapBaseballSuperbetLiveAdvice(
       nSimulations: summary.n_simulations ?? null,
       marketTotalLine: summary.market_total_line ?? null,
       marketSpreadLine: summary.market_spread_line ?? null,
+      scoreAdapted: summary.score_adapted === true,
+      obsElapsedInnings: summary.obs_elapsed_innings ?? null,
     },
     aportes: (raw.aportes ?? []).map((a) => ({
       market: a.market,
       outcome: a.outcome,
       label: a.label,
+      marketDisplay: a.market_display ?? undefined,
       modelProb: a.model_prob,
       marketOdd: a.market_odd,
       impliedProb: a.implied_prob,
@@ -2625,6 +2805,7 @@ export function mapBaseballSuperbetLiveAdvice(
       suggestedStakePct: a.suggested_stake_pct,
       suggestedStakeValue: a.suggested_stake_value ?? null,
       action: a.action,
+      lineTier: a.line_tier ?? null,
     })),
     confidence: raw.confidence
       ? {
@@ -2633,6 +2814,166 @@ export function mapBaseballSuperbetLiveAdvice(
           maxEdgePp: raw.confidence.max_edge_pp,
         }
       : null,
+    marketBenchmark: raw.market_benchmark
+      ? {
+          source: String(raw.market_benchmark.source ?? "superbet"),
+          eventId: Number(raw.market_benchmark.event_id ?? raw.superbet_event_id),
+          moneyline: Object.fromEntries(
+            Object.entries(raw.market_benchmark.moneyline ?? {}).map(([k, v]) => [
+              k,
+              {
+                market: Number(v.market ?? 0),
+                model: Number(v.model ?? 0),
+                edge: Number(v.edge ?? 0),
+                odds: v.odds ?? null,
+              },
+            ]),
+          ),
+          totals: Object.fromEntries(
+            Object.entries(raw.market_benchmark.totals ?? {}).map(([k, v]) => [
+              k,
+              {
+                marketOver: Number(v.market_over ?? 0),
+                modelOver: Number(v.model_over ?? 0),
+                edgeOver: Number(v.edge_over ?? 0),
+              },
+            ]),
+          ),
+          spread: Object.fromEntries(
+            Object.entries(raw.market_benchmark.spread ?? {}).map(([k, v]) => [
+              k,
+              {
+                marketHomeCover: Number(v.market_home_cover ?? 0),
+                modelHomeCover: Number(v.model_home_cover ?? 0),
+                edgeHome: Number(v.edge_home ?? 0),
+              },
+            ]),
+          ),
+        }
+      : null,
+    gamePhase: raw.game_phase
+      ? {
+          phase: raw.game_phase.phase,
+          label: raw.game_phase.label,
+          extrasPossible: raw.game_phase.extras_possible,
+          blockF5: raw.game_phase.block_f5,
+          blockFtTotals: raw.game_phase.block_ft_totals,
+          blockNewFtAportes: raw.game_phase.block_new_ft_aportes,
+          runGap: raw.game_phase.run_gap,
+          leadSide: raw.game_phase.lead_side ?? null,
+        }
+      : null,
+    strategy: raw.strategy
+      ? {
+          posture: String(raw.strategy.posture ?? "neutro"),
+          waitReason:
+            raw.strategy.wait_reason != null ? String(raw.strategy.wait_reason) : null,
+          opportunities: ((raw.strategy.opportunities as Array<Record<string, unknown>>) ?? []).map(
+            (op) => ({
+              market: String(op.market ?? ""),
+              outcome: String(op.outcome ?? ""),
+              label: String(op.label ?? ""),
+              tier: String(op.tier ?? ""),
+              action: String(op.action ?? ""),
+              timing: op.timing != null ? String(op.timing) : undefined,
+              edgePp: Number(op.edge_pp ?? 0),
+              expectedValue: Number(op.expected_value ?? 0),
+              marketOdd: Number(op.market_odd ?? 0),
+              modelProb: Number(op.model_prob ?? 0),
+            }),
+          ),
+          shields: ((raw.strategy.shields as Array<Record<string, unknown>>) ?? []).map((s) => ({
+            action: String(s.action ?? ""),
+            priority: String(s.priority ?? ""),
+            title: String(s.title ?? ""),
+            reason: String(s.reason ?? ""),
+          })),
+          watchList: (raw.strategy.watch_list as Array<Record<string, unknown>>) ?? [],
+          marketScan: ((raw.strategy.market_scan as Array<Record<string, unknown>>) ?? []).map(
+            (row) => ({
+              category: String(row.category ?? ""),
+              line: String(row.line ?? ""),
+              edgePp: Number(row.edge_pp ?? 0),
+              model: row.model != null ? Number(row.model) : undefined,
+              market: row.market != null ? Number(row.market) : undefined,
+            }),
+          ),
+          rules: ((raw.strategy.rules as string[]) ?? []).map(String),
+        }
+      : null,
+    betGuardrails: raw.bet_guardrails
+      ? {
+          blockNewBets: Boolean(raw.bet_guardrails.block_new_bets),
+          blockReason:
+            raw.bet_guardrails.block_reason != null
+              ? String(raw.bet_guardrails.block_reason)
+              : null,
+          deadMarkets: (raw.bet_guardrails.dead_markets ?? []).map(String),
+          allowF5: raw.bet_guardrails.allow_f5 !== false,
+          allowFtTotals: raw.bet_guardrails.allow_ft_totals !== false,
+          extrasWarning: Boolean(raw.bet_guardrails.extras_warning),
+        }
+      : null,
+    cashout: raw.cashout
+      ? {
+          action: String(raw.cashout.action),
+          confidence: Number(raw.cashout.confidence),
+          reason: String(raw.cashout.reason),
+          currentModelProb: Number(raw.cashout.current_model_prob),
+          placedImpliedProb: Number(raw.cashout.placed_implied_prob),
+          remainingEv: Number(raw.cashout.remaining_ev),
+          estimatedFairCashout: Number(raw.cashout.estimated_fair_cashout),
+          potentialReturn: Number(raw.cashout.potential_return),
+          trendInfluenced: raw.cashout.trend_influenced === true,
+          trendUrgency:
+            raw.cashout.trend_urgency != null ? String(raw.cashout.trend_urgency) : null,
+        }
+      : null,
+    trendReport: raw.trend_report as Record<string, unknown> | null | undefined,
+    scoreStale: raw.score_stale
+      ? {
+          scoreStale: Boolean(raw.score_stale.score_stale),
+          warnings: (raw.score_stale.warnings ?? []).map(String),
+          snapshotRuns: raw.score_stale.snapshot_runs ?? null,
+          tickRuns: raw.score_stale.tick_runs ?? null,
+        }
+      : null,
+  };
+}
+
+type ApiBaseballSuperbetEvent = {
+  event_id: number;
+  home_team: string;
+  away_team: string;
+  is_live: boolean;
+  inplay?: {
+    home_score?: number;
+    away_score?: number;
+    minute?: number;
+    period_label?: string | null;
+    status?: string | null;
+  } | null;
+  moneyline_odds?: Record<string, number>;
+  raw_market_count?: number;
+  captured_at: string;
+};
+
+export function mapBaseballSuperbetEvent(raw: ApiBaseballSuperbetEvent) {
+  const inplay = raw.inplay;
+  const homeScore = inplay?.home_score ?? 0;
+  const awayScore = inplay?.away_score ?? 0;
+  return {
+    eventId: raw.event_id,
+    homeTeam: raw.home_team,
+    awayTeam: raw.away_team,
+    isLive: raw.is_live,
+    currentScore: inplay ? `${homeScore}x${awayScore}` : null,
+    minute: inplay?.minute ?? 0,
+    periodLabel: inplay?.period_label ?? null,
+    status: inplay?.status ?? null,
+    h2hOdds: raw.moneyline_odds ?? {},
+    rawMarketCount: raw.raw_market_count ?? 0,
+    capturedAt: raw.captured_at,
   };
 }
 

@@ -214,11 +214,61 @@ export function evaluateLegLive(
   }
 
   const mktLH2h = market.toLowerCase();
-  if (mktLH2h === "h2h" || ["1", "2", "x"].includes(mktLH2h)) {
+  if (
+    mktLH2h === "h2h" ||
+    mktLH2h === "moneyline" ||
+    mktLH2h === "f5_moneyline" ||
+    mktLH2h === "inning_1x2" ||
+    ["1", "2", "x"].includes(mktLH2h)
+  ) {
     const side = ["1", "2", "x"].includes(mktLH2h) ? mktLH2h : outcome.toLowerCase();
     const settled = evaluateH2HSettled(side, homeScore, awayScore);
     if (settled === true) return { market, outcome, label, status: "won", reason: "Perna já ganha." };
     if (settled === false) return { market, outcome, label, status: "lost", reason: "Perna perdida." };
+  }
+
+  if (
+    mktL === "total_runs" ||
+    mktL === "f5_total" ||
+    mktL === "inning_total" ||
+    mktL === "team_total_runs"
+  ) {
+    const outMatch = outcome.match(/^(over|under)_(\d+)_(\d+)$/i);
+    let direction: "over" | "under" | null = null;
+    let line: number | null = null;
+    if (outMatch) {
+      direction = outMatch[1].toLowerCase() as "over" | "under";
+      line = parseFloat(`${outMatch[2]}.${outMatch[3]}`);
+    } else {
+      const norm = normalizeTotalsPick(market, outcome, pick.targetValue, label);
+      direction = norm.direction;
+      line = norm.line;
+    }
+    if (direction && line != null) {
+      const scope =
+        mktL === "f5_total"
+          ? "no F5"
+          : mktL === "team_total_runs"
+            ? "do time"
+            : "no jogo";
+      const teamSide = outcome.startsWith("home_") ? "home" : outcome.startsWith("away_") ? "away" : null;
+      const current =
+        mktL === "team_total_runs" && teamSide === "home"
+          ? homeScore
+          : mktL === "team_total_runs" && teamSide === "away"
+            ? awayScore
+            : homeScore + awayScore;
+      const lateInning = minute >= 70;
+      const live = evaluateUnderOverLive(
+        current,
+        line,
+        direction,
+        "corridas",
+        scope,
+        lateInning ? 75 : minute,
+      );
+      if (live) return { market, outcome, label, ...live };
+    }
   }
 
   const { direction, line, isFirstHalf } = normalizeTotalsPick(

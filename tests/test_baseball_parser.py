@@ -86,4 +86,12 @@ def test_parse_baseball_inning_and_moneyline():
     assert snap.sport_id == 20
     assert snap.total_points_odds == {}
     assert snap.inferred_total_runs == 9.0
+    assert snap.team_totals["home"]["3.5"]["over"] == 1.90
+    assert snap.team_totals["away"]["5.5"]["over"] == 1.90
     assert snap.spread_odds
+    assert snap.baseball_market_names["moneyline"] == "Vencedor (incl. entradas extras)"
+    assert snap.baseball_market_names["run_line"] == "Handicap (incl. entradas extras)"
+    assert (
+        snap.baseball_market_names["team_total_runs_home"]
+        == "Hanwha Eagles - Total de Corridas (incl. entradas extras)"
+    )

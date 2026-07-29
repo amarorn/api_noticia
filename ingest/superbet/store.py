@@ -16,6 +16,11 @@ logger = logging.getLogger(__name__)
 DEFAULT_SUPERBET_ODDS = Path("data/rounds/superbet_odds.json")
 
 
+def is_valid_superbet_event_id(event_id: int) -> bool:
+    """IDs abaixo do mínimo são fixtures de teste ou lixo de bronze local."""
+    return event_id >= settings.superbet_min_event_id
+
+
 def superbet_bronze_dir() -> Path:
     return settings.bronze_path / "superbet" / "events"
 
@@ -49,6 +54,11 @@ def fetch_event_with_stale_fallback(
     event_id: int,
 ) -> tuple[SuperbetEventSnapshot, bool]:
     """Busca evento na Superbet; em falha de rede usa bronze ``latest.json``."""
+    if not is_valid_superbet_event_id(event_id):
+        raise SuperbetClientError(
+            f"event_id {event_id} inválido para Superbet "
+            f"(mínimo {settings.superbet_min_event_id})"
+        )
     try:
         return client.fetch_event(event_id), False
     except SuperbetClientError as exc:

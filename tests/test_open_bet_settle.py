@@ -207,3 +207,107 @@ class TestOtherMarkets:
         settled = json.loads((tmp_path / "user_settled_bets.json").read_text(encoding="utf-8"))
         assert settled["bets"][0]["result"] == "won"
 
+
+class TestBaseballSettle:
+    _INNINGS = [
+        {"num": 1, "home": 1, "away": 0},
+        {"num": 2, "home": 0, "away": 1},
+        {"num": 3, "home": 2, "away": 0},
+        {"num": 4, "home": 0, "away": 2},
+        {"num": 5, "home": 2, "away": 0},
+        {"num": 6, "home": 2, "away": 0},
+        {"num": 7, "home": 0, "away": 1},
+        {"num": 8, "home": 1, "away": 0},
+        {"num": 9, "home": 0, "away": 0},
+    ]
+
+    def test_moneyline_home_win(self):
+        assert evaluate_pick(
+            market="moneyline",
+            outcome="1",
+            target_value=None,
+            home_score=5,
+            away_score=3,
+        )
+
+    def test_total_runs_over(self):
+        assert evaluate_pick(
+            market="total_runs",
+            outcome="over_7_5",
+            target_value=None,
+            home_score=5,
+            away_score=3,
+        )
+
+    def test_run_line_home_covers(self):
+        assert evaluate_pick(
+            market="run_line",
+            outcome="home_m1_5",
+            target_value=None,
+            home_score=5,
+            away_score=3,
+        )
+
+    def test_f5_moneyline_requires_innings(self):
+        assert (
+            evaluate_pick(
+                market="f5_moneyline",
+                outcome="f5_ml_1",
+                target_value=None,
+                home_score=5,
+                away_score=3,
+                baseball_innings=self._INNINGS,
+            )
+            is True
+        )
+
+    def test_f5_total_over(self):
+        assert evaluate_pick(
+            market="f5_total",
+            outcome="f5_over_4_5",
+            target_value=None,
+            home_score=5,
+            away_score=3,
+            baseball_innings=self._INNINGS,
+        )
+
+    def test_settle_baseball_moneyline_bet(self, tmp_path, monkeypatch):
+        from config import settings as s
+
+        monkeypatch.setattr(s, "lake_root", tmp_path)
+
+        open_path = tmp_path / "user_open_bets.json"
+        open_path.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "bets": [
+                        {
+                            "id": "bb1",
+                            "event_name": "Isotopes · River Cats",
+                            "home_team": "Albuquerque Isotopes",
+                            "away_team": "Sacramento River Cats",
+                            "picks": [{"market": "moneyline", "outcome": "1"}],
+                            "stake": 25.0,
+                            "odds_placed": 1.85,
+                            "potential_return": 46.25,
+                            "status": "open",
+                            "superbet_event_id": 12896894,
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = settle_open_bets_for_event(
+            event_id=12896894,
+            home_team="Albuquerque Isotopes",
+            away_team="Sacramento River Cats",
+            home_score=6,
+            away_score=4,
+        )
+        assert result.n_settled == 1
+        settled = json.loads((tmp_path / "user_settled_bets.json").read_text(encoding="utf-8"))
+        assert settled["bets"][0]["result"] == "won"
+

@@ -909,6 +909,7 @@ class BasketAporteAdvice(BaseModel):
     market: str
     outcome: str
     label: str
+    market_display: str = ""
     model_prob: float
     market_odd: float
     implied_prob: float
@@ -1026,6 +1027,75 @@ class BasketSuperbetLiveAdviceResponse(BaseModel):
     confidence: BasketConfidence | None = None
 
 
+class BasketMultiGameTicketsRequest(BaseModel):
+    """Pedido de bilhetes cross-game (basquete)."""
+
+    event_ids: list[int] = Field(..., min_length=2, max_length=8)
+    bankroll: float = Field(1000.0, gt=0)
+    stake: float | None = Field(None, gt=0)
+    min_legs: int = Field(2, ge=2, le=6)
+    max_legs: int = Field(4, ge=2, le=6)
+    max_tickets: int = Field(5, ge=1, le=10)
+    require_apostar: bool = False
+    fast: bool = False
+
+
+class BasketMultiGameLeg(BaseModel):
+    superbet_event_id: int
+    event_name: str
+    home_team: str
+    away_team: str
+    minute: int = 0
+    is_live: bool = False
+    market: str
+    outcome: str
+    label: str
+    market_display: str = ""
+    model_prob: float
+    market_odd: float
+    expected_value: float
+    edge_pp: float
+    action: str
+
+
+class BasketMultiGameSkippedEvent(BaseModel):
+    event_id: int
+    reason: str
+    home_team: str | None = None
+    away_team: str | None = None
+
+
+class BasketMultiGameTicket(BaseModel):
+    ticket_id: str
+    legs: list[BasketMultiGameLeg]
+    combined_odd: float
+    product_odds: float | None = None
+    pricing_mode: str = "product"
+    combined_prob: float | None = None
+    combined_ev: float | None = None
+    stake_brl: float
+    stake_pct: float
+    potential_payout: float
+    final_payout: float
+    bonus_eligible: bool = False
+    bonus_percentage: float = 0.0
+    score: float
+    warnings: list[str] = Field(default_factory=list)
+
+
+class BasketMultiGameTicketsResponse(BaseModel):
+    event_ids: list[int]
+    games_evaluated: int
+    games_with_pick: int
+    skipped_events: list[BasketMultiGameSkippedEvent] = Field(default_factory=list)
+    per_game_best: list[BasketMultiGameLeg] = Field(default_factory=list)
+    suggested_tickets: list[BasketMultiGameTicket] = Field(default_factory=list)
+    bankroll: float
+    stake: float
+    min_legs: int
+    max_legs: int
+
+
 # ---------------------------------------------------------------------------
 # Beisebol In-Play
 # ---------------------------------------------------------------------------
@@ -1035,6 +1105,7 @@ class BaseballAporteAdvice(BaseModel):
     market: str
     outcome: str
     label: str
+    market_display: str = ""
     model_prob: float
     market_odd: float
     implied_prob: float
@@ -1044,6 +1115,7 @@ class BaseballAporteAdvice(BaseModel):
     suggested_stake_pct: float
     suggested_stake_value: float | None = None
     action: str
+    line_tier: str | None = None
 
 
 class BaseballConfidence(BaseModel):
@@ -1062,6 +1134,8 @@ class BaseballInPlaySummary(BaseModel):
     moneyline_probs: dict[str, float] = Field(default_factory=dict)
     spread_probs: dict[str, float] = Field(default_factory=dict)
     total_probs: dict[str, float] = Field(default_factory=dict)
+    team_total_probs: dict[str, float] = Field(default_factory=dict)
+    period_probs: dict[str, Any] = Field(default_factory=dict)
     rpi_home: float | None = None
     rpi_away: float | None = None
     rpi_home_prior: float | None = None
@@ -1070,6 +1144,41 @@ class BaseballInPlaySummary(BaseModel):
     n_simulations: int | None = None
     market_total_line: float | None = None
     market_spread_line: float | None = None
+    score_adapted: bool = False
+    obs_elapsed_innings: float | None = None
+
+
+class BaseballGamePhaseResponse(BaseModel):
+    phase: str
+    label: str
+    extras_possible: bool
+    block_f5: bool
+    block_ft_totals: bool
+    block_new_ft_aportes: bool
+    run_gap: int
+    lead_side: str | None = None
+
+
+class BaseballBetGuardrailsResponse(BaseModel):
+    block_new_bets: bool
+    block_reason: str | None = None
+    dead_markets: list[str] = Field(default_factory=list)
+    allow_f5: bool = True
+    allow_ft_totals: bool = True
+    extras_warning: bool = False
+
+
+class BaseballCashoutAdvice(BaseModel):
+    action: str
+    confidence: float
+    reason: str
+    current_model_prob: float
+    placed_implied_prob: float
+    remaining_ev: float
+    estimated_fair_cashout: float
+    potential_return: float
+    trend_influenced: bool = False
+    trend_urgency: str | None = None
 
 
 class BaseballInningScore(BaseModel):
@@ -1148,6 +1257,16 @@ class BaseballSuperbetLiveAdviceResponse(BaseModel):
     inplay_summary: BaseballInPlaySummary = Field(default_factory=BaseballInPlaySummary)
     aportes: list[BaseballAporteAdvice] = Field(default_factory=list)
     confidence: BaseballConfidence | None = None
+    team_totals: dict[str, Any] = Field(default_factory=dict)
+    baseball_period_markets: dict[str, Any] = Field(default_factory=dict)
+    game_phase: BaseballGamePhaseResponse | None = None
+    market_benchmark: dict[str, Any] | None = None
+    strategy: dict[str, Any] | None = None
+    bet_guardrails: BaseballBetGuardrailsResponse | None = None
+    cashout: BaseballCashoutAdvice | None = None
+    trend_report: dict[str, Any] | None = None
+    score_stale: dict[str, Any] | None = None
+    superbet_error: str | None = None
 
 
 # ---------------------------------------------------------------------------

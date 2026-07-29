@@ -8,7 +8,7 @@ const COPILOT_POLL_MS = 25_000;
 
 export function useLiveCopilotQuery(options: {
   eventId: number;
-  sport: "football" | "basketball";
+  sport: "football" | "basketball" | "baseball";
   phase?: string;
   bankroll?: number;
   enabled?: boolean;

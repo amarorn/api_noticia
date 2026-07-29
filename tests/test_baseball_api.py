@@ -96,3 +96,30 @@ class TestBaseballApi:
         assert data["inning"] == 5
         assert data["inplay_summary"]["prob_away_win"] > data["inplay_summary"]["prob_home_win"]
         assert "aportes" in data
+
+    def test_baseball_copilot(self, monkeypatch):
+        monkeypatch.setattr("config.settings.api_key", None)
+        monkeypatch.setattr("config.settings.live_copilot_enabled", True)
+        monkeypatch.setattr("config.settings.openai_api_key", "")
+        advice = {
+            "superbet_event_id": 12856152,
+            "home_team": "Hanwha Eagles",
+            "away_team": "Kiwoom Heroes",
+            "inning": 5,
+            "minute": 5,
+            "current_score": "0x5",
+            "period_label": "5I",
+            "strategy": {"posture": "neutro", "wait_reason": "Aguardar", "shields": []},
+            "aportes": [],
+            "inplay_summary": {"expected_total": 9.1},
+        }
+        with patch(
+            "ingest.superbet.live_advice_cache.get_stale_advice_for_event",
+            return_value=advice,
+        ):
+            response = client.get("/baseball/superbet/live/12856152/copilot")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["sport"] == "baseball"
+        assert data["event_id"] == 12856152
+        assert data["acao_agora"] in {"apostar", "aguardar", "cashout"}

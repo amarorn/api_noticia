@@ -14,11 +14,12 @@ from typing import Any
 
 from config import settings
 from ingest.superbet.parser import SuperbetEventSnapshot
-from ingest.superbet.store import merge_snapshot_into_odds_file
+from ingest.superbet.store import is_valid_superbet_event_id, merge_snapshot_into_odds_file
 
 logger = logging.getLogger(__name__)
 
 _REGISTRY_NAME = "superbet_finalized_events.json"
+_FINISHED_STATUSES = {"FINISHED", "ENDED", "CLOSED", "CANCELLED", "ABANDONED", "COMPLETE"}
 _retrain_lock = threading.Lock()
 _retrain_queue: list[int] = []
 _retrain_worker: threading.Thread | None = None
@@ -67,6 +68,9 @@ def list_pending_watch_event_ids(*, max_events: int | None = None) -> list[int]:
         if not path.is_dir() or not path.name.isdigit():
             continue
         eid = int(path.name)
+        if not is_valid_superbet_event_id(eid):
+            logger.debug("watchlist_ignora_event_id_invalido event_id=%s", eid)
+            continue
         if str(eid) in registry:
             continue
         latest = path / "latest.json"
@@ -322,6 +326,7 @@ def maybe_finalize_finished_event(
                 final_score=inplay.get("current_score"),
                 home_corners=ip.home_corners,
                 away_corners=ip.away_corners,
+                baseball_innings=ip.baseball_innings or None,
             )
         except Exception as exc:
             logger.warning("settle open bets falhou: %s", exc)
@@ -391,9 +396,127 @@ def maybe_finalize_finished_event(
     return entry
 
 
+def mark_event_watchlist_discarded(event_id: int, reason: str) -> dict[str, Any]:
+    """Remove evento da watchlist sem pipeline gold completo (API 404 / bronze stale)."""
+    key = str(event_id)
+    registry = _load_registry()
+    if key in registry.get("events", {}):
+        return registry["events"][key]
+
+    entry = {
+        "event_id": event_id,
+        "finalized_at": datetime.now(UTC).isoformat(),
+        "discarded": True,
+        "discard_reason": reason,
+    }
+    registry.setdefault("events", {})[key] = entry
+    _save_registry(registry)
+    logger.info("watchlist_evento_descartado event_id=%s reason=%s", event_id, reason)
+    return entry
+
+
+def _bronze_latest_age_hours(event_id: int) -> float | None:
+    path = settings.bronze_path / "superbet" / "events" / str(event_id) / "latest.json"
+    if not path.exists():
+        return None
+    age_sec = max(0.0, datetime.now(UTC).timestamp() - path.stat().st_mtime)
+    return age_sec / 3600.0
+
+
+def _snapshot_is_finished(snapshot: SuperbetEventSnapshot) -> bool:
+    if not snapshot.inplay:
+        return not snapshot.is_live
+    status = str(snapshot.inplay.status or "").upper()
+    if status in _FINISHED_STATUSES:
+        return True
+    if not snapshot.is_live and status not in {"", "LIVE", "IN_PROGRESS", "STARTED"}:
+        return True
+    return False
+
+
+def _inplay_dict_from_snapshot(snapshot: SuperbetEventSnapshot) -> dict[str, Any]:
+    ip = snapshot.inplay
+    if ip is None:
+        return {"current_score": "0x0"}
+    return {
+        "current_score": f"{ip.home_score}x{ip.away_score}",
+        "prob_final_home": None,
+        "prob_final_draw": None,
+        "prob_final_away": None,
+        "minute": ip.minute,
+    }
+
+
+def try_finalize_from_bronze(event_id: int) -> dict[str, Any] | None:
+    """Finaliza evento a partir do bronze local quando o jogo já encerrou."""
+    from ingest.superbet.store import load_latest_snapshot
+
+    if is_event_finalized(event_id):
+        return _load_registry().get("events", {}).get(str(event_id))
+
+    snapshot = load_latest_snapshot(event_id)
+    if snapshot is None:
+        return mark_event_watchlist_discarded(event_id, "sem_bronze")
+
+    if not _snapshot_is_finished(snapshot):
+        return None
+
+    inplay = _inplay_dict_from_snapshot(snapshot)
+    advice = {"aportes": [], "confidence": None}
+    return maybe_finalize_finished_event(
+        event_id=event_id,
+        snapshot=snapshot,
+        inplay=inplay,
+        advice=advice,
+        is_finished=True,
+    )
+
+
+def sweep_stale_watchlist_events(
+    event_ids: list[int],
+    *,
+    live_event_ids: set[int] | None = None,
+) -> list[dict[str, Any]]:
+    """Varre watchlist: finaliza encerrados ou descarta bronze antigo sem ao vivo."""
+    if not settings.superbet_watchlist_sweep_enabled:
+        return []
+
+    live = live_event_ids or set()
+    results: list[dict[str, Any]] = []
+    stale_hours = settings.superbet_watchlist_stale_hours
+
+    for event_id in event_ids:
+        if event_id in live:
+            continue
+        if is_event_finalized(event_id):
+            continue
+
+        finalized = try_finalize_from_bronze(event_id)
+        if finalized is not None:
+            results.append({"event_id": event_id, "action": "finalized", "detail": finalized})
+            continue
+
+        age_h = _bronze_latest_age_hours(event_id)
+        if age_h is not None and age_h >= stale_hours:
+            from ingest.superbet.store import load_latest_snapshot
+
+            snap = load_latest_snapshot(event_id)
+            if snap is None or not snap.is_live:
+                discarded = mark_event_watchlist_discarded(
+                    event_id,
+                    f"bronze_stale_{age_h:.0f}h",
+                )
+                results.append({"event_id": event_id, "action": "discarded", "detail": discarded})
+
+    return results
+
+
 __all__ = [
     "is_event_finalized",
     "list_pending_watch_event_ids",
+    "mark_event_watchlist_discarded",
     "maybe_finalize_finished_event",
     "save_finished_event_record",
+    "sweep_stale_watchlist_events",
+    "try_finalize_from_bronze",
 ]

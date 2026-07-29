@@ -18,9 +18,17 @@ from functools import lru_cache
 
 from ingest.fifa.teams import FIFA_COUNTRY_CODES
 from ingest.superbet.advice import run_live_advice
+from ingest.superbet.baseball_advice import run_baseball_live_advice
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
+from ingest.superbet.event_finalize import (
+    list_pending_watch_event_ids,
+    mark_event_watchlist_discarded,
+    sweep_stale_watchlist_events,
+    try_finalize_from_bronze,
+)
 from ingest.superbet.live_ticks import live_ticks_path
 from ingest.superbet.parser import SuperbetLiveEventSummary
+from ingest.superbet.store import is_valid_superbet_event_id
 from models.wc_artifact import load_or_train_wc_predictor
 from schemas.national_teams import NATIONAL_ALIASES, normalize_national_team
 
@@ -94,6 +102,11 @@ def _filter_live_events(
     return []
 
 
+def _filter_superbet_event_ids(event_ids: list[int]) -> list[int]:
+    """Remove IDs de teste ou bronze local inválido (ex.: event_id=123)."""
+    return [eid for eid in event_ids if is_valid_superbet_event_id(eid)]
+
+
 def _resolve_event_ids(
     client: SuperbetClient,
     *,
@@ -104,13 +117,15 @@ def _resolve_event_ids(
     filter_international: bool = False,
 ) -> list[int]:
     if event_ids:
-        return event_ids[:max_events] if max_events else event_ids
+        return _filter_superbet_event_ids(
+            event_ids[:max_events] if max_events else event_ids
+        )
     if not auto:
         return []
     events = client.fetch_live_events(sport_id=sport_id)
     events = _filter_live_events(events, filter_international=filter_international)
     ids = [e.event_id for e in events if e.event_id > 0]
-    return ids[:max_events] if max_events else ids
+    return _filter_superbet_event_ids(ids[:max_events] if max_events else ids)
 
 
 def _resolve_event_ids_resilient(
@@ -163,6 +178,8 @@ def _merge_poll_event_ids(
     cap = settings.superbet_poll_watchlist_max
     merged: list[int] = []
     for eid in [*resolved, *sorted(watchlist)]:
+        if not is_valid_superbet_event_id(eid):
+            continue
         if eid not in merged:
             merged.append(eid)
         if len(merged) >= cap:
@@ -207,6 +224,18 @@ def poll_once(
             )
         except SuperbetClientError as exc:
             errors += 1
+            if not is_valid_superbet_event_id(event_id):
+                active_watch.discard(event_id)
+            elif try_finalize_from_bronze(event_id):
+                active_watch.discard(event_id)
+                captured += 1
+                msg = f"[{event_id}] encerrado via bronze (API indisponível)"
+                details.append(msg)
+                print(msg)
+                continue
+            elif "400" in str(exc) or "404" in str(exc):
+                mark_event_watchlist_discarded(event_id, f"api_{exc}")
+                active_watch.discard(event_id)
             msg = f"[{event_id}] erro API: {exc}"
             details.append(msg)
             logger.warning(msg)
@@ -279,6 +308,122 @@ def poll_once(
     }
 
 
+def poll_once_baseball(
+    event_ids: list[int],
+    *,
+    bankroll: float = 1000.0,
+    client: SuperbetClient | None = None,
+    watchlist: set[int] | None = None,
+    fast: bool = False,
+) -> dict:
+    """Ciclo de poll beisebol (sem WcPredictor)."""
+    superbet_client = client or SuperbetClient()
+    captured = 0
+    skipped = 0
+    errors = 0
+    details: list[str] = []
+    active_watch: set[int] = set(watchlist or [])
+
+    for event_id in event_ids:
+        try:
+            payload = run_baseball_live_advice(
+                event_id,
+                bankroll=bankroll,
+                save_bronze=True,
+                save_tick=True,
+                fast=fast,
+                client=superbet_client,
+            )
+        except SuperbetClientError as exc:
+            errors += 1
+            if not is_valid_superbet_event_id(event_id):
+                active_watch.discard(event_id)
+            elif try_finalize_from_bronze(event_id):
+                active_watch.discard(event_id)
+                captured += 1
+                msg = f"[{event_id}] encerrado via bronze (API indisponível)"
+                details.append(msg)
+                print(msg)
+                continue
+            elif "400" in str(exc) or "404" in str(exc):
+                mark_event_watchlist_discarded(event_id, f"api_{exc}")
+                active_watch.discard(event_id)
+            msg = f"[{event_id}] erro API: {exc}"
+            details.append(msg)
+            logger.warning(msg)
+            continue
+
+        inning = payload.get("inning") or payload.get("minute") or 0
+        if not payload.get("is_live"):
+            if payload.get("is_finished"):
+                active_watch.discard(event_id)
+                fin = payload.get("event_finalize") or {}
+                msg = (
+                    f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+                    f"— encerrado {payload.get('current_score')} "
+                    f"(gold={'ok' if fin else 'já processado'})"
+                )
+                if fin.get("retrain_scheduled"):
+                    msg += " · retreino agendado"
+                details.append(msg)
+                print(msg)
+                captured += 1
+            else:
+                if event_id in active_watch:
+                    captured += 1
+                    msg = (
+                        f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+                        f"— watchlist ({payload.get('status') or 'sem stats'}) "
+                        f"{payload.get('current_score')} @ {inning}I"
+                    )
+                    details.append(msg)
+                    print(msg)
+                else:
+                    skipped += 1
+                    status = payload.get("status") or "sem stats"
+                    msg = (
+                        f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+                        f"— não ao vivo ({status})"
+                    )
+                    details.append(msg)
+                    print(msg)
+            continue
+
+        active_watch.add(event_id)
+        captured += 1
+        aportes = len(payload.get("aportes") or [])
+        posture = (payload.get("strategy") or {}).get("posture")
+        msg = (
+            f"[{event_id}] {payload.get('home_team')} x {payload.get('away_team')} "
+            f"{payload.get('current_score')} @ {inning}I "
+            f"— {aportes} aportes"
+        )
+        if posture:
+            msg += f" · {posture}"
+        try:
+            from models.live_llm_copilot import warm_live_copilot
+
+            copilot = warm_live_copilot(payload, sport="baseball")
+            if copilot and copilot.get("acao_agora") == "apostar":
+                picks = copilot.get("picks") or []
+                pick_label = picks[0].get("label") if picks else ""
+                if pick_label:
+                    msg += f" · copilot: {pick_label}"
+        except Exception:
+            pass
+        details.append(msg)
+        print(msg)
+
+    return {
+        "captured": captured,
+        "skipped": skipped,
+        "errors": errors,
+        "n_events": len(event_ids),
+        "details": details,
+        "watchlist": active_watch,
+    }
+
+
 def poll_loop(
     event_ids: list[int] | None,
     *,
@@ -292,13 +437,12 @@ def poll_loop(
     max_events: int | None = None,
     filter_international: bool = False,
     fast: bool = False,
+    sport: str = "football",
 ) -> int:
     """Loop de captura até max_cycles ou Ctrl+C."""
-    predictor, _manifest = load_or_train_wc_predictor(allow_train=allow_train)
     client = SuperbetClient()
     cycle = 0
     last_auto_ids: list[int] | None = None
-    from ingest.superbet.event_finalize import list_pending_watch_event_ids
 
     watchlist: set[int] = set(
         list_pending_watch_event_ids(max_events=settings.superbet_poll_watchlist_max)
@@ -307,7 +451,11 @@ def poll_loop(
         print(f"Watchlist retomada: {len(watchlist)} evento(s) pendente(s)")
 
     print(f"Ticks parquet: {live_ticks_path()}")
-    print(f"Intervalo: {interval_sec}s | auto={auto} | sport_id={sport_id}")
+    print(f"Intervalo: {interval_sec}s | auto={auto} | sport_id={sport_id} | sport={sport}")
+
+    predictor = None
+    if sport == "football":
+        predictor, _manifest = load_or_train_wc_predictor(allow_train=allow_train)
 
     while True:
         cycle += 1
@@ -323,19 +471,43 @@ def poll_loop(
         )
 
         print(f"\n--- Ciclo {cycle} @ {ts} | {len(ids)} ao vivo + {len(watchlist)} watch ---")
+
+        if watchlist and settings.superbet_watchlist_sweep_enabled:
+            swept = sweep_stale_watchlist_events(
+                sorted(watchlist),
+                live_event_ids=set(ids),
+            )
+            for row in swept:
+                watchlist.discard(int(row["event_id"]))
+            if swept:
+                n_fin = sum(1 for r in swept if r.get("action") == "finalized")
+                n_disc = sum(1 for r in swept if r.get("action") == "discarded")
+                print(
+                    f"Watchlist sweep: {n_fin} finalizado(s), {n_disc} descartado(s)"
+                )
+
         merged_ids = _merge_poll_event_ids(resolved=ids, watchlist=watchlist)
         if not merged_ids:
             print("Nenhum evento ao vivo encontrado.")
         else:
-            result = poll_once(
-                merged_ids,
-                predictor,
-                phase=phase,
-                bankroll=bankroll,
-                client=client,
-                watchlist=watchlist,
-                fast=fast,
-            )
+            if sport == "baseball":
+                result = poll_once_baseball(
+                    merged_ids,
+                    bankroll=bankroll,
+                    client=client,
+                    watchlist=watchlist,
+                    fast=fast,
+                )
+            else:
+                result = poll_once(
+                    merged_ids,
+                    predictor,
+                    phase=phase,
+                    bankroll=bankroll,
+                    client=client,
+                    watchlist=watchlist,
+                    fast=fast,
+                )
             watchlist = set(result.get("watchlist") or watchlist)
             print(
                 f"Resumo: {result['captured']} capturados, "
@@ -368,7 +540,12 @@ def main() -> int:
         action="store_true",
         help="Descobre jogos ao vivo automaticamente (sport_id=5 futebol).",
     )
-    parser.add_argument("--sport-id", type=int, default=5, help="Esporte para --auto (5=futebol)")
+    parser.add_argument(
+        "--baseball",
+        action="store_true",
+        help=f"Atalho beisebol: --auto --sport-id {settings.baseball_sport_id} (sem WC predictor)",
+    )
+    parser.add_argument("--sport-id", type=int, default=5, help="Esporte para --auto (5=futebol, 20=beisebol)")
     parser.add_argument(
         "--max-events",
         type=int,
@@ -421,6 +598,14 @@ def main() -> int:
         if args.interval == 0 and settings.superbet_poll_interval_sec > 0:
             args.interval = settings.superbet_poll_interval_sec
 
+    sport = "football"
+    if args.baseball:
+        args.auto = True
+        args.sport_id = settings.baseball_sport_id
+        sport = "baseball"
+        if args.interval == 0 and settings.superbet_poll_interval_sec > 0:
+            args.interval = settings.superbet_poll_interval_sec
+
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARNING)
 
     event_ids: list[int] | None = None
@@ -443,10 +628,10 @@ def main() -> int:
             max_events=args.max_events,
             filter_international=args.filter_international,
             fast=args.fast,
+            sport=sport,
         )
 
     # Execução única
-    predictor, _ = load_or_train_wc_predictor(allow_train=not args.no_train)
     client = SuperbetClient()
     try:
         ids = _resolve_event_ids(
@@ -463,9 +648,16 @@ def main() -> int:
     if not ids:
         print("Nenhum evento ao vivo encontrado.")
         return 0
-    result = poll_once(
-        ids, predictor, phase=args.phase, bankroll=args.bankroll, client=client, fast=args.fast
-    )
+
+    if sport == "baseball":
+        result = poll_once_baseball(
+            ids, bankroll=args.bankroll, client=client, fast=args.fast
+        )
+    else:
+        predictor, _ = load_or_train_wc_predictor(allow_train=not args.no_train)
+        result = poll_once(
+            ids, predictor, phase=args.phase, bankroll=args.bankroll, client=client, fast=args.fast
+        )
     print(
         f"\nResumo: {result['captured']} capturados, "
         f"{result['skipped']} ignorados, {result['errors']} erros"

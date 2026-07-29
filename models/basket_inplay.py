@@ -6,7 +6,7 @@ taxa de pontos com base no placar observado e ajustes de clutch/lead.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -47,6 +47,10 @@ class BasketInPlayResult:
     next_quarter_number: int | None = None
     next_quarter_projection_home: float = 0.0
     next_quarter_projection_away: float = 0.0
+    team_total_probs: dict[str, float] = field(default_factory=dict)
+    regulation_ml_probs: dict[str, float] = field(default_factory=dict)
+    odd_even_probs: dict[str, float] = field(default_factory=dict)
+    period_probs: dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -74,6 +78,10 @@ class BasketInPlayResult:
             "next_quarter_number": self.next_quarter_number,
             "next_quarter_projection_home": round(self.next_quarter_projection_home, 1),
             "next_quarter_projection_away": round(self.next_quarter_projection_away, 1),
+            "team_total_probs": {k: round(v, 4) for k, v in self.team_total_probs.items()},
+            "regulation_ml_probs": {k: round(v, 4) for k, v in self.regulation_ml_probs.items()},
+            "odd_even_probs": {k: round(v, 4) for k, v in self.odd_even_probs.items()},
+            "period_probs": {k: round(v, 4) for k, v in self.period_probs.items()},
         }
 
 
@@ -406,6 +414,213 @@ def _total_probs(
     return out
 
 
+def _team_total_probs(
+    final_h: np.ndarray,
+    final_a: np.ndarray,
+    team_totals: dict[str, dict[str, dict[str, float]]] | None,
+    n: int,
+) -> dict[str, float]:
+    if not team_totals:
+        return {}
+    out: dict[str, float] = {}
+    for side, lines in team_totals.items():
+        scores = final_h if side == "home" else final_a
+        for line_str in lines:
+            try:
+                line_val = float(str(line_str).replace(",", "."))
+            except ValueError:
+                continue
+            lk = f"{line_val:g}".replace(".", "_")
+            out[f"{side}_over_{lk}"] = float(np.sum(scores > line_val) / n)
+            out[f"{side}_under_{lk}"] = float(np.sum(scores <= line_val) / n)
+    return out
+
+
+def _regulation_ml_probs(final_h: np.ndarray, final_a: np.ndarray, n: int) -> dict[str, float]:
+    """1X2 ao fim do tempo regulamentar (empate possível; sem OT explícita)."""
+    margin = final_h - final_a
+    return {
+        "1": float(np.sum(margin > 0) / n),
+        "2": float(np.sum(margin < 0) / n),
+        "X": float(np.sum(margin == 0) / n),
+    }
+
+
+def _odd_even_probs(final_h: np.ndarray, final_a: np.ndarray, n: int) -> dict[str, float]:
+    total = final_h + final_a
+    odd_count = int(np.sum(total % 2 == 1))
+    even_count = n - odd_count
+    return {"odd": odd_count / n, "even": even_count / n}
+
+
+def _observed_quarter_map(
+    basket_periods: list[dict[str, int]] | None,
+    home_score: int,
+    away_score: int,
+    current_quarter: int,
+) -> dict[int, tuple[int, int]]:
+    obs: dict[int, tuple[int, int]] = {}
+    if basket_periods:
+        for row in basket_periods:
+            num = int(row.get("num") or 0)
+            if num > 0:
+                obs[num] = (int(row.get("home") or 0), int(row.get("away") or 0))
+    prev_h = sum(v[0] for n, v in obs.items() if n < current_quarter)
+    prev_a = sum(v[1] for n, v in obs.items() if n < current_quarter)
+    if current_quarter not in obs:
+        obs[current_quarter] = (max(0, home_score - prev_h), max(0, away_score - prev_a))
+    return obs
+
+
+def _simulate_quarter_matrix(
+    *,
+    home_score: int,
+    away_score: int,
+    minute: int,
+    match_minutes: int,
+    market_total: float,
+    market_spread: float,
+    basket_periods: list[dict[str, int]] | None,
+    n_simulations: int,
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Matriz (n_sim, n_quarters) de pontos por quarto."""
+    n_quarters = max(1, round(match_minutes / _BASKET_QUARTER_MINUTES))
+    home_mat = np.zeros((n_simulations, n_quarters))
+    away_mat = np.zeros((n_simulations, n_quarters))
+    current_quarter = min(n_quarters, int(minute // _BASKET_QUARTER_MINUTES) + 1)
+    obs = _observed_quarter_map(basket_periods, home_score, away_score, current_quarter)
+
+    rate_post, diff_remaining, remaining = _posterior_rate_and_diff(
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        match_minutes=match_minutes,
+        market_total=market_total,
+        market_spread=market_spread,
+    )
+    sigma_ppm = settings.basket_sigma_ppm
+
+    for q in range(1, n_quarters + 1):
+        idx = q - 1
+        q_start = (q - 1) * _BASKET_QUARTER_MINUTES
+        q_end = q * _BASKET_QUARTER_MINUTES
+        if q < current_quarter:
+            h, a = obs.get(q, (0, 0))
+            home_mat[:, idx] = h
+            away_mat[:, idx] = a
+            continue
+
+        window_start = max(float(minute), q_start)
+        window_end = min(float(match_minutes), q_end)
+        window_len = max(0.0, window_end - window_start)
+        if window_len <= 0:
+            continue
+
+        if remaining > 0:
+            frac_start = (window_start - minute) / remaining
+            frac_end = (window_end - minute) / remaining
+            diff_window = diff_remaining * (frac_end - frac_start)
+        else:
+            diff_window = 0.0
+        total_window = rate_post * window_len
+        mu_home = max(0.0, (total_window + diff_window) / 2.0)
+        mu_away = max(0.0, (total_window - diff_window) / 2.0)
+        sigma = sigma_ppm * np.sqrt(window_len) * max(rate_post / 2.0, 0.5)
+
+        if q == current_quarter:
+            cur_h, cur_a = obs.get(q, (0, 0))
+            rem_len = max(0.0, window_end - max(window_start, float(minute)))
+            if rem_len > 0:
+                frac_rem = rem_len / window_len if window_len > 0 else 0.0
+                sim_h = rng.normal(loc=mu_home * frac_rem, scale=sigma * frac_rem, size=n_simulations)
+                sim_a = rng.normal(loc=mu_away * frac_rem, scale=sigma * frac_rem, size=n_simulations)
+                home_mat[:, idx] = cur_h + np.maximum(sim_h, 0.0)
+                away_mat[:, idx] = cur_a + np.maximum(sim_a, 0.0)
+            else:
+                home_mat[:, idx] = cur_h
+                away_mat[:, idx] = cur_a
+        else:
+            sim_h = rng.normal(loc=mu_home, scale=sigma, size=n_simulations)
+            sim_a = rng.normal(loc=mu_away, scale=sigma, size=n_simulations)
+            home_mat[:, idx] = np.maximum(sim_h, 0.0)
+            away_mat[:, idx] = np.maximum(sim_a, 0.0)
+
+    return home_mat, away_mat
+
+
+def _period_probs_from_quarters(
+    home_mat: np.ndarray,
+    away_mat: np.ndarray,
+    period_markets: dict[str, Any] | None,
+    current_quarter: int,
+    n: int,
+) -> dict[str, float]:
+    if not period_markets:
+        return {}
+    out: dict[str, float] = {}
+    quarters = period_markets.get("quarters") or {}
+
+    for q_str, bucket in quarters.items():
+        try:
+            q_num = int(q_str)
+        except ValueError:
+            continue
+        if q_num < current_quarter:
+            continue
+        if q_num < 1 or q_num > home_mat.shape[1]:
+            continue
+        idx = q_num - 1
+        q_total = home_mat[:, idx] + away_mat[:, idx]
+        q_margin = home_mat[:, idx] - away_mat[:, idx]
+
+        for line_str, sides in (bucket.get("total") or {}).items():
+            try:
+                line = float(str(line_str).replace(",", "."))
+            except ValueError:
+                continue
+            lk = f"{line:g}".replace(".", "_")
+            if "over" in sides:
+                out[f"q{q_num}_over_{lk}"] = float(np.sum(q_total > line) / n)
+            if "under" in sides:
+                out[f"q{q_num}_under_{lk}"] = float(np.sum(q_total <= line) / n)
+
+        for side, lines in (bucket.get("team_total") or {}).items():
+            scores = home_mat[:, idx] if side == "home" else away_mat[:, idx]
+            for line_str, sides in (lines or {}).items():
+                try:
+                    line = float(str(line_str).replace(",", "."))
+                except ValueError:
+                    continue
+                lk = f"{line:g}".replace(".", "_")
+                if "over" in sides:
+                    out[f"q{q_num}_{side}_over_{lk}"] = float(np.sum(scores > line) / n)
+                if "under" in sides:
+                    out[f"q{q_num}_{side}_under_{lk}"] = float(np.sum(scores <= line) / n)
+
+        for key, odd_side in (bucket.get("moneyline") or {}).items():
+            if not odd_side:
+                continue
+            if key == "1":
+                out[f"q{q_num}_ml_1"] = float(np.sum(q_margin > 0) / n)
+            elif key == "2":
+                out[f"q{q_num}_ml_2"] = float(np.sum(q_margin < 0) / n)
+            elif key == "X":
+                out[f"q{q_num}_ml_X"] = float(np.sum(q_margin == 0) / n)
+
+        for line_key, sides in (bucket.get("spread") or {}).items():
+            try:
+                line_val = float(line_key.replace("p", "").replace("m", "-").replace("_", "."))
+            except ValueError:
+                continue
+            if "home" in sides:
+                out[f"q{q_num}_home_{line_key}"] = float(np.sum(q_margin + line_val > 0) / n)
+            if "away" in sides:
+                out[f"q{q_num}_away_{line_key}"] = float(np.sum((-q_margin) + line_val > 0) / n)
+
+    return out
+
+
 def simulate_basket_inplay(
     *,
     home_team: str,
@@ -417,6 +632,9 @@ def simulate_basket_inplay(
     moneyline_odds: dict[str, float] | None = None,
     spread_odds: dict[str, dict[str, float]] | None = None,
     total_points_odds: dict[str, dict[str, float]] | None = None,
+    team_totals: dict[str, dict[str, dict[str, float]]] | None = None,
+    period_markets: dict[str, Any] | None = None,
+    basket_periods: list[dict[str, int]] | None = None,
     n_simulations: int | None = None,
     random_seed: int | None = None,
 ) -> BasketInPlayResult:
@@ -454,6 +672,29 @@ def simulate_basket_inplay(
     ml_probs = _moneyline_probs(final_h, final_a, n)
     sp_probs = _spread_probs(final_h, final_a, spread_odds, settings.basket_spread_lines, n)
     tp_probs = _total_probs(final_h, final_a, total_points_odds, settings.basket_total_lines, n)
+    ttp = _team_total_probs(final_h, final_a, team_totals, n)
+    reg_probs = _regulation_ml_probs(final_h, final_a, n)
+    oe_probs = _odd_even_probs(final_h, final_a, n)
+
+    rng = np.random.default_rng(seed + 1)
+    home_mat, away_mat = _simulate_quarter_matrix(
+        home_score=home_score,
+        away_score=away_score,
+        minute=minute,
+        match_minutes=match_minutes,
+        market_total=market_total,
+        market_spread=market_spread,
+        basket_periods=basket_periods,
+        n_simulations=n,
+        rng=rng,
+    )
+    current_quarter = min(
+        max(1, round(match_minutes / _BASKET_QUARTER_MINUTES)),
+        int(minute // _BASKET_QUARTER_MINUTES) + 1,
+    )
+    pp = _period_probs_from_quarters(
+        home_mat, away_mat, period_markets, current_quarter, n
+    )
 
     ppm_home_prior = (market_total + market_spread) / (2.0 * match_minutes)
     ppm_away_prior = (market_total - market_spread) / (2.0 * match_minutes)
@@ -499,4 +740,8 @@ def simulate_basket_inplay(
         next_quarter_number=next_quarter_number,
         next_quarter_projection_home=next_q_home,
         next_quarter_projection_away=next_q_away,
+        team_total_probs=ttp,
+        regulation_ml_probs=reg_probs,
+        odd_even_probs=oe_probs,
+        period_probs=pp,
     )

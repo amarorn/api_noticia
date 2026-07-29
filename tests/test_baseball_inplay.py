@@ -62,3 +62,36 @@ class TestSimulateBaseballInPlay:
             random_seed=3,
         )
         assert 6.0 <= result.expected_total <= 12.0
+
+    def test_box_score_adapt_raises_projection_on_high_scoring(self, monkeypatch):
+        monkeypatch.setattr("config.settings.baseball_box_score_adapt", True)
+        monkeypatch.setattr("config.settings.baseball_box_score_weight_boost", 1.5)
+        innings = [
+            {"num": 1, "home": 2, "away": 0},
+            {"num": 2, "home": 3, "away": 1},
+            {"num": 3, "home": 1, "away": 0},
+            {"num": 4, "home": 2, "away": 0},
+        ]
+        high = simulate_baseball_inplay(
+            home_team="NYY",
+            away_team="BOS",
+            home_score=8,
+            away_score=1,
+            inning=4,
+            total_runs_odds={"8.5": {"over": 1.90, "under": 1.90}},
+            innings_observed=innings,
+            n_simulations=2500,
+            random_seed=11,
+        )
+        low = simulate_baseball_inplay(
+            home_team="NYY",
+            away_team="BOS",
+            home_score=2,
+            away_score=2,
+            inning=4,
+            total_runs_odds={"8.5": {"over": 1.90, "under": 1.90}},
+            n_simulations=2500,
+            random_seed=11,
+        )
+        assert high.score_adapted is True
+        assert high.expected_total > low.expected_total + 2.0

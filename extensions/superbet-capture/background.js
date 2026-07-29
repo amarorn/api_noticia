@@ -125,7 +125,7 @@ async function findSuperbetBetsTab() {
 
 async function waitForTabComplete(tabId, timeoutMs = 15000) {
   const start = Date.now();
-  while Date.now() - start < timeoutMs) {
+  while (Date.now() - start < timeoutMs) {
     const tab = await chrome.tabs.get(tabId);
     if (tab.status === "complete") return tab;
     await new Promise((r) => setTimeout(r, 400));
@@ -179,7 +179,141 @@ async function executeCashoutOnSuperbet(payload) {
   }
 }
 
+function legEventId(leg, fallbackEventId) {
+  return leg?.superbetEventId ?? leg?.superbet_event_id ?? fallbackEventId ?? null;
+}
+
+function isCrossGameTicket(payload) {
+  const legs = payload?.legs || [];
+  if (payload?.crossGame === true) return legs.length >= 2;
+  if (legs.length < 2) return false;
+  const rootEventId = payload?.superbetEventId ?? null;
+  const eventIds = new Set(
+    legs.map((leg) => legEventId(leg, rootEventId)).filter((id) => id != null),
+  );
+  return eventIds.size > 1;
+}
+
+async function applyTicketLegsOnTab(tabId, payload) {
+  try {
+    return await chrome.tabs.sendMessage(tabId, {
+      type: "APPLY_TICKET_LEGS",
+      payload,
+    });
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+}
+
+/** Múltipla cross-game: visita cada evento e clica a perna correspondente no cupom. */
+async function applyCrossGameTicket(payload) {
+  const legs = payload?.legs || [];
+  if (legs.length < 2) {
+    return { ok: false, error: "Cross-game exige ao menos 2 pernas." };
+  }
+
+  const rootEventId = payload?.superbetEventId ?? legEventId(legs[0], null);
+  const byEvent = new Map();
+  for (const leg of legs) {
+    const eventId = legEventId(leg, rootEventId);
+    if (!eventId) {
+      return { ok: false, error: "Perna sem superbetEventId." };
+    }
+    if (!byEvent.has(eventId)) byEvent.set(eventId, []);
+    byEvent.get(eventId).push(leg);
+  }
+
+  const eventIds = [...byEvent.keys()];
+  await chrome.storage.local.set({
+    bolao_pending_ticket: {
+      ...payload,
+      crossGame: true,
+      queuedAt: new Date().toISOString(),
+    },
+  });
+
+  const aggregatedResults = [];
+  let lastTabId = null;
+
+  for (let index = 0; index < eventIds.length; index += 1) {
+    const eventId = eventIds[index];
+    const eventLegs = byEvent.get(eventId) || [];
+    const isLast = index === eventIds.length - 1;
+
+    const tab = await openSuperbetEventTab(eventId);
+    if (!tab?.id) {
+      return { ok: false, error: `Não foi possível abrir evento #${eventId}.` };
+    }
+    lastTabId = tab.id;
+
+    await waitForTabComplete(tab.id, 20000);
+    const ensured = await ensureTicketBuilderScripts(tab.id);
+    if (!ensured.ok) {
+      return {
+        ok: true,
+        tabId: tab.id,
+        crossGame: true,
+        warning: ensured.error || `Evento #${eventId}: recarregue (F5) e tente de novo.`,
+      };
+    }
+
+    await new Promise((r) => setTimeout(r, 1400));
+
+    const step = await applyTicketLegsOnTab(tab.id, {
+      legs: eventLegs,
+      stake: isLast ? payload.stake : null,
+      eventIndex: index + 1,
+      eventTotal: eventIds.length,
+    });
+
+    if (step?.results?.length) {
+      aggregatedResults.push(...step.results);
+    } else if (eventLegs.length) {
+      aggregatedResults.push(
+        ...eventLegs.map((leg) => ({
+          leg,
+          ok: Boolean(step?.ok),
+        })),
+      );
+    }
+
+    if (!isLast) {
+      await new Promise((r) => setTimeout(r, 900));
+    }
+  }
+
+  if (lastTabId) {
+    await applyTicketLegsOnTab(lastTabId, {
+      legs: [],
+      showSummary: true,
+      summary: {
+        ticket: payload,
+        allResults: aggregatedResults,
+      },
+    });
+  }
+
+  const okCount = aggregatedResults.filter((r) => r.ok).length;
+  showNotification(
+    "Bolão AI — múltipla cross-game",
+    `${okCount}/${legs.length} perna(s) · ${eventIds.length} jogos · R$ ${Number(payload.stake || 0).toFixed(2)}`,
+  );
+
+  return {
+    ok: true,
+    tabId: lastTabId,
+    crossGame: true,
+    okCount,
+    total: legs.length,
+    eventCount: eventIds.length,
+  };
+}
+
 async function queueSuperbetTicket(payload) {
+  if (isCrossGameTicket(payload)) {
+    return applyCrossGameTicket(payload);
+  }
+
   const eventId = payload?.superbetEventId;
   if (!eventId) {
     return { ok: false, error: "superbetEventId ausente no bilhete." };
@@ -696,8 +830,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   if (request.type === "TICKET_BUILDER_RESULT") {
-    const { okCount, total } = request.payload || {};
-    if (okCount != null && total != null) {
+    const { okCount, total, crossGame } = request.payload || {};
+    if (!crossGame && okCount != null && total != null) {
       showNotification(
         "Bolão AI — cupom montado",
         `${okCount}/${total} perna(s) clicadas — confira stake e confirme na Superbet.`,

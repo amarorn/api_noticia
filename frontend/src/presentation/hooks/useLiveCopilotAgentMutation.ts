@@ -4,7 +4,7 @@ import type { LiveCopilotChatMessage } from "@/domain/entities";
 
 export function useLiveCopilotAgentMutation(options: {
   eventId: number;
-  sport: "football" | "basketball";
+  sport: "football" | "basketball" | "baseball";
   phase?: string;
   bankroll?: number;
   fast?: boolean;

@@ -29,7 +29,12 @@ export function formatLiveScore(home: number, away: number): string {
 export type LiveAdviceSource = "fast" | "full";
 
 function isPropsMarket(market: string): boolean {
-  return market.startsWith("cards_") || market.startsWith("corners_");
+  return (
+    market.startsWith("cards_") ||
+    market.startsWith("corners_") ||
+    market.includes("_corners_over_") ||
+    market.startsWith("fouls_")
+  );
 }
 
 /** Preserva escanteios/cartões do poll full quando o fast é mais recente no placar. */

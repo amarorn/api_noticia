@@ -251,6 +251,23 @@ export class GetBasketSuperbetLiveAdviceUseCase {
   }
 }
 
+export class BuildBasketMultiGameTicketsUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: {
+    eventIds: number[];
+    bankroll?: number;
+    stake?: number;
+    minLegs?: number;
+    maxLegs?: number;
+    maxTickets?: number;
+    requireApostar?: boolean;
+    fast?: boolean;
+  }) {
+    return this.repository.buildBasketMultiGameTickets(dto);
+  }
+}
+
 export class GetBaseballSuperbetLiveUseCase {
   constructor(private readonly repository: IWcRepository) {}
 
@@ -259,10 +276,26 @@ export class GetBaseballSuperbetLiveUseCase {
   }
 }
 
+export class GetBaseballSuperbetEventUseCase {
+  constructor(private readonly repository: IWcRepository) {}
+
+  execute(dto: { eventId: number; saveBronze?: boolean }) {
+    return this.repository.getBaseballSuperbetEvent(dto);
+  }
+}
+
 export class GetBaseballSuperbetLiveAdviceUseCase {
   constructor(private readonly repository: IWcRepository) {}
 
-  execute(dto: { eventId: number; bankroll?: number; fast?: boolean }) {
+  execute(dto: {
+    eventId: number;
+    bankroll?: number;
+    fast?: boolean;
+    market?: string;
+    outcome?: string;
+    stake?: number;
+    oddsPlaced?: number;
+  }) {
     return this.repository.getBaseballSuperbetLiveAdvice(dto);
   }
 }
@@ -272,7 +305,7 @@ export class GetLiveCopilotUseCase {
 
   execute(dto: {
     eventId: number;
-    sport: "football" | "basketball";
+    sport: "football" | "basketball" | "baseball";
     phase?: string;
     bankroll?: number;
     fast?: boolean;
@@ -287,7 +320,7 @@ export class PostLiveCopilotAgentUseCase {
 
   execute(dto: {
     eventId: number;
-    sport: "football" | "basketball";
+    sport: "football" | "basketball" | "baseball";
     message: string;
     history: import("@/domain/entities").LiveCopilotChatMessage[];
     phase?: string;

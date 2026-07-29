@@ -11,6 +11,9 @@ from api.schemas import (
     BaseballSuperbetLiveAdviceResponse,
     BaseballSuperbetLiveEventResponse,
     BaseballSuperbetLiveResponse,
+    LiveCopilotAgentRequest,
+    LiveCopilotAgentResponse,
+    LiveCopilotResponse,
 )
 from config import settings
 from ingest.superbet.baseball_advice import SuperbetClientError, run_baseball_live_advice
@@ -89,18 +92,102 @@ async def baseball_superbet_event(event_id: int, save_bronze: bool = Query(True)
 async def baseball_superbet_live_advice(
     event_id: int,
     bankroll: float = Query(1000, gt=0),
+    market: str | None = Query(None),
+    outcome: str | None = Query(None),
+    stake: float | None = Query(None, gt=0),
+    odds_placed: float | None = Query(None, gt=1),
     fast: bool = Query(False),
 ):
     """Retorna advice in-play para um evento de beisebol Superbet."""
+    from models.wc_bet_advice import UserBetInput
+
+    user_bet = None
+    if market and outcome and stake is not None and odds_placed is not None:
+        user_bet = UserBetInput(
+            market=market,
+            outcome=outcome,
+            stake=stake,
+            odds_placed=odds_placed,
+        )
+
     try:
         payload = await asyncio.to_thread(
             run_baseball_live_advice,
             event_id,
             bankroll=bankroll,
             save_bronze=not fast,
+            save_tick=not fast,
             fast=fast,
+            user_bet=user_bet,
         )
     except SuperbetClientError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        from ingest.superbet.live_advice_cache import get_stale_advice_for_event
+
+        advice = get_stale_advice_for_event(event_id)
+        if advice is None:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        advice = dict(advice)
+        advice["superbet_stale"] = True
+        advice["superbet_error"] = str(exc)
+        return BaseballSuperbetLiveAdviceResponse(**advice)
 
     return BaseballSuperbetLiveAdviceResponse(**payload)
+
+
+@router.get("/superbet/live/{event_id}/copilot", response_model=LiveCopilotResponse)
+async def baseball_superbet_live_copilot(
+    event_id: int,
+    bankroll: float = Query(1000, gt=0),
+    fast: bool = Query(True),
+):
+    """Narrativa copiloto in-play para beisebol."""
+    from ingest.superbet.live_advice_cache import get_stale_advice_for_event
+    from models.live_llm_copilot import run_live_copilot
+
+    advice = get_stale_advice_for_event(event_id)
+    if advice is None:
+        try:
+            advice = await asyncio.to_thread(
+                run_baseball_live_advice,
+                event_id,
+                bankroll=bankroll,
+                save_bronze=False,
+                save_tick=False,
+                fast=fast,
+            )
+        except SuperbetClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    payload = await asyncio.to_thread(run_live_copilot, advice, sport="baseball")
+    return LiveCopilotResponse(**payload)
+
+
+@router.post("/superbet/live/{event_id}/copilot/agent", response_model=LiveCopilotAgentResponse)
+async def baseball_superbet_live_copilot_agent(event_id: int, req: LiveCopilotAgentRequest):
+    """Agente copiloto in-play para beisebol."""
+    from ingest.superbet.live_advice_cache import get_stale_advice_for_event
+    from models.live_copilot_agent import run_live_copilot_agent
+
+    advice = get_stale_advice_for_event(event_id)
+    if advice is None:
+        try:
+            advice = await asyncio.to_thread(
+                run_baseball_live_advice,
+                event_id,
+                bankroll=req.bankroll,
+                save_bronze=False,
+                save_tick=False,
+                fast=req.fast,
+            )
+        except SuperbetClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    history = [{"role": m.role, "content": m.content} for m in req.history]
+    payload = await asyncio.to_thread(
+        run_live_copilot_agent,
+        advice,
+        sport="baseball",
+        message=req.message,
+        history=history,
+    )
+    return LiveCopilotAgentResponse(**payload)

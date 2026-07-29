@@ -119,6 +119,9 @@ class InPlayResult:
     ft_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
     ht_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
     sh_asian_handicap_probs: dict[str, float] = field(default_factory=dict)
+    ft_handicap_3way_probs: dict[str, float] = field(default_factory=dict)
+    ht_handicap_3way_probs: dict[str, float] = field(default_factory=dict)
+    sh_handicap_3way_probs: dict[str, float] = field(default_factory=dict)
     features: Any = None
     ensemble_shadow: dict[str, Any] | None = None
     halftime_adjustment: dict[str, Any] | None = None
@@ -169,6 +172,9 @@ class InPlayResult:
             "ft_asian_handicap_probs": {k: round(v, 4) for k, v in self.ft_asian_handicap_probs.items()},
             "ht_asian_handicap_probs": {k: round(v, 4) for k, v in self.ht_asian_handicap_probs.items()},
             "sh_asian_handicap_probs": {k: round(v, 4) for k, v in self.sh_asian_handicap_probs.items()},
+            "ft_handicap_3way_probs": {k: round(v, 4) for k, v in self.ft_handicap_3way_probs.items()},
+            "ht_handicap_3way_probs": {k: round(v, 4) for k, v in self.ht_handicap_3way_probs.items()},
+            "sh_handicap_3way_probs": {k: round(v, 4) for k, v in self.sh_handicap_3way_probs.items()},
             "top_ht_ft": self.top_ht_ft,
             "combo_markets": {k: round(v, 4) for k, v in self.combo_markets.items()},
             "btts_final": round(self.btts_final, 4),
@@ -368,6 +374,8 @@ def _top_ht_ft(ht_h: np.ndarray, ht_a: np.ndarray, final_h: np.ndarray, final_a:
 
 _HALF_HANDICAP_LINES = (-1.5, -0.5, 0.0, 0.5, 1.5)
 _FT_HANDICAP_LINES = (-2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0)
+_FT_HANDICAP_3WAY_LINES = (-2, -1, 0, 1, 2)
+_HALF_HANDICAP_3WAY_LINES = (-1, 0, 1)
 _ASIAN_HANDICAP_LINES = (
     -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5,
 )
@@ -415,6 +423,24 @@ def _handicap_probs(
         lk = _handicap_line_key(line)
         out[f"home_{lk}"] = float(np.sum(diff + line > 0) / n)
         out[f"away_{lk}"] = float(np.sum(-diff - line > 0) / n)
+    return out
+
+
+def _handicap_3way_probs(
+    h: np.ndarray,
+    a: np.ndarray,
+    n: int,
+    lines: tuple[int | float, ...] = _FT_HANDICAP_3WAY_LINES,
+) -> dict[str, float]:
+    """Handicap 3-way: vitória/empate/derrota após aplicar linha ao mandante."""
+    diff = h.astype(float) - a.astype(float)
+    out: dict[str, float] = {}
+    for line in lines:
+        lk = _handicap_line_key(float(line))
+        adjusted = diff + float(line)
+        out[f"home_{lk}"] = float(np.sum(adjusted > 0) / n)
+        out[f"draw_{lk}"] = float(np.sum(adjusted == 0) / n)
+        out[f"away_{lk}"] = float(np.sum(adjusted < 0) / n)
     return out
 
 
@@ -493,6 +519,8 @@ def _half_market_probs(
         "sh_away_exact": _exact_goals_distribution(a_2h, n),
         "ht_handicap_probs": _handicap_probs(ht_h, ht_a, n),
         "sh_handicap_probs": _handicap_probs(h_2h, a_2h, n),
+        "ht_handicap_3way_probs": _handicap_3way_probs(ht_h, ht_a, n, lines=_HALF_HANDICAP_3WAY_LINES),
+        "sh_handicap_3way_probs": _handicap_3way_probs(h_2h, a_2h, n, lines=_HALF_HANDICAP_3WAY_LINES),
         "ht_asian_handicap_probs": _asian_handicap_probs(ht_h, ht_a, n),
         "sh_asian_handicap_probs": _asian_handicap_probs(h_2h, a_2h, n),
     }
@@ -931,6 +959,7 @@ def simulate_inplay(
         n=n,
     )
     ft_handicap = _handicap_probs(final_h, final_a, n, lines=_FT_HANDICAP_LINES)
+    ft_handicap_3way = _handicap_3way_probs(final_h, final_a, n, lines=_FT_HANDICAP_3WAY_LINES)
     ft_asian = _asian_handicap_probs(final_h, final_a, n)
     handicap_probs = handicap_probs_from_samples(final_h, final_a)
 
@@ -978,9 +1007,12 @@ def simulate_inplay(
         ht_handicap_probs=half_markets["ht_handicap_probs"],
         sh_handicap_probs=half_markets["sh_handicap_probs"],
         ft_handicap_probs=ft_handicap,
+        ft_handicap_3way_probs=ft_handicap_3way,
         ft_asian_handicap_probs=ft_asian,
         ht_asian_handicap_probs=half_markets["ht_asian_handicap_probs"],
         sh_asian_handicap_probs=half_markets["sh_asian_handicap_probs"],
+        ht_handicap_3way_probs=half_markets["ht_handicap_3way_probs"],
+        sh_handicap_3way_probs=half_markets["sh_handicap_3way_probs"],
         top_ht_ft=_top_ht_ft(ht_h, ht_a, final_h, final_a, n),
         combo_markets=combo,
         btts_final=btts,

@@ -17,7 +17,9 @@ import { SchedulePage } from "@/presentation/pages/SchedulePage";
 import { FriendliesPage } from "@/presentation/pages/FriendliesPage";
 import { LivePage } from "@/presentation/pages/LivePage";
 import { LiveDashboardPage } from "@/presentation/pages/LiveDashboardPage";
+import { LiveOperationalPage } from "@/presentation/pages/LiveOperationalPage";
 import { BasketLiveInPlayPage } from "@/presentation/pages/BasketLiveInPlayPage";
+import { BasketMultiLiveInPlayPage } from "@/presentation/pages/BasketMultiLiveInPlayPage";
 import { BaseballLiveInPlayPage } from "@/presentation/pages/BaseballLiveInPlayPage";
 import { AlbumPage } from "@/presentation/pages/AlbumPage";
 import { TeamAlbumPage } from "@/presentation/pages/TeamAlbumPage";
@@ -67,7 +69,9 @@ export function App() {
               <Route path="amistosos" element={<FriendliesPage />} />
               <Route path="ao-vivo" element={<LivePage />} />
               <Route path="ao-vivo/:eventId" element={<LiveDashboardPage />} />
+              <Route path="aovivo-v2/:eventId" element={<LiveOperationalPage />} />
               <Route path="ao-vivo/:eventId/painel" element={<Navigate to="/ao-vivo/:eventId" replace />} />
+              <Route path="ao-vivo/basquete/multi" element={<BasketMultiLiveInPlayPage />} />
               <Route path="ao-vivo/basquete/:eventId" element={<BasketLiveInPlayPage />} />
               <Route path="ao-vivo/beisebol/:eventId" element={<BaseballLiveInPlayPage />} />
               <Route path="casino" element={<CasinoPage />} />
