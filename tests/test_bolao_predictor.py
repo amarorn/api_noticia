@@ -15,7 +15,8 @@ def test_parse_bolao_label():
     assert parse_bolao_label("empate") == "X"
 
 
-def test_predictor_baseline_without_checkpoint(tmp_path):
+def test_predictor_baseline_without_checkpoint(tmp_path, monkeypatch):
+    monkeypatch.setattr("models.bolao_predictor.settings.bolao_use_dixon_coles", False)
     predictor = BolaoPredictor(model_path=tmp_path / "missing", use_lm=True)
     features = BolaoFeature(
         match_id="x",
@@ -33,7 +34,8 @@ def test_predictor_baseline_without_checkpoint(tmp_path):
     assert abs(sum(result.probabilities.values()) - 1.0) < 1e-6
 
 
-def test_predictor_context_uses_baseline_when_no_lm(tmp_path):
+def test_predictor_context_uses_baseline_when_no_lm(tmp_path, monkeypatch):
+    monkeypatch.setattr("models.bolao_predictor.settings.bolao_use_dixon_coles", False)
     predictor = BolaoPredictor(model_path=tmp_path / "none", use_lm=False)
     context = GoldBolaoContext(
         match_id="x",

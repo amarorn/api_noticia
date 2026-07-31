@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ambiente dev completo: API + frontend Vite + poll Superbet (futebol WC + beisebol).
+# Ambiente dev completo: API + frontend Vite + poll Superbet (futebol clubes + beisebol).
 #
 # Uso:
 #   ./scripts/dev-full.sh              # sobe tudo (mata processos nas portas 8000/5173 antes)
@@ -17,7 +17,7 @@
 #   SKIP_FRONTEND=1           # só API + poll
 #   NO_KILL_PORTS=1           # não mata processos já nas portas
 #   SUPERBET_POLL_INTERVAL_SEC=120
-#   POLL_EVENT_IDS=11499852   # IDs fixos (futebol); vazio = --wc-copa --auto
+#   POLL_EVENT_IDS=11499852   # IDs fixos (futebol); vazio = --auto (clubes ao vivo)
 #   POLL_BASEBALL_EVENT_IDS=  # IDs fixos beisebol; vazio = --baseball --auto
 #   DEV_LOG_DIR=./.dev/logs
 #
@@ -211,12 +211,14 @@ start_api() {
 }
 
 start_poll_football() {
-  local poll_args=(--wc-copa --interval "$POLL_INTERVAL" --no-train)
+  local poll_args=(--auto --interval "$POLL_INTERVAL" --no-train)
   if [[ -n "${POLL_EVENT_IDS:-}" ]]; then
-    poll_args=(--event-ids "$POLL_EVENT_IDS" --interval "$POLL_INTERVAL" --no-train --phase "${POLL_PHASE:-group}")
+    poll_args=(--event-ids "$POLL_EVENT_IDS" --interval "$POLL_INTERVAL" --no-train --phase "${POLL_PHASE:-friendly}")
+  elif [[ "${POLL_WC_COPA:-false}" == "true" ]]; then
+    poll_args=(--wc-copa --interval "$POLL_INTERVAL" --no-train)
   fi
   _cyn
-  echo "→ Poll Superbet futebol/WC (intervalo ${POLL_INTERVAL}s) — log: ${DEV_LOG_DIR}/poll.log"
+  echo "→ Poll Superbet futebol (intervalo ${POLL_INTERVAL}s) — log: ${DEV_LOG_DIR}/poll.log"
   _rst
   (
     poll-superbet-live "${poll_args[@]}" 2>&1 | tee -a "$DEV_LOG_DIR/poll.log" | prefix_log "poll"
@@ -250,14 +252,14 @@ start_poll() {
   if [[ "${POLL_BASEBALL:-0}" == "1" ]]; then
     SKIP_POLL_FOOTBALL=1
     _ylw
-    echo "→ POLL_BASEBALL=1: poll futebol/WC desativado (só beisebol)"
+    echo "→ POLL_BASEBALL=1: poll futebol desativado (só beisebol)"
     _rst
   fi
   if [[ "${SKIP_POLL_FOOTBALL:-0}" != "1" ]]; then
     start_poll_football
   else
     _ylw
-    echo "→ Poll futebol/WC pulado (SKIP_POLL_FOOTBALL=1)"
+    echo "→ Poll futebol pulado (SKIP_POLL_FOOTBALL=1)"
     _rst
   fi
   if [[ "${SKIP_POLL_BASEBALL:-0}" != "1" ]]; then

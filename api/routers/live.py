@@ -72,7 +72,7 @@ async def worldcup_superbet_live_best_picks(
     max_minute: int = Query(85),
     compute_missing: bool = Query(False),
     max_compute: int = Query(6, ge=1, le=15),
-    phase: str = Query("friendly"),
+    phase: str = Query(default="league"),
     bankroll: float = Query(1000, gt=0),
 ):
     from ingest.superbet.advice import run_live_advice
@@ -169,7 +169,7 @@ async def worldcup_superbet_live_best_picks(
 @router.get("/superbet/live/{event_id}/advice", response_model=WcSuperbetLiveAdviceResponse)
 async def worldcup_superbet_live_advice(
     event_id: int,
-    phase: str = Query("friendly"),
+    phase: str = Query(default="league"),
     bankroll: float = Query(1000, gt=0),
     market: str | None = Query(None),
     outcome: str | None = Query(None),
@@ -207,7 +207,7 @@ async def worldcup_superbet_live_advice(
 @router.get("/superbet/live/{event_id}/copilot", response_model=LiveCopilotResponse)
 async def worldcup_superbet_live_copilot(
     event_id: int,
-    phase: str = Query("friendly"),
+    phase: str = Query(default="league"),
     bankroll: float = Query(1000, gt=0),
     fast: bool = Query(True),
     kickoff: str | None = Query(None),
@@ -399,7 +399,7 @@ async def fetch_context_via_perplexity(
 @router.get("/superbet/live/{event_id}/optimized-tickets")
 async def worldcup_superbet_optimized_tickets(
     event_id: int,
-    phase: str = Query("friendly"),
+    phase: str = Query(default="league"),
     bankroll: float = Query(1000, gt=0),
     max_legs: int = Query(4, ge=2, le=6),
     min_legs: int = Query(2, ge=2, le=4),
@@ -523,7 +523,7 @@ def worldcup_superbet_multiple_calculate(req: SuperMultiplaCalculateRequest):
 def worldcup_handicap_analysis(
     event_id: int,
     bankroll: float = Query(default=1000.0, ge=10.0),
-    phase: str = Query(default="group"),
+    phase: str = Query(default="league"),
 ):
     from ingest.superbet.client import SuperbetClient, SuperbetClientError
     from ingest.superbet.store import fetch_event_with_stale_fallback, save_event_snapshot

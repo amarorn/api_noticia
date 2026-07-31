@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instala crons da plataforma ML (poll WC + wallet + relatório semanal).
+# Instala crons da plataforma ML (poll futebol clubes + wallet + relatório semanal).
 #
 # Uso:
 #   ./scripts/install-platform-cron.sh          # instala tudo
@@ -14,7 +14,7 @@ usage() {
   cat <<EOF
 Instala crons recomendados para a plataforma ML:
 
-  */2 10-23 * * *   poll Superbet (POLL_WC_COPA=true no .env)
+  */2 10-23 * * *   poll Superbet (--auto, clubes ao vivo)
   0 */6 * * *       watch-wallet-csv (importa inbox)
   0 12 * * 0        wallet-reminder (domingo)
   0 11 * * 1        weekly-pl-report (segunda)
@@ -37,7 +37,7 @@ install_crons() {
   chmod +x "${ROOT}/scripts/lake-cloud-backup.sh"
   mkdir -p "${ROOT}/data/lake/logs"
 
-  POLL_LINE="*/2 10-23 * * * POLL_WC_COPA=true ${ROOT}/scripts/poll_superbet_cron.sh"
+  POLL_LINE="*/2 10-23 * * * ${ROOT}/scripts/poll_superbet_cron.sh"
   WALLET_LINE="0 */6 * * * ${ROOT}/scripts/watch-wallet-cron.sh ${USER_ID}"
   REMIND_LINE="0 12 * * 0 ${ROOT}/scripts/wallet-reminder-cron.sh ${USER_ID}"
   REPORT_LINE="0 11 * * 1 ${ROOT}/scripts/weekly-pl-report.sh ${USER_ID}"

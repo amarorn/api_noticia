@@ -14,12 +14,11 @@ import time
 from datetime import datetime, timezone
 
 from config import settings
-from functools import lru_cache
 
-from ingest.fifa.teams import FIFA_COUNTRY_CODES
 from ingest.superbet.advice import run_live_advice
 from ingest.superbet.baseball_advice import run_baseball_live_advice
 from ingest.superbet.client import SuperbetClient, SuperbetClientError
+from ingest.superbet.team_resolver import is_international_match
 from ingest.superbet.event_finalize import (
     list_pending_watch_event_ids,
     mark_event_watchlist_discarded,
@@ -30,59 +29,8 @@ from ingest.superbet.live_ticks import live_ticks_path
 from ingest.superbet.parser import SuperbetLiveEventSummary
 from ingest.superbet.store import is_valid_superbet_event_id
 from models.wc_artifact import load_or_train_wc_predictor
-from schemas.national_teams import NATIONAL_ALIASES, normalize_national_team
 
 logger = logging.getLogger(__name__)
-
-_CLUB_MARKERS = (
-    " fc",
-    " fa",
-    " juniors",
-    " kopavog",
-    "(f)",
-    " united fc",
-    " city",
-    " town",
-    " athletic",
-    " wanderers",
-    " rovers",
-    " deportivo",
-    " club ",
-)
-
-
-@lru_cache
-def _known_national_teams() -> frozenset[str]:
-    """Seleções reconhecidas (FIFA + aliases + Copa 2026)."""
-    import json
-    from pathlib import Path
-
-    teams = set(FIFA_COUNTRY_CODES.keys()) | set(NATIONAL_ALIASES.values())
-    wc_path = Path(__file__).resolve().parents[1] / "data" / "rounds" / "wc_2026.json"
-    if wc_path.exists():
-        data = json.loads(wc_path.read_text(encoding="utf-8"))
-        for group in data.get("groups", []):
-            teams.update(group.get("teams", []))
-    return frozenset(teams)
-
-
-def _looks_like_club(name: str) -> bool:
-    low = name.lower()
-    if any(marker in low for marker in _CLUB_MARKERS):
-        return True
-    if " united" in low and "estados unidos" not in low:
-        return True
-    return False
-
-
-def is_international_match(home_team: str, away_team: str) -> bool:
-    """Heurística: amistoso/seleção vs seleção (exclui clubes óbvios)."""
-    if _looks_like_club(home_team) or _looks_like_club(away_team):
-        return False
-    known = _known_national_teams()
-    home = normalize_national_team(home_team)
-    away = normalize_national_team(away_team)
-    return home in known and away in known
 
 
 def _filter_live_events(
@@ -574,7 +522,7 @@ def main() -> int:
         default=None,
         help="Limite de ciclos no loop (padrão: infinito até Ctrl+C)",
     )
-    parser.add_argument("--phase", default="friendly", help="Fase do modelo WC")
+    parser.add_argument("--phase", default=None, help="Fase do modelo in-play (default: config inplay_default_phase)")
     parser.add_argument("--bankroll", type=float, default=1000.0, help="Bankroll para Kelly/EV")
     parser.add_argument(
         "--no-train",
@@ -589,6 +537,9 @@ def main() -> int:
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Logs detalhados")
     args = parser.parse_args()
+
+    if args.phase is None:
+        args.phase = settings.inplay_default_phase
 
     if args.wc_copa:
         args.auto = True

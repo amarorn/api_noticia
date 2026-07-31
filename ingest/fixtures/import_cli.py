@@ -4,7 +4,9 @@ import asyncio
 import structlog
 
 from ingest.fixtures.brasileirao import import_seasons as import_brasileirao
+from ingest.fixtures.brasileirao_serie_b import import_seasons as import_serie_b
 from ingest.fixtures.copa_brasil import import_seasons as import_copa
+from ingest.fixtures.libertadores import import_seasons as import_libertadores
 from ingest.fixtures.store import load_fixtures
 
 structlog.configure(
@@ -16,16 +18,15 @@ structlog.configure(
 
 IMPORTERS = {
     "brasileirao": import_brasileirao,
+    "serie_b": import_serie_b,
     "copa": import_copa,
-    "all": None,
+    "libertadores": import_libertadores,
 }
 
 
 async def _import_competition(name: str, seasons: list[int]) -> None:
-    if name == "brasileirao":
-        df = await import_brasileirao(seasons)
-    else:
-        df = await import_copa(seasons)
+    importer = IMPORTERS[name]
+    df = await importer(seasons)
     if df.empty:
         print(f"{name}: nenhum jogo importado.")
         return
@@ -37,7 +38,7 @@ async def _import_competition(name: str, seasons: list[int]) -> None:
 
 
 async def run(competitions: list[str], seasons: list[int]) -> None:
-    targets = ["brasileirao", "copa"] if "all" in competitions else competitions
+    targets = list(IMPORTERS.keys()) if "all" in competitions else competitions
     for comp in targets:
         await _import_competition(comp, seasons)
 
@@ -53,7 +54,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--competition",
-        choices=["brasileirao", "copa", "all"],
+        choices=["brasileirao", "serie_b", "copa", "libertadores", "all"],
         default="all",
         help="Competição a importar",
     )
@@ -62,7 +63,7 @@ def main() -> None:
         nargs="+",
         type=int,
         default=[2022, 2023, 2024, 2025],
-        help="Temporadas (Copa: só anos com arquivo brcup no repositório)",
+        help="Temporadas (Copa/Libertadores: só anos com arquivo no repositório)",
     )
     args = parser.parse_args()
     asyncio.run(run([args.competition], args.seasons))

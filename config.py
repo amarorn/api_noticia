@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     gcs_lake_prefix: str = "lake"
     google_application_credentials: Path | None = None
     odds_api_key: str | None = None
-    odds_default_sport: str = "soccer_fifa_world_cup"
+    odds_default_sport: str = "soccer_brazil_campeonato"
     odds_default_regions: str = "eu"
     odds_default_markets: str = "h2h"
     odds_default_odds_format: str = "decimal"
@@ -80,6 +80,8 @@ class Settings(BaseSettings):
     bolao_lm_base_model: str = "unsloth/Qwen2.5-0.5B-Instruct"
     bolao_use_lm: bool = True
     bolao_lm_max_tokens: int = 8
+    bolao_use_dixon_coles: bool = True
+    bolao_dc_weight: float = 0.55
     wc_validation_season: int = 2022
     wc_train_include_fifa_history: bool = True
     wc_train_labels_copa_only: bool = True
@@ -204,7 +206,7 @@ class Settings(BaseSettings):
     superbet_finalize_min_confidence: float = 0.7
     superbet_finalize_settle_open_bets: bool = True
     # Poll contínuo Superbet (seleções / Copa)
-    superbet_poll_wc_enabled: bool = True
+    superbet_poll_wc_enabled: bool = False
     superbet_poll_interval_sec: int = 120
     superbet_poll_wc_phase: str = "group"
     superbet_poll_watchlist_enabled: bool = True
@@ -214,6 +216,7 @@ class Settings(BaseSettings):
     # Widget Sportradar LMT Plus (mesmo feed Betradar da Superbet — requer licença)
     sportradar_client_id: str | None = None
     sportradar_language: str = "pt_br"
+    inplay_default_phase: str = "league"
     inplay_use_sofascore_live: bool = True
     inplay_sofascore_waf_max_retries: int = 0
     inplay_halftime_adjust: bool = True

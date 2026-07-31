@@ -24,7 +24,7 @@ from models.wc_trend_advisor import (
     load_event_ticks,
     trend_report_to_dict,
 )
-from schemas.national_teams import normalize_national_team
+from ingest.superbet.team_resolver import classify_live_match, resolve_club_competition
 from models.wc_combo_optimizer import build_optimized_tickets, tickets_to_dict
 
 logger = logging.getLogger(__name__)
@@ -167,7 +167,7 @@ def run_live_advice(
     event_id: int,
     predictor: Any,
     *,
-    phase: str = "friendly",
+    phase: str = "league",
     bankroll: float = 1000.0,
     user_bet: UserBetInput | None = None,
     save_bronze: bool = True,
@@ -195,8 +195,7 @@ def run_live_advice(
     if save_bronze and not superbet_stale:
         save_event_snapshot(snapshot)
 
-    home = normalize_national_team(snapshot.home_team)
-    away = normalize_national_team(snapshot.away_team)
+    home, away, match_kind = classify_live_match(snapshot.home_team, snapshot.away_team)
 
     if snapshot.inplay:
         ip = snapshot.inplay
@@ -217,8 +216,9 @@ def run_live_advice(
         minute=minute,
         bankroll=bankroll,
         fast=fast,
-        phase=phase,
-    )
+            phase=phase,
+            match_kind=match_kind,
+        )
 
     def _compute() -> dict[str, Any]:
         return _build_live_advice_payload(
@@ -241,6 +241,7 @@ def run_live_advice(
             use_sofascore_live=use_sofascore_live,
             fast=fast,
             kickoff=kickoff,
+            match_kind=match_kind,
         )
 
     payload = run_with_advice_cache(cache_key, _compute, fast=fast)
@@ -274,13 +275,16 @@ def _build_live_advice_payload(
     use_sofascore_live: bool | None,
     fast: bool,
     kickoff: str | None = None,
+    match_kind: str = "national",
 ) -> dict[str, Any]:
     from pipelines.wc_predict_utils import resolve_inplay_before_date
     from pipelines.wc_schedule import find_schedule_match
 
     schedule_match = find_schedule_match(home, away)
     effective_phase = phase
-    if schedule_match and phase == "friendly":
+    if match_kind == "club" and phase in {"friendly", "group", "league"}:
+        effective_phase = "league"
+    elif schedule_match and phase == "friendly":
         effective_phase = schedule_match.get("phase") or phase
 
     model_before_date = resolve_inplay_before_date(
@@ -445,17 +449,16 @@ def _build_live_advice_payload(
         (scorealarm_context or {}).get("timeline") if scorealarm_context else None
     )
 
-    result = inplay_from_predictor(
-        predictor,
+    ip = snapshot.inplay
+    sim_common = dict(
         home_team=home,
         away_team=away,
         home_score=home_score,
         away_score=away_score,
         minute=minute,
-        phase=effective_phase,
-        is_neutral=True,
         ht_home_score=ht_h,
         ht_away_score=ht_a,
+        match_minutes=90,
         momentum_events=momentum_events,
         home_corners=ip.home_corners if snapshot.inplay else 0,
         away_corners=ip.away_corners if snapshot.inplay else 0,
@@ -465,10 +468,47 @@ def _build_live_advice_payload(
         live_timeline=inplay_live_timeline,
         match_context=match_context,
         live_research=live_research_result,
-        n_simulations=settings.inplay_fast_mc_simulations if fast else None,
-        use_ensemble=False if fast else None,
-        before_date=model_before_date,
     )
+
+    if match_kind == "club":
+        from models.league_inplay import inplay_for_club_match, inplay_for_market_prior_match
+
+        club_competition = resolve_club_competition(home, away)
+        if club_competition:
+            result = inplay_for_club_match(
+                competition=club_competition,
+                before_date=model_before_date,
+                n_simulations=settings.inplay_fast_mc_simulations if fast else None,
+                **sim_common,
+            )
+            league_model_source = "league_dixon_coles"
+        else:
+            result = inplay_for_market_prior_match(
+                before_date=model_before_date,
+                n_simulations=settings.inplay_fast_mc_simulations if fast else None,
+                **sim_common,
+            )
+            league_model_source = "market_prior"
+    elif match_kind == "other":
+        from models.league_inplay import inplay_for_market_prior_match
+
+        result = inplay_for_market_prior_match(
+            before_date=model_before_date,
+            n_simulations=settings.inplay_fast_mc_simulations if fast else None,
+            **sim_common,
+        )
+        league_model_source = "market_prior"
+    else:
+        league_model_source = "wc_ensemble"
+        result = inplay_from_predictor(
+            predictor,
+            phase=effective_phase,
+            is_neutral=True,
+            before_date=model_before_date,
+            n_simulations=settings.inplay_fast_mc_simulations if fast else None,
+            use_ensemble=False if fast else None,
+            **sim_common,
+        )
     inplay_dict = result.to_dict()
     from models.wc_derived_markets import enrich_inplay_derived_probs
 
@@ -487,18 +527,39 @@ def _build_live_advice_payload(
             "_cached": live_research_result.get("_cached", False),
         }
     try:
-        pre = predictor.predict(
-            home,
-            away,
-            phase=effective_phase,
-            is_neutral=True,
-            before_date=model_before_date,
-        )
-        inplay_dict["pregame_probs"] = {
-            "1": round(pre.prob_home, 4),
-            "X": round(pre.prob_draw, 4),
-            "2": round(pre.prob_away, 4),
-        }
+        if match_kind == "club":
+            from models.league_inplay import league_pregame_probs
+
+            club_competition = resolve_club_competition(home, away)
+            pre_probs = (
+                league_pregame_probs(
+                    home,
+                    away,
+                    competition=club_competition,
+                    before_date=model_before_date,
+                )
+                if club_competition
+                else None
+            )
+            if pre_probs:
+                inplay_dict["pregame_probs"] = {k: round(pre_probs[k], 4) for k in ("1", "X", "2")}
+            else:
+                raise ValueError("sem fixtures de liga")
+        elif match_kind == "other":
+            raise ValueError("ligas estrangeiras usam prior de mercado")
+        else:
+            pre = predictor.predict(
+                home,
+                away,
+                phase=effective_phase,
+                is_neutral=True,
+                before_date=model_before_date,
+            )
+            inplay_dict["pregame_probs"] = {
+                "1": round(pre.prob_home, 4),
+                "X": round(pre.prob_draw, 4),
+                "2": round(pre.prob_away, 4),
+            }
     except Exception:
         inplay_dict["pregame_probs"] = {
             "1": market_probs[0] if market_probs else None,
@@ -702,7 +763,7 @@ def _build_live_advice_payload(
                 snapshot=snapshot_dict,
                 inplay=inplay_dict,
                 advice=report,
-                tick_extra=tick_extra,
+                tick_extra={**(tick_extra or {}), "match_kind": match_kind},
             )
         except Exception as exc:
             logger.warning("Falha ao gravar live_ticks parquet (event_id=%s): %s", event_id, exc)
@@ -829,6 +890,8 @@ def _build_live_advice_payload(
     return {
         "home_team": home,
         "away_team": away,
+        "match_kind": match_kind,
+        "model_source": league_model_source if match_kind in {"club", "other"} else "wc_ensemble",
         "minute": minute,
         "current_score": inplay_dict.get("current_score"),
         "period_label": period_label,

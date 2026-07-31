@@ -49,6 +49,7 @@ TEAM_ALIASES: dict[str, str] = {
     "América FC": "América-MG",
     "América Mineiro": "América-MG",
     "América-MG": "América-MG",
+    "Sport Recife PE": "Sport",
     "Sport Club do Recife": "Sport",
     "Sport Recife": "Sport",
     "Sport": "Sport",

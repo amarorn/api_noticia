@@ -35,9 +35,17 @@ def test_wc_national_team():
     assert not is_wc_national_team("Queanbeyan City")
 
 
+def test_rank_brazilian_club_competitive():
+    rank = rank_live_event(_event(home_team="Flamengo", away_team="Palmeiras"))
+    assert rank.tier in {"top", "good"}
+    assert rank.match_kind == "club"
+    assert rank.score > 40
+
+
 def test_rank_national_competitive_game_top():
     rank = rank_live_event(_event())
     assert rank.tier in {"top", "good"}
+    assert rank.match_kind == "national"
     assert rank.score > 40
 
 
@@ -73,7 +81,7 @@ def test_latest_ticks_handles_pandas_na(tmp_path, monkeypatch):
             "prob_final_home": [0.4],
             "prob_final_draw": [0.3],
             "prob_final_away": [0.3],
-            "captured_at": [pd.Timestamp("2026-06-13T05:00:00Z")],
+            "captured_at": [pd.Timestamp.now(tz="UTC")],
         }
     )
     df.to_parquet(path)
@@ -89,8 +97,9 @@ def test_latest_ticks_handles_pandas_na(tmp_path, monkeypatch):
 def test_rank_live_events_sorted():
     events = [
         _event(event_id=1, home_team="Club A", away_team="Club B", minute=80, home_score=0, away_score=4),
-        _event(event_id=2, home_team="Brasil", away_team="Egito", minute=22, home_score=0, away_score=0),
+        _event(event_id=2, home_team="Flamengo", away_team="Palmeiras", minute=22, home_score=0, away_score=0),
     ]
     ranked = rank_live_events(events)
     assert ranked[0][0].event_id == 2
+    assert ranked[0][1].match_kind == "club"
     assert isinstance(ranked[0][1], LiveBetRank)

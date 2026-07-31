@@ -210,6 +210,10 @@ interface ApiBrasileiraoRound {
     confidence: number;
     reason: string;
     news_count: number;
+    model_source?: string | null;
+    probabilities?: Record<string, number> | null;
+    home_position?: number | null;
+    away_position?: number | null;
   }>;
 }
 
@@ -500,6 +504,10 @@ export function mapBrasileiraoRound(raw: ApiBrasileiraoRound): BrasileiraoRound 
       confidence: p.confidence,
       reason: p.reason,
       newsCount: p.news_count,
+      modelSource: p.model_source ?? undefined,
+      probabilities: p.probabilities ?? undefined,
+      homePosition: p.home_position ?? undefined,
+      awayPosition: p.away_position ?? undefined,
     })),
   };
 }
@@ -1095,6 +1103,7 @@ interface ApiSuperbetLiveEvent {
   bet_opportunity_count?: number | null;
   bet_top_ev?: number | null;
   bet_top_label?: string | null;
+  match_kind?: string | null;
 }
 
 interface ApiSuperbetLiveFeed {
@@ -2163,6 +2172,7 @@ export function mapSuperbetLiveFeed(raw: ApiSuperbetLiveFeed) {
       betOpportunityCount: event.bet_opportunity_count ?? null,
       betTopEv: event.bet_top_ev ?? null,
       betTopLabel: event.bet_top_label ?? null,
+      matchKind: (event.match_kind as SuperbetLiveEvent["matchKind"]) ?? null,
     })),
   };
 }

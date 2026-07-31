@@ -1,4 +1,4 @@
-"""Ranking rápido de jogos ao vivo para palpite (heurística + ticks recentes)."""
+"""Ranking ao vivo — prioriza clubes BR e jogos com edge modelado."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,24 +9,15 @@ import pandas as pd
 
 from ingest.superbet.live_ticks import live_ticks_path
 from ingest.superbet.parser import SuperbetLiveEventSummary
-from schemas.national_teams import normalize_national_team
+from ingest.superbet.team_resolver import classify_live_match, is_wc_national_team
 
-# Seleções com modelo WC calibrado (mesmo conjunto do frontend LivePage).
-_WC_TEAMS = {
-    "Brasil", "Argentina", "Uruguai", "Chile", "Colômbia", "Equador", "Paraguai", "Peru",
-    "Bolívia", "Venezuela", "México", "EUA", "Canadá", "Costa Rica", "Jamaica",
-    "Alemanha", "França", "Espanha", "Itália", "Inglaterra", "Portugal", "Holanda",
-    "Bélgica", "Croácia", "Suíça", "Dinamarca", "Áustria", "Polônia", "Sérvia",
-    "Turquia", "Ucrânia", "Escócia", "Irlanda", "Noruega", "Suécia", "Japão",
-    "Coreia do Sul", "Austrália", "Arábia Saudita", "Irã", "Qatar", "Egito",
-    "Marrocos", "Nigéria", "Senegal", "Ghaná", "Camarões", "Costa do Marfim",
-    "África do Sul", "Tunísia", "Argélia",
-}
-
-
-def is_wc_national_team(name: str) -> bool:
-    norm = normalize_national_team(name)
-    return norm in _WC_TEAMS
+# Reexport para compatibilidade de testes/frontend legado.
+__all__ = [
+    "LiveBetRank",
+    "is_wc_national_team",
+    "rank_live_event",
+    "rank_live_events",
+]
 
 
 @dataclass
@@ -38,6 +29,7 @@ class LiveBetRank:
     opportunity_count: int = 0
     top_ev: float | None = None
     top_label: str | None = None
+    match_kind: str = "other"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -48,6 +40,7 @@ class LiveBetRank:
             "bet_opportunity_count": self.opportunity_count,
             "bet_top_ev": round(self.top_ev, 4) if self.top_ev is not None else None,
             "bet_top_label": self.top_label,
+            "match_kind": self.match_kind,
         }
 
 
@@ -110,18 +103,20 @@ def _palpite_from_probs(h: float | None, d: float | None, a: float | None) -> st
     return best
 
 
-def _heuristic_score(event: SuperbetLiveEventSummary) -> tuple[float, list[str]]:
+def _heuristic_score(event: SuperbetLiveEventSummary) -> tuple[float, list[str], str]:
     score = 0.0
     tags: list[str] = []
-    home = event.home_team
-    away = event.away_team
+    _, _, match_kind = classify_live_match(event.home_team, event.away_team)
     minute = event.minute or 0
     gap = abs(event.home_score - event.away_score)
     status = (event.status or "").upper()
 
-    if is_wc_national_team(home) or is_wc_national_team(away):
-        score += 75
-        tags.append("seleção WC")
+    if match_kind == "club":
+        score += 80
+        tags.append("clube BR")
+    elif match_kind == "national":
+        score += 55
+        tags.append("seleção")
 
     if 8 <= minute <= 44:
         score += 35
@@ -151,7 +146,7 @@ def _heuristic_score(event: SuperbetLiveEventSummary) -> tuple[float, list[str]]
         score -= 200
         tags.append("encerrado")
 
-    return score, tags
+    return score, tags, match_kind
 
 
 def _tier_from_score(score: float, top_ev: float | None) -> str:
@@ -188,7 +183,7 @@ def rank_live_event(
     event: SuperbetLiveEventSummary,
     tick: dict[str, Any] | None = None,
 ) -> LiveBetRank:
-    score, tags = _heuristic_score(event)
+    score, tags, match_kind = _heuristic_score(event)
     top_ev = tick.get("top_aporte_ev") if tick else None
     if top_ev is not None:
         score += min(40.0, top_ev * 200)
@@ -219,6 +214,7 @@ def rank_live_event(
         opportunity_count=opp_count,
         top_ev=top_ev,
         top_label=top_label,
+        match_kind=match_kind,
     )
 
 

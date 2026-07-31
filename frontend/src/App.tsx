@@ -5,7 +5,6 @@ import { NotificationsProvider } from "@/presentation/components/ui/notification
 import { AppLayout } from "@/presentation/components/layout/AppLayout";
 import { DashboardPage } from "@/presentation/pages/DashboardPage";
 import { PredictPage } from "@/presentation/pages/PredictPage";
-import { BrasileiraoPage } from "@/presentation/pages/BrasileiraoPage";
 import { MatchDetailPage } from "@/presentation/pages/MatchDetailPage";
 import { AnalysisPage } from "@/presentation/pages/AnalysisPage";
 import { HistoricalValidationPage } from "@/presentation/pages/HistoricalValidationPage";
@@ -61,7 +60,7 @@ export function App() {
               <Route path="news" element={<Navigate to="/noticias" replace />} />
               <Route path="predict" element={<Navigate to="/palpite-avulso" replace />} />
               <Route path="validate" element={<HistoricalValidationPage />} />
-              <Route path="brasileirao" element={<BrasileiraoPage />} />
+              <Route path="brasileirao" element={<Navigate to="/" replace />} />
               <Route path="match/:home/:away" element={<MatchDetailPage />} />
               <Route path="bilhetes/:home/:away" element={<MatchTicketsPage />} />
               <Route path="album" element={<AlbumPage />} />

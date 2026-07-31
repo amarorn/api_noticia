@@ -443,6 +443,7 @@ export interface SuperbetLiveEvent {
   betOpportunityCount?: number | null;
   betTopEv?: number | null;
   betTopLabel?: string | null;
+  matchKind?: "club" | "national" | "other" | null;
 }
 
 export interface SuperbetLiveFeed {
@@ -1445,6 +1446,10 @@ export interface BrasileiraoPrediction {
   confidence: number;
   reason: string;
   newsCount: number;
+  modelSource?: string;
+  probabilities?: Record<string, number>;
+  homePosition?: number;
+  awayPosition?: number;
 }
 
 export interface BrasileiraoRound {

@@ -218,63 +218,6 @@ function formatEventSchedule(utcDate: string | null): { date: string; time: stri
   };
 }
 
-function isNationalTeam(name: string): boolean {
-  const known = new Set([
-    "Brasil",
-    "Argentina",
-    "Uruguai",
-    "Chile",
-    "Colômbia",
-    "Equador",
-    "Paraguai",
-    "Peru",
-    "Bolívia",
-    "Venezuela",
-    "México",
-    "EUA",
-    "Canadá",
-    "Costa Rica",
-    "Jamaica",
-    "Alemanha",
-    "França",
-    "Espanha",
-    "Itália",
-    "Inglaterra",
-    "Portugal",
-    "Holanda",
-    "Bélgica",
-    "Croácia",
-    "Suíça",
-    "Dinamarca",
-    "Áustria",
-    "Polônia",
-    "Sérvia",
-    "Turquia",
-    "Ucrânia",
-    "Escócia",
-    "Irlanda",
-    "Noruega",
-    "Suécia",
-    "Japão",
-    "Coreia do Sul",
-    "Austrália",
-    "Arábia Saudita",
-    "Irã",
-    "Qatar",
-    "Egito",
-    "Marrocos",
-    "Nigéria",
-    "Senegal",
-    "Gana",
-    "Camarões",
-    "Costa do Marfim",
-    "África do Sul",
-    "Tunísia",
-    "Argélia",
-  ]);
-  return known.has(name);
-}
-
 const TIER_STYLES: Record<
   NonNullable<SuperbetLiveEvent["betTier"]>,
   { badge: string; row: string }
@@ -421,8 +364,8 @@ function LiveEventRow({ event }: { event: SuperbetLiveEvent }) {
 
 export function LivePage() {
   const [searchParams] = useSearchParams();
-  const [sportFilter, setSportFilter] = useState<SportFilter>("esport_fifa");
-  const [nationalOnly, setNationalOnly] = useState(false);
+  const [sportFilter, setSportFilter] = useState<SportFilter>("football");
+  const [brasileiraoOnly, setBrasileiraoOnly] = useState(false);
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
   const [selectedBasketEventIds, setSelectedBasketEventIds] = useState<number[]>([]);
 
@@ -482,11 +425,9 @@ export function LivePage() {
 
   const baseEvents = useMemo(() => {
     const events = liveQuery.data?.events ?? [];
-    if (!nationalOnly) return events;
-    return events.filter(
-      (event) => isNationalTeam(event.homeTeam) || isNationalTeam(event.awayTeam),
-    );
-  }, [liveQuery.data?.events, nationalOnly]);
+    if (!brasileiraoOnly) return events;
+    return events.filter((event) => event.matchKind === "club");
+  }, [liveQuery.data?.events, brasileiraoOnly]);
 
   const tierCounts = useMemo(() => {
     const counts = { all: baseEvents.length, bettable: 0, top: 0, good: 0, watch: 0 };
@@ -563,9 +504,9 @@ export function LivePage() {
             label="Todos os esportes"
           />
           <FilterChip
-            active={nationalOnly}
-            onClick={() => setNationalOnly((v) => !v)}
-            label="Seleções"
+            active={brasileiraoOnly}
+            onClick={() => setBrasileiraoOnly((v) => !v)}
+            label="Brasileirão"
           />
         </FilterBar>
 
@@ -764,7 +705,7 @@ export function LivePage() {
               <>
                 {rows.length} jogo(s) exibido(s)
                 {tierFilter !== "all" ? ` · filtro: ${tierFilterLabel[tierFilter]}` : ""}
-                {nationalOnly ? " · seleções" : ""}
+                {brasileiraoOnly ? " · clubes BR" : ""}
                 {" · "}ordenados por score de palpite · fonte Superbet
                 {liveQuery.data?.capturedAt
                   ? ` · atualizado ${new Intl.DateTimeFormat("pt-BR", {

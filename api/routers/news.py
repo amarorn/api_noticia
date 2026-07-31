@@ -265,6 +265,10 @@ def predict_current_round():
                 confidence=r["confidence"],
                 reason=r["reason"],
                 news_count=r["news_count"],
+                model_source=r.get("model_source"),
+                probabilities=r.get("probabilities"),
+                home_position=r.get("home_position"),
+                away_position=r.get("away_position"),
             )
             for r in results
         ],

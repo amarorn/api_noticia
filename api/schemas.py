@@ -49,6 +49,10 @@ class RoundPrediction(BaseModel):
     confidence: float
     reason: str
     news_count: int
+    model_source: str | None = None
+    probabilities: dict[str, float] | None = None
+    home_position: int | None = None
+    away_position: int | None = None
 
 
 class RoundResponse(BaseModel):
@@ -824,6 +828,7 @@ class WcSuperbetLiveEventResponse(BaseModel):
     bet_opportunity_count: int | None = None
     bet_top_ev: float | None = None
     bet_top_label: str | None = None
+    match_kind: str | None = None
 
 
 class WcSuperbetLiveResponse(BaseModel):

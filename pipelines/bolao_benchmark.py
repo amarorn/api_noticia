@@ -17,6 +17,11 @@ from ingest.fixtures.store import load_fixtures
 from pipelines.mlflow_tracking import log_classification_benchmark
 from models.baseline import predict_baseline_probs
 from models.eval_metrics import LABELS, classification_metrics
+from models.league_dixon_coles import (
+    LeagueDixonColesModel,
+    MIN_TRAIN_MATCHES,
+    clear_league_model_cache,
+)
 from pipelines.bolao_features import FEATURE_NAMES, build_bolao_feature, features_to_array
 from schemas.models import BolaoFeature
 
@@ -61,6 +66,7 @@ def run_benchmark(eval_season: int = 2024, enable_mlflow: bool = False) -> dict:
         raise ValueError(f"Poucos jogos na temporada {eval_season}: {len(eval_df)}")
 
     eval_features: list = []
+    eval_rows: list[pd.Series] = []
     y_eval: list[str] = []
 
     for _, row in eval_df.iterrows():
@@ -69,6 +75,7 @@ def run_benchmark(eval_season: int = 2024, enable_mlflow: bool = False) -> dict:
             continue
         feat = _row_to_feature(df, row, history)
         eval_features.append(feat)
+        eval_rows.append(row)
         y_eval.append(str(row["label"]))
 
     if len(y_eval) < 20:
@@ -89,6 +96,31 @@ def run_benchmark(eval_season: int = 2024, enable_mlflow: bool = False) -> dict:
     )
     m_baseline = classification_metrics(y_eval, probs_baseline)
     m_baseline["model"] = "baseline_heuristic"
+
+    clear_league_model_cache()
+    train_fixtures = df[df["season"] < eval_season]
+    league_model: LeagueDixonColesModel | None = None
+    if len(train_fixtures) >= MIN_TRAIN_MATCHES:
+        league_model = LeagueDixonColesModel()
+        league_model.fit(train_fixtures)
+
+    probs_dc: list[list[float]] = []
+    for feat, row in zip(eval_features, eval_rows, strict=True):
+        if league_model is None:
+            probs_dc.append([predict_baseline_probs(feat)[c] for c in LABELS])
+            continue
+        before = pd.to_datetime(row["match_date"], utc=True).to_pydatetime()
+        dc = league_model.predict_probs(
+            df,
+            feat.home_team,
+            feat.away_team,
+            before_date=before,
+            is_neutral=False,
+        )
+        probs_dc.append([dc[c] for c in LABELS])
+    probs_dc_arr = np.array(probs_dc)
+    m_dc = classification_metrics(y_eval, probs_dc_arr)
+    m_dc["model"] = "dixon_coles_league"
 
     x_train = features_to_array(train_features)
     x_eval = features_to_array(eval_features)
@@ -124,7 +156,7 @@ def run_benchmark(eval_season: int = 2024, enable_mlflow: bool = False) -> dict:
         "train_samples": len(y_train),
         "eval_samples": len(y_eval),
         "feature_names": FEATURE_NAMES,
-        "metrics": [m_baseline, m_log, m_gb],
+        "metrics": [m_baseline, m_dc, m_log, m_gb],
     }
 
     if enable_mlflow:

@@ -50,7 +50,7 @@ export function LiveDashboardTopBar({
             Bolão AI
           </p>
           <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-slate-500 sm:text-[10px]">
-            {isBasket ? "Basquete NBA" : "Copa 2026"}
+            {isBasket ? "Basquete NBA" : "Campeonatos"}
           </p>
         </div>
       </Link>

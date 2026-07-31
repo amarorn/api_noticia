@@ -249,6 +249,10 @@ interface BrasileiraoCardProps {
   reason: string;
   newsCount: number;
   index?: number;
+  modelSource?: string;
+  probabilities?: Record<string, number>;
+  homePosition?: number;
+  awayPosition?: number;
 }
 
 export function BrasileiraoCard({
@@ -259,6 +263,10 @@ export function BrasileiraoCard({
   reason,
   newsCount,
   index = 0,
+  modelSource,
+  probabilities,
+  homePosition,
+  awayPosition,
 }: BrasileiraoCardProps) {
   const predColor =
     prediction === "1"
@@ -279,7 +287,13 @@ export function BrasileiraoCard({
           <h3 className="truncate font-bold text-white">
             {homeTeam} <span className="font-normal text-slate-500">x</span> {awayTeam}
           </h3>
-          <p className="mt-0.5 text-[11px] text-slate-500">{newsCount} notícias analisadas</p>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            {newsCount} notícias
+            {homePosition != null && awayPosition != null
+              ? ` · ${homePosition}º vs ${awayPosition}º`
+              : ""}
+            {modelSource ? ` · ${modelSource}` : ""}
+          </p>
         </div>
         <div
           className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl text-xs"
@@ -289,6 +303,12 @@ export function BrasileiraoCard({
           <span className="text-[10px] font-semibold text-slate-500">{formatPercent(confidence)}</span>
         </div>
       </div>
+      {probabilities ? (
+        <p className="font-mono text-[10px] text-slate-500">
+          1 {formatPercent(probabilities["1"] ?? 0)} · X {formatPercent(probabilities["X"] ?? 0)} · 2{" "}
+          {formatPercent(probabilities["2"] ?? 0)}
+        </p>
+      ) : null}
       <p className="line-clamp-2 text-xs leading-relaxed text-slate-400">{reason}</p>
     </motion.article>
   );

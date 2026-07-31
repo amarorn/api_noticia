@@ -7,6 +7,7 @@ import structlog
 
 from config import settings
 from models.baseline import predict_baseline, predict_baseline_probs
+from models.league_dixon_coles import predict_league_probs
 from schemas.models import BolaoFeature, BolaoLabel, GoldBolaoContext
 
 logger = structlog.get_logger()
@@ -68,6 +69,40 @@ def _blend_probs(
     blended = {k: baseline[k] * (1.0 - lm_weight) for k in LABELS}
     blended[lm_label] += lm_weight
     return _normalize_probs(blended)
+
+
+def _blend_prob_dicts(
+    a: dict[BolaoLabel, float],
+    b: dict[BolaoLabel, float],
+    b_weight: float,
+) -> dict[BolaoLabel, float]:
+    w = min(max(b_weight, 0.0), 1.0)
+    blended = {k: a[k] * (1.0 - w) + b[k] * w for k in LABELS}
+    return _normalize_probs(blended)
+
+
+def _ensemble_baseline_dc(
+    features: BolaoFeature,
+    *,
+    match_date,
+) -> tuple[dict[BolaoLabel, float], str | None]:
+    """Combina heurística (notícias/tabela) com Dixon-Coles de liga."""
+    baseline_probs = predict_baseline_probs(features)
+    if not settings.bolao_use_dixon_coles:
+        return baseline_probs, None
+
+    dc_probs = predict_league_probs(
+        features.home_team,
+        features.away_team,
+        features.competition,
+        before_date=match_date,
+        is_neutral=False,
+    )
+    if dc_probs is None:
+        return baseline_probs, None
+
+    merged = _blend_prob_dicts(baseline_probs, dc_probs, settings.bolao_dc_weight)
+    return merged, "dixon_coles"
 
 
 class BolaoPredictor:
@@ -161,19 +196,33 @@ class BolaoPredictor:
             return None
 
     def predict_from_features(self, features: BolaoFeature) -> BolaoPrediction:
-        baseline_probs = predict_baseline_probs(features)
+        probs, dc_source = _ensemble_baseline_dc(
+            features,
+            match_date=features.match_date,
+        )
         pred, conf, reason = predict_baseline(features)
+        if dc_source:
+            pred = max(probs, key=probs.get)  # type: ignore[arg-type]
+            conf = float(probs[pred])
+            reason = f"Dixon-Coles + baseline: {reason}"
         return BolaoPrediction(
             prediction=pred,
-            confidence=conf,
+            confidence=min(conf, 0.92),
             reason=reason,
-            probabilities=baseline_probs,
-            model_source="baseline",
+            probabilities=probs,
+            model_source=dc_source or "baseline",
         )
 
     def predict(self, context: GoldBolaoContext) -> BolaoPrediction:
-        baseline_probs = predict_baseline_probs(context.features)
+        probs, dc_source = _ensemble_baseline_dc(
+            context.features,
+            match_date=context.match_date,
+        )
         pred, conf, reason = predict_baseline(context.features)
+        if dc_source:
+            pred = max(probs, key=probs.get)  # type: ignore[arg-type]
+            conf = float(probs[pred])
+            reason = f"Dixon-Coles + baseline: {reason}"
 
         prompt = build_match_prompt(
             context.home_team,
@@ -186,20 +235,20 @@ class BolaoPredictor:
         if lm_label is None:
             return BolaoPrediction(
                 prediction=pred,
-                confidence=conf,
+                confidence=min(conf, 0.92),
                 reason=reason,
-                probabilities=baseline_probs,
-                model_source="baseline",
+                probabilities=probs,
+                model_source=dc_source or "baseline",
             )
 
-        probs = _blend_probs(baseline_probs, lm_label)
-        prediction = max(probs, key=probs.get)  # type: ignore[arg-type]
-        confidence = float(probs[prediction])
+        lm_probs = _blend_probs(probs, lm_label)
+        prediction = max(lm_probs, key=lm_probs.get)  # type: ignore[arg-type]
+        confidence = float(lm_probs[prediction])
         return BolaoPrediction(
             prediction=prediction,
             confidence=min(confidence, 0.92),
-            reason=f"modelo LM ({lm_label}); baseline: {reason}",
-            probabilities=probs,
+            reason=f"modelo LM ({lm_label}); {reason}",
+            probabilities=lm_probs,
             model_source="lm",
         )
 

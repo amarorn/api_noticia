@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { IconCalendar, IconUsers, IconZap } from "@/presentation/components/ui/Icons";
+import { IconLive, IconNewspaper, IconZap } from "@/presentation/components/ui/Icons";
 
 const actions = [
-  { to: "/jogos", label: "Ver tabela", Icon: IconCalendar, accent: "blue" as const },
-  { to: "/convocacoes", label: "Convocações", Icon: IconUsers, accent: "purple" as const },
-  { to: "/predict", label: "Palpite avulso", Icon: IconZap, accent: "green" as const },
+  { to: "/ao-vivo?sport=football", label: "Ao vivo", Icon: IconLive, accent: "green" as const },
+  { to: "/noticias", label: "Notícias", Icon: IconNewspaper, accent: "blue" as const },
+  { to: "/palpite-avulso", label: "Palpite avulso", Icon: IconZap, accent: "purple" as const },
 ] as const;
 
 const accentMap = {

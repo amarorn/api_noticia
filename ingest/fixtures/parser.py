@@ -8,6 +8,7 @@ from schemas.models import BolaoLabel, MatchResult
 from schemas.teams import normalize_team
 
 ROUND_RE = re.compile(r"^▪ (?:Matchday|Round)\s+(\d+)", re.IGNORECASE)
+ROUND_GENERIC_RE = re.compile(r"^▪ .+?(?:Round|Rodada|Matchday)\s+(\d+)", re.IGNORECASE)
 DATE_RE = re.compile(
     r"^\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+([A-Za-z]{3}\s+\d{1,2}\s+\d{4})"
 )
@@ -41,14 +42,20 @@ def _make_match_id(season: int, round_number: int, home: str, away: str, match_d
     return sha256(key.encode()).hexdigest()[:16]
 
 
-def parse_football_txt(content: str, season: int, competition: str = "Brasileirão") -> list[MatchResult]:
+def parse_football_txt(
+    content: str,
+    season: int,
+    competition: str = "Brasileirão",
+    *,
+    is_neutral: bool | None = None,
+) -> list[MatchResult]:
     imported_at = datetime.now(timezone.utc)
     matches: list[MatchResult] = []
     current_round = 0
     current_date: datetime | None = None
 
     for line in content.splitlines():
-        round_match = ROUND_RE.match(line)
+        round_match = ROUND_RE.match(line) or ROUND_GENERIC_RE.match(line)
         if round_match:
             current_round = int(round_match.group(1))
             continue
@@ -78,6 +85,17 @@ def parse_football_txt(content: str, season: int, competition: str = "Brasileir�
         match_date = current_date
         match_id = _make_match_id(season, current_round, home_team, away_team, match_date)
 
+        if is_neutral is None:
+            neutral = competition.lower() not in (
+                "brasileirão",
+                "brasileirao",
+                "brasileirão série b",
+                "copa do brasil",
+                "copa libertadores",
+            )
+        else:
+            neutral = is_neutral
+
         matches.append(
             MatchResult(
                 match_id=match_id,
@@ -93,6 +111,7 @@ def parse_football_txt(content: str, season: int, competition: str = "Brasileir�
                 away_score=away_score,
                 label=score_to_label(home_score, away_score),
                 imported_at=imported_at,
+                is_neutral=neutral,
             )
         )
 

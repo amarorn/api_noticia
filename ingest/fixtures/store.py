@@ -8,7 +8,9 @@ from config import settings
 
 COMPETITION_PREFIXES = {
     "brasileirao": "brasileirao_",
+    "brasileirao_serie_b": "brasileirao_serie_b_",
     "copa_brasil": "copa_brasil_",
+    "libertadores": "libertadores_",
 }
 
 
