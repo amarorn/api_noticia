@@ -43,4 +43,14 @@ fi
 {
   echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) inplay weekly report (eval_season=${EVAL_SEASON}) ==="
   .venv/bin/inplay-weekly-report "${ARGS[@]}"
+
+  if [[ "${SKIP_HF_PUBLISH:-0}" != "1" ]]; then
+    if [[ -n "${HF_TOKEN:-${HUGGING_FACE_HUB_TOKEN:-}}" ]]; then
+      echo "=== HF publish (reports + artifacts) ==="
+      ./scripts/publish-reports-hf.sh || echo "publish-reports-hf falhou (exit $?)"
+      ./scripts/publish-artifacts.sh || echo "publish-artifacts falhou (exit $?)"
+    else
+      echo "HF publish pulado (HF_TOKEN ausente)"
+    fi
+  fi
 } >> "${LOG_FILE}" 2>&1

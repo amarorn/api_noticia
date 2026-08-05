@@ -40,14 +40,29 @@ for arg in "$@"; do
   esac
 done
 
+if [[ -f "$ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/.env"
+  set +a
+fi
+
 if [[ ! -d "$ARTIFACTS_DIR" ]]; then
   echo "Pasta de artefatos não encontrada: $ARTIFACTS_DIR" >&2
   exit 1
 fi
 
 if [[ -z "${HF_TOKEN:-}" && -z "${HUGGING_FACE_HUB_TOKEN:-}" ]]; then
-  echo "Defina HF_TOKEN (https://huggingface.co/settings/tokens)" >&2
-  exit 1
+  HF_BIN="${HF_BIN:-hf}"
+  if ! command -v "$HF_BIN" >/dev/null 2>&1; then
+    HF_BIN="$ROOT/.venv/bin/hf"
+  fi
+  if command -v "$HF_BIN" >/dev/null 2>&1 && "$HF_BIN" auth whoami >/dev/null 2>&1; then
+    echo "Usando login HF em cache ($( "$HF_BIN" auth whoami 2>/dev/null | head -1 ))"
+  else
+    echo "Defina HF_TOKEN (https://huggingface.co/settings/tokens) ou rode: hf auth login" >&2
+    exit 1
+  fi
 fi
 
 HF_BIN="${HF_BIN:-hf}"
