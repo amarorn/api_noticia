@@ -94,9 +94,9 @@ class MatchResult(BaseModel):
     away_team: str
     home_team_raw: str
     away_team_raw: str
-    home_score: int
-    away_score: int
-    label: BolaoLabel
+    home_score: int | None = None
+    away_score: int | None = None
+    label: BolaoLabel | None = None
     imported_at: datetime
     phase: str = "group"
     group_name: Optional[str] = None

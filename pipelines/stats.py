@@ -62,7 +62,7 @@ def _played_before(fixtures_df: pd.DataFrame, before_date: datetime, season: int
     played = df[df["match_date"] < cutoff]
     if season is not None:
         played = played[played["season"] == season]
-    return played
+    return played.dropna(subset=["home_score", "away_score"])
 
 
 def compute_standings(

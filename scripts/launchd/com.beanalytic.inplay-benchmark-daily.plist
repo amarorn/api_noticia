@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.beanalytic.inplay-benchmark-daily</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>@@REPO_ROOT@@/scripts/inplay_benchmark_cron.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>@@REPO_ROOT@@</string>
+
+    <!-- Diário às 06:12 (horário local do macOS) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>12</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>@@REPO_ROOT@@/data/lake/logs/inplay_benchmark_launchd.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>@@REPO_ROOT@@/data/lake/logs/inplay_benchmark_launchd.err.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>

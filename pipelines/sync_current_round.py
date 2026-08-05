@@ -36,7 +36,14 @@ def latest_round_by_schedule(
     by_round = df.groupby("round_number")["match_date"].max()
     eligible = by_round[by_round <= now + pd.Timedelta(days=1)]
     if not eligible.empty:
-        return int(eligible.idxmax())
+        latest_past = int(eligible.idxmax())
+        next_round = latest_past + 1
+        next_df = df[df["round_number"] == next_round]
+        if not next_df.empty:
+            first_kickoff = next_df["match_date"].min()
+            if first_kickoff > now and (first_kickoff - now).days <= 14:
+                return next_round
+        return latest_past
     return int(by_round.idxmin())
 
 

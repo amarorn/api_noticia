@@ -29,6 +29,7 @@ def advice_cache_key(
     bankroll: float,
     fast: bool,
     phase: str,
+    match_kind: str = "national",
 ) -> tuple[Any, ...]:
     return (
         event_id,
@@ -38,6 +39,7 @@ def advice_cache_key(
         int(bankroll * 100),
         fast,
         phase,
+        match_kind,
     )
 
 

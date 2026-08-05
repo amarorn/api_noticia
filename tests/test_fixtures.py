@@ -1,5 +1,9 @@
+from datetime import datetime, timezone
+import zoneinfo
 
 from ingest.fixtures.parser import parse_football_txt, score_to_label
+
+BR = zoneinfo.ZoneInfo("America/Sao_Paulo")
 
 
 SAMPLE_TXT = """
@@ -34,6 +38,27 @@ def test_parse_football_txt():
     assert matches[0].round_number == 1
     assert matches[0].home_score == 2
     assert matches[0].away_score == 1
+    kickoff = datetime(2024, 4, 13, 18, 30, tzinfo=BR).astimezone(timezone.utc)
+    assert matches[0].match_date == kickoff
+
+
+def test_parse_football_txt_future_without_score():
+    sample = """
+▪ Matchday 22
+  Sat Aug 8
+    16:00  Grêmio FBPA             v São Paulo FC
+    18:30  Clube do Remo           v CA Mineiro
+  Sun Aug 9
+    16:00  EC Bahia                v CR Vasco da Gama
+           SE Palmeiras            v SC Internacional
+"""
+    matches = parse_football_txt(sample, season=2026)
+    assert len(matches) == 4
+    assert matches[0].home_score is None
+    assert matches[0].label is None
+    assert matches[0].match_date == datetime(2026, 8, 8, 16, 0, tzinfo=BR).astimezone(timezone.utc)
+    palmeiras = next(m for m in matches if m.home_team == "Palmeiras")
+    assert palmeiras.match_date == datetime(2026, 8, 9, 16, 0, tzinfo=BR).astimezone(timezone.utc)
 
 
 def test_parse_date_without_year():

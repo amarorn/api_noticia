@@ -22,7 +22,7 @@ def test_advice_cache_key_stable():
         fast=True,
         phase="friendly",
     )
-    assert key == (123, 1, 0, 45, 100000, True, "friendly")
+    assert key == (123, 1, 0, 45, 100000, True, "friendly", "national")
 
 
 def test_run_with_advice_cache_deduplicates_parallel_calls():
@@ -64,7 +64,7 @@ def test_run_with_advice_cache_deduplicates_parallel_calls():
 
 
 def test_cached_advice_expires():
-    key = (1, 0, 0, 0, 100000, True, "friendly")
+    key = (1, 0, 0, 0, 100000, True, "friendly", "national")
     set_cached_advice(key, {"v": 1}, ttl_sec=0.05)
     assert get_cached_advice(key) == {"v": 1}
     time.sleep(0.08)

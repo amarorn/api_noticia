@@ -7,6 +7,21 @@ from ingest.superbet.live_ticks import live_ticks_path
 from pipelines.inplay_event_finals import load_all_event_final_scores
 
 
+def _int_field(value: object, default: int = 0) -> int:
+    """Converte tick Parquet para int; trata None/NaN/pd.NA."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return default
+    try:
+        if pd.isna(value):
+            return default
+    except (TypeError, ValueError):
+        pass
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def build_timeline_from_live_ticks(
     *,
     min_minute: int = 1,
@@ -81,10 +96,10 @@ def build_timeline_from_live_ticks(
                 "away_score_final": as_final,
                 "remaining_goals_home": remaining_home,
                 "remaining_goals_away": remaining_away,
-                "home_red_cards": int(tick.get("home_red_cards") or 0),
-                "away_red_cards": int(tick.get("away_red_cards") or 0),
-                "home_corners": int(tick.get("home_corners") or 0),
-                "away_corners": int(tick.get("away_corners") or 0),
+                "home_red_cards": _int_field(tick.get("home_red_cards")),
+                "away_red_cards": _int_field(tick.get("away_red_cards")),
+                "home_corners": _int_field(tick.get("home_corners")),
+                "away_corners": _int_field(tick.get("away_corners")),
                 "remaining_fraction": remaining_frac,
                 "source": "live_ticks",
             }

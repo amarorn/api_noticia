@@ -167,6 +167,7 @@ class LeagueDixonColesModel:
 
     def fit(self, fixtures_df: pd.DataFrame, *, holdout_season: int | None = None) -> dict:
         df = fixtures_df.sort_values("match_date").copy()
+        df = df.dropna(subset=["home_score", "away_score"])
         if holdout_season is not None and "season" in df.columns:
             train_df = df[df["season"] < holdout_season]
         else:

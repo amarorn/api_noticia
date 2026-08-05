@@ -1,13 +1,15 @@
 """Append de ticks ao vivo Superbet → parquet para histórico e backtest."""
 from __future__ import annotations
 
+import fcntl
 import json
 import logging
 import os
 import threading
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import pandas as pd
 
@@ -100,9 +102,30 @@ def _read_ticks_safe(path: Path) -> pd.DataFrame | None:
         return None
 
 
+@contextmanager
+def _parquet_file_lock(path: Path) -> Iterator[None]:
+    """Lock entre processos (poll futebol + beisebol escrevem no mesmo parquet)."""
+    lock_path = path.with_suffix(path.suffix + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_path, "w") as lock_fp:
+        fcntl.flock(lock_fp.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_fp.fileno(), fcntl.LOCK_UN)
+
+
+def _concat_ticks(existing: pd.DataFrame | None, new_df: pd.DataFrame) -> pd.DataFrame:
+    if existing is None or existing.empty:
+        return new_df
+    left = _normalize_tick_df(existing)
+    right = _normalize_tick_df(new_df)
+    return pd.concat([left, right], ignore_index=True)
+
+
 def _atomic_write_parquet(df: pd.DataFrame, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".parquet.tmp")
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     try:
         df.to_parquet(tmp, index=False)
         os.replace(tmp, path)
@@ -163,9 +186,9 @@ def append_live_tick(
     path = live_ticks_path()
     new_df = _normalize_tick_df(pd.DataFrame([row]))
 
-    with _WRITE_LOCK:
+    with _WRITE_LOCK, _parquet_file_lock(path):
         existing = _read_ticks_safe(path)
-        combined = pd.concat([existing, new_df], ignore_index=True) if existing is not None else new_df
+        combined = _concat_ticks(existing, new_df)
         _atomic_write_parquet(combined, path)
 
     return path

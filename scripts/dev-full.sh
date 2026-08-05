@@ -144,15 +144,61 @@ status_services() {
   done
 }
 
+sanitize_ssl_env() {
+  local var ca
+  for var in SSL_CERT_FILE REQUESTS_CA_BUNDLE CURL_CA_BUNDLE; do
+    ca="${!var:-}"
+    if [[ -n "$ca" ]] && [[ ! -f "$ca" ]]; then
+      _ylw
+      echo "Aviso: ${var} aponta para arquivo inexistente (${ca}) — ignorando." >&2
+      _rst
+      unset "$var"
+    fi
+  done
+}
+
+ensure_python_deps() {
+  local missing
+  missing="$("$VENV_PY" -c "
+import importlib.util
+mods = ('sklearn', 'certifi', 'httpx')
+missing = [m for m in mods if importlib.util.find_spec(m) is None]
+print(' '.join(missing))
+" 2>/dev/null || true)"
+  if [[ -n "$missing" ]]; then
+    _ylw
+    echo "Dependências ausentes no venv (${missing}). Instalando pip install -e \".[dev]\"…"
+    _rst
+    "$VENV_PY" -m pip install -e ".[dev]"
+    missing="$("$VENV_PY" -c "
+import importlib.util
+mods = ('sklearn', 'certifi', 'httpx')
+missing = [m for m in mods if importlib.util.find_spec(m) is None]
+print(' '.join(missing))
+" 2>/dev/null || true)"
+    if [[ -n "$missing" ]]; then
+      _red
+      echo "Erro: ainda faltam módulos (${missing}). Rode manualmente:" >&2
+      echo "  ${VENV_PY} -m pip install -e \".[dev]\"" >&2
+      _rst
+      exit 1
+    fi
+  fi
+}
+
 ensure_prereqs() {
-  if [[ ! -f .venv/bin/activate ]]; then
+  VENV_PY="$ROOT/.venv/bin/python"
+  VENV_BIN="$ROOT/.venv/bin"
+  if [[ ! -x "$VENV_PY" ]]; then
     _red
-    echo "Erro: .venv não encontrado. Rode: python -m venv .venv && pip install -e \".[dev]\"" >&2
+    echo "Erro: .venv não encontrado. Rode: python3 -m venv .venv && .venv/bin/pip install -e \".[dev]\"" >&2
     _rst
     exit 1
   fi
   # shellcheck disable=SC1091
-  source .venv/bin/activate
+  source "$VENV_BIN/activate"
+  sanitize_ssl_env
+  ensure_python_deps
 
   if [[ "${SKIP_FRONTEND:-0}" != "1" ]] && [[ ! -d frontend/node_modules ]]; then
     _ylw
@@ -192,11 +238,11 @@ start_api() {
   local api_cmd
   if [[ "${DEV_API_RELOAD:-1}" == "1" ]]; then
     api_cmd=(
-      uvicorn api.main:app --reload --host 127.0.0.1 --port "$API_PORT"
+      "$VENV_BIN/uvicorn" api.main:app --reload --host 127.0.0.1 --port "$API_PORT"
       --reload-dir api --reload-dir ingest --reload-dir models --reload-dir schemas --reload-dir pipelines
     )
   else
-    api_cmd=(uvicorn api.main:app --host 127.0.0.1 --port "$API_PORT")
+    api_cmd=("$VENV_BIN/uvicorn" api.main:app --host 127.0.0.1 --port "$API_PORT")
   fi
   _cyn
   echo "→ API http://127.0.0.1:${API_PORT} (log: ${DEV_LOG_DIR}/api.log)"
@@ -221,7 +267,7 @@ start_poll_football() {
   echo "→ Poll Superbet futebol (intervalo ${POLL_INTERVAL}s) — log: ${DEV_LOG_DIR}/poll.log"
   _rst
   (
-    poll-superbet-live "${poll_args[@]}" 2>&1 | tee -a "$DEV_LOG_DIR/poll.log" | prefix_log "poll"
+    "$VENV_BIN/poll-superbet-live" "${poll_args[@]}" 2>&1 | tee -a "$DEV_LOG_DIR/poll.log" | prefix_log "poll"
   ) &
   record_pid "$!"
   echo "$!" >"$POLL_PID_FILE"
@@ -242,7 +288,7 @@ start_poll_baseball() {
   echo "→ Poll Superbet beisebol (intervalo ${POLL_INTERVAL}s) — log: ${DEV_LOG_DIR}/poll-baseball.log"
   _rst
   (
-    poll-superbet-live "${poll_args[@]}" 2>&1 | tee -a "$DEV_LOG_DIR/poll-baseball.log" | prefix_log "poll-bb"
+    "$VENV_BIN/poll-superbet-live" "${poll_args[@]}" 2>&1 | tee -a "$DEV_LOG_DIR/poll-baseball.log" | prefix_log "poll-bb"
   ) &
   record_pid "$!"
   echo "$!" >"$POLL_BASEBALL_PID_FILE"
